@@ -15,7 +15,6 @@
             pkgs.dotnet-sdk_8
             pkgs.curl
             pkgs.unzip
-            pkgs.rsync
           ];
 
           # NuGet needs a writable home, and NixOS has no global dotnet install to probe.

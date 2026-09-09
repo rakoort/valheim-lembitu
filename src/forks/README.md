@@ -15,3 +15,7 @@ Each fork directory contains:
 
 Keep our changes minimal and separable. A port is not an opportunity to restyle upstream code:
 diffs against upstream are the only practical way to re-apply our work on a later release.
+
+Forks inherit the shared build configuration in `Directory.Build.props` (see `docs/build.md`),
+including `PluginGuid` being required. Upstream code written before nullable reference types should
+set `<Nullable>disable</Nullable>` in its own `.csproj` rather than absorb edits to silence warnings.

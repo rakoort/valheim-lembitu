@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Install everything in dist/plugins/ into a BepInEx plugins directory.
 #
-#   scripts/install-plugins.sh test/server-config/bepinex/plugins
+#   scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx/plugins
 #
 # Stale DLLs are the whole reason this script exists. A server keeps loading a plugin DLL until the
 # file is gone, and the lloesche/valheim-server container copies the plugins directory into the game
 # directory on every start without ever pruning it (see docs/build.md). So this script records what
 # it installed in .lembitu-installed and removes anything it installed previously but no longer
 # builds. Files it did not install are never touched.
+#
+# dist/plugins/ is the source of truth, so run `dotnet clean` (or delete dist/) after renaming or
+# removing a plugin, otherwise the old DLL is still there to install.
 
 set -euo pipefail
 
@@ -40,11 +43,14 @@ if [[ -f "$MANIFEST" ]]; then
   done < "$MANIFEST"
 fi
 
-: > "$MANIFEST"
+# The manifest is written after the copies, so a failure part-way cannot disown DLLs that are still
+# sitting in the target directory.
+installed=()
 for dll in "${built[@]}"; do
   cp "$dll" "$TARGET_DIR/"
-  basename "$dll" >> "$MANIFEST"
+  installed+=("$(basename "$dll")")
   echo "installed $(basename "$dll")"
 done
+printf '%s\n' "${installed[@]}" > "$MANIFEST"
 
 echo "target: $TARGET_DIR"

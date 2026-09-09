@@ -2,9 +2,9 @@
 # Run a Valheim 1.0.7 dedicated server with the plugins from dist/plugins/ loaded, so a plugin can
 # be proven to chainload before it goes near the live server.
 #
-#   scripts/test-server.sh install   download server files, install BepInEx, install our plugins
-#   scripts/test-server.sh run       start the server in the foreground (Ctrl-C to stop)
-#   scripts/test-server.sh install run
+#   scripts/test-server.sh install                     game files, reference assemblies, BepInEx, plugins
+#   scripts/test-server.sh run                         start in the foreground (Ctrl-C to stop)
+#   scripts/test-server.sh run -world "My World"       replace the server arguments
 #
 # Requires an x86_64 Linux host (astral-bicep): the dedicated server is linux/amd64 only, and its
 # Mono runtime dies on Apple Silicon under both Rosetta and QEMU. See docs/build.md.
@@ -14,7 +14,6 @@
 #
 # Environment:
 #   VALHEIM_TEST_DIR   where server files live (default ~/.cache/valheim-lembitu/server)
-#   VALHEIM_TEST_ARGS  server arguments (default a private world named LembituTest)
 
 set -euo pipefail
 
@@ -22,27 +21,45 @@ DEPOTDOWNLOADER_VERSION="3.4.0"
 VALHEIM_SERVER_APPID="896660"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}"
-SERVER_DIR="${VALHEIM_TEST_DIR:-$CACHE_DIR/server}"
+SERVER_CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}"
+SERVER_DIR="${VALHEIM_TEST_DIR:-$SERVER_CACHE_DIR/server}"
 PACK_DIR="$REPO_ROOT/lib/bepinex/pack/BepInExPack_Valheim"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
-ensure_depotdownloader() {
-  local bin="$CACHE_DIR/DepotDownloader" asset
-  if [[ -x "$bin" ]]; then printf '%s\n' "$bin"; return; fi
+sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
+  else shasum -a 256 "$1" | cut -d' ' -f1
+  fi
+}
+
+# Pinned like the BepInEx pack: this binary downloads the game we test against.
+depotdownloader_asset() {
   case "$(uname -s)-$(uname -m)" in
-    Linux-x86_64)  asset="DepotDownloader-linux-x64.zip" ;;
-    Linux-aarch64) asset="DepotDownloader-linux-arm64.zip" ;;
-    Darwin-arm64)  asset="DepotDownloader-macos-arm64.zip" ;;
-    Darwin-x86_64) asset="DepotDownloader-macos-x64.zip" ;;
+    Linux-x86_64)  echo "DepotDownloader-linux-x64.zip a999dec66b4850fc961bd50366696d23c2d0fad7b18790e6a5647b2f19097a53" ;;
+    Linux-aarch64) echo "DepotDownloader-linux-arm64.zip d9fb612ccebc1db8eeea3b4045d2221ec70431381393ce908fb72f01d4f9c812" ;;
+    Darwin-arm64)  echo "DepotDownloader-macos-arm64.zip 60e80c7c496f3f9a079cd3c62036b35d088c27bc0149baf38f009eb57a52f6a5" ;;
+    Darwin-x86_64) echo "DepotDownloader-macos-x64.zip 3214b689564d73e9342a8a4aef693de6ad3d293801b0f300a4466f60ec75befb" ;;
     *) die "no DepotDownloader build for $(uname -s)-$(uname -m)" ;;
   esac
-  mkdir -p "$CACHE_DIR"
+}
+
+ensure_depotdownloader() {
+  local bin="$SERVER_CACHE_DIR/DepotDownloader" asset expected zip got
+  if [[ -x "$bin" ]]; then printf '%s\n' "$bin"; return; fi
+
+  read -r asset expected <<< "$(depotdownloader_asset)"
+  zip="$SERVER_CACHE_DIR/$asset"
+  mkdir -p "$SERVER_CACHE_DIR"
   echo "downloading DepotDownloader $DEPOTDOWNLOADER_VERSION" >&2
-  curl -sSL -o "$CACHE_DIR/depotdownloader.zip" \
-    "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_${DEPOTDOWNLOADER_VERSION}/${asset}"
-  unzip -oq "$CACHE_DIR/depotdownloader.zip" -d "$CACHE_DIR"
+  curl -fsSL -o "$zip.tmp" \
+    "https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_${DEPOTDOWNLOADER_VERSION}/${asset}" \
+    || { rm -f "$zip.tmp"; die "download failed: $asset"; }
+  mv "$zip.tmp" "$zip"
+  got="$(sha256 "$zip")"
+  [[ "$got" == "$expected" ]] || die "$asset hash mismatch: expected $expected, got $got"
+
+  unzip -oq "$zip" -d "$SERVER_CACHE_DIR"
   chmod +x "$bin"
   printf '%s\n' "$bin"
 }
@@ -77,10 +94,10 @@ do_run() {
   [[ "$(uname -s)-$(uname -m)" == "Linux-x86_64" ]] \
     || die "the dedicated server only runs on x86_64 Linux; use astral-bicep (see docs/build.md)"
 
-  # 2466, not the usual 2456: bicep already runs the barebones server on the default ports.
-  local args=(-name "Lembitu test" -port 2466 -world LembituTest -password lembitutest -public 0)
-  if [[ -n "${VALHEIM_TEST_ARGS:-}" ]]; then
-    read -r -a args <<< "$VALHEIM_TEST_ARGS"
+  local args=("$@")
+  if [[ ${#args[@]} -eq 0 ]]; then
+    # 2466, not the usual 2456: bicep already runs the barebones server on the default ports.
+    args=(-name "Lembitu test" -port 2466 -world LembituTest -password lembitutest -public 0)
   fi
 
   cd "$SERVER_DIR"
@@ -92,11 +109,14 @@ do_run() {
   exec ./valheim_server.x86_64 "${args[@]}"
 }
 
-[[ $# -gt 0 ]] || die "usage: scripts/test-server.sh install|run"
-for cmd in "$@"; do
-  case "$cmd" in
-    install) do_install ;;
-    run) do_run ;;
-    *) die "unknown command: $cmd" ;;
-  esac
-done
+case "${1:-}" in
+  install)
+    [[ $# -eq 1 ]] || die "install takes no arguments"
+    do_install
+    ;;
+  run)
+    shift
+    do_run "$@"
+    ;;
+  *) die "usage: scripts/test-server.sh install | run [server arguments]" ;;
+esac

@@ -7,7 +7,7 @@
 #
 # Usage:
 #   scripts/extract-refs.sh            extract (idempotent)
-#   scripts/extract-refs.sh --check    verify lib/ still matches the recorded hashes
+#   scripts/extract-refs.sh --check    compare lib/ against the game install it came from
 #
 # Override auto-detection with VALHEIM_MANAGED=/path/to/..._Data/Managed
 
@@ -20,7 +20,7 @@ BEPINEX_PACK_URL="https://thunderstore.io/package/download/denikson/BepInExPack_
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VALHEIM_REF_DIR="$REPO_ROOT/lib/valheim"
 BEPINEX_REF_DIR="$REPO_ROOT/lib/bepinex"
-CACHE_DIR="$REPO_ROOT/lib/.cache"
+PACK_CACHE_DIR="$REPO_ROOT/lib/.cache"
 LOCK_FILE="$VALHEIM_REF_DIR/refs.lock.json"
 
 # Game code and its managed dependencies. mscorlib/netstandard/System.* are deliberately excluded:
@@ -73,17 +73,18 @@ resolve_managed_dir() {
 }
 
 fetch_bepinex_pack() {
-  local zip="$CACHE_DIR/BepInExPack_Valheim-${BEPINEX_PACK_VERSION}.zip"
-  mkdir -p "$CACHE_DIR"
+  local zip="$PACK_CACHE_DIR/BepInExPack_Valheim-${BEPINEX_PACK_VERSION}.zip"
+  mkdir -p "$PACK_CACHE_DIR"
   if [[ ! -f "$zip" ]]; then
     echo "downloading BepInExPack_Valheim $BEPINEX_PACK_VERSION"
-    curl -sSL -o "$zip.tmp" "$BEPINEX_PACK_URL"
+    # --fail, or an HTTP error page gets cached as the pack and every later run fails the hash.
+    curl -fsSL -o "$zip.tmp" "$BEPINEX_PACK_URL" || { rm -f "$zip.tmp"; die "download failed: $BEPINEX_PACK_URL"; }
     mv "$zip.tmp" "$zip"
   fi
   local got
   got="$(sha256 "$zip")"
   [[ "$got" == "$BEPINEX_PACK_SHA256" ]] \
-    || die "BepInEx pack hash mismatch: expected $BEPINEX_PACK_SHA256, got $got"
+    || die "BepInEx pack hash mismatch: expected $BEPINEX_PACK_SHA256, got $got. Delete $zip and retry."
 
   rm -rf "$BEPINEX_REF_DIR"
   mkdir -p "$BEPINEX_REF_DIR"
@@ -115,23 +116,50 @@ write_lock() {
   } > "$LOCK_FILE"
 }
 
+lock_value() {
+  sed -n "s/^  \"$1\": \"\(.*\)\",\?$/\1/p" "$LOCK_FILE"
+}
+
+# Answers "can I still trust what I built against?": the extracted copies must be intact, and the
+# install they came from must still contain the same bytes. The second half is the one that matters,
+# because a game update silently invalidates every inlined const in every plugin we ship.
 check_lock() {
   [[ -f "$LOCK_FILE" ]] || die "no $LOCK_FILE; run scripts/extract-refs.sh"
-  local failures=0 rel expected actual
+
+  local source_dir failures=0 rel expected actual name
+  source_dir="$(lock_value valheimSource)"
+
   while IFS=$'\t' read -r rel expected; do
     if [[ ! -f "$REPO_ROOT/$rel" ]]; then
-      echo "missing: $rel"; failures=$((failures + 1)); continue
+      echo "missing from lib/: $rel"; failures=$((failures + 1)); continue
     fi
     actual="$(sha256 "$REPO_ROOT/$rel")"
     if [[ "$actual" != "$expected" ]]; then
-      echo "changed: $rel"; failures=$((failures + 1))
+      echo "changed in lib/: $rel"; failures=$((failures + 1)); continue
+    fi
+
+    # Only game assemblies have a source install to compare against; BepInEx comes from a hashed zip.
+    [[ "$rel" == lib/valheim/* ]] || continue
+    name="$(basename "$rel")"
+    if [[ -z "$source_dir" || ! -d "$source_dir" ]]; then
+      continue
+    fi
+    if [[ ! -f "$source_dir/$name" ]]; then
+      echo "gone from the game install: $name"; failures=$((failures + 1)); continue
+    fi
+    if [[ "$(sha256 "$source_dir/$name")" != "$expected" ]]; then
+      echo "the game updated: $name differs from $source_dir"; failures=$((failures + 1))
     fi
   done < <(sed -n 's/^    "\(.*\)": "\(.*\)".*$/\1\t\2/p' "$LOCK_FILE")
 
   if [[ $failures -gt 0 ]]; then
-    die "$failures reference assemblies drifted from $LOCK_FILE; re-run scripts/extract-refs.sh"
+    die "$failures reference assemblies drifted; re-run scripts/extract-refs.sh and rebuild"
   fi
-  echo "references match $LOCK_FILE"
+  if [[ -z "$source_dir" || ! -d "$source_dir" ]]; then
+    echo "references intact; game install $source_dir is not on this machine, so drift is unchecked"
+  else
+    echo "references match $source_dir"
+  fi
 }
 
 if [[ "${1:-}" == "--check" ]]; then

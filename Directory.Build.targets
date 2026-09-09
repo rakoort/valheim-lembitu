@@ -7,10 +7,37 @@
            Text="Missing BepInEx reference assemblies in lib/bepinex/. Run scripts/extract-refs.sh (see docs/build.md)." />
   </Target>
 
-  <!-- Every plugin lands in one directory so the install step has a single source. -->
+  <!-- BepInPlugin's arguments must be compile-time constants, so identity lives in the project file
+       and reaches the code through this generated class. Restating it in both places is how a
+       version bump ends up lying in the server log. -->
+  <Target Name="GeneratePluginInfo"
+          BeforeTargets="BeforeCompile;CoreCompile"
+          Inputs="$(MSBuildProjectFullPath)"
+          Outputs="$(IntermediateOutputPath)PluginInfo.g.cs">
+    <Error Condition="'$(PluginGuid)' == ''"
+           Text="$(MSBuildProjectName) must set &lt;PluginGuid&gt; (see docs/build.md)." />
+    <PropertyGroup>
+      <_PluginInfoFile>$(IntermediateOutputPath)PluginInfo.g.cs</_PluginInfoFile>
+      <PluginDisplayName Condition="'$(PluginDisplayName)' == ''">$(AssemblyName)</PluginDisplayName>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_PluginInfoFile)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true"
+                      Lines="// Generated from $(MSBuildProjectFile). Do not edit.;internal static class PluginInfo;{;    public const string Guid = &quot;$(PluginGuid)&quot;%3B;    public const string Name = &quot;$(PluginDisplayName)&quot;%3B;    public const string Version = &quot;$(Version)&quot;%3B;}" />
+    <ItemGroup>
+      <Compile Include="$(_PluginInfoFile)" />
+      <FileWrites Include="$(_PluginInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Every plugin lands in one directory so the install step has a single source. FileWrites makes
+       `dotnet clean` remove it again. -->
   <Target Name="CopyPluginToDist" AfterTargets="Build">
     <MakeDir Directories="$(PluginDistDir)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDistDir)" />
+    <ItemGroup>
+      <FileWrites Include="$(PluginDistDir)$(TargetFileName)" />
+    </ItemGroup>
     <Message Importance="high" Text="$(MSBuildProjectName) -> $(PluginDistDir)$(TargetFileName)" />
   </Target>
 

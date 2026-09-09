@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>Lembitu.Hello</AssemblyName>
-    <RootNamespace>Lembitu.Hello</RootNamespace>
+    <PluginGuid>lembitu.hello</PluginGuid>
     <Version>0.1.0</Version>
     <Description>Toolchain smoke test: logs one line on server startup and reports build/runtime version skew.</Description>
   </PropertyGroup>

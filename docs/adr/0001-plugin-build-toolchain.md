@@ -23,17 +23,25 @@ Constraints found while setting this up:
 ## Decision
 
 - **Target net472 with the .NET SDK**, using `Microsoft.NETFramework.ReferenceAssemblies`. No
-  Windows, Visual Studio or Mono install is needed; `dotnet build` at the repo root builds every
-  plugin.
+  Windows, Visual Studio or Mono install is needed.
+- **No solution file.** `Valheim.Lembitu.proj` at the root globs `src/**/*.csproj` and forwards
+  Restore, Build and Clean, so `dotnet build` builds every plugin and adding one is adding a
+  directory. A `.sln` would have to be edited, with a fresh GUID, for every project, and a project
+  missing from it would silently never build.
 - **Shared build configuration in `Directory.Build.props`/`.targets`**: net472, nullable enabled,
-  the baseline game/loader references, publicization, and a copy of every plugin DLL into
-  `dist/plugins/`. A plugin `.csproj` is then a name, a version and any extra references.
+  the baseline game/loader references, publicization, a generated `PluginInfo` class, and a copy of
+  every plugin DLL into `dist/plugins/`. A plugin `.csproj` is then a GUID, a version and any extra
+  references. Forks that do not want nullable analysis on upstream code set `<Nullable>disable</…>`.
+- **Plugin identity lives in the project file.** `BepInPlugin` needs compile-time constants, so the
+  build generates `PluginInfo` from `PluginGuid`/`Version` rather than restating them in code, where
+  a bump applied to one of the two would make the server log lie.
 - **Publicize with `BepInEx.AssemblyPublicizer.MSBuild`** at build time rather than committing
   publicized DLLs.
 - **`scripts/extract-refs.sh` reproduces `lib/`**: game assemblies copied from a local install
   (preferring the test server, which is the build we deploy on), BepInEx from Thunderstore's
   `denikson-BepInExPack_Valheim` pinned to `5.4.2350` (BepInEx 5.4.23.5) with a SHA-256 check. It
-  writes `lib/valheim/refs.lock.json`, and `--check` re-verifies it.
+  writes `lib/valheim/refs.lock.json`, and `--check` re-hashes both the extracted copies and the
+  install they came from, so a game update is reported rather than inferred.
 - **Compile against the loader we deploy**: the same downloaded pack provides both the reference
   assemblies and the server install, so plugin and loader versions cannot drift.
 - **Develop and test on astral-bicep** (x86_64 Linux), with `scripts/test-server.sh` installing the

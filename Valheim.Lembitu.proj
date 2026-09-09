@@ -1,0 +1,29 @@
+<!-- Root build entry point: `dotnet build` finds this and builds every project under src/, so
+     adding a plugin or a fork is adding a directory. There is deliberately no solution file, which
+     would have to be edited (with a fresh GUID) for every new project. -->
+<Project DefaultTargets="Build">
+
+  <!-- Not an SDK project, so the shared properties are not imported automatically. -->
+  <Import Project="Directory.Build.props" />
+
+  <ItemGroup>
+    <PluginProject Include="src/**/*.csproj" />
+  </ItemGroup>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(PluginProject)" Targets="Restore" />
+  </Target>
+
+  <Target Name="Build">
+    <MSBuild Projects="@(PluginProject)" Targets="Build" />
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Projects="@(PluginProject)" Targets="Clean" />
+    <!-- dist/ is ours, not the SDK's: without this a renamed or deleted plugin keeps shipping. -->
+    <RemoveDir Directories="$(PluginDistDir)" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+
+</Project>

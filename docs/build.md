@@ -39,7 +39,7 @@ playtest tickets.
 ```sh
 git clone https://github.com/rakoort/valheim-lembitu.git
 cd valheim-lembitu
-nix develop                      # dotnet SDK 8, curl, unzip, rsync
+nix develop                      # dotnet SDK 8, curl, unzip
 scripts/test-server.sh install   # game files, reference assemblies, BepInEx (a few GB, once)
 dotnet build                     # every plugin -> dist/plugins/
 scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx/plugins
@@ -75,6 +75,25 @@ stale references keeps the old value forever — this is exactly how pre-1.0 Ser
 on 1.0.7 (issue #2). `Lembitu.Hello` reports the skew: it logs the network version it was compiled
 against and errors if the running server reports a different one.
 
+## Adding a plugin
+
+Create `src/plugins/<Name>/<Name>.csproj` with a GUID and a version; `dotnet build` at the root
+globs `src/**/*.csproj`, so there is nothing else to register:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PluginGuid>lembitu.example</PluginGuid>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+</Project>
+```
+
+The build generates an internal `PluginInfo` class from those properties, so the identity is
+declared once: `[BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]`. `PluginGuid`
+is required and the build fails without it. `PluginDisplayName` overrides the name, which otherwise
+follows the assembly.
+
 ## Referencing more of the game
 
 `Directory.Build.props` gives every plugin `assembly_valheim`, `assembly_utils`,
@@ -105,6 +124,10 @@ scripts/install-plugins.sh <bepinex-plugins-dir>    # sync into a server
 `scripts/install-plugins.sh` records what it installed in `.lembitu-installed` in the target
 directory, and on the next run deletes DLLs it installed before but no longer builds. Files it did
 not install are never touched.
+
+`dist/plugins/` is the installer's source of truth and the build only ever adds to it, so run
+`dotnet clean` (which empties `dist/`) after renaming or deleting a plugin. Otherwise the old DLL is
+still there to install, which is how you end up with two plugins claiming one GUID.
 
 **The pruning trap.** A server keeps loading a plugin DLL until the file is gone, and
 `lloesche/valheim-server` — the container used for the real server — copies plugins into a *second*
@@ -143,9 +166,10 @@ scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
 
 Game files land in `~/.cache/valheim-lembitu/server` (override with `VALHEIM_TEST_DIR`). It listens
-on port 2466, because bicep already runs the barebones server on 2456; replace the whole argument
-list with `VALHEIM_TEST_ARGS`. DepotDownloader is used instead of SteamCMD: anonymous login, no
-32-bit dependencies, one self-contained binary.
+on port 2466, because bicep already runs the barebones server on 2456; anything after `run` replaces
+the whole argument list, e.g. `scripts/test-server.sh run -world "My World" -port 2466 -public 0`.
+DepotDownloader is used instead of SteamCMD: anonymous login, no 32-bit dependencies, one
+self-contained binary pinned by hash.
 
 Chainload is proven by the BepInEx banner and the plugin's own line in the server log:
 
