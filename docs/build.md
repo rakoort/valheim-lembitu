@@ -18,8 +18,9 @@ Game and BepInEx binaries are never committed. `scripts/extract-refs.sh` reprodu
 
 ## Where work happens
 
-Development and testing happen on **astral-bicep** (x86_64 Linux). The Valheim dedicated server only
-ships for linux/amd64 and its Mono runtime cannot be emulated on Apple Silicon:
+Development and testing happen on **astral-bicep** (x86_64 Linux), where the checkout lives at
+`~/code/valheim-lembitu`. The Valheim dedicated server only ships for linux/amd64 and its Mono
+runtime cannot be emulated on Apple Silicon:
 
 - Docker Desktop with Rosetta: `Assertion: should not be reached at tramp-amd64.c:641`.
 - Docker Desktop with QEMU (`tonistiigi/binfmt --install amd64`): BepInEx 5.4.23.5 preloads, then
@@ -124,7 +125,13 @@ Consequences:
   BepInEx reports a duplicate GUID.
 
 So: remove plugins with `scripts/install-plugins.sh` (it prunes what it owns), and after removing or
-renaming anything, check the server's own plugin directory, not just `/config`.
+renaming anything, check the server's own plugin directory, not just `/config`. Both trees are
+visible on the existing barebones server on bicep:
+
+```sh
+docker exec valheim-barebones ls /config/bepinex/plugins
+docker exec valheim-barebones ls /opt/valheim/bepinex/BepInEx/plugins
+```
 
 ## Test server
 
@@ -135,16 +142,24 @@ scripts/test-server.sh install   # game files (app 896660), reference assemblies
 scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
 
-Game files land in `~/.cache/valheim-lembitu/server` (override with `VALHEIM_TEST_DIR`) and server
-arguments can be replaced with `VALHEIM_TEST_ARGS`. DepotDownloader is used instead of SteamCMD:
-anonymous login, no 32-bit dependencies, one self-contained binary.
+Game files land in `~/.cache/valheim-lembitu/server` (override with `VALHEIM_TEST_DIR`). It listens
+on port 2466, because bicep already runs the barebones server on 2456; replace the whole argument
+list with `VALHEIM_TEST_ARGS`. DepotDownloader is used instead of SteamCMD: anonymous login, no
+32-bit dependencies, one self-contained binary.
 
-Chainload is proven by the BepInEx banner and the plugin's own lines in the server log:
+Chainload is proven by the BepInEx banner and the plugin's own line in the server log:
 
 ```
 [Message:   BepInEx] BepInEx 5.4.23.5 - valheim_server
 [Info   :   BepInEx] Loading [Lembitu.Hello 0.1.0]
-[Info   :Lembitu.Hello] Lembitu.Hello 0.1.0 loaded on 1.0.7 (built against network version 39)
+[Info   :Lembitu.Hello] Lembitu.Hello 0.1.0 loaded on l-1.0.7 (built against network version 39)
+[Message:   BepInEx] Chainloader startup complete
+09/09/2026 20:01:16: Valheim version: l-1.0.7 (network version 39)
 ```
 
 `BepInEx/LogOutput.log` in the server directory keeps the same output.
+
+Vanilla noise to ignore: `DllNotFoundException: libParty.so` and
+`[S_API FAIL] Tried to access Steam interface SteamNetworkingUtils004 before SteamAPI_Init
+succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed` followed by
+`Steam is not initialized` means the UDP ports are taken — usually by the barebones server.
