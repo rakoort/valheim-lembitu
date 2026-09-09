@@ -117,7 +117,7 @@ write_lock() {
 }
 
 lock_value() {
-  sed -n "s/^  \"$1\": \"\(.*\)\",\?$/\1/p" "$LOCK_FILE"
+  sed -n "s/^  \"$1\": \"\([^\"]*\)\".*$/\1/p" "$LOCK_FILE"
 }
 
 # Answers "can I still trust what I built against?": the extracted copies must be intact, and the
