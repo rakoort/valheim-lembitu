@@ -39,10 +39,15 @@ playtest tickets.
 git clone https://github.com/rakoort/valheim-lembitu.git
 cd valheim-lembitu
 nix develop                      # dotnet SDK 8, curl, unzip, rsync
-scripts/test-server.sh install   # game files + BepInEx + plugins (a few GB, once)
-scripts/extract-refs.sh          # reference assemblies out of that install
+scripts/test-server.sh install   # game files, reference assemblies, BepInEx (a few GB, once)
 dotnet build                     # every plugin -> dist/plugins/
+scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx/plugins
+scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
+
+`scripts/test-server.sh install` runs `scripts/extract-refs.sh` for you, since the server it just
+downloaded is the best source of reference assemblies. Run `scripts/extract-refs.sh` on its own when
+you build against a different install (`VALHEIM_MANAGED=…`) or after a game update.
 
 Without Nix, any .NET SDK 8 or newer works; `Microsoft.NETFramework.ReferenceAssemblies` supplies
 the net472 reference assemblies, so no Windows or Mono install is needed.
@@ -126,7 +131,7 @@ renaming anything, check the server's own plugin directory, not just `/config`.
 On astral-bicep:
 
 ```sh
-scripts/test-server.sh install   # DepotDownloader (app 896660) + BepInEx pack + dist/plugins
+scripts/test-server.sh install   # game files (app 896660), reference assemblies, BepInEx, plugins
 scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
 

@@ -48,12 +48,14 @@ ensure_depotdownloader() {
 }
 
 do_install() {
-  [[ -d "$PACK_DIR" ]] || die "no BepInEx pack in lib/bepinex/pack/; run scripts/extract-refs.sh"
-
   local depotdownloader
   depotdownloader="$(ensure_depotdownloader)"
   # Anonymous login: the dedicated server app is free. Re-running validates and repairs.
   "$depotdownloader" -app "$VALHEIM_SERVER_APPID" -os linux -osarch 64 -dir "$SERVER_DIR"
+
+  # The server we just installed is also the best source of reference assemblies, and extraction
+  # downloads the pinned BepInEx pack we install below.
+  VALHEIM_TEST_DIR="$SERVER_DIR" "$REPO_ROOT/scripts/extract-refs.sh"
 
   # BepInEx: the same pinned pack the plugins compile against.
   cp -R "$PACK_DIR/BepInEx" "$SERVER_DIR/"
@@ -62,7 +64,11 @@ do_install() {
   cp "$PACK_DIR/start_server_bepinex.sh" "$SERVER_DIR/"
   chmod +x "$SERVER_DIR/start_server_bepinex.sh" "$SERVER_DIR/valheim_server.x86_64"
 
-  "$REPO_ROOT/scripts/install-plugins.sh" "$SERVER_DIR/BepInEx/plugins"
+  if compgen -G "$REPO_ROOT/dist/plugins/*.dll" > /dev/null; then
+    "$REPO_ROOT/scripts/install-plugins.sh" "$SERVER_DIR/BepInEx/plugins"
+  else
+    echo "no plugins built yet; run 'dotnet build' then scripts/install-plugins.sh $SERVER_DIR/BepInEx/plugins"
+  fi
   echo "test server ready in $SERVER_DIR"
 }
 
