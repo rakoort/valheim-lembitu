@@ -1,0 +1,17 @@
+<Project>
+
+  <Target Name="CheckValheimReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(ValheimRefDir)assembly_valheim.dll')"
+           Text="Missing Valheim reference assemblies in lib/valheim/. Run scripts/extract-refs.sh (see docs/build.md)." />
+    <Error Condition="!Exists('$(BepInExRefDir)BepInEx.dll')"
+           Text="Missing BepInEx reference assemblies in lib/bepinex/. Run scripts/extract-refs.sh (see docs/build.md)." />
+  </Target>
+
+  <!-- Every plugin lands in one directory so the install step has a single source. -->
+  <Target Name="CopyPluginToDist" AfterTargets="Build">
+    <MakeDir Directories="$(PluginDistDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDistDir)" />
+    <Message Importance="high" Text="$(MSBuildProjectName) -> $(PluginDistDir)$(TargetFileName)" />
+  </Target>
+
+</Project>

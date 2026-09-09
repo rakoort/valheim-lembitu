@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+dist/
+
+# Extracted reference assemblies and downloaded packs (see docs/build.md)
+lib/valheim/
+lib/bepinex/
+lib/.cache/
+
+# Local test server state (docker volume mount)
+test/server-config/

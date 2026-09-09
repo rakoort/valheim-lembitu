@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/plugins/">
+    <Project Path="src/plugins/Lembitu.Hello/Lembitu.Hello.csproj" />
+  </Folder>
+</Solution>
