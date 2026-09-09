@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.hello</PluginGuid>
-    <Version>0.1.0</Version>
-    <Description>Toolchain smoke test: logs one line on server startup and reports build/runtime version skew.</Description>
+    <Version>0.2.0</Version>
+    <Description>Toolchain smoke test: logs one line on server startup, reports build/runtime version skew, and proves ServerSync can broadcast on this game build.</Description>
   </PropertyGroup>
+
+  <Import Project="$(RepoRoot)src/forks/ServerSync/ServerSync.props" />
 
 </Project>

@@ -114,6 +114,25 @@ else, add it to the plugin's own `.csproj`:
 `Reference`, not as a separate `<Publicize Include="…" />` item: the package declares empty default
 metadata for that item type, and its task then rejects the empty value.
 
+## Server-synced config
+
+A plugin whose settings must come from the server imports our ServerSync fork:
+
+```xml
+<Import Project="$(RepoRoot)src/forks/ServerSync/ServerSync.props" />
+```
+
+That compiles `src/forks/ServerSync/ConfigSync.cs` into the plugin, along with the three extra
+references it needs. ServerSync is shared source rather than a shared DLL, and our copy names game
+members with `nameof`, so a game update that renames or removes one is a build error here rather
+than a silent failure on the server; ADR-0002 has the reasoning and
+`src/forks/ServerSync/UPSTREAM.md` the detail. `src/plugins/Lembitu.Hello/HelloPlugin.cs` is a
+worked example.
+
+Never bundle a mod's own copy of ServerSync when porting it — delete it and import ours. Every
+pre-1.0 build of it throws `MissingFieldException` on 1.0.7 the moment a mod broadcasts, and one
+vendored copy is one place to fix that.
+
 ## Install loop
 
 ```sh
@@ -171,14 +190,18 @@ the whole argument list, e.g. `scripts/test-server.sh run -world "My World" -por
 DepotDownloader is used instead of SteamCMD: anonymous login, no 32-bit dependencies, one
 self-contained binary pinned by hash.
 
-Chainload is proven by the BepInEx banner and the plugin's own line in the server log:
+Chainload is proven by the BepInEx banner and the plugin's own lines in the server log. The last two
+are ServerSync: its RPC registered on `ZNet.Awake`, and a synced config value broadcast without the
+`MissingFieldException` a pre-1.0 build would throw:
 
 ```
 [Message:   BepInEx] BepInEx 5.4.23.5 - valheim_server
-[Info   :   BepInEx] Loading [Lembitu.Hello 0.1.0]
-[Info   :Lembitu.Hello] Lembitu.Hello 0.1.0 loaded on l-1.0.7 (built against network version 39)
+[Info   :   BepInEx] Loading [Lembitu.Hello 0.2.0]
+[Info   :Lembitu.Hello] Lembitu.Hello 0.2.0 loaded on l-1.0.7 (built against network version 39)
 [Message:   BepInEx] Chainloader startup complete
-09/09/2026 20:01:16: Valheim version: l-1.0.7 (network version 39)
+09/09/2026 20:39:47: Valheim version: l-1.0.7 (network version 39)
+Registered 'lembitu.hello ConfigSync' RPC - waiting for incoming connections
+[Info   :Lembitu.Hello] ServerSync broadcast ok (probe = 1788975592)
 ```
 
 `BepInEx/LogOutput.log` in the server directory keeps the same output.
