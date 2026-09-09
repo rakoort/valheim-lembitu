@@ -77,7 +77,8 @@ do_run() {
   [[ "$(uname -s)-$(uname -m)" == "Linux-x86_64" ]] \
     || die "the dedicated server only runs on x86_64 Linux; use astral-bicep (see docs/build.md)"
 
-  local args=(-name "Lembitu test" -port 2456 -world LembituTest -password lembitutest -public 0)
+  # 2466, not the usual 2456: bicep already runs the barebones server on the default ports.
+  local args=(-name "Lembitu test" -port 2466 -world LembituTest -password lembitutest -public 0)
   if [[ -n "${VALHEIM_TEST_ARGS:-}" ]]; then
     read -r -a args <<< "$VALHEIM_TEST_ARGS"
   fi
