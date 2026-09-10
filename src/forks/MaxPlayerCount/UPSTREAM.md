@@ -85,6 +85,21 @@ to match leaves the cap at ten:
 7. **No ServerSync.** This mod has none upstream and needs none: the limit is enforced by the
    server on its own admission path, and a client cannot opt out of it. ADR-0002 does not apply.
 
+## Do clients need it? No — server only
+
+Issue #9 asks this explicitly, and all three patched surfaces answer it. `ZNet.RPC_PeerInfo` runs
+on the machine **receiving** a peer's info, which is the host; `SteamGameServer.SetMaxPlayerCount`
+exists only on a game server; `ZPlayFabMatchmaking.CreateLobby` and `CreateAndJoinNetwork` run on
+whoever creates the session, again the host. A client without the mod is told the server's capacity
+by the server, so it stays out of the pack: nothing about it is synchronised, and installing it on
+a client changes nothing. It is not in the client pack list in `docs/modstack.md` for that reason.
+
+What the test server proves and what it does not: the log lines show each of the three literals
+found and rewritten, and the Steam prefix actually executing with the configured value. The
+admission hook's own "rewritten limit in use" line needs a peer to connect, so the *rewrite* of
+the admission path is evidenced and its *execution* is not — that, and the eleventh simultaneous
+player, are #10's.
+
 ## Re-forking
 
 Upstream is one file. Pull its `Plugin.cs`, re-apply changes 1–6 (the `nameof` conversion is

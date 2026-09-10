@@ -7,8 +7,9 @@
     <PluginDisplayName>MaxPlayerCount</PluginDisplayName>
     <!-- The upstream release this port matches, not a version of ours; see UPSTREAM.md. -->
     <Version>1.2.5</Version>
-    <!-- Upstream predates nullable reference types in this file's style. -->
-    <Nullable>disable</Nullable>
+    <!-- Upstream predates nullable reference types; annotations-only is the repo convention for
+         forked code (src/forks/README.md) and warns on neither side. -->
+    <Nullable>annotations</Nullable>
     <Description>Raises Valheim's ten-player admission limit, and the Steam and PlayFab capacities it advertises, to a configured value.</Description>
   </PropertyGroup>
 

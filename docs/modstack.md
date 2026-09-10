@@ -162,9 +162,25 @@ PvPBiomeDominions' death and retention rules (#8) are enforced from
 equipped and hotbar items, unflagged players take the vanilla penalty, only flagged players may
 loot a grave, and the alert message that gates the loot restriction is pinned non-empty.
 
-What these boots cannot show, and #10 owns: every client-side behaviour. The attribute panel, the
-exp bar, nameplate level display, the 15-level PvP damage band, the craft-button and equip refusals
-and their tooltips, tombstone retention on a real death, and an eleventh simultaneous connection.
+What these boots cannot show, because every one of these paths runs on a client — so all of it is
+#10's, listed criterion by criterion so nothing looks skipped:
+
+- **#5**: XP awarded for a kill, levelling granting attribute points, spending them, the attribute
+  panel, the exp bar, nameplate level and XP-worth display, the 15-level PvP damage band, PvP kill
+  XP, and levels surviving reconnect and restart. All of it keys off `Player.m_localPlayer`, and
+  level and XP are stored in the character save, so a headless server never evaluates any of it.
+- **#4**: the craft button disabling, the equip and consume refusals with their messages, the
+  tooltip lines in their allowed/denied colours, a client with different local settings being
+  overridden by the server, and a rule keyed on a key being confirmed — `IsAble` returns early
+  when there is no local player, so the key branch cannot be exercised server-side either. The
+  rule file our fork generates carries a key example for that test; the rules we enforce gate on
+  character level only, deliberately, with the tiers themselves left to #18.
+- **#8**: retention on a real death, one flagged player looting another's grave, and an unflagged
+  player taking the vanilla penalty.
+- **#9**: an eleventh simultaneous connection. Note the distinction the log makes: the admission
+  literal is proven **rewritten**, and the inserted call is proven to execute only for the Steam
+  surface, since the admission hook needs a peer to connect. MaxPlayerCount is server-only and
+  stays out of the pack; `src/forks/MaxPlayerCount/UPSTREAM.md` shows why, per patched surface.
 
 Open unknowns to settle in #10, recorded here so they are not rediscovered:
 

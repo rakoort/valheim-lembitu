@@ -41,9 +41,8 @@ public partial class EpicMMOSystem : BaseUnityPlugin
     // store a character's level are all built from it.
     internal const string ModName = PluginInfo.Name;
     internal const string VERSION = PluginInfo.Version;
-    internal const string Author = "WackyMole";
    // internal const string configV = "_1_7";
-    private const string ModGUID = Author + "." + ModName; //+ configV; changes GUID
+    private const string ModGUID = PluginInfo.Guid;
     private static string ConfigFileName = ModGUID + ".cfg";
     private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
     public static bool _isServer => SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null;
@@ -853,10 +852,11 @@ public partial class EpicMMOSystem : BaseUnityPlugin
 [BepInPlugin(ModGUID, ModName, VERSION)]
 public partial class EpicMMOSystemUI : BaseUnityPlugin
 {
-    internal const string ModName = "EpicMMOSystemUI";
+    // The assembly declares two plugins, so only one of them can be PluginInfo itself; this one
+    // is the other, and both names derive from it rather than from a second literal.
+    internal const string ModName = PluginInfo.Name + "UI";
     internal const string VERSION = EpicMMOSystem.VERSION;
-    internal const string Author = EpicMMOSystem.Author;
-    private const string ModGUID = Author + "." + ModName; //+ configV; changes GUID
+    private const string ModGUID = PluginInfo.Guid + "UI";
     private static string ConfigFileName = ModGUID + ".cfg";
 
     internal static EpicMMOSystemUI Instance;

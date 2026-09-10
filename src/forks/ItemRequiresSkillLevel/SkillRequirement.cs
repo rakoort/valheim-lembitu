@@ -224,26 +224,30 @@ namespace ItemRequiresSkillLevel
                 var sample = new RequirementSampleDocument
                 {
                     Requirements = initials,
+                    // A group applies one requirement to several prefabs. Deliberately a different
+                    // tier from the rules above: upstream's sample gated the same three iron
+                    // pieces twice, at two levels and under two labels, which is a schema example
+                    // that teaches the reader the wrong thing.
                     RequirementGroups = new List<RequirementGroup>
                     {
                         new RequirementGroup
                         {
                             Prefabs = new List<string>
                             {
-                                "ArmorIronChest",
-                                "ArmorIronLegs",
-                                "HelmetIron"
+                                "ArmorBronzeChest",
+                                "ArmorBronzeLegs",
+                                "HelmetBronze"
                             },
                             Requirements = new List<Requirement>
                             {
                                 new Requirement
                                 {
-                                    Skill = "Level",
-                                    Level = 10,
-                                    BlockCraft = true,
+                                    Skill = "Strength",
+                                    Level = 5,
+                                    BlockCraft = false,
                                     BlockEquip = true,
                                     EpicMMO = true,
-                                    ExhibitionName = "Player Level"
+                                    ExhibitionName = "Strength"
                                 }
                             }
                         }

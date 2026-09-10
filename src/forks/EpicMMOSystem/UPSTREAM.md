@@ -103,7 +103,9 @@ won: it is what the pin actually is.
    (RtD, Monstrum, MonsterLabZ, Jewelcrafting, Therzie, Bestiary, the animal packs …). We ship
    `Default.json` and `NonCombat.json`, plus `Players.json` — **emptied**, because upstream shipped
    it containing a named player with a 2000-point XP bonus. Adding a creature mod means adding its
-   table back, and the log says when a table entry has no prefab.
+   table back, and the log says when a table entry has no prefab. That log immediately earned
+   itself: `Default.json` named the baby chicken `Chick`, and the prefab is `Chicken` (grep the
+   game's asset files: `Chick` appears nowhere), so chicks were worth no XP. Corrected here.
 6. **`EnvMan.m_currentBiome` is a `BiomeSector` on 1.0.7**, not a `Heightmap.Biome`; the orb-drop
    path reads `.Biome` from it and tolerates a null sector.
 7. **Three diagnostics, all ours**, because this mod's failure modes are silent:

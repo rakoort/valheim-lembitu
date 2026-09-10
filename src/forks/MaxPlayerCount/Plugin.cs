@@ -89,9 +89,66 @@ public class MaxPlayerCountPlugin : BaseUnityPlugin
     }
 
     /// <summary>
+    /// The configured limit, expressed at the offset the rewritten site used. A configured value
+    /// below one means "leave vanilla alone", which is how the config disables the mod.
+    /// </summary>
+    private static int LimitFor(int vanillaLimit)
+    {
+        int configured = maxPlayers.Value;
+        return configured < 1 ? vanillaLimit : configured + (vanillaLimit - VanillaPlayerLimit);
+    }
+
+    /// <summary>
+    /// Called from every rewritten method in place of the literal it used to load, so the limit is
+    /// answered per admission and per lobby rather than baked in when Harmony patched.
+    /// </summary>
+    private static int ReplacePlayerLimit(int vanillaLimit)
+    {
+        int limit = LimitFor(vanillaLimit);
+        // The first time each site runs is the only proof the inserted call executes rather than
+        // merely compiling: admission fires when a peer connects, the PlayFab sites when a
+        // crossplay lobby is created.
+        if (Once(usedSites, vanillaLimit))
+        {
+            Log.LogInfo($"Rewritten limit in use: vanilla loaded {vanillaLimit}, answered {limit}");
+        }
+
+        return limit;
+    }
+
+    private static CodeInstruction CallReplacePlayerLimit() =>
+        new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(MaxPlayerCountPlugin), nameof(ReplacePlayerLimit)));
+
+    /// <summary>
+    /// Reports a rewritten site once, however often the transpiler runs — and it runs a lot: every
+    /// mod in the stack carries its own ServerSync copy, each of which patches
+    /// <c>ZNet.RPC_PeerInfo</c>, and Harmony re-runs every transpiler on a method it re-patches.
+    /// </summary>
+    private static void ReportPatched(string method, string what, int vanillaLimit)
+    {
+        if (Once(patchedSites, method))
+        {
+            Log.LogInfo($"Patched {method}: {what} reads {vanillaLimit} in vanilla, now {LimitFor(vanillaLimit)}");
+        }
+    }
+
+    /// <summary>True the first time this key is seen. Harmony patches off the main thread.</summary>
+    private static bool Once<T>(HashSet<T> seen, T key)
+    {
+        lock (seen)
+        {
+            return seen.Add(key);
+        }
+    }
+
+    private static readonly HashSet<string> patchedSites = new();
+
+    private static readonly HashSet<int> usedSites = new();
+
+    /// <summary>
     /// Admission. Vanilla's check is <c>if (GetNrOfPlayers() &gt;= 10)</c>, so the limit is a
     /// literal in the peer-admission path: the transpiler finds the call, then the first literal
-    /// loaded after it, and pipes that literal through <see cref="ReplacePlayerLimit"/>.
+    /// loaded after it, and pipes that literal through <see cref="ReplacePlayerLimit" />.
     /// </summary>
     [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_PeerInfo))]
     internal static class MaxPlayersCount
@@ -115,7 +172,7 @@ public class MaxPlayerCountPlugin : BaseUnityPlugin
                     }
 
                     int vanillaLimit = Convert.ToInt32(codes[j].operand);
-                    codes.Insert(j + 1, ReplacePlayerLimitCall());
+                    codes.Insert(j + 1, CallReplacePlayerLimit());
                     ReportPatched($"{nameof(ZNet)}.{nameof(ZNet.RPC_PeerInfo)}", "the server-full check", vanillaLimit);
                     return codes;
                 }
@@ -131,69 +188,6 @@ public class MaxPlayerCountPlugin : BaseUnityPlugin
             (instruction.opcode == OpCodes.Call || instruction.opcode == OpCodes.Callvirt)
             && instruction.operand is MethodInfo called
             && called.Name == method;
-
-        internal static CodeInstruction ReplacePlayerLimitCall() =>
-            new(OpCodes.Call, AccessTools.DeclaredMethod(typeof(MaxPlayersCount), nameof(ReplacePlayerLimit)));
-
-        /// <summary>
-        /// One line per rewritten site, however often the transpiler runs. It runs a lot: every
-        /// mod in the stack carries its own ServerSync copy, each of which patches
-        /// <c>ZNet.RPC_PeerInfo</c>, and Harmony re-runs every transpiler on the method each time.
-        /// </summary>
-        internal static void ReportPatched(string method, string what, int vanillaLimit)
-        {
-            lock (patched)
-            {
-                if (!patched.Add(method))
-                {
-                    return;
-                }
-            }
-
-            Log.LogInfo($"Patched {method}: {what} reads {vanillaLimit} in vanilla, now {LimitFor(vanillaLimit)}");
-        }
-
-        private static readonly HashSet<string> patched = new();
-
-        /// <summary>
-        /// The configured limit, expressed at the offset the rewritten site used. A configured
-        /// value below one means "leave vanilla alone", which is how the config disables the mod.
-        /// </summary>
-        internal static int LimitFor(int vanillaLimit)
-        {
-            int configured = maxPlayers.Value;
-            return configured < 1 ? vanillaLimit : configured + (vanillaLimit - VanillaPlayerLimit);
-        }
-
-        /// <summary>
-        /// Called from the rewritten methods in place of the literal they used to load.
-        /// </summary>
-        internal static int ReplacePlayerLimit(int vanillaLimit)
-        {
-            int limit = LimitFor(vanillaLimit);
-            ReportFirstUse(vanillaLimit, limit);
-            return limit;
-        }
-
-        /// <summary>
-        /// One line per rewritten site the first time it actually runs, which is the only proof
-        /// available that the inserted call executes rather than merely compiling: admission fires
-        /// when a peer connects, the PlayFab sites when a crossplay lobby is created.
-        /// </summary>
-        private static void ReportFirstUse(int vanillaLimit, int limit)
-        {
-            lock (reported)
-            {
-                if (!reported.Add(vanillaLimit))
-                {
-                    return;
-                }
-            }
-
-            Log.LogInfo($"Rewritten limit in use: vanilla loaded {vanillaLimit}, answered {limit}");
-        }
-
-        private static readonly HashSet<int> reported = new();
     }
 
     /// <summary>
@@ -245,8 +239,8 @@ public class MaxPlayerCountPlugin : BaseUnityPlugin
                 }
 
                 int vanillaLimit = Convert.ToInt32(codes[i].operand);
-                codes.Insert(i + 1, MaxPlayersCount.ReplacePlayerLimitCall());
-                MaxPlayersCount.ReportPatched($"{nameof(ZPlayFabMatchmaking)}.{original.Name}", "the crossplay capacity", vanillaLimit);
+                codes.Insert(i + 1, CallReplacePlayerLimit());
+                ReportPatched($"{nameof(ZPlayFabMatchmaking)}.{original.Name}", "the crossplay capacity", vanillaLimit);
                 return codes;
             }
 
