@@ -91,7 +91,51 @@ No mod enters the pack until it has, on our own 1.0.7 test server:
 2. broadcast its synced config without throwing — the failure mode ADR-0002 exists for,
 3. survived a two-client session (#10).
 
-Installing and verifying the pinned stack is #25.
+Installing and verifying the pinned stack is #25. Package hashes are pinned in
+[modstack.lock.json](modstack.lock.json); `scripts/stage-stack.sh` verifies every download
+against it and refuses a re-published zip under the same version number.
+
+## Verification record
+
+**2026-09-10, #25**: the whole stack installed from `scripts/stage-stack.sh` onto the 1.0.7 test
+server on astral-bicep and booted twice. Result per mod — gate items 1 and 2 proven, item 3 (the
+two-client session) remains #10's:
+
+| Mod | Pin | Loaded | Config sync | Notes |
+| --- | --- | --- | --- | --- |
+| sighsorry/Clan | 1.0.5 | yes | RPC registered | 96 emblem/emoji seeds deployed to `BepInEx/config/Clan/`; friendly fire enforced off, config locked |
+| sighsorry/STU_Ward | 1.3.11 | yes | RPC registered | |
+| sighsorry/PortalRules | 1.0.4 | yes | RPC registered | Portal map off, travel costs off (default), no GlobalKey gates; logs that gating falls back to shared world progression since YouAreNotWorthy is cut |
+| sighsorry/BossRules | 1.0.8 | yes | RPC registered | `forsakenPowers.yml` emptied (shipped with modified powers); log confirms "0 entries"; remote power rotation off |
+| MidnightMods/ProgressivePowers | 0.1.0 | yes | — | not ServerSync-based |
+| RandyKnapp/EpicLoot | 0.14.2 | yes | — | runs against Jotunn 2.30.0 despite declaring 2.29.2; Deep North content loads |
+| warpalicious/More_World_Locations_AIO | 5.1.0 | yes | RPC registered | 266 files staged; LootDB/CreatureDB initialized; Jotunn logs ambiguous-asset warnings for its props, none fatal |
+| Digitalroot/Max_Dungeon_Rooms | 2.0.39 | yes | — | |
+| sighsorry/CreatureManager | 1.1.13 | yes | RPC registered | creatures/attacks/ai/projectile yml all empty: no cloning, no customisation |
+| turbero/PvPBiomeDominions | 1.7.6 | yes | RPC registered | defaults to forced PvP in all nine biomes — all set to PlayerChoose; config locked. Position-sharing rules left at ShowPlayer for #8/#14 to review |
+| sighsorry/CaptainValheim | 1.0.10 | yes | RPC registered | |
+| sighsorry/SecondaryAttacks | 1.2.4 | yes | RPC registered | |
+| sighsorry/Dive_In | 1.2.3 | yes | RPC registered | |
+| sighsorry/Groundwork | 1.1.8 | yes | RPC registered | |
+| sighsorry/RepairRequiresMaterials | 1.0.4 | yes | RPC registered | |
+| sighsorry/VeiledRecipes | 1.1.3 | yes | RPC registered | |
+| sighsorry/InventorySlots | 1.4.8 | yes | RPC registered | keep-on-death enforced off, config locked |
+| turbero/DetailedLevels | 2.1.2 | yes | RPC registered | |
+| sighsorry/AdminQoL | 1.1.3 | yes | — | loaded 48 YAML itemsets |
+| sighsorry/DataForge | 1.3.2 | yes | RPC registered | items/pieces/effects yml empty: tuning only, nothing shipped |
+| sighsorry/SkadiNet | 1.1.3 | yes | RPC registered | |
+| sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.4 | yes | RPC registered | |
+| sighsorry/Fast_AssetBundle_Loader | 1.0.7 | yes (patcher) | — | deploys to `BepInEx/patchers/`; caches MWL's 200+ bundles on first boot |
+| TOYNBEE/BoneMod | 1.0.1 | yes | — | client-side; assembly reports 1.0.0.0 |
+| ValheimModding/Jotunn | 2.30.0 | yes | — | one copy; overrides the 2.29.2 three mods declare |
+| ValheimModding/JsonDotNET | 13.0.4 | yes | — | loads as Newtonsoft.Json + detector |
+| ValheimModding/YamlDotNet | 16.3.1 | yes | — | |
+
+Zero `MissingFieldException`, `MissingMethodException` or `[Error]` lines across both boots;
+vanilla noise only (`libparty.so`, intro cinematic). Enforced config applied via
+`scripts/apply-enforced-config.sh` from `config/enforced/` and confirmed idempotent. The
+per-mod client-side handshake of the synced configs is exercised in #10, which needs real
+clients.
 
 Open unknowns to settle in #10, recorded here so they are not rediscovered:
 

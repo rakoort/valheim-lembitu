@@ -82,9 +82,9 @@ do_install() {
   chmod +x "$SERVER_DIR/start_server_bepinex.sh" "$SERVER_DIR/valheim_server.x86_64"
 
   if compgen -G "$REPO_ROOT/dist/plugins/*" > /dev/null; then
-    "$REPO_ROOT/scripts/install-plugins.sh" "$SERVER_DIR/BepInEx/plugins"
+    "$REPO_ROOT/scripts/install-plugins.sh" "$SERVER_DIR/BepInEx"
   else
-    echo "no plugins built yet; run 'dotnet build' then scripts/install-plugins.sh $SERVER_DIR/BepInEx/plugins"
+    echo "no plugins built yet; run 'dotnet build' and 'scripts/stage-stack.sh', then scripts/install-plugins.sh $SERVER_DIR/BepInEx"
   fi
   echo "test server ready in $SERVER_DIR"
 }

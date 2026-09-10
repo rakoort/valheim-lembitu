@@ -40,10 +40,11 @@ playtest tickets.
 ```sh
 git clone https://github.com/rakoort/valheim-lembitu.git
 cd valheim-lembitu
-nix develop                      # dotnet SDK 8, curl, unzip
+nix develop                      # dotnet SDK 8, curl, unzip, zip
 scripts/test-server.sh install   # game files, reference assemblies, BepInEx (a few GB, once)
 dotnet build                     # every plugin -> dist/plugins/
-scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx/plugins
+scripts/stage-stack.sh           # every adopted mod at its pin -> dist/{plugins,patchers,config}/
+scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx
 scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
 
@@ -137,21 +138,41 @@ vendored copy is one place to fix that.
 ## Install loop
 
 ```sh
-dotnet build                                        # -> dist/plugins/
-scripts/install-plugins.sh <bepinex-plugins-dir>    # sync into a server
+dotnet build                                  # -> dist/plugins/
+scripts/stage-stack.sh                        # -> dist/plugins/, dist/patchers/, dist/config/
+scripts/install-plugins.sh <bepinex-dir>      # sync into a server's BepInEx directory
 ```
 
-The installer deploys *everything* in `dist/plugins/`, preserving relative paths: a DLL at the top
-level lands in the plugins root, a directory lands there as one self-contained tree. It records
-every file it installed in `.lembitu-installed` in the target directory, and on the next run deletes
-what it installed before but no longer finds in `dist/plugins/` — a stale DLL, or a whole stale
-tree, empty directories included. Files it did not install are never touched, and a directory that
-still holds a foreign file survives pruning. `test/install-plugins.test.sh` pins all of this down.
+`dist/` mirrors the BepInEx directory it deploys into: `plugins/` holds our built DLLs and one
+self-contained tree per adopted mod, `patchers/` holds BepInEx patcher DLLs (Fast_AssetBundle_Loader
+ships as a patcher), and `config/` holds config files a package ships as seeds, such as Clan's
+emblems. The installer deploys all three trees preserving relative paths, records every file it
+installed in `.lembitu-installed` at the BepInEx root, and on the next run deletes what it
+installed before but no longer finds in `dist/` — a stale DLL, or a whole stale tree, empty
+directories included. Files it did not install are never touched, and a directory that still holds
+a foreign file survives pruning. `test/install-plugins.test.sh` pins all of this down.
 
-`dist/plugins/` is the installer's source of truth and the build only ever adds to it, so run
-`dotnet clean` (which empties `dist/`) after renaming or deleting a plugin. Otherwise the old DLL is
-still there to install, which is how you end up with two plugins claiming one GUID. An empty
-`dist/plugins/` is an error, not "prune everything" — the build may simply not have run.
+`dist/` is the installer's source of truth and the build only ever adds to it, so run `dotnet clean`
+(which empties `dist/`) after renaming or deleting a plugin. Otherwise the old DLL is still there to
+install, which is how you end up with two plugins claiming one GUID. An empty `dist/plugins/` is an
+error, not "prune everything" — the build may simply not have run.
+
+## Enforced server config
+
+The deliberate deviations from each mod's defaults - the "Enforced config" column of
+`docs/modstack.md` - live in `config/enforced/`, applied onto the configs the mods generate on
+their first boot:
+
+```sh
+scripts/apply-enforced-config.sh <bepinex-config-dir>
+```
+
+A `.cfg` overlay holds only the entries we pin and merges them into the generated file by section
+and exact key, so a mod adding or renaming settings keeps working and a renamed key shows up as a
+duplicate instead of silently reverting. Data files with no merge semantics (BossRules' power
+table) replace wholesale. The run is idempotent; `test/apply-enforced-config.test.sh` pins the
+merge down. Run it once after the first boot of a server, and again whenever the overlay or a pin
+changes.
 
 **The pruning trap.** A server keeps loading a plugin DLL until the file is gone, and
 `lloesche/valheim-server` — the container used for the real server — copies plugins into a *second*
@@ -175,7 +196,7 @@ So: remove plugins with `scripts/install-plugins.sh` (it prunes what it owns in 
 clear the container's second copy with `prune-mirror`:
 
 ```sh
-scripts/install-plugins.sh prune-mirror <bepinex-plugins-dir> <docker-container>
+scripts/install-plugins.sh prune-mirror <bepinex-dir> <docker-container>
 ```
 
 Install runs append whatever they pruned to `.lembitu-removed` beside the manifest, and remind you
@@ -194,27 +215,32 @@ docker exec valheim-barebones ls /opt/valheim/bepinex/BepInEx/plugins
 
 **Adopted mods are not built here.** Most of what the server runs is upstream, installed at a pinned
 version straight from Thunderstore; `docs/modstack.md` is the pin list, and ADR-0003 says why we
-adopt rather than fork. A mod that is just DLLs is dropped straight into `dist/plugins/`; a mod that
-ships a tree is staged as one directory, and then the installer owns it like anything else we
-deploy. More World Locations AIO 5.1.0 is the worked example:
+adopt rather than fork. `scripts/stage-stack.sh` turns that list into `dist/` trees:
 
 ```sh
-curl -fsSL -o /tmp/mwl.zip \
-  "https://thunderstore.io/package/download/warpalicious/More_World_Locations_AIO/5.1.0/"
-unzip -q /tmp/mwl.zip -d /tmp/mwl
-mkdir -p dist/plugins/More_World_Locations_AIO
-cp /tmp/mwl/plugins/Bundles dist/plugins/More_World_Locations_AIO/
-cp /tmp/mwl/More_World_Locations_AIO.dll /tmp/mwl/assetBundleManifest_full \
-   dist/plugins/More_World_Locations_AIO/
+scripts/stage-stack.sh            # fetch if missing, verify hashes, stage every pin
+scripts/stage-stack.sh --refresh  # re-download every package, still hash-verified
+scripts/stage-stack.sh --list     # print the parsed pin list, no downloads
 ```
 
-The DLL, the bundle manifest and `Bundles/` must sit together — the manifest resolves
-`bundles directory: ./Bundles` relative to itself — and BepInEx loads DLLs from subdirectories, so
-one self-contained tree per mod is the shape to keep. Its libraries (Jotunn, JsonDotNET, YamlDotNet
-at the pins in `docs/modstack.md`) stage the same way. Staging is manual until #25 builds the
-pinned-package fetch; `dotnet clean` does not remove staged trees, so delete a staged mod's
-directory in `dist/plugins/` by hand when retiring it — the installer prunes it from the server on
-the next run.
+It reads the "Adopted upstream" table in `docs/modstack.md`, so the pin list has one home. Each
+package becomes one self-contained directory — a mod that is just DLLs still gets its own, so two
+mods can never argue about a file they both ship — with the package's three possible shapes
+normalized: root files and `plugins/` trees into `dist/plugins/<Mod>/`, `BepInEx/patchers/` into
+`dist/patchers/<Mod>/`, and shipped config seeds like Clan's emblems into `dist/config/`. Thunderstore
+metadata (README, CHANGELOG, icon, manifest) is dropped; licences and Jotunn `.yml` localization
+stay beside the DLL, where the game loads them.
+
+Every download is hash-checked against `docs/modstack.lock.json`, which the script writes on first
+fetch of a pin and verifies thereafter — a re-published zip under the same version number is
+refused, which is the silent-upgrade path ADR-0007 exists to close. Commit the lock file when the
+script says it recorded new hashes. Declared dependencies are checked against the pin list before
+anything is staged; the BepInEx pack and the Jotunn 2.30.0-over-2.29.2 override are the two
+documented exceptions. Staged trees are recorded in `dist/.staged-dirs`, wiped before restaging (a
+version bump leaves nothing from the older package) and retired when a pin leaves the list;
+`dotnet clean` does not remove them, and it does not need to.
+
+`test/stage-stack.test.sh` pins the parser, the layouts, the lock and the closure check down.
 
 ## Test server
 

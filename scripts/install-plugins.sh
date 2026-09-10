@@ -1,77 +1,82 @@
 #!/usr/bin/env bash
-# Install everything in dist/plugins/ into a BepInEx plugins directory.
+# Install everything in dist/ into a BepInEx directory.
 #
-#   scripts/install-plugins.sh [--dist <dir>] <bepinex-plugins-dir>
-#   scripts/install-plugins.sh prune-mirror <bepinex-plugins-dir> <docker-container>
+#   scripts/install-plugins.sh [--dist <dir>] <bepinex-dir>
+#   scripts/install-plugins.sh prune-mirror <bepinex-dir> <docker-container>
 #
-# --dist overrides dist/plugins/ as the source tree; the tests use it to stage throwaway trees.
+# --dist overrides dist/ as the source tree; the tests use it to stage throwaway trees.
 #
-# dist/plugins/ holds our plugin DLLs and whole mod trees: a DLL with the files it ships beside it,
-# such as More World Locations AIO's asset-bundle manifest and Bundles/ directory. Everything in
-# dist/plugins/ is deployed preserving relative paths, so a DLL at the top level lands in the
-# plugins root and a directory lands there as one self-contained tree. See docs/build.md for how a
-# Thunderstore package is staged into dist/plugins/.
+# dist/ mirrors the BepInEx directory it deploys into: plugins/ holds our plugin DLLs and whole
+# staged mod trees (see scripts/stage-stack.sh), patchers/ holds BepInEx patcher DLLs, and config/
+# holds config files a package ships as seeds, such as Clan's emblems. Everything in those three
+# trees is deployed preserving relative paths, so a DLL at the top of dist/plugins/ lands in the
+# plugins root and a directory lands there as one self-contained tree. See docs/build.md.
 #
 # Stale files are the whole reason this script exists. A server keeps loading a plugin DLL until the
 # file is gone, and the lloesche/valheim-server container copies the plugins directory into the game
 # directory on every start without ever pruning it (see docs/build.md). So this script records every
-# file it installed in .lembitu-installed and removes anything it installed previously but no
-# longer finds in dist/plugins/. Files it did not install are never touched: removal is driven by
-# the manifest alone, and a directory is only removed by rmdir once it has become empty.
+# file it installed in .lembitu-installed and removes anything it installed previously but no longer
+# finds in dist/. Files it did not install are never touched: removal is driven by the manifest
+# alone, and a directory is only removed by rmdir once it has become empty. A manifest left in
+# plugins/ by the older, plugins-only version of this script is migrated to the BepInEx root on the
+# next run, its entries prefixed with plugins/, so those files stay owned and prunable.
 #
 # The container's second copy needs separate help: its rsync has no --delete, so a tree pruned from
 # /config keeps loading under /opt/valheim until prune-mirror removes it there. Install runs append
-# what they pruned to .lembitu-removed; after the container has synced, prune-mirror replays that
-# list inside it and clears the ledger.
+# what they pruned to .lembitu-removed; after the container has synced, prune-mirror replays the
+# plugins/ portion of that list inside it and clears the ledger - the container only ever mirrors
+# plugins/, so config/ and patchers/ entries are spent without a replay.
 #
-# dist/plugins/ is the source of truth, so run `dotnet clean` (or delete dist/) after renaming or
-# removing a plugin, otherwise the old DLL is still there to install.
+# dist/ is the source of truth, so run `dotnet clean` (or delete dist/) after renaming or removing
+# a plugin, otherwise the old DLL is still there to install.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DIST_DIR="$REPO_ROOT/dist/plugins"
+DIST_DIR="$REPO_ROOT/dist"
+
+# The BepInEx trees dist/ may hold. plugins/ is required; the other two deploy when present.
+TREES=(plugins patchers config)
 
 # Where lloesche/valheim-server copies /config/bepinex/plugins into the game directory.
 CONTAINER_PLUGINS_DIR="/opt/valheim/bepinex/BepInEx/plugins"
 
+# shellcheck source=lib/ledger.sh
+. "$REPO_ROOT/scripts/lib/ledger.sh"
+
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
-# Ledger entries are relative paths with a boring charset, because prune-mirror embeds them in a
-# shell script that runs inside the container. Traversal is refused on top of that: anything else
-# is an error rather than something to escape.
-safe_ledger_entry() {
-  [[ "$1" =~ ^[A-Za-z0-9._+()@-]+(/[A-Za-z0-9._+()@-]+)*$ ]] || return 1
-  case "$1" in .*|*/../*|*/..|*/.) return 1 ;; esac
-  return 0
-}
-
-# Every regular file in dist/plugins/, as paths relative to it, sorted. Anything that is neither a
-# file nor a directory (a symlink, say) is an error: it would be skipped silently otherwise.
+# Every regular file in dist/'s BepInEx trees, as paths relative to dist/, sorted. Anything that is
+# neither a file nor a directory (a symlink, say) is an error: it would be skipped silently
+# otherwise. Entries at the dist/ root outside the three trees are ignored - the staging ledger
+# dist/.staged-dirs lives there.
 dist_files() {
-  local unexpected
-  unexpected="$(cd "$DIST_DIR" && find . -mindepth 1 ! -type f ! -type d -print)"
-  [[ -z "$unexpected" ]] || die "unexpected entry in dist/plugins/: $(printf '%s' "$unexpected" | head -n 1)"
-  cd "$DIST_DIR" && find . -type f | sed 's|^\./||' | LC_ALL=C sort
+  local tree unexpected
+  for tree in "${TREES[@]}"; do
+    [[ -d "$DIST_DIR/$tree" ]] || continue
+    unexpected="$(cd "$DIST_DIR/$tree" && find . -mindepth 1 ! -type f ! -type d -print)"
+    [[ -z "$unexpected" ]] || die "unexpected entry in dist/$tree/: $(printf '%s' "$unexpected" | head -n 1)"
+    (cd "$DIST_DIR/$tree" && find . -type f | sed "s|^\\./|$tree/|")
+  done | LC_ALL=C sort
 }
 
-# One line per top-level dist entry, so a 230-file bundle tree is summarized instead of scrolled:
-#   installed Lembitu.Hello.dll
-#   removed stale More_World_Locations_AIO/ (4 files)
+# One line per staged tree, so a 230-file bundle tree is summarized instead of scrolled:
+#   installed plugins/Lembitu.Hello.dll
+#   removed stale plugins/More_World_Locations_AIO/ (4 files)
+# Groups are the first two path components - tree and package - because with dist/ mirroring
+# BepInEx/ the first component alone would collapse every package into "plugins/".
 report() {  # report <verb> <relative-path>...
   local verb=$1; shift
-  local path root="" count=0 nested=0
-  # Paths are sorted here, so a group is a run sharing the same first component. A group is a tree
-  # if any of its paths has a slash - decided from the paths, not from dist/plugins/, because a
-  # pruned tree's directory is by definition no longer there to ask.
+  local path rest root="" count=0 nested=0
   while IFS= read -r path; do
     [[ -n "$path" ]] || continue
-    if [[ "${path%%/*}" != "$root" ]]; then
+    rest="${path#*/}"
+    if [[ "${path%%/*}/${rest%%/*}" != "$root" ]]; then
       report_group "$verb" "$root" "$count" "$nested"
-      root="${path%%/*}"; count=0; nested=0
+      root="${path%%/*}/${rest%%/*}"; count=0; nested=0
     fi
     count=$((count + 1))
-    [[ "$path" == */* ]] && nested=1
+    [[ "$path" == */*/* ]] && nested=1
   done <<< "$(printf '%s\n' "$@" | sort)"
   report_group "$verb" "$root" "$count" "$nested"
 }
@@ -91,14 +96,32 @@ do_install() {
   mkdir -p "$target_arg"
   target="$(cd "$target_arg" && pwd)"
   [[ "$target" != "/" ]] || die "refusing to install into /"
-  [[ -d "$DIST_DIR" ]] || die "no dist/plugins/; run 'dotnet build' first"
+  case "$(basename "$target")" in
+    plugins|patchers|config)
+      die "the target is the BepInEx directory itself, not its $(basename "$target") subdirectory" ;;
+  esac
+  [[ -d "$DIST_DIR/plugins" ]] || die "no dist/plugins/; run 'dotnet build' (and scripts/stage-stack.sh) first"
 
   local manifest="$target/.lembitu-installed"
+
+  # Manifests from the plugins-only era of this script live in plugins/ with bare plugins-relative
+  # paths; adopt them at the BepInEx root with the prefix they now need, or their files stop being
+  # pruned the moment this version runs against an old server.
+  if [[ ! -f "$manifest" && -f "$target/plugins/.lembitu-installed" ]]; then
+    sed 's|^|plugins/|' "$target/plugins/.lembitu-installed" > "$manifest"
+    rm -f "$target/plugins/.lembitu-installed"
+    if [[ -f "$target/plugins/.lembitu-removed" ]]; then
+      sed 's|^|plugins/|' "$target/plugins/.lembitu-removed" > "$target/.lembitu-removed"
+      rm -f "$target/plugins/.lembitu-removed"
+    fi
+    echo "migrated the installer manifest from plugins/ to the BepInEx root"
+  fi
+
   local files=() name dir
   while IFS= read -r name; do
     # Same policy the ledger enforces: paths prune-mirror would refuse never get installed, so a
-    # dotfile or traversal-shaped name in dist/plugins/ fails here instead of breaking cleanup later.
-    safe_ledger_entry "$name" || die "refusing to deploy from dist/plugins/: $name"
+    # dotfile or traversal-shaped name in dist/ fails here instead of breaking cleanup later.
+    safe_ledger_entry "$name" || die "refusing to deploy from dist/: $name"
     files+=("$name")
   done < <(dist_files)
   [[ ${#files[@]} -gt 0 ]] || die "dist/plugins/ is empty; run 'dotnet build' or stage a mod tree (docs/build.md)"
@@ -162,15 +185,19 @@ do_prune_mirror() {
     return 0
   fi
 
+  # Ledger entries are BepInEx-root-relative; the container only mirrors plugins/, so only those
+  # are replayed, stripped of the prefix. Validation still runs on the full path.
   local entries=() rel
   while IFS= read -r rel; do
     [[ -n "$rel" ]] || continue
     safe_ledger_entry "$rel" || die "unsafe ledger entry: $rel"
-    entries+=("$rel")
+    case "$rel" in
+      plugins/*) entries+=("${rel#plugins/}") ;;
+    esac
   done < "$ledger"
   if [[ ${#entries[@]} -eq 0 ]]; then
     : > "$ledger"
-    echo "nothing to prune (ledger held no paths)"
+    echo "nothing to prune (ledger held no plugins/ entries for the container mirror)"
     return 0
   fi
 
@@ -202,12 +229,12 @@ fi
 
 case "${1:-}" in
   prune-mirror)
-    [[ $# -eq 3 ]] || die "usage: scripts/install-plugins.sh prune-mirror <bepinex-plugins-dir> <docker-container>"
+    [[ $# -eq 3 ]] || die "usage: scripts/install-plugins.sh prune-mirror <bepinex-dir> <docker-container>"
     do_prune_mirror "$2" "$3"
     ;;
   -*) die "unknown option: $1 (only --dist is understood before the target)" ;;
   *)
-    [[ $# -eq 1 ]] || die "usage: scripts/install-plugins.sh [--dist <dir>] <bepinex-plugins-dir> | prune-mirror <bepinex-plugins-dir> <docker-container>"
+    [[ $# -eq 1 ]] || die "usage: scripts/install-plugins.sh [--dist <dir>] <bepinex-dir> | prune-mirror <bepinex-dir> <docker-container>"
     do_install "$1"
     ;;
 esac

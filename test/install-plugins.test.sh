@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Behaviour tests for scripts/install-plugins.sh: deployment of DLLs and whole mod trees, pruning of
-# what the manifest owns (and nothing else), and the container-side replay of .lembitu-removed.
+# Behaviour tests for scripts/install-plugins.sh: deployment of the three dist/ BepInEx trees,
+# pruning of what the manifest owns (and nothing else), migration of plugins/-era manifests, and
+# the container-side replay of .lembitu-removed.
 #
 #   test/install-plugins.test.sh
 #
@@ -48,46 +49,47 @@ expect_lines() {
 }
 
 fresh_dist() {
-  rm -rf "$WORK/dist" "$WORK/target"
-  mkdir -p "$WORK/dist" "$WORK/target"
+  rm -rf "$WORK/dist" "$WORK/bepinex"
+  mkdir -p "$WORK/dist/plugins" "$WORK/bepinex"
 }
 
 write_file() {  # write_file <file> <bytes>
   printf '%s' "$2" > "$1"
 }
 
-run_install() { "$INSTALLER" --dist "$WORK/dist" "$WORK/target" >"$WORK/out" 2>&1; }
+run_install() { "$INSTALLER" --dist "$WORK/dist" "$WORK/bepinex" >"$WORK/out" 2>&1; }
 
 # --- 1. fresh install: top-level DLLs and a whole tree, layout preserved ---------------------
 
 fresh_dist
-write_file "$WORK/dist/Lembitu.Hello.dll" hello
-mkdir -p "$WORK/dist/More_World_Locations_AIO/Bundles/sub"
-write_file "$WORK/dist/More_World_Locations_AIO/More_World_Locations_AIO.dll" dll
-write_file "$WORK/dist/More_World_Locations_AIO/assetBundleManifest_full" manifest
-write_file "$WORK/dist/More_World_Locations_AIO/Bundles/mwl_ruins1" bundle1
-write_file "$WORK/dist/More_World_Locations_AIO/Bundles/sub/mwl_ruins2" bundle2
+write_file "$WORK/dist/plugins/Lembitu.Hello.dll" hello
+mkdir -p "$WORK/dist/plugins/More_World_Locations_AIO/Bundles/sub"
+write_file "$WORK/dist/plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll" dll
+write_file "$WORK/dist/plugins/More_World_Locations_AIO/assetBundleManifest_full" manifest
+write_file "$WORK/dist/plugins/More_World_Locations_AIO/Bundles/mwl_ruins1" bundle1
+write_file "$WORK/dist/plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2" bundle2
 
 if run_install \
-   && expect_tree "$WORK/target" \
+   && expect_tree "$WORK/bepinex" \
       .lembitu-installed \
-      Lembitu.Hello.dll \
-      More_World_Locations_AIO \
-      More_World_Locations_AIO/Bundles \
-      More_World_Locations_AIO/Bundles/sub \
-      More_World_Locations_AIO/Bundles/mwl_ruins1 \
-      More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
-      More_World_Locations_AIO/More_World_Locations_AIO.dll \
-      More_World_Locations_AIO/assetBundleManifest_full \
-   && expect_lines "$WORK/target/.lembitu-installed" \
-      Lembitu.Hello.dll \
-      More_World_Locations_AIO/More_World_Locations_AIO.dll \
-      More_World_Locations_AIO/assetBundleManifest_full \
-      More_World_Locations_AIO/Bundles/mwl_ruins1 \
-      More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
-   && grep -q '^installed More_World_Locations_AIO/ (4 files)$' "$WORK/out" \
-   && grep -q '^installed Lembitu.Hello.dll$' "$WORK/out" \
-   && [[ ! -e "$WORK/target/.lembitu-removed" ]]; then
+      plugins \
+      plugins/Lembitu.Hello.dll \
+      plugins/More_World_Locations_AIO \
+      plugins/More_World_Locations_AIO/Bundles \
+      plugins/More_World_Locations_AIO/Bundles/sub \
+      plugins/More_World_Locations_AIO/Bundles/mwl_ruins1 \
+      plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
+      plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll \
+      plugins/More_World_Locations_AIO/assetBundleManifest_full \
+   && expect_lines "$WORK/bepinex/.lembitu-installed" \
+      plugins/Lembitu.Hello.dll \
+      plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll \
+      plugins/More_World_Locations_AIO/assetBundleManifest_full \
+      plugins/More_World_Locations_AIO/Bundles/mwl_ruins1 \
+      plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
+   && grep -q '^installed plugins/More_World_Locations_AIO/ (4 files)$' "$WORK/out" \
+   && grep -q '^installed plugins/Lembitu.Hello.dll$' "$WORK/out" \
+   && [[ ! -e "$WORK/bepinex/.lembitu-removed" ]]; then
   report ok "fresh install deploys DLLs and trees, manifest lists every file"
 else
   report fail "fresh install deploys DLLs and trees, manifest lists every file"
@@ -95,20 +97,21 @@ fi
 
 # --- 2. prune: stale DLL and stale tree removed, directories cleaned up ----------------------
 
-write_file "$WORK/dist/Replacement.dll" rep
-rm "$WORK/dist/Lembitu.Hello.dll"
-rm -rf "$WORK/dist/More_World_Locations_AIO"
+write_file "$WORK/dist/plugins/Replacement.dll" rep
+rm "$WORK/dist/plugins/Lembitu.Hello.dll"
+rm -rf "$WORK/dist/plugins/More_World_Locations_AIO"
 
 if run_install \
-   && expect_tree "$WORK/target" .lembitu-installed .lembitu-removed Replacement.dll \
-   && expect_lines "$WORK/target/.lembitu-installed" Replacement.dll \
-   && expect_lines "$WORK/target/.lembitu-removed" \
-      Lembitu.Hello.dll \
-      More_World_Locations_AIO/More_World_Locations_AIO.dll \
-      More_World_Locations_AIO/assetBundleManifest_full \
-      More_World_Locations_AIO/Bundles/mwl_ruins1 \
-      More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
-   && grep -q '^removed stale More_World_Locations_AIO/ (4 files)$' "$WORK/out"; then
+   && expect_tree "$WORK/bepinex" \
+      .lembitu-installed .lembitu-removed plugins plugins/Replacement.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Replacement.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-removed" \
+      plugins/Lembitu.Hello.dll \
+      plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll \
+      plugins/More_World_Locations_AIO/assetBundleManifest_full \
+      plugins/More_World_Locations_AIO/Bundles/mwl_ruins1 \
+      plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
+   && grep -q '^removed stale plugins/More_World_Locations_AIO/ (4 files)$' "$WORK/out"; then
   report ok "prune removes stale DLL and tree, ledger records them"
 else
   report fail "prune removes stale DLL and tree, ledger records them"
@@ -117,58 +120,64 @@ fi
 # --- 3. foreign files are never touched, even inside a tree we own ---------------------------
 
 fresh_dist
-mkdir -p "$WORK/dist/Tree"
-write_file "$WORK/dist/Keeper.dll" k
-write_file "$WORK/dist/Tree/ours.dll" o
-write_file "$WORK/target/foreign-top.dll" f
-mkdir -p "$WORK/target/Tree/Bundles" "$WORK/target/foreign-dir"
-write_file "$WORK/target/Tree/foreign.dll" f
-write_file "$WORK/target/Tree/Bundles/foreign.bundle" f
-write_file "$WORK/target/foreign-dir/foreign.dll" f
-run_install  # installs Tree/ours.dll
-rm -rf "$WORK/dist/Tree"
+mkdir -p "$WORK/dist/plugins/Tree"
+write_file "$WORK/dist/plugins/Keeper.dll" k
+write_file "$WORK/dist/plugins/Tree/ours.dll" o
+mkdir -p "$WORK/bepinex/plugins/Tree/Bundles" "$WORK/bepinex/plugins/foreign-dir"
+write_file "$WORK/bepinex/plugins/foreign-top.dll" f
+write_file "$WORK/bepinex/plugins/Tree/foreign.dll" f
+write_file "$WORK/bepinex/plugins/Tree/Bundles/foreign.bundle" f
+write_file "$WORK/bepinex/plugins/foreign-dir/foreign.dll" f
+run_install  # installs plugins/Tree/ours.dll
+rm -rf "$WORK/dist/plugins/Tree"
 run_install
 
-if expect_tree "$WORK/target" \
+if expect_tree "$WORK/bepinex" \
       .lembitu-installed \
       .lembitu-removed \
-      Keeper.dll \
-      foreign-top.dll \
-      foreign-dir \
-      foreign-dir/foreign.dll \
-      Tree \
-      Tree/Bundles \
-      Tree/Bundles/foreign.bundle \
-      Tree/foreign.dll; then
+      plugins \
+      plugins/Keeper.dll \
+      plugins/foreign-top.dll \
+      plugins/foreign-dir \
+      plugins/foreign-dir/foreign.dll \
+      plugins/Tree \
+      plugins/Tree/Bundles \
+      plugins/Tree/Bundles/foreign.bundle \
+      plugins/Tree/foreign.dll; then
   report ok "prune leaves every foreign file and its directory alone"
 else
   report fail "prune leaves every foreign file and its directory alone"
 fi
 
-# --- 4. a manifest from the DLL-only era (bare filenames) still prunes -----------------------
+# --- 4. a plugins/-era manifest is migrated, its files stay prunable --------------------------
 
 fresh_dist
-write_file "$WORK/dist/Current.dll" c
-write_file "$WORK/target/Old.dll" o
-printf 'Old.dll\n' > "$WORK/target/.lembitu-installed"
+write_file "$WORK/dist/plugins/Current.dll" c
+mkdir -p "$WORK/bepinex/plugins/Bundles"
+write_file "$WORK/bepinex/plugins/Old.dll" o
+write_file "$WORK/bepinex/plugins/Bundles/old.bundle" old
+printf 'Old.dll\nBundles/old.bundle\n' > "$WORK/bepinex/plugins/.lembitu-installed"
 
 if run_install \
-   && expect_tree "$WORK/target" Current.dll .lembitu-installed .lembitu-removed \
-   && grep -q '^Old.dll$' "$WORK/target/.lembitu-removed"; then
-  report ok "old bare-filename manifests are honoured"
+   && expect_tree "$WORK/bepinex" \
+      .lembitu-installed .lembitu-removed plugins plugins/Current.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Current.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-removed" plugins/Old.dll plugins/Bundles/old.bundle \
+   && grep -q 'migrated the installer manifest' "$WORK/out"; then
+  report ok "an old plugins/ manifest is migrated with the prefix and still prunes"
 else
-  report fail "old bare-filename manifests are honoured"
+  report fail "an old plugins/ manifest is migrated with the prefix and still prunes"
 fi
 
 # --- 5. nothing stale: no ledger is created --------------------------------------------------
 
 fresh_dist
-write_file "$WORK/dist/Stable.dll" s
+write_file "$WORK/dist/plugins/Stable.dll" s
 run_install
-rm -f "$WORK/target/.lembitu-removed"
+rm -f "$WORK/bepinex/.lembitu-removed"
 run_install
 
-if [[ ! -e "$WORK/target/.lembitu-removed" ]]; then
+if [[ ! -e "$WORK/bepinex/.lembitu-removed" ]]; then
   report ok "a no-op run writes no ledger"
 else
   report fail "a no-op run writes no ledger"
@@ -177,25 +186,127 @@ fi
 # --- 6. an updated file is recopied (contents, not just presence) ----------------------------
 
 fresh_dist
-write_file "$WORK/dist/Stable.dll" v1
+write_file "$WORK/dist/plugins/Stable.dll" v1
 run_install
-write_file "$WORK/dist/Stable.dll" v2
+write_file "$WORK/dist/plugins/Stable.dll" v2
 run_install
-if [[ "$(cat "$WORK/target/Stable.dll")" == v2 ]]; then
+if [[ "$(cat "$WORK/bepinex/plugins/Stable.dll")" == v2 ]]; then
   report ok "an updated file is recopied"
 else
   report fail "an updated file is recopied"
 fi
 
-# --- 7. prune-mirror replays the ledger inside the container ---------------------------------
+# --- 7. patchers/ and config/ deploy beside plugins/ and prune with them ---------------------
 
 fresh_dist
-mkdir -p "$WORK/dist/Tree/Bundles"
-write_file "$WORK/dist/Tree/ours.dll" o
-write_file "$WORK/dist/Tree/Bundles/ours.bundle" b
+mkdir -p "$WORK/dist/plugins/Root" "$WORK/dist/patchers/Fast_AssetBundle_Loader" "$WORK/dist/config/Clan/emblems"
+write_file "$WORK/dist/plugins/Root/Root.dll" root
+write_file "$WORK/dist/patchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll" patcher
+write_file "$WORK/dist/config/Clan/emblems/cat.png" emblem
 run_install
-rm -rf "$WORK/dist/Tree"
-write_file "$WORK/dist/New.dll" n
+
+ok_so_far=0
+expect_tree "$WORK/bepinex" \
+   .lembitu-installed \
+   config config/Clan config/Clan/emblems config/Clan/emblems/cat.png \
+   patchers patchers/Fast_AssetBundle_Loader patchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll \
+   plugins plugins/Root plugins/Root/Root.dll \
+   && grep -q '^installed config/Clan/ (1 files)$' "$WORK/out" \
+   && grep -q '^installed patchers/Fast_AssetBundle_Loader/ (1 files)$' "$WORK/out" \
+   && ok_so_far=1
+rm -rf "$WORK/dist/patchers" "$WORK/dist/config"
+run_install
+if [[ ${ok_so_far:-0} == 1 ]] \
+   && expect_tree "$WORK/bepinex" \
+      .lembitu-installed .lembitu-removed \
+      plugins plugins/Root plugins/Root/Root.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-removed" \
+      config/Clan/emblems/cat.png \
+      patchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll; then
+  report ok "patchers/ and config/ deploy from dist and prune when retired"
+else
+  report fail "patchers/ and config/ deploy from dist and prune when retired"
+fi
+
+# --- 8. the plugins subdirectory as target is refused -----------------------------------------
+
+fresh_dist
+write_file "$WORK/dist/plugins/Plain.dll" p
+if ! "$INSTALLER" --dist "$WORK/dist" "$WORK/bepinex/plugins" >"$WORK/out" 2>&1 \
+   && grep -q 'BepInEx directory itself' "$WORK/out"; then
+  report ok "a plugins/ target is refused with the correct target named"
+else
+  report fail "a plugins/ target is refused with the correct target named"
+fi
+
+# --- 9. symlinks in dist are rejected, not silently skipped ---------------------------------
+
+fresh_dist
+write_file "$WORK/dist/plugins/Real.dll" r
+ln -s Real.dll "$WORK/dist/plugins/Link.dll"
+
+if ! run_install && grep -qi 'unexpected entry' "$WORK/out"; then
+  report ok "a symlink in dist/plugins/ is an error"
+else
+  report fail "a symlink in dist/plugins/ is an error"
+fi
+
+# --- 10. empty dist is an error ----------------------------------------------------------------
+
+fresh_dist
+if ! run_install && grep -q 'run .dotnet build.' "$WORK/out"; then
+  report ok "an empty dist/plugins/ is an error"
+else
+  report fail "an empty dist/plugins/ is an error"
+fi
+
+# --- 11. trailing slash on the target is fine --------------------------------------------------
+
+fresh_dist
+write_file "$WORK/dist/plugins/Plain.dll" p
+if "$INSTALLER" --dist "$WORK/dist" "$WORK/bepinex/" >"$WORK/out" 2>&1 \
+   && [[ -f "$WORK/bepinex/plugins/Plain.dll" ]]; then
+  report ok "a trailing slash on the target directory is accepted"
+else
+  report fail "a trailing slash on the target directory is accepted"
+fi
+
+# --- 12. dotfiles and traversal-shaped names in dist are refused at install time ---------------
+
+fresh_dist
+write_file "$WORK/dist/plugins/Good.dll" g
+write_file "$WORK/dist/plugins/.hidden" h
+
+if ! run_install && grep -q 'refusing to deploy' "$WORK/out"; then
+  report ok "a dotfile in dist/plugins/ is refused"
+else
+  report fail "a dotfile in dist/plugins/ is refused"
+fi
+
+# --- 13. taking over a foreign path of the same name says so ------------------------------------
+
+fresh_dist
+write_file "$WORK/dist/plugins/Adopted.dll" ours
+mkdir -p "$WORK/bepinex/plugins"
+write_file "$WORK/bepinex/plugins/Adopted.dll" foreign
+
+if run_install \
+   && grep -q '^warning: overwriting foreign file plugins/Adopted.dll$' "$WORK/out" \
+   && [[ "$(cat "$WORK/bepinex/plugins/Adopted.dll")" == ours ]]; then
+  report ok "adopting a foreign path of the same name warns and overwrites"
+else
+  report fail "adopting a foreign path of the same name warns and overwrites"
+fi
+
+# --- 14. prune-mirror replays the plugins portion of the ledger inside the container ----------
+
+fresh_dist
+mkdir -p "$WORK/dist/plugins/Tree/Bundles"
+write_file "$WORK/dist/plugins/Tree/ours.dll" o
+write_file "$WORK/dist/plugins/Tree/Bundles/ours.bundle" b
+run_install
+rm -rf "$WORK/dist/plugins/Tree"
+write_file "$WORK/dist/plugins/New.dll" n
 run_install   # ledger now holds the two Tree paths
 
 # The fake docker pretends to be the container: it records its arguments, redirects the script's
@@ -216,22 +327,38 @@ write_file "$FAKE_MIRROR/.lembitu-removed" stale
 write_file "$FAKE_MIRROR/New.dll" n
 
 if ( export PATH="$WORK/bin:$PATH"
-     "$INSTALLER" prune-mirror "$WORK/target" test-container ) >"$WORK/out" 2>&1 \
+     "$INSTALLER" prune-mirror "$WORK/bepinex" test-container ) >"$WORK/out" 2>&1 \
    && expect_tree "$FAKE_MIRROR" New.dll \
    && grep -q '^exec -i test-container sh -s$' "$WORK/docker-args" \
-   && [[ ! -s "$WORK/target/.lembitu-removed" ]]; then
+   && [[ ! -s "$WORK/bepinex/.lembitu-removed" ]]; then
   report ok "prune-mirror replays the ledger in the container and clears it"
 else
   report fail "prune-mirror replays the ledger in the container and clears it"
 fi
 
-# --- 8. prune-mirror refuses a tampered ledger ----------------------------------------------
+# --- 15. prune-mirror spends config/ and patchers/ entries without a replay -------------------
 
-printf 'Tree/ours.dll\n../../etc/passwd\n' > "$WORK/target/.lembitu-removed"
+printf 'config/Clan/emblems/cat.png\npatchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll\n' \
+  > "$WORK/bepinex/.lembitu-removed"
+rm -f "$WORK/docker-args" "$WORK/docker-script"
+
+if ( export PATH="$WORK/bin:$PATH"
+     "$INSTALLER" prune-mirror "$WORK/bepinex" test-container ) >"$WORK/out" 2>&1 \
+   && grep -q 'no plugins/ entries' "$WORK/out" \
+   && [[ ! -s "$WORK/bepinex/.lembitu-removed" ]] \
+   && [[ ! -e "$WORK/docker-args" ]]; then
+  report ok "non-plugins ledger entries are spent without touching the container"
+else
+  report fail "non-plugins ledger entries are spent without touching the container"
+fi
+
+# --- 16. prune-mirror refuses a tampered ledger ----------------------------------------------
+
+printf 'plugins/Tree/ours.dll\n../../etc/passwd\n' > "$WORK/bepinex/.lembitu-removed"
 rm -f "$WORK/docker-args" "$WORK/docker-script"
 
 if ! ( export PATH="$WORK/bin:$PATH"
-     "$INSTALLER" prune-mirror "$WORK/target" test-container ) >"$WORK/out" 2>&1 \
+     "$INSTALLER" prune-mirror "$WORK/bepinex" test-container ) >"$WORK/out" 2>&1 \
    && grep -q 'unsafe ledger entry' "$WORK/out" \
    && [[ ! -e "$WORK/docker-args" ]]; then
   report ok "a ledger entry outside the plugins directory aborts prune-mirror"
@@ -239,84 +366,26 @@ else
   report fail "a ledger entry outside the plugins directory aborts prune-mirror"
 fi
 
-# --- 9. prune-mirror with no ledger is a no-op ------------------------------------------------
+# --- 17. prune-mirror with no ledger is a no-op ------------------------------------------------
 
-rm -f "$WORK/target/.lembitu-removed"
+rm -f "$WORK/bepinex/.lembitu-removed"
 if ( export PATH="$WORK/bin:$PATH"
-     "$INSTALLER" prune-mirror "$WORK/target" test-container ) >"$WORK/out" 2>&1 \
+     "$INSTALLER" prune-mirror "$WORK/bepinex" test-container ) >"$WORK/out" 2>&1 \
    && grep -qi 'nothing to prune' "$WORK/out"; then
   report ok "prune-mirror without a ledger does nothing"
 else
   report fail "prune-mirror without a ledger does nothing"
 fi
 
-# --- 10. symlinks in dist are rejected, not silently skipped ---------------------------------
+# --- 18. a failed replay keeps the ledger --------------------------------------------------------
 
-fresh_dist
-write_file "$WORK/dist/Real.dll" r
-ln -s Real.dll "$WORK/dist/Link.dll"
-
-if ! run_install && grep -qi 'unexpected entry' "$WORK/out"; then
-  report ok "a symlink in dist/plugins/ is an error"
-else
-  report fail "a symlink in dist/plugins/ is an error"
-fi
-
-# --- 11. empty dist is an error ----------------------------------------------------------------
-
-fresh_dist
-if ! run_install && grep -q 'run .dotnet build.' "$WORK/out"; then
-  report ok "an empty dist/plugins/ is an error"
-else
-  report fail "an empty dist/plugins/ is an error"
-fi
-
-# --- 12. trailing slash on the target is fine --------------------------------------------------
-
-fresh_dist
-write_file "$WORK/dist/Plain.dll" p
-if "$INSTALLER" --dist "$WORK/dist" "$WORK/target/" >"$WORK/out" 2>&1 \
-   && [[ -f "$WORK/target/Plain.dll" ]]; then
-  report ok "a trailing slash on the target directory is accepted"
-else
-  report fail "a trailing slash on the target directory is accepted"
-fi
-
-# --- 13. dotfiles and traversal-shaped names in dist are refused at install time ---------------
-
-fresh_dist
-write_file "$WORK/dist/Good.dll" g
-write_file "$WORK/dist/.hidden" h
-
-if ! run_install && grep -q 'refusing to deploy' "$WORK/out"; then
-  report ok "a dotfile in dist/plugins/ is refused"
-else
-  report fail "a dotfile in dist/plugins/ is refused"
-fi
-
-# --- 14. taking over a foreign path of the same name says so ------------------------------------
-
-fresh_dist
-write_file "$WORK/dist/Adopted.dll" ours
-write_file "$WORK/target/Adopted.dll" foreign
-
-if run_install \
-   && grep -q '^warning: overwriting foreign file Adopted.dll$' "$WORK/out" \
-   && [[ "$(cat "$WORK/target/Adopted.dll")" == ours ]]; then
-  report ok "adopting a foreign path of the same name warns and overwrites"
-else
-  report fail "adopting a foreign path of the same name warns and overwrites"
-fi
-
-# --- 15. a failed replay keeps the ledger --------------------------------------------------------
-
-printf 'Tree/ours.dll\n' > "$WORK/target/.lembitu-removed"
+printf 'plugins/Tree/ours.dll\n' > "$WORK/bepinex/.lembitu-removed"
 rm -f "$WORK/docker-args" "$WORK/docker-script"
 rm -rf "$FAKE_MIRROR" && mkdir -p "$FAKE_MIRROR/Tree/ours.dll"   # ours.dll as a directory: rm -f fails
 
 if ! ( export PATH="$WORK/bin:$PATH"
-     "$INSTALLER" prune-mirror "$WORK/target" test-container ) >"$WORK/out" 2>&1 \
-   && grep -q 'Tree/ours.dll' "$WORK/target/.lembitu-removed"; then
+     "$INSTALLER" prune-mirror "$WORK/bepinex" test-container ) >"$WORK/out" 2>&1 \
+   && grep -q 'plugins/Tree/ours.dll' "$WORK/bepinex/.lembitu-removed"; then
   report ok "a removal that fails inside the container keeps the ledger for retry"
 else
   report fail "a removal that fails inside the container keeps the ledger for retry"
