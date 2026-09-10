@@ -1,0 +1,59 @@
+# Enforced gear gates for ItemRequiresSkillLevel (#4).
+#
+# The mod is here to stop a clan handing a newcomer endgame gear (ADR-0005), so every rule gates on
+# character level from EpicMMOSystem - the project's second power curve (ADR-0004) - and none on
+# world progression. `EpicMMO: true` with `Skill: Level` reads the character's level; naming an
+# attribute instead (Strength, Dexterity, Intellect, Endurance, Vigour, Specializing) reads that
+# attribute. `BlockCraft` disables the craft button, `BlockEquip` refuses the equip.
+#
+# Shipping this file also stops the mod writing its own sample on first boot.
+#
+# The tiers below are a starting point, not a balance decision: they gate the chest, legs and helm
+# of each armour tier past bronze, which is where borrowed gear starts to matter. The playtest
+# (#18) is where the numbers get argued about. The server logs, per rule, whether the prefab exists
+# and whether the requirement can be met, so a typo here is visible in BepInEx/LogOutput.log.
+RequirementGroups:
+  - Prefabs:
+      - ArmorIronChest
+      - ArmorIronLegs
+      - HelmetIron
+    Requirements:
+      - Skill: Level
+        Level: 20
+        EpicMMO: true
+        BlockCraft: true
+        BlockEquip: true
+        ExhibitionName: Character Level
+  - Prefabs:
+      - ArmorWolfChest
+      - ArmorWolfLegs
+      - HelmetDrake
+    Requirements:
+      - Skill: Level
+        Level: 35
+        EpicMMO: true
+        BlockCraft: true
+        BlockEquip: true
+        ExhibitionName: Character Level
+  - Prefabs:
+      - ArmorPaddedCuirass
+      - ArmorPaddedGreaves
+      - HelmetPadded
+    Requirements:
+      - Skill: Level
+        Level: 50
+        EpicMMO: true
+        BlockCraft: true
+        BlockEquip: true
+        ExhibitionName: Character Level
+  - Prefabs:
+      - ArmorCarapaceChest
+      - ArmorCarapaceLegs
+      - HelmetCarapace
+    Requirements:
+      - Skill: Level
+        Level: 65
+        EpicMMO: true
+        BlockCraft: true
+        BlockEquip: true
+        ExhibitionName: Character Level
