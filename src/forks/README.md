@@ -1,8 +1,11 @@
 # Forks of third-party mods
 
-One directory per forked mod, named after the mod (`src/forks/Clan/`, `src/forks/BossRules/`). Our
-own plugins live in `src/plugins/` instead; the split exists so it is always obvious whose code you
-are reading and whose licence applies.
+One directory per forked mod, named after the mod (`src/forks/EpicMMOSystem/`,
+`src/forks/ValheimRAFT/`). Our own plugins live in `src/plugins/` instead; the split exists so it is
+always obvious whose code you are reading and whose licence applies.
+
+We fork only where upstream has no working 1.0.7 build (ADR-0003); everything else in the stack is
+adopted at a pinned version. `docs/modstack.md` lists which is which.
 
 Each fork directory contains:
 

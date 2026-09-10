@@ -175,6 +175,16 @@ docker exec valheim-barebones ls /config/bepinex/plugins
 docker exec valheim-barebones ls /opt/valheim/bepinex/BepInEx/plugins
 ```
 
+**Adopted mods are not built here.** Most of what the server runs is upstream, installed at a pinned
+version straight from Thunderstore; `docs/modstack.md` is the pin list, and ADR-0003 says why we
+adopt rather than fork. `scripts/install-plugins.sh` only owns what `dotnet build` produced, so it
+never touches an adopted mod's files — which also means it does not prune them.
+
+**Asset-bundle trees are not handled yet.** More World Locations AIO ships a bundle manifest and a
+`Bundles/` directory beside its DLL, and the installer syncs single DLLs. Deploying it needs
+directory support in `scripts/install-plugins.sh`, and the pruning trap above then applies to a whole
+tree rather than one file. This blocks world creation (ADR-0009).
+
 ## Test server
 
 On astral-bicep:
