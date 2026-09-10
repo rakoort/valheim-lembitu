@@ -117,6 +117,52 @@ else, add it to the plugin's own `.csproj`:
 `Reference`, not as a separate `<Publicize Include="…" />` item: the package declares empty default
 metadata for that item type, and its task then rejects the empty value.
 
+A port that reaches into most of the engine — `src/forks/EpicMMOSystem` references about fifty
+Unity modules upstream — takes everything `scripts/extract-refs.sh` extracted instead of a list
+that rots:
+
+```xml
+<Reference Include="$(ValheimRefDir)*.dll" Private="false"
+           Exclude="$(ValheimRefDir)assembly_valheim.dll;…" />
+```
+
+Exclude the assemblies `Directory.Build.props` and `ServerSync.props` already declare, or they are
+referenced twice. One module cannot be referenced at all: `UnityEngine.ImageConversionModule`
+targets netstandard 2.1, which a net472 assembly cannot consume (CS1705).
+
+## Depending on a library another mod ships
+
+Several pinned packages are plain libraries — `ValheimModding/JsonDotNET` (Newtonsoft.Json),
+`ValheimModding/YamlDotNet`, `Jotunn`. BepInEx resolves them from the plugins directory at runtime,
+so compile against them and ship nothing:
+
+```xml
+<PackageReference Include="Newtonsoft.Json" Version="[13.0.4]" ExcludeAssets="runtime" PrivateAssets="all" />
+```
+
+The version is exact for a reason. A floating reference resolves to whatever NuGet has newest, and
+.NET Framework binds strong-named assemblies by exact version: compiling against 17.x while the
+server has 16.x loaded fails at runtime, not at build. Check what the pinned package actually
+contains — `ValheimModding/YamlDotNet 16.3.1` ships YamlDotNet **16.3.0**, and 16.3.1 was never
+released on NuGet.
+
+## Screening a prebuilt DLL against the game
+
+A mod that bundles prebuilt libraries hides the ADR-0002 failure mode in each one: a member the
+game removed, or a field it turned into a `const`, fails when the code runs rather than when it
+builds. Before trusting such a DLL, compare what it reaches for against `lib/valheim/`. Its member
+references are readable with a decompiler:
+
+```sh
+nix run nixpkgs#ilspycmd -- -r lib/valheim --ilcode <mod>.dll | grep 'ldsfld\|call'
+nix run nixpkgs#ilspycmd -- -r lib/valheim -t ZRoutedRpc lib/valheim/assembly_valheim.dll
+```
+
+`ZRoutedRpc.Everybody` is the known one: a `const` on 1.0.7, so any assembly compiled when it was a
+field carries an `ldsfld` to storage that no longer exists. That check is how
+`src/forks/EpicMMOSystem` learned its bundled PieceManager was as broken as its bundled ServerSync,
+and why every library it needs is vendored as source and recompiled.
+
 ## Server-synced config
 
 A plugin whose settings must come from the server imports our ServerSync fork:

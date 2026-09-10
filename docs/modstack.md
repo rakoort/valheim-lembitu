@@ -48,14 +48,21 @@ config rather than a player's file.
 ## Forks
 
 Upstream has no working 1.0.7 build, so we own these. Each lives in `src/forks/<Name>/` with an
-`UPSTREAM.md`; see [build.md](build.md) and `../src/forks/README.md`.
+`UPSTREAM.md` recording the exact commit, the licence and every change; see [build.md](build.md)
+and `../src/forks/README.md`.
 
 | Fork | Forked from | Why | Ticket |
 | --- | --- | --- | --- |
-| WackyEpicMMOSystem | 1.9.62, BepInEx 5.4.2202 | Character level curve; upstream last touched 2026-09-06 with no 1.0 work | #5 |
-| WackyItemRequiresSkillLevel | 1.4.6, BepInEx 5.4.2333 | Gates equipping on character level; upstream stale since May | #4 |
-| MaxPlayerCount | 1.2.5, BepInEx 5.4.2333 | Player cap above 10; ours to patch if the fork will not carry it | #9 |
+| EpicMMOSystem | `Wacky-Mole/WackyEpicMMOSystem@09d0e25` = 1.9.62, MIT-0 | Character level curve; upstream last touched 2026-09-06 with no 1.0 work | #5 |
+| ItemRequiresSkillLevel | `Wacky-Mole/ItemRequiresSkillLevel@be31aa9` = 1.4.6, no licence stated | Gates crafting and equipping on character level; upstream stale since May | #4 |
+| MaxPlayerCount | `AzumattDev/MaxPlayerCount@4482e27` = 1.2.4 source, pinned release 1.2.5, MIT-0 | Player cap above 10, raised to 20 | #9 |
 | ValheimRAFT | 4.2.2, Jotunn 2.27.0, no pack pin | Ships and anchoring; cannons and their projectile system disabled | #26 |
+
+Enforced config the forks carry, for the same reason as the adopted table above: **EpicMMOSystem**
+brews the XP meads in the vanilla fermenter (its own fermenter piece is not registered) and ships
+only the mob-XP tables for creatures this stack can spawn; **ItemRequiresSkillLevel** ships
+`config/enforced/WackyMole.ItemRequiresSkillLevel.yml`, gating the four armour tiers past bronze on
+character level and nothing on world progression (ADR-0005); **MaxPlayerCount** defaults to 20.
 
 `src/forks/ServerSync/` is a library fork rather than a mod: shared source compiled into our own
 plugins (ADR-0002).
@@ -139,6 +146,26 @@ vanilla noise only (`libparty.so`, intro cinematic). Enforced config applied via
 per-mod client-side handshake of the synced configs is exercised in #10, which needs real
 clients.
 
+**2026-09-10, #4/#5/#8/#9**: the three forks built by `dotnet build`, installed with
+`scripts/install-plugins.sh` beside the pinned stack, and booted on the same 1.0.7 test server.
+Zero `MissingFieldException`, `MissingMethodException` or `[Error]` lines; the same vanilla noise
+as above.
+
+| Fork | Loaded | Config sync | Server-side evidence |
+| --- | --- | --- | --- |
+| EpicMMOSystem 1.9.62 | yes, both plugins (`EpicMMOSystem`, `EpicMMOSystemUI`) | `WackyMole.EpicMMOSystem` and its ItemManager channel registered | 2 mob-XP tables loaded covering 152 creatures, 151 of which match a prefab in this world (`Chick` does not and can never award XP); XP mead conversions added to the vanilla fermenter; `BepInEx/config/EpicMMOSystem/` holds only the two tables we ship |
+| ItemRequiresSkillLevel 1.4.6 | yes | `WackyMole.ItemRequiresSkillLevel` registered | 12 rules read from `config/enforced/WackyMole.ItemRequiresSkillLevel.yml`, all 12 matching an item in the world database; the static constructor that threw on 1.0.7 through its bundled ServerSync now runs clean |
+| MaxPlayerCount 1.2.5 | yes | not ServerSync-based | All three capacity surfaces patched and logged: `ZNet.RPC_PeerInfo` 10 → 20, `ZPlayFabMatchmaking.CreateLobby` and `.CreateAndJoinNetwork` 11 → 21, and `SteamGameServer.SetMaxPlayerCount` asked for 64 and given 20 |
+
+PvPBiomeDominions' death and retention rules (#8) are enforced from
+`config/enforced/Turbero.PvPBiomeDominions.cfg` and confirmed idempotent: flagged players keep
+equipped and hotbar items, unflagged players take the vanilla penalty, only flagged players may
+loot a grave, and the alert message that gates the loot restriction is pinned non-empty.
+
+What these boots cannot show, and #10 owns: every client-side behaviour. The attribute panel, the
+exp bar, nameplate level display, the 15-level PvP damage band, the craft-button and equip refusals
+and their tooltips, tombstone retention on a real death, and an eleventh simultaneous connection.
+
 Open unknowns to settle in #10, recorded here so they are not rediscovered:
 
 - **ProgressivePowers kill tracking.** Mastery levels are earned by boss kills; whether it counts
@@ -151,6 +178,15 @@ Open unknowns to settle in #10, recorded here so they are not rediscovered:
   AdditiveDamageModifier's floor all land on one number; Harmony order decides the result.
 - **Creature level authority.** Character level rewrites star levels; EpicLoot, CreatureManager's
   Karma and #13 all read them.
+- **PieceManager's build categories.** The same breakage, hit directly: EpicMMOSystem's fermenter
+  piece is not registered because PieceManager writes `Hud.m_buildCategoryNames` and treats
+  `PieceTable.m_availablePieces` as a list of lists, neither of which exists on 1.0.7.
+- **Retention is death-cause blind.** PvPBiomeDominions patches `Player.CreateTombStone`, which
+  takes no killer, so a flagged player who drowns keeps their gear too. #8's premise — dying to a
+  player costing less than dying to a troll — is only half achievable with this mod.
+- **Character level lives in the character save.** EpicMMOSystem stores level and XP in
+  `Player.m_knownTexts`, so a client owns its own progression; #12, #15 and #27 need to decide
+  whether that is acceptable or whether the server has to hold it.
 
 ## Considered and cut
 
