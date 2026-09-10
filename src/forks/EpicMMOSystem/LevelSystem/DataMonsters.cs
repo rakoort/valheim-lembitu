@@ -1,0 +1,921 @@
+using BepInEx;
+using Newtonsoft.Json;
+using HarmonyLib;
+using ItemManager;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Mime;
+using System.Numerics;
+using System.Reflection;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Runtime.Remoting.Messaging;
+using System.Threading;
+//using Text = UnityEngine.UI.Text;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR;
+//using UnityEngine.UI;
+using static System.Net.Mime.MediaTypeNames;
+using Object = UnityEngine.Object;
+using Quaternion = UnityEngine.Quaternion;
+using Random = UnityEngine.Random;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
+
+namespace EpicMMOSystem;
+
+
+public static class DataMonsters
+{
+    private static Dictionary<string, Monster> dictionary = new();
+    private static string MonsterDB = "";
+    public static List<string> MonsterDBL;
+    public static string PlayerDBL;
+    private static readonly Dictionary<Heightmap.Biome, GameObject> OrbsByBiomes = new(10);
+    public static readonly Dictionary<GameObject, int> MagicOrbDictionary = new Dictionary<GameObject, int>(10);// thx KG
+
+    private static TMP_FontAsset ResolveHudFont(TextMeshProUGUI referenceText = null)
+    {
+        if (referenceText != null && referenceText.font != null)
+        {
+            return referenceText.font;
+        }
+
+        if (TMP_Settings.defaultFontAsset != null)
+        {
+            return TMP_Settings.defaultFontAsset;
+        }
+
+        return Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault();
+    }
+
+    private static void EnsureHudFont(TextMeshProUGUI text, TextMeshProUGUI referenceText = null)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        var font = ResolveHudFont(referenceText ?? text);
+        if (font != null)
+        {
+            text.font = font;
+        }
+    }
+
+
+    public static void InitItems()
+    {// Visit  https://github.com/Wacky-Mole/MagicHeim/blob/master/MagicTomes.cs for more details
+
+        Item Orb1 = new("mmo_xp", "mmo_orb1", "asset");
+        Orb1.ToggleConfigurationVisibility(Configurability.Disabled);
+        Item Orb2 = new("mmo_xp", "mmo_orb2", "asset");
+        Orb2.ToggleConfigurationVisibility(Configurability.Disabled);
+        Item Orb3 = new("mmo_xp", "mmo_orb3", "asset");
+        Orb3.ToggleConfigurationVisibility(Configurability.Disabled);
+        Item Orb4 = new("mmo_xp", "mmo_orb4", "asset");
+        Orb4.ToggleConfigurationVisibility(Configurability.Disabled);
+        Item Orb5 = new("mmo_xp", "mmo_orb5", "asset");
+        Orb5.ToggleConfigurationVisibility(Configurability.Disabled);
+        Item Orb6 = new("mmo_xp", "mmo_orb6", "asset");
+        Orb6.ToggleConfigurationVisibility(Configurability.Disabled);       
+        Item Orb7 = new("mmo_xp", "mmo_orb7", "asset");
+        Orb7.ToggleConfigurationVisibility(Configurability.Disabled);        
+        Item Orb8 = new("mmo_xp", "mmo_orb8", "asset");
+        Orb8.ToggleConfigurationVisibility(Configurability.Disabled);
+
+        MagicOrbDictionary.Add(Orb1.Prefab, EpicMMOSystem.XPforOrb1.Value);
+        MagicOrbDictionary.Add(Orb2.Prefab, EpicMMOSystem.XPforOrb2.Value);
+        MagicOrbDictionary.Add(Orb3.Prefab, EpicMMOSystem.XPforOrb3.Value);
+        MagicOrbDictionary.Add(Orb4.Prefab, EpicMMOSystem.XPforOrb4.Value);
+        MagicOrbDictionary.Add(Orb5.Prefab, EpicMMOSystem.XPforOrb5.Value);
+        MagicOrbDictionary.Add(Orb6.Prefab, EpicMMOSystem.XPforOrb6.Value);
+        MagicOrbDictionary.Add(Orb7.Prefab, EpicMMOSystem.XPforOrb7.Value);
+        MagicOrbDictionary.Add(Orb8.Prefab, EpicMMOSystem.XPforOrb8.Value);
+        
+
+
+        OrbsByBiomes.Add(Heightmap.Biome.Meadows, Orb1.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.BlackForest, Orb2.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.Swamp, Orb3.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.Mountain, Orb4.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.Plains, Orb5.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.DeepNorth, Orb8.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.AshLands, Orb7.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.Ocean, Orb3.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.None, Orb2.Prefab);
+        OrbsByBiomes.Add(Heightmap.Biome.Mistlands, Orb6.Prefab);
+    }
+
+    /*
+
+    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetTooltip), typeof(ItemDrop.ItemData),typeof(int),typeof(bool), typeof(float) )]
+    public class GetTooltipPatch
+    {
+        public static void Postfix(ItemDrop.ItemData item, bool crafting, ref string __result)
+        {
+            if (crafting || item == null || !item.m_dropPrefab) return;
+            if (MagicOrbDictionary.TryGetValue(item.m_dropPrefab, out var expGain))
+            {
+                __result = __result + $"Right Mouse Button click to get <color=yellow>{expGain}</color> EXP";
+            }
+        }
+    }
+    */
+    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetTooltip), new Type[] { typeof(int) })]
+    public class GetTooltipPatch
+    {
+        public static void Postfix(ItemDrop.ItemData __instance, int stackOverride, ref string __result)
+        {
+            // Ensure that `crafting` is checked and `item` validity is confirmed as in the original patch logic.
+            if (__instance == null || !__instance.m_dropPrefab) return;
+
+            if (MagicOrbDictionary.TryGetValue(__instance.m_dropPrefab, out var expGain))
+            {
+                __result += $" Right Mouse Button click to get <color=yellow>{expGain}</color> EXP";
+            }
+        }
+    }
+
+
+    public static bool contains(string name)
+    {
+        return  dictionary.ContainsKey(name);
+    }
+
+    public static int getExp(string name)
+    { 
+        var monster = dictionary[name];
+        int exp = Random.Range(monster.minExp, monster.maxExp);
+        return exp;
+    }
+
+    public static int getMaxExp(string name)
+    {
+      return dictionary[name].maxExp;
+    }
+
+    public static int getLevel(string name)
+    {
+        return dictionary[name].level;     
+    }
+
+
+    public static void createNewDataMonsters(List<string> json)
+    {
+        createNewDataMonsters(json, null);
+    }
+
+    public static void createNewDataMonsters(List<string> json, List<string> sources)
+    {
+        dictionary.Clear();
+
+        if (json == null)
+        {
+            EpicMMOSystem.MLLogger.LogWarning("Monster database payload was null.");
+            return;
+        }
+
+        int payloadIndex = 0;
+        foreach (var monster2 in json)
+        {
+            payloadIndex++;
+            string sourceLabel = sources != null && payloadIndex - 1 < sources.Count && !string.IsNullOrWhiteSpace(sources[payloadIndex - 1])
+                ? sources[payloadIndex - 1]
+                : $"payload #{payloadIndex}";
+
+            if (string.IsNullOrWhiteSpace(monster2))
+            {
+                EpicMMOSystem.MLLogger.LogWarning($"Monster database {sourceLabel} was empty and has been skipped.");
+                continue;
+            }
+
+            if (EpicMMOSystem.extraDebug.Value)
+                EpicMMOSystem.MLLogger.LogInfo($"Loading monster json {sourceLabel}");
+
+            Monster[] temp;
+            try
+            {
+                temp = JsonConvert.DeserializeObject<Monster[]>(monster2);
+            }
+            catch (Exception ex)
+            {
+                string preview = monster2.Length > 200 ? monster2.Substring(0, 200) + "..." : monster2;
+                EpicMMOSystem.MLLogger.LogWarning($"Failed to parse monster database {sourceLabel}. Expected a JSON array of Monster objects. Preview: {preview}");
+                EpicMMOSystem.MLLogger.LogWarning(ex.ToString());
+                continue;
+            }
+
+            if (temp == null || temp.Length == 0)
+            {
+                EpicMMOSystem.MLLogger.LogWarning($"Monster database {sourceLabel} did not contain any monsters and has been skipped.");
+                continue;
+            }
+
+            foreach (var monster in temp)
+            {
+                if (string.IsNullOrWhiteSpace(monster.name))
+                {
+                    EpicMMOSystem.MLLogger.LogWarning($"Monster database {sourceLabel} contains an entry with no name and it has been skipped.");
+                    continue;
+                }
+
+                if (EpicMMOSystem.extraDebug.Value)
+                    EpicMMOSystem.MLLogger.LogInfo($"{monster.name}");
+
+                string key = $"{monster.name}(Clone)";
+                if (dictionary.ContainsKey(key))
+                {
+                    EpicMMOSystem.MLLogger.LogWarning($"{monster.name} from {sourceLabel} is already entered");
+                }
+                else
+                {
+                    dictionary.Add(key, monster);
+                }
+            }
+        }
+        // Ours. Without this, the only way to tell whether a creature is worth XP is to kill one:
+        // a creature missing from every table silently awards nothing.
+        EpicMMOSystem.MLLogger.LogInfo($"{json.Count} mob-XP table(s) loaded, covering {dictionary.Count} creatures");
+        ReportTablesAgainstPrefabs();
+    }
+
+    /// <summary>
+    /// Ours. Names the table entries this world has no prefab for. Runs once the prefab scene
+    /// exists and again on every reload after that, because either can come first.
+    /// </summary>
+    public static void ReportTablesAgainstPrefabs()
+    {
+        if (ZNetScene.instance == null || dictionary.Count == 0) return;
+
+        int matched = 0;
+        List<string> unknown = new();
+        foreach (string key in dictionary.Keys)
+        {
+            // Keys are stored as "<prefab>(Clone)", the name a spawned creature reports.
+            string prefab = key.Substring(0, key.Length - "(Clone)".Length);
+            if (ZNetScene.instance.GetPrefab(prefab) != null)
+            {
+                matched++;
+            }
+            else
+            {
+                unknown.Add(prefab);
+            }
+        }
+
+        EpicMMOSystem.MLLogger.LogInfo($"{matched} of {dictionary.Count} table entries match a prefab in this world");
+        if (unknown.Count > 0)
+        {
+            EpicMMOSystem.MLLogger.LogWarning($"No prefab for {unknown.Count} table entr(ies), which can never award XP: {string.Join(", ", unknown)}");
+        }
+    }
+
+
+    public static void setplayeralivetoZero(string playerset)
+    {
+        //dictionaryPlayer[playerset].daysAlive = 0;
+    }
+
+    public static void createUpdateDataPlayer(List<string> json)
+    {
+        /*
+        if (EpicMMOSystem.extraDebug.Value)
+            EpicMMOSystem.MLLogger.LogInfo($"/n Player json Updating /n");
+        var json2 = json[0];
+        //var temp = JsonUtility.FromJson<Monster[]>(monster2);
+        var temp = JsonConvert.DeserializeObject<PlayerXP[]>(json2);
+        foreach (var monster in temp)
+        {
+            string name = monster.name;//.ToUpper(); // players name always uppper
+            if (EpicMMOSystem.extraDebug.Value)
+                EpicMMOSystem.MLLogger.LogInfo($"{name}");
+
+
+            if (dictionaryPlayer.ContainsKey(name))
+            {
+                dictionaryPlayer[name] = monster;
+            }
+            else
+                dictionaryPlayer.Add($"{name}", monster);
+
+        }       
+        */
+    }
+
+    public static void Init()
+    {
+        var versionpath = Path.Combine(Paths.ConfigPath, EpicMMOSystem.ModName, $"Version.txt");
+        var folderpath = Path.Combine(Paths.ConfigPath, EpicMMOSystem.ModName);
+        //var folderpathbackup = Path.Combine(Paths.ConfigPath, EpicMMOSystem.ModName +"_backup");
+        var warningtext = Path.Combine(Paths.ConfigPath, EpicMMOSystem.ModName, $"If you want to stop from updating.txt");
+        // The mob-XP tables this fork ships, deployed into BepInEx/config/EpicMMOSystem/ on first
+        // boot and read back from there. Upstream embedded 27, all but two of them for mods this
+        // server does not run (RtD, Monstrum, MonsterLabZ, Jewelcrafting, Therzie, ...); those
+        // tables can never match a creature here, and every one of them is a file an admin has to
+        // read past. Adding a mod means adding its table back — see UPSTREAM.md.
+        string[] tables = { "Default.json", "NonCombat.json" };
+
+
+        var badfile = "MonsterLabZ.json";
+        var badfilepath = Path.Combine(folderpath, badfile);
+
+
+
+        if (!Directory.Exists(folderpath)){
+            Directory.CreateDirectory(folderpath);
+        }
+        var cleartowrite = true;
+        if (File.Exists(versionpath))
+        {
+            //MonsterDB = File.ReadAllText(path);
+            var filev = File.ReadAllText(versionpath);
+            cleartowrite = false; // default is false because it exists in the first place
+           
+            if (filev == "1.7.3")
+                cleartowrite = true;            
+            if (filev == "1.7.4")
+                cleartowrite = true;            
+            if (filev == "1.7.5")
+                cleartowrite = true;            
+            if (filev == "1.7.6")
+                cleartowrite = true;            
+            if (filev == "1.7.7")
+                cleartowrite = true;
+            if (filev == "1.7.8")
+                cleartowrite = true;            
+            if (filev == "1.7.9")
+                cleartowrite = true;
+            if (filev == "1.8.7")
+                cleartowrite = true;
+            if (filev == "1.8.8")
+                cleartowrite = true;
+            if (filev == "1.8.97")
+                cleartowrite = true;            
+            if (filev == "1.9.02")
+                cleartowrite = true;            
+            if (filev == "1.9.12")
+                cleartowrite = true;        
+            if (filev == "1.9.20")
+                cleartowrite = true;            
+            if (filev == "1.9.21")
+                cleartowrite = true;            
+            if (filev == "1.9.23")
+                cleartowrite = true;            
+            if (filev == "1.9.30")
+                cleartowrite = true;
+            if (filev == "1.9.32")           
+                cleartowrite = true;           
+            if (filev == "1.9.35")           
+                cleartowrite = true;
+            if (filev == "1.9.38")           
+                cleartowrite = true;
+            if (filev == "1.9.47")           
+                cleartowrite = true;
+            if (filev == "1.9.49")           
+                cleartowrite = true;
+            if (filev == "1.9.51")           
+                cleartowrite = true;
+            if (filev == "1.9.55")           
+                cleartowrite = true;
+
+
+            if (File.Exists(badfilepath))
+            {
+                File.Delete(badfilepath);
+            }
+
+                        
+
+            if (filev == "1.9.60") // last version to get a DB update
+                cleartowrite = false;
+
+            if (filev == "NO" || filev == "no" || filev == "No" || filev == "STOP" || filev == "stop" || filev == "Stop")
+            {// don't update
+                cleartowrite = false;
+            }
+
+        }
+        if (cleartowrite)
+        {
+            //list.Clear();
+            File.WriteAllText(versionpath, "1.9.60"); // Write Version file, don't auto update
+
+            File.WriteAllText(warningtext, "Erase numbers in Version.txt and write NO or stop in file. This should stop DB json files from updating on an update. If you make your own custom json file, then that one should never be updated.");
+
+            foreach (string table in tables)
+            {
+                File.WriteAllText(Path.Combine(folderpath, table), getDefaultJsonMonster(table));
+            }
+
+
+
+            if (EpicMMOSystem.extraDebug.Value)
+                EpicMMOSystem.MLLogger.LogInfo($"Mobs Jsons Written");
+        }
+        /*
+        if (!File.Exists(EpicMMOSystem.playerspath))
+        {
+            File.WriteAllText(EpicMMOSystem.playerspath, getDefaultJsonMonster(EpicMMOSystem.playerjson));
+        } */ 
+        List<string> list = new List<string>();
+        List<string> sources = new List<string>();
+        foreach (string file in Directory.GetFiles(folderpath, "*.json", SearchOption.AllDirectories))
+        {
+            var nam = Path.GetFileName(file);
+            if (nam == EpicMMOSystem.playerjson)
+                continue;
+
+            if (EpicMMOSystem.extraDebug.Value)
+                EpicMMOSystem.MLLogger.LogInfo(nam + " read");
+
+            var temp = File.ReadAllText(file);
+            list.Add(temp);
+            sources.Add(nam);
+            MonsterDB += temp;
+           
+        }
+        if (EpicMMOSystem.extraDebug.Value)
+            EpicMMOSystem.MLLogger.LogInfo($"Mobs Read");
+
+        MonsterDBL = list;
+        createNewDataMonsters(list, sources);
+        
+    }
+
+    private static string getDefaultJsonMonster(string jsonname)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        string resourceName = assembly.GetManifestResourceNames()
+            .Single(str => str.EndsWith(jsonname));
+
+        using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+        using (StreamReader reader = new StreamReader(stream))
+        {
+            return reader.ReadToEnd();
+        }
+    }
+    
+    [HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))] // clients
+    private static class ZrouteMethodsServerFeedback
+    {
+        private static void Postfix()
+        {
+            if (EpicMMOSystem._isServer)
+            {
+                ZRoutedRpc.instance.Register($"{EpicMMOSystem.ModName} ReloadJsons",
+                 new Action<long, bool>(ReloadJsons));
+
+            }
+            else
+            {
+                ZRoutedRpc.instance.Register($"{EpicMMOSystem.ModName} SetMonsterDB",
+                    new Action<long, List<string>>(SetMonsterDB));                
+                
+            }
+
+            // Ours: the tables are loaded before the prefabs exist, so this is the first moment
+            // the mismatch between them can be reported.
+            ReportTablesAgainstPrefabs();
+        }
+    }
+    public static void ReloadJsons(long peer, bool reload)
+    {
+        List<string> list = new List<string>();
+        List<string> sources = new List<string>();
+        foreach (string file in Directory.GetFiles(EpicMMOSystem.folderpath, "*.json", SearchOption.AllDirectories))
+        {
+            var nam = Path.GetFileName(file);
+            if (nam == EpicMMOSystem.playerjson)
+                continue;
+
+            if (EpicMMOSystem.extraDebug.Value)
+                EpicMMOSystem.MLLogger.LogInfo(nam + " read");
+
+            var temp = File.ReadAllText(file);
+            list.Add(temp);
+            sources.Add(nam);
+
+        }
+        if (EpicMMOSystem.extraDebug.Value)
+            EpicMMOSystem.MLLogger.LogInfo($"Mobs Updated on Server");
+
+        DataMonsters.MonsterDBL = list;
+
+        createNewDataMonsters(list, sources); // could update coop
+
+        List<ZNetPeer> peers2 = ZNet.instance.GetPeers();
+        foreach (var peer1 in peers2)
+        {
+            if (peer1 == null) return;
+            ZRoutedRpc.instance.InvokeRoutedRPC(peer1.m_uid, $"{EpicMMOSystem.ModName} SetMonsterDB", MonsterDBL); //sync list
+        }
+    }
+
+
+    public static void SetMonsterDB(long peer, List<string> json)
+    {
+        createNewDataMonsters(json);
+    }
+
+
+    [HarmonyPatch(typeof(ZNet), "RPC_PeerInfo")]
+    private static class ZnetSyncServerInfo
+    {
+        private static void Postfix(ZRpc rpc) // for server
+        {
+            if (!EpicMMOSystem._isServer) return; // doesn't work on Coop
+            //if (!(ZNet.instance.IsServer() && ZNet.instance.IsDedicated())) return;
+            ZNetPeer peer = ZNet.instance.GetPeer(rpc);
+            if(peer == null) return;
+            ZRoutedRpc.instance.InvokeRoutedRPC(peer.m_uid, $"{EpicMMOSystem.ModName} SetMonsterDB", MonsterDBL); //sync list
+        }
+    }
+
+    // [HarmonyPatch(typeof(Character), nameof(Character.GetHoverName))]
+    // [HarmonyPriority(Priority.First)]
+    // public static class MonsterColorText
+    // {
+    //     public static void Postfix(Character __instance, ref string __result)
+    //     {
+    //         if (!contains(__instance.gameObject.name)) return;
+    //         int maxLevelExp = LevelSystem.Instance.getLevel() + EpicMMOSystem.maxLevelExp.Value;
+    //         int minLevelExp = LevelSystem.Instance.getLevel() + EpicMMOSystem.minLevelExp.Value;
+    //         int monsterLevel = getLevel(__instance.gameObject.name);
+    //         if (monsterLevel > maxLevelExp)
+    //         {
+    //             __result = $"<color=red>{__result} [{monsterLevel}]</color>";
+    //         } else if (monsterLevel < minLevelExp)
+    //         {
+    //             __result = $"<color=#2FFFDC>{__result} [{monsterLevel}]</color>";
+    //         }
+    //         else
+    //         {
+    //             __result = $"{__result} [{monsterLevel}]";
+    //         }
+    //     }
+    // }
+
+
+
+
+    [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.ShowHud))]
+    [HarmonyPriority(1)] //almost last
+    public static class MonsterColorTexts
+    {
+        public static void Postfix(EnemyHud __instance, Character c, Dictionary<Character, EnemyHud.HudData> ___m_huds, bool __state)
+        {
+            try { if (c.m_tamed) return; } catch { } // might remove this in future so tames can give xp ect
+
+            //if (___m_huds)
+            
+            if (c.IsPlayer() && ___m_huds[c].m_gui != null && EpicMMOSystem.displayUIString.Value) // player pvp
+            {
+                GameObject hudBase = ___m_huds[c].m_gui;
+                TextMeshProUGUI playerName = hudBase.transform.Find("Name").GetComponent<TextMeshProUGUI>();
+
+
+                if (hudBase.transform.Find("mmoname")?.gameObject is not { } mmonameObject)
+                {
+                    mmonameObject = new GameObject("mmoname", typeof(RectTransform));
+                    mmonameObject.transform.SetParent(hudBase.transform, false);
+                    ((RectTransform)mmonameObject.transform).sizeDelta = hudBase.transform.Find("Name").GetComponent<RectTransform>().sizeDelta + new Vector2(0, EpicMMOSystem.displayUIStringYPosition.Value);  // new UnityEngine.Vector2(300, -18);
+                    TextMeshProUGUI MMOnametext = mmonameObject.AddComponent<TextMeshProUGUI>();
+                    EnsureHudFont(MMOnametext, playerName);
+                    MMOnametext.fontSize = 16;
+                    MMOnametext.alignment = playerName.alignment;
+                   
+                    //Outline outline = mmonameObject.AddComponent<Outline>();
+                    //outline.effectColor = Color.black;
+                    //outline.effectDistance = new UnityEngine.Vector2(1, -1);
+                }
+
+                TextMeshProUGUI MMONameText = mmonameObject.GetComponent<TextMeshProUGUI>();
+                EnsureHudFont(MMONameText, playerName);
+                RectTransform nameTransform = playerName.GetComponent<RectTransform>();
+                UnityEngine.Vector2 namePrivot = nameTransform.pivot;
+
+                int level = 1;
+                int daysalive = 0;
+                int maxLevelExpplayer = LevelSystem.Instance.getLevel() + EpicMMOSystem.maxLevelExp.Value;
+                int minLevelExpplayer = LevelSystem.Instance.getLevel() - EpicMMOSystem.minLevelExp.Value;
+
+                Player targetPlayer = c as Player;
+                var targetZdo = targetPlayer?.m_nview?.GetZDO();
+                if (targetZdo != null)
+                {
+                    daysalive = targetZdo.GetInt(EpicMMOSystem.ModName + EpicMMOSystem.PlayerAliveString, -1);
+                    if (daysalive == -1)
+                    {
+                        EpicMMOSystem.MLLogger.LogWarning("Days alive not found" + daysalive + " for player " + c.GetHoverName());
+                        daysalive = 0;
+                    }
+
+                    level = targetZdo.GetInt($"{EpicMMOSystem.ModName}_level", 1);
+                }
+
+                int monsterLevelplayer = level;
+                Color color2 = monsterLevelplayer > maxLevelExpplayer ? Color.red : Color.white;
+                if (monsterLevelplayer < minLevelExpplayer) color2 = Color.cyan;
+
+                string levelstring = "";
+                string xpstring = "";
+                string daysstring = "";
+                int xpworth = (level * EpicMMOSystem.xpPerLevelPVP.Value) + (daysalive * EpicMMOSystem.xpPerDayNotDead.Value);
+
+                levelstring = EpicMMOSystem.displayPlayerLevel.Value;
+                levelstring = levelstring.Replace("@", level.ToString());
+
+                xpstring = EpicMMOSystem.displayPlayerXP.Value;
+                xpstring = xpstring.Replace("@", xpworth.ToString());
+
+                daysstring = EpicMMOSystem.displayDaysAlive.Value;
+                daysstring = daysstring.Replace("@", daysalive.ToString());
+
+                namePrivot.y = 0.2f;
+                mmonameObject.GetComponent<TextMeshProUGUI>().text = levelstring + xpstring + daysstring;
+                nameTransform.pivot = namePrivot;
+
+            } // end player search
+
+          
+
+            if (!EpicMMOSystem.enabledLevelControl.Value) return;
+            if (!contains(c.gameObject.name)) return;
+            Transform go = ___m_huds[c].m_gui.transform.Find("Name/Name(Clone)");
+            if (go) return;
+            int maxLevelExp = LevelSystem.Instance.getLevel() + EpicMMOSystem.maxLevelExp.Value;
+            int minLevelExp = LevelSystem.Instance.getLevel() - EpicMMOSystem.minLevelExp.Value;
+            int monsterLevel = getLevel(c.gameObject.name);
+            if (EpicMMOSystem.mobLvlPerStar.Value)
+                monsterLevel = monsterLevel + c.m_level - 1;
+
+            GameObject component = ___m_huds[c].m_gui.transform.Find("Name").gameObject;
+            //var textspace = component.GetComponent<Text>().text;
+            //component.GetComponent<Text>().text = " "+ textspace + " "; // add some spacing for single letter names
+            GameObject levelName = Object.Instantiate(component, component.transform);
+            EnsureHudFont(levelName.GetComponent<TextMeshProUGUI>(), component.GetComponent<TextMeshProUGUI>());
+            levelName.GetComponent<RectTransform>().anchoredPosition = EpicMMOSystem.MobLevelPosition.Value;
+            if (c.m_boss)
+            {
+                levelName.GetComponent<RectTransform>().anchoredPosition = EpicMMOSystem.BossLevelPosition.Value;
+            }
+            string stringtolvl = EpicMMOSystem.MobLVLChars.Value;
+            string moblvlstring = monsterLevel.ToString();
+            Color color = monsterLevel > maxLevelExp ? Color.red : Color.white;
+            if (monsterLevel < minLevelExp) color = Color.cyan;
+            if (getLevel(c.gameObject.name) == 0)
+            {
+                moblvlstring = "???";
+                color = Color.yellow;
+            }
+            stringtolvl = stringtolvl.Replace("@", moblvlstring); // not sure how fast this is
+                                                                 // levelName.GetComponent<TextMeshProUGUI>().horizontalOverflow = UnityEngine.HorizontalWrapMode.Overflow; 
+            levelName.GetComponent<TextMeshProUGUI>().overflowMode = TextOverflowModes.Overflow;
+            levelName.AddComponent<ContentSizeFitter>().SetLayoutHorizontal();
+            levelName.GetComponent<TextMeshProUGUI>().text = stringtolvl;
+            component.GetComponent<TextMeshProUGUI>().color = color;
+            levelName.GetComponent<TextMeshProUGUI>().color = color;
+            if (___m_huds[c].m_gui.transform.Find("extraeffecttext"))
+            {
+                ___m_huds[c].m_gui.transform.Find("extraeffecttext").TryGetComponent<TextMeshProUGUI>(out var hi);
+                if (hi != null)
+                {
+                    hi.color = color;
+                }
+            }
+        }
+        
+        [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.UpdateHuds))]
+        public static class StarVisibilityMMO
+        {
+            private static void Postfix(Dictionary<Character, EnemyHud.HudData> ___m_huds)
+            {
+                if (___m_huds == null) return;
+                //if (EpicMMOSystem.CLLCLoaded) return;
+       
+                foreach (KeyValuePair<Character, EnemyHud.HudData> keyValuePair in ___m_huds)
+                {
+                    /*
+                    if (keyValuePair.Key.IsPlayer() && keyValuePair.Value.m_gui != null) // player pvp
+                    {
+                        int level = 1;
+                        int daysalive = 0;
+                        int maxLevelExp = LevelSystem.Instance.getLevel() + EpicMMOSystem.maxLevelExp.Value;
+                        int minLevelExp = LevelSystem.Instance.getLevel() - EpicMMOSystem.minLevelExp.Value;
+                        GameObject component = keyValuePair.Value.m_gui.transform.Find("Name").gameObject;
+                        string namesearch = keyValuePair.Key.GetHoverName();
+
+                        var playerlist2 = Player.GetAllPlayers();
+                        foreach (var pla in playerlist2)
+                        {
+                            if (pla.GetPlayerName() == namesearch)
+                            {                             
+                                var zdopla = pla.m_nview.GetZDO();
+                                daysalive = zdopla.GetInt(EpicMMOSystem.ModName + EpicMMOSystem.PlayerAliveString, -1);
+                                if (daysalive == -1)
+                                {
+                                    EpicMMOSystem.MLLogger.LogWarning("Days alive not found" + daysalive + " for player "+ namesearch);
+                                    daysalive = 0;
+                                }
+                                level = zdopla.GetInt($"{EpicMMOSystem.ModName}_level", 1);
+                                break;
+                            }
+                        }
+
+                        int monsterLevel = level;
+                        Color color = monsterLevel > maxLevelExp ? Color.red : Color.white;
+                        if (monsterLevel < minLevelExp) color = Color.cyan;
+
+                        string levelstring = "";
+                        string xpstring = "";
+                        string daysstring = "";
+                        int xpworth = (level * EpicMMOSystem.xpPerLevelPVP.Value) + (daysalive * EpicMMOSystem.xpPerDayNotDead.Value);
+
+                        levelstring = EpicMMOSystem.displayPlayerLevel.Value;
+                        levelstring = levelstring.Replace("@", level.ToString());
+
+                        xpstring = EpicMMOSystem.displayPlayerXP.Value;
+                        xpstring = xpstring.Replace("@", xpworth.ToString());
+
+                        daysstring = EpicMMOSystem.displayDaysAlive.Value;
+                        daysstring = daysstring.Replace("@", daysalive.ToString());
+
+                        component.GetComponent<TextMeshProUGUI>().text = levelstring + keyValuePair.Key.GetHoverName() + xpstring + daysstring;
+                   
+                                             
+                    }  */  // end player search
+
+                    if (!EpicMMOSystem.enabledLevelControl.Value) continue;
+
+                    Character key = keyValuePair.Key;
+                    if (key.IsTamed()) return;
+                    if (key != null && keyValuePair.Value.m_gui)
+                    {
+                        if (!contains(key.gameObject.name)) return;
+
+                        //key.IsPlayer();
+                        int maxLevelExp = LevelSystem.Instance.getLevel() + EpicMMOSystem.maxLevelExp.Value;
+                        int minLevelExp = LevelSystem.Instance.getLevel() - EpicMMOSystem.minLevelExp.Value;
+                        int monsterLevel = getLevel(key.gameObject.name);
+                        if (EpicMMOSystem.mobLvlPerStar.Value)
+                            monsterLevel = monsterLevel + key.m_level - 1;
+
+                        string mobLevelString = monsterLevel.ToString();
+                        Color color = monsterLevel > maxLevelExp ? Color.red : Color.white;
+                        if (monsterLevel < minLevelExp) color = Color.cyan;
+                        if (getLevel(key.gameObject.name) == 0)
+                        {
+                            mobLevelString = "???";
+                            color = Color.yellow;
+                        }
+                        Transform transform = keyValuePair.Value.m_gui.transform.Find("Name/Name(Clone)");
+                        if (transform != null)
+                        {
+                            transform.gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            GameObject component = keyValuePair.Value.m_gui.transform.Find("Name").gameObject;
+                            transform = Object.Instantiate(component, component.transform).transform;
+                            EnsureHudFont(transform.GetComponent<TextMeshProUGUI>(), component.GetComponent<TextMeshProUGUI>());
+                            transform.GetComponent<RectTransform>().anchoredPosition = new Vector2(37, -30);
+                            transform.GetComponent<TextMeshProUGUI>().fontSize = 13;
+                            transform.GetComponent<TextMeshProUGUI>().text = $"[{mobLevelString}]";
+                        }
+                        transform.GetComponent<TextMeshProUGUI>().color = color;
+                        keyValuePair.Value.m_gui.transform.Find("Name").GetComponent<TextMeshProUGUI>().color = color;
+                       if (keyValuePair.Value.m_gui.transform.Find("extraeffecttext")) // for cllc extra components
+                        {
+                            keyValuePair.Value.m_gui.transform.Find("extraeffecttext").TryGetComponent<TextMeshProUGUI>(out var hi);
+                            if (hi != null) // null check if not set
+                            {
+                                hi.color = color;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    [HarmonyPatch(typeof(CharacterDrop), nameof(CharacterDrop.GenerateDropList))]
+    public static class MonsterDropGenerate
+    {
+        [HarmonyPriority(1)] // maybe stop epic loot? Last is 0, so 1 will be almost last for any other mod
+
+        static void DropItem(GameObject prefab, Vector3 centerPos, float dropArea)  // Thx KG
+        {
+            Quaternion rotation = Quaternion.Euler(0f, (float)UnityEngine.Random.Range(0, 360), 0f);
+            Vector3 b = UnityEngine.Random.insideUnitSphere * dropArea;
+            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(prefab, centerPos + b, rotation);
+            Rigidbody component = gameObject.GetComponent<Rigidbody>();
+            if (component)
+            {
+                Vector3 insideUnitSphere = UnityEngine.Random.insideUnitSphere;
+                if (insideUnitSphere.y < 0f)
+                {
+                    insideUnitSphere.y = -insideUnitSphere.y;
+                }
+
+                component.AddForce(insideUnitSphere * 5f, ForceMode.VelocityChange);
+            }
+        }
+
+        public static void Postfix(CharacterDrop __instance, ref List<KeyValuePair<GameObject, int>> __result)
+        {
+            if (__instance.m_character.IsTamed() ) return;
+            // 1.0 turned EnvMan.m_currentBiome from a Heightmap.Biome into a BiomeSector that
+            // carries one; a sector is null before the first environment update.
+            Heightmap.Biome biome = EnvMan.instance.m_currentBiome?.Biome ?? Heightmap.Biome.None;
+
+            float rand = Random.value;
+            var dropChance = __instance.m_character.IsBoss() ? EpicMMOSystem.OrbDropChancefromBoss.Value : EpicMMOSystem.OrbDropChance.Value;
+            var isBoss = __instance.m_character.IsBoss(); // could remove extra code
+
+
+            // clear to add Magic orbs now // always orb chance
+            if (OrbsByBiomes.TryGetValue(biome, out var orb) && rand <= dropChance / 100f)
+            {
+                if (isBoss)
+                {
+                    for (int i = 0; i < Random.Range(1, EpicMMOSystem.OrdDropMaxAmountFromBoss.Value); i++) // random amount 1-4
+                    {
+                        DropItem(orb, __instance.transform.position + Vector3.up * 0.75f, 0.5f);
+                    }
+                }
+                else
+                {
+                    DropItem(orb, __instance.transform.position + Vector3.up * 0.75f, 0.5f);
+                }
+            }
+
+            if (EpicMMOSystem.enabledLevelControl.Value && (EpicMMOSystem.removeDropMax.Value || EpicMMOSystem.removeDropMin.Value || EpicMMOSystem.removeBossDropMax.Value || EpicMMOSystem.removeBossDropMin.Value || EpicMMOSystem.removeAllDropsFromNonPlayerKills.Value))
+            {
+                var playerLevel = __instance.m_character.m_nview.GetZDO().GetInt("epic playerLevel");
+
+                if (playerLevel == 1000512)
+                {
+                    if (EpicMMOSystem.removeAllDropsFromNonPlayerKills.Value)
+                    {
+                        if (contains(__instance.m_character.gameObject.name))
+                        {
+                            __result = new(); // no drops from charcter related objects
+                        }
+                    }
+                    playerLevel = 0;
+                }
+
+                if (!contains(__instance.m_character.gameObject.name)) return;
+                if (playerLevel != 0)
+                {                
+                    // could just use isBoss above
+                    var Regmob = true;
+                    if (EpicMMOSystem.extraDebug.Value)
+                        EpicMMOSystem.MLLogger.LogInfo("Player level " + playerLevel);
+                    if (playerLevel > 0) // postive so boss
+                    {
+                        Regmob = false;
+                    }
+                    else // reg mobs
+                    {
+                        Regmob = true;
+                        playerLevel = -playerLevel;
+                    }
+
+                    int maxLevelExp = playerLevel + EpicMMOSystem.maxLevelExp.Value;
+                    int minLevelExp = playerLevel - EpicMMOSystem.minLevelExp.Value;
+                    
+                    //int monsterLevel = getLevel(__instance.m_character.gameObject.name) + __instance.m_character.m_level - 1; // fuck!
+
+                    int monsterLevel = DataMonsters.getLevel(__instance.m_character.gameObject.name);
+
+                    if (EpicMMOSystem.mobLvlPerStar.Value)
+                    {
+                        monsterLevel = monsterLevel + __instance.m_character.m_level - 1;
+                    }
+
+                    if (getLevel(__instance.m_character.gameObject.name) == 0)
+                        return;
+
+                    if ((monsterLevel > maxLevelExp) && (EpicMMOSystem.removeBossDropMax.Value && !Regmob || EpicMMOSystem.removeDropMax.Value && Regmob))
+                    {
+                        __result = new();
+                        return;
+                    }
+                    if ((monsterLevel < minLevelExp) && (EpicMMOSystem.removeBossDropMin.Value && !Regmob || EpicMMOSystem.removeDropMin.Value && Regmob))
+                    {
+                        __result = new();
+                        return;
+                    }
+                }
+            }
+
+        }
+    }
+}
