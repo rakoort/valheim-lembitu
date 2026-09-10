@@ -299,6 +299,16 @@ rm -f "$LOCK"   # same version, different bytes: the lock would refuse it before
 make_pkg acme Root 2.0.0
 if ! run_stage && grep -q 'declares weird-Team-Missing-1.0' "$WORK/out"; then
   report ok "a dependency outside the pin list and the overrides aborts staging"
+else
+  report fail "a dependency outside the pin list and the overrides aborts staging"
+fi
+
+printf 'acme-Root-2.0\n' > "$WORK/pkg-deps"   # a prefix of pin 2.0.0, not the pin
+make_pkg acme Root 2.0.0
+if ! run_stage && grep -q 'declares acme-Root-2.0,' "$WORK/out"; then
+  report ok "a dependency version that is only a prefix of a pin is refused"
+else
+  report fail "a dependency version that is only a prefix of a pin is refused"
 fi
 
 # --- 8. unexpected package shapes abort before anything is staged ------------------------------

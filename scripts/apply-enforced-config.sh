@@ -70,9 +70,12 @@ merge_cfg() {
 # changed is decided by comparing bytes, not by trusting a rewrite: an enforced value that is
 # already in effect must not be reported as set, or idempotence is invisible.
 apply_entry() {
-  local file=$1 section=$2 key=$3 value=$4 tmp
+  local file=$1 section=$2 key=$3 value=$4 tmp rc=0
   tmp="$file.lembitu-merge"
-  if awk -v sec="[$section]" -v key="$key" -v val="$value" '
+  # Exit 3 is the program's own "key absent" sentinel; any other failure (unreadable file, broken
+  # awk) must die rather than be read as absent, or the append path would write a duplicate key
+  # and silently un-do the enforcement.
+  awk -v sec="[$section]" -v key="$key" -v val="$value" '
     BEGIN { insec = 0; done = 0 }
     /^\[/ { insec = ($0 == sec) ? 1 : 0; print; next }
     !done && insec && index($0, "=") > 0 {
@@ -82,18 +85,17 @@ apply_entry() {
     }
     { print }
     END { exit done ? 0 : 3 }
-  ' "$file" > "$tmp"; then
-    if cmp -s "$file" "$tmp"; then
-      rm -f "$tmp"
-    else
-      mv "$tmp" "$file"
-      echo "set $(basename "$file") [$section] $key = $value"
-      changed=1
-    fi
-    return 0
+  ' "$file" > "$tmp" || rc=$?
+  [[ $rc == 0 || $rc == 3 ]] || { rm -f "$tmp"; die "awk failed ($rc) rewriting $file"; }
+  if [[ $rc == 3 ]]; then rm -f "$tmp"; return 1; fi
+  if cmp -s "$file" "$tmp"; then
+    rm -f "$tmp"
+  else
+    mv "$tmp" "$file"
+    echo "set $(basename "$file") [$section] $key = $value"
+    changed=1
   fi
-  rm -f "$tmp"
-  return 1
+  return 0
 }
 
 # --- walk the overlay -------------------------------------------------------------------------

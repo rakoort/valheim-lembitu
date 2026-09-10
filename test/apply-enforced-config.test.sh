@@ -18,17 +18,6 @@ report() {
   [ "$1" = ok ] && pass=$((pass + 1)) || fail=$((fail + 1))
 }
 
-# assert_eq <want> <got> <description>
-assert_eq() {
-  if [[ "$1" == "$2" ]]; then return 0; fi
-  printf '  want: %s\n  got:  %s\n' "$1" "$2" >&2
-  return 1
-}
-
-write_file() {  # write_file <file> <bytes>
-  printf '%s' "$2" > "$1"
-}
-
 OVERLAY="$WORK/enforced"
 CFG="$WORK/config"
 mkdir -p "$OVERLAY" "$CFG"
@@ -81,11 +70,6 @@ fi
 
 # --- 3. a key the mod never generated is appended under its section ----------------------------
 
-cat >> "$OVERLAY/mod.cfg" <<'EOF'
-[1 - General]
-New Key We Decided On = 7
-EOF
-rm "$OVERLAY/mod.cfg"  # rebuild the overlay: only the appended case
 cat > "$OVERLAY/mod.cfg" <<'EOF'
 [1 - General]
 New Key We Decided On = 7

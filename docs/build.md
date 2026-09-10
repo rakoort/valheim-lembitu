@@ -11,9 +11,10 @@ a .NET Framework 4.7.2 assembly because the game runs Unity's Mono runtime.
 | `src/forks/<Name>/` | Forks of third-party mods, one directory each, each with an `UPSTREAM.md` recording origin, version, licence and our changes. See `src/forks/README.md`. |
 | `lib/valheim/` | Game reference assemblies, extracted from a local install. Not committed. |
 | `lib/bepinex/` | BepInEx assemblies to compile against, plus the full pack in `lib/bepinex/pack/`. Not committed. |
-| `dist/plugins/` | Installer source: our plugin DLLs plus staged mod trees. Not committed. |
-| `scripts/` | Reference extraction, plugin install, test server. |
-| `test/` | Behaviour tests for the scripts. `test/install-plugins.test.sh` runs standalone. |
+| `dist/` | Installer source, mirroring the target BepInEx directory: `plugins/` with our DLLs and staged mod trees, `patchers/`, `config/` seeds. Not committed. |
+| `config/enforced/` | The enforced server config, applied onto mod-generated configs. Committed. |
+| `scripts/` | Reference extraction, stack staging, plugin install, enforced config, test server, plus `lib/` helpers shared between them. |
+| `test/` | Behaviour tests for the scripts; each `test/*.test.sh` runs standalone. |
 
 Game and BepInEx binaries are never committed. `scripts/extract-refs.sh` reproduces them.
 

@@ -3,8 +3,11 @@
 # whole stack in one run (#25). docs/modstack.md is the only place a version is written by hand;
 # this script reads it, so the pin list cannot drift between the docs and what we install.
 #
-#   scripts/stage-stack.sh [--refresh]
-#   scripts/stage-stack.sh --list
+#   scripts/stage-stack.sh [--refresh] [--pins <modstack.md>] [--cache <dir>] [--dist <dir>]
+#                          [--lock <modstack.lock.json>]
+#   scripts/stage-stack.sh --list [same flags]   print the parsed pins, no downloads
+#
+# The flags exist for the tests; day to day the defaults below are what you want.
 #
 # A Thunderstore package becomes one self-contained directory in dist/, because BepInEx loads DLLs
 # from subdirectories and a mod's assets (Jotunn localization .yml, bundle manifests) resolve
@@ -112,7 +115,9 @@ dependency_satisfied() {  # dependency_satisfied <team-Mod-version> <pins-tsv>
   team="${dep%%-*}"
   version="${dep##*-}"
   mod="${dep#*-}"; mod="${mod%-*}"
-  grep -qF "$(printf '%s\t%s\t%s' "$team" "$mod" "$version")" "$pins" && return 0
+  # -x anchors the match: an unanchored -F grep would let a prefix version ("2.3") satisfy pin
+  # 2.30.0, and the closure check exists to refuse versions we do not run.
+  grep -qxF "$(printf '%s\t%s\t%s' "$team" "$mod" "$version")" "$pins" && return 0
   grep -qFx -e "$dep" <<<"$KNOWN_OVERRIDES"
 }
 
@@ -123,6 +128,7 @@ dependency_satisfied() {  # dependency_satisfied <team-Mod-version> <pins-tsv>
 # DLL (Jotunn localization, bundle manifests, asset directories): BepInEx loads recursively from
 # plugins/, and a package's assets resolve relative to its DLL.
 map_stage_path() {  # map_stage_path <mod> <zip-entry>
+  local mod=$1 entry=$2
   case "$entry" in
     plugins/*)          printf 'plugins/%s/%s\n' "$mod" "${entry#plugins/}" ;;
     patchers/*)         printf 'patchers/%s/%s\n' "$mod" "${entry#patchers/}" ;;
@@ -180,7 +186,8 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # The stack is 28 packages; far fewer means the table changed shape unnoticed.
+  # A tripwire, not the count: the stack is 28 packages today, and anything far below that means
+  # the table changed shape unnoticed rather than that seven mods were deliberately retired.
   [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 20 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
