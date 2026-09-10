@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Upstream's GUID, unchanged: BepInEx derives the config file name from it, so a server
+         already carrying Azumatt.MaxPlayerCount.cfg keeps its value. -->
+    <PluginGuid>Azumatt.MaxPlayerCount</PluginGuid>
+    <PluginDisplayName>MaxPlayerCount</PluginDisplayName>
+    <!-- The upstream release this port matches, not a version of ours; see UPSTREAM.md. -->
+    <Version>1.2.5</Version>
+    <!-- Upstream predates nullable reference types in this file's style. -->
+    <Nullable>disable</Nullable>
+    <Description>Raises Valheim's ten-player admission limit, and the Steam and PlayFab capacities it advertises, to a configured value.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SteamGameServer.SetMaxPlayerCount, the Steam-advertised capacity. -->
+    <Reference Include="com.rlabrecque.steamworks.net" Private="false">
+      <HintPath>$(ValheimRefDir)com.rlabrecque.steamworks.net.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
