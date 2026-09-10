@@ -183,7 +183,9 @@ to do this. `prune-mirror` replays that list inside the container at the lloesch
 above, removes the directories those removals emptied, and clears the ledger. Run it after the
 container has synced (any restart after the install), or before; both orders end clean. The ledger
 is only spent on a full replay — a removal that fails inside the container aborts the run and
-leaves it pending. The two trees are visible on the existing barebones server on bicep:
+leaves it pending. An emptied directory can survive in the mirror when the container user may not
+write the plugins root itself; it loads nothing and is harmless. The two trees are visible on the
+existing barebones server on bicep:
 
 ```sh
 docker exec valheim-barebones ls /config/bepinex/plugins
