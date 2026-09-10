@@ -105,9 +105,6 @@ Open unknowns to settle in #10, recorded here so they are not rediscovered:
   AdditiveDamageModifier's floor all land on one number; Harmony order decides the result.
 - **Creature level authority.** Character level rewrites star levels; EpicLoot, CreatureManager's
   Karma and #13 all read them.
-- **Asset-bundle deployment** (#28). `scripts/install-plugins.sh` syncs DLLs only, and the
-  container's `rsync` has no `--delete`. MWL AIO needs its manifest and `Bundles/` tree deployed and
-  pruned.
 
 ## Considered and cut
 

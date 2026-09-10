@@ -11,8 +11,9 @@ a .NET Framework 4.7.2 assembly because the game runs Unity's Mono runtime.
 | `src/forks/<Name>/` | Forks of third-party mods, one directory each, each with an `UPSTREAM.md` recording origin, version, licence and our changes. See `src/forks/README.md`. |
 | `lib/valheim/` | Game reference assemblies, extracted from a local install. Not committed. |
 | `lib/bepinex/` | BepInEx assemblies to compile against, plus the full pack in `lib/bepinex/pack/`. Not committed. |
-| `dist/plugins/` | Build output: every plugin DLL, in one place. Not committed. |
+| `dist/plugins/` | Installer source: our plugin DLLs plus staged mod trees. Not committed. |
 | `scripts/` | Reference extraction, plugin install, test server. |
+| `test/` | Behaviour tests for the scripts. `test/install-plugins.test.sh` runs standalone. |
 
 Game and BepInEx binaries are never committed. `scripts/extract-refs.sh` reproduces them.
 
@@ -140,13 +141,17 @@ dotnet build                                        # -> dist/plugins/
 scripts/install-plugins.sh <bepinex-plugins-dir>    # sync into a server
 ```
 
-`scripts/install-plugins.sh` records what it installed in `.lembitu-installed` in the target
-directory, and on the next run deletes DLLs it installed before but no longer builds. Files it did
-not install are never touched.
+The installer deploys *everything* in `dist/plugins/`, preserving relative paths: a DLL at the top
+level lands in the plugins root, a directory lands there as one self-contained tree. It records
+every file it installed in `.lembitu-installed` in the target directory, and on the next run deletes
+what it installed before but no longer finds in `dist/plugins/` — a stale DLL, or a whole stale
+tree, empty directories included. Files it did not install are never touched, and a directory that
+still holds a foreign file survives pruning. `test/install-plugins.test.sh` pins all of this down.
 
 `dist/plugins/` is the installer's source of truth and the build only ever adds to it, so run
 `dotnet clean` (which empties `dist/`) after renaming or deleting a plugin. Otherwise the old DLL is
-still there to install, which is how you end up with two plugins claiming one GUID.
+still there to install, which is how you end up with two plugins claiming one GUID. An empty
+`dist/plugins/` is an error, not "prune everything" — the build may simply not have run.
 
 **The pruning trap.** A server keeps loading a plugin DLL until the file is gone, and
 `lloesche/valheim-server` — the container used for the real server — copies plugins into a *second*
@@ -166,9 +171,19 @@ Consequences:
 - Renaming a plugin DLL leaves the old name behind, so two copies of the same plugin load and
   BepInEx reports a duplicate GUID.
 
-So: remove plugins with `scripts/install-plugins.sh` (it prunes what it owns), and after removing or
-renaming anything, check the server's own plugin directory, not just `/config`. Both trees are
-visible on the existing barebones server on bicep:
+So: remove plugins with `scripts/install-plugins.sh` (it prunes what it owns in the target), then
+clear the container's second copy with `prune-mirror`:
+
+```sh
+scripts/install-plugins.sh prune-mirror <bepinex-plugins-dir> <docker-container>
+```
+
+Install runs append whatever they pruned to `.lembitu-removed` beside the manifest, and remind you
+to do this. `prune-mirror` replays that list inside the container at the lloesche mirror path
+above, removes the directories those removals emptied, and clears the ledger. Run it after the
+container has synced (any restart after the install), or before; both orders end clean. The ledger
+is only spent on a full replay — a removal that fails inside the container aborts the run and
+leaves it pending. The two trees are visible on the existing barebones server on bicep:
 
 ```sh
 docker exec valheim-barebones ls /config/bepinex/plugins
@@ -177,13 +192,27 @@ docker exec valheim-barebones ls /opt/valheim/bepinex/BepInEx/plugins
 
 **Adopted mods are not built here.** Most of what the server runs is upstream, installed at a pinned
 version straight from Thunderstore; `docs/modstack.md` is the pin list, and ADR-0003 says why we
-adopt rather than fork. `scripts/install-plugins.sh` only owns what `dotnet build` produced, so it
-never touches an adopted mod's files — which also means it does not prune them.
+adopt rather than fork. A mod that is just DLLs is dropped straight into `dist/plugins/`; a mod that
+ships a tree is staged as one directory, and then the installer owns it like anything else we
+deploy. More World Locations AIO 5.1.0 is the worked example:
 
-**Asset-bundle trees are not handled yet.** More World Locations AIO ships a bundle manifest and a
-`Bundles/` directory beside its DLL, and the installer syncs single DLLs. Deploying it needs
-directory support in `scripts/install-plugins.sh`, and the pruning trap above then applies to a whole
-tree rather than one file. This blocks world creation (ADR-0009).
+```sh
+curl -fsSL -o /tmp/mwl.zip \
+  "https://thunderstore.io/package/download/warpalicious/More_World_Locations_AIO/5.1.0/"
+unzip -q /tmp/mwl.zip -d /tmp/mwl
+mkdir -p dist/plugins/More_World_Locations_AIO
+cp /tmp/mwl/plugins/Bundles dist/plugins/More_World_Locations_AIO/
+cp /tmp/mwl/More_World_Locations_AIO.dll /tmp/mwl/assetBundleManifest_full \
+   dist/plugins/More_World_Locations_AIO/
+```
+
+The DLL, the bundle manifest and `Bundles/` must sit together — the manifest resolves
+`bundles directory: ./Bundles` relative to itself — and BepInEx loads DLLs from subdirectories, so
+one self-contained tree per mod is the shape to keep. Its libraries (Jotunn, JsonDotNET, YamlDotNet
+at the pins in `docs/modstack.md`) stage the same way. Staging is manual until #25 builds the
+pinned-package fetch; `dotnet clean` does not remove staged trees, so delete a staged mod's
+directory in `dist/plugins/` by hand when retiring it — the installer prunes it from the server on
+the next run.
 
 ## Test server
 
