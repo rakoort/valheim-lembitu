@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.harness</PluginGuid>
+    <Version>0.1.0</Version>
+    <Description>Client-side test harness: joins the test server from a real game client, drives the character through code instead of keystrokes, and logs what the session state proves. Inert unless the client is launched with -lembitu-harness.</Description>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <!-- FejdStartup's name field is a GuiInputField: gui_framework, deriving from TMP_InputField. -->
+    <Reference Include="gui_framework" Private="false">
+      <HintPath>$(ValheimRefDir)gui_framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro" Private="false">
+      <HintPath>$(ValheimRefDir)Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
