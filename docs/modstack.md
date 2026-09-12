@@ -47,9 +47,13 @@ config rather than a player's file.
 
 ## Forks
 
-Upstream has no working 1.0.7 build, so we own these. Each lives in `src/forks/<Name>/` with an
-`UPSTREAM.md` recording the exact commit, the licence and every change; see [build.md](build.md)
-and `../src/forks/README.md`.
+These were forked because upstream had no verified working 1.0.7 build at the time. Each maintained
+fork lives in `src/forks/<Name>/` with an `UPSTREAM.md` recording the exact commit, licence and
+changes; see [build.md](build.md) and `../src/forks/README.md`. ValheimRAFT remains planned.
+
+**2026-09-12 update check:** upstream EpicMMOSystem 1.9.66 now declares 1.0.7 support. It is a
+replacement/rebase candidate, not an adopted pin: our integration removals, fermenter behavior and
+XP-table changes still need comparison. The table below continues to record our fork origins.
 
 | Fork | Forked from | Why | Ticket |
 | --- | --- | --- | --- |
@@ -89,6 +93,31 @@ and never removed during the run (ADR-0009): **More World Locations AIO**, **Max
 
 EpicLoot, ProgressivePowers and the Enchantment-style data our own plugins write are one-way for a
 different reason: removing them destroys player gear or progress rather than corrupting the world.
+
+## Upstream update check — 2026-09-12
+
+All 33 tracked Thunderstore packages were checked: the 28 lock entries, three maintained plugin
+forks, planned ValheimRAFT, and BepInExPack. Eleven have newer releases; 22 remain current.
+Pins above are unchanged. The [complete comparison](https://github.com/rakoort/valheim-lembitu/issues/10#issuecomment-5646354590)
+is recorded on #10; newer releases have not passed the runtime gate below.
+
+| Package | Pin → latest | Relevant change |
+| --- | --- | --- |
+| WackyEpicMMOSystem | 1.9.62 → 1.9.66 | Official 1.0.7 update; compare our custom changes |
+| BoneMod | 1.0.1 → 1.0.2 | Fixes save attempts before local-player creation during join/logout |
+| EpicLoot | 0.14.2 → 0.14.4 | Linux config-sync and data-lookup fixes |
+| PvPBiomeDominions | 1.7.6 → 1.7.7 | Fixes black screen on death |
+| Clan | 1.0.5 → 1.0.7 | Chat, panel, HUD and map-marker fixes |
+| InventorySlots | 1.4.8 → 1.4.10 | Container cursor capture and requirement-display fixes |
+| DataForge | 1.3.2 → 1.3.3 | Build-category discovery and duplicate fixes |
+| STU_Ward | 1.3.11 → 1.3.12 | UI fixes |
+| VeiledRecipes | 1.1.3 → 1.1.4 | Hammer silhouette rendering fix |
+| PortalRules | 1.0.4 → 1.0.5 | Fare calculation changes; fares disabled here |
+| Groundwork | 1.1.8 → 1.1.9 | Targets a **1.0.12** field-to-property change; do not blindly adopt on 1.0.7 |
+
+Fast_AssetBundle_Loader remains 1.0.7; no newer package fixes the observed Linux `DriveInfo` failure.
+ServerSync v1.20 says “Recompile for 1.0” but tags our existing source commit, so no source update
+is needed. Metadata came from Thunderstore package APIs; changes came from publisher changelogs.
 
 ## Verification gate
 

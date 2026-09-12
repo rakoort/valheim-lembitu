@@ -324,3 +324,121 @@ Vanilla noise to ignore: `DllNotFoundException: libParty.so` and
 `[S_API FAIL] Tried to access Steam interface SteamNetworkingUtils004 before SteamAPI_Init
 succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed` followed by
 `Steam is not initialized` means the UDP ports are taken — usually by the barebones server.
+
+## Headless test client
+
+`scripts/test-client.sh run` requires a logged-in Steam client, the pinned 1.0.7 game installation,
+and a GPU-backed X display. Its Weston headless launcher uses `--renderer=gl --fake-seat --xwayland`.
+The virtual input seat is required: without it, Xwayland 24.1.12 aborts in `xwl_cursor_warped_to`
+when a client warps the pointer. Valheim then aborts after losing its display; its Bumblelion
+thread stack alone does not identify the original display failure.
+
+On astral-bicep, `DISPLAY=:0 xdotool mousemove 400 300` reproduced the display crash without
+Valheim. Adding only `--fake-seat` allowed 20 consecutive pointer warps to finish successfully.
+Use this probe only on a disposable test display: the failing configuration kills its X clients.
+
+The launcher uses `-force-glcore`: default Vulkan stayed in the `loading` scene on astral-bicep
+even with BepInEx disabled, while OpenGL reached the menu and rendered native gameplay. This
+does not establish compatibility of every mod’s bundled shaders; the full-pack attempt below
+reported unavailable shader platforms.
+
+A licensed 1.0.7 client was restored separately at
+`/home/ra/.cache/valheim-lembitu/client-1.0.7` using Linux depot 892971, manifest
+8489898024822656053. Its network version is 39. Keep it outside Steam’s managed installation,
+which had advanced to 1.0.12/network 40; do not rebuild against the newer game as a workaround.
+The launcher now defaults to this isolated pinned path, not Steam’s mutable library.
+
+### Native gameplay control
+
+`Lembitu.Harness` calls native Unity/Valheim methods on the main thread. Python only exchanges
+JSON and checks observations; it does not emulate mouse or keyboard input. Control requires
+both `-lembitu-harness` and an explicit absolute control directory. Dedicated servers stay inert.
+The harness uses the stack’s existing JsonDotNET 13.0.4 (`Newtonsoft.Json.dll`); an isolated
+harness-only installation must include that library too. Unity’s runtime `JsonUtility` omitted
+nested response state in the first real-client run, so it is not used for this protocol.
+
+```sh
+export VALHEIM_CLIENT_DIR="$HOME/.cache/valheim-lembitu/client-1.0.7"
+export LEMBITU_CHARACTER=harness
+scripts/test-client.sh run --control-dir "$HOME/.local/state/lembitu/control-a" 127.0.0.1:2466
+
+# From another shell; timeout includes waiting for the player to spawn.
+python3 scripts/harness.py --dir "$HOME/.local/state/lembitu/control-a" \
+  --timeout 1200 --command '{"action":"snapshot"}'
+```
+
+Use a fresh control directory for each launch: retained `status.json` is not process-liveness
+proof and may describe a previous run. Use separate characters and installations for concurrent
+clients. A scenario routes sequential commands with
+`--scenario steps.json --client a=/absolute/control-a --client b=/absolute/control-b`.
+An example `steps.json` that observes movement rather than assigning a position:
+
+```json
+[
+  {"client":"a","command":{"action":"snapshot"},"save":"before"},
+  {"client":"a","command":{"action":"move","x":1,"seconds":1},
+   "expect":[{"path":"state.player.x","op":"gt",
+              "from":{"saved":"before","path":"state.player.x"}}]}
+]
+```
+
+Commands use observed IDs, not guessed object names:
+
+| Action | Fields / behavior |
+| --- | --- |
+| `snapshot` | Player, inventory, nearby entities, progression texts, UI and connection state |
+| `move` | World `x`/`z` direction in [-1,1], `seconds` in (0,10]; native player controls |
+| `attack` | Entity `target`, optional `secondary`, `seconds` in (0,10]; native attacks, never direct damage/XP |
+| `interact` | Nearby entity `target`; native interaction/pickup |
+| `equip` | Inventory `item` ID; native equipment requirements apply |
+| `craft` | `recipe` asset name from `state.ui.recipes`; native crafting UI/timer and requirements apply |
+| `pvp` | Boolean `value` |
+| `ui` | `target` = `inventory`/`map`, boolean `value`; or observed button ID with `value:true` |
+| `screenshot` | `target` = new absolute image path; native screen capture |
+| `fixture.spawn` | Prefab `target` and absolute `x`/`y`/`z` within 20 m; requires launcher `--fixtures` |
+| `quit` | Exit this client; `state` is null and no local player is required |
+
+Fixtures arrange disposable-world objects; they do not prove gameplay. Assert movement, pickup,
+equipment, material consumption or attack results separately. Entity/button IDs belong to one
+client session, and inventory IDs are session-local; do not reuse IDs on another client.
+
+Each step may `save` its response, reference a saved dot-path in command values, and `expect`
+`eq`/`ne`/`gt`/`gte`/`lt`/`lte` comparisons against `value` or `from`. `expect_ok:false` requires an
+explicit native refusal; errors are never silently treated as successful actions.
+
+Protocol: `status.json` holds `{ready,error}`. Atomic `inbox/<UUID>.json` requests are limited to
+16 KiB; `outbox/<UUID>.json` responses contain `{id,ok,error,state}`. Use one coordinator per
+directory. Responses remain as evidence. A timeout does **not** cancel a published command;
+inspect that UUID’s response before retrying. Exit codes: 0 success, 2 input, 3 native/startup
+rejection, 4 IPC failure, 5 timeout, 6 assertion failure, 130 interruption.
+
+### Verification status
+
+Verified on September 12 against a real isolated 1.0.7 client, its dedicated server, BepInEx,
+the harness and pinned JsonDotNET. No direct damage, XP grants or player teleportation were used.
+
+- Movement advanced 5.47 metres through native controls.
+- Inventory/map toggles and an observed Skills button worked; the resulting Skills panel was
+  captured and inspected. Inactive button, invalid equipment ID and zero-duration move requests
+  were refused.
+- Six fixture wood objects were picked up through native interaction. Crafting refused one wood,
+  then consumed six to produce a club; native equipment selected it.
+- A normal club attack reduced a Greyling’s health by 19.65. The native screenshot showed the
+  hit and a Clubs skill increase. World and UI rendering were visible.
+- A fixture Skeleton caused normal death (25 → 0 health); the endpoint remained available
+  through respawn, observed a new player object at 25 health, and accepted movement afterward.
+- An incorrect server password surfaced `ErrorPassword`, controller exit 3, in 29 seconds.
+- A fresh character completed its native first-spawn flight before readiness. The controller’s
+  real five-step scenario passed saved-response comparisons and required fixture refusal when
+  `--fixtures` was absent. Native quit also completed successfully, including a real respawn
+  interval with no local player; its response contained `ok:true` and `state:null`.
+
+Proof JSON and screenshots are under `/home/ra/.local/state/lembitu/`: `native-gameplay-smoke.*`,
+`native-lifecycle-smoke.*`, `native-refused-result.json`, `native-scenario-result.json` and
+`native-quit-respawn-smoke.json`.
+
+**Full-pack and two-client acceptance remain open in #10.** The unchanged full pack reached a
+join attempt but returned `ErrorConnectFailed`; the running test server logged a `ZRpc` timeout.
+Its client also logged Fast_AssetBundle_Loader `DriveInfo` failures, STU_Ward accessing Steamworks
+before initialization, unresolved MWL mock references, unavailable shader platforms, and BoneMod
+logout exceptions. These observations are not a demonstrated causal diagnosis of the timeout.

@@ -15,5 +15,8 @@
     <Reference Include="Unity.TextMeshPro" Private="false">
       <HintPath>$(ValheimRefDir)Unity.TextMeshPro.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UI" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath></Reference>
+    <PackageReference Include="Newtonsoft.Json" Version="[13.0.4]" ExcludeAssets="runtime" PrivateAssets="all" />
+    <Reference Include="UnityEngine.ScreenCaptureModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.ScreenCaptureModule.dll</HintPath></Reference>
   </ItemGroup>
 </Project>
