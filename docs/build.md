@@ -462,6 +462,10 @@ Full-pack mode first generates configuration in a disposable world, applies the 
 configuration merger, then starts a separate measured world. Minimal mode installs only the
 harness and JsonDotNET. No source installation or live server is modified.
 
+Server readiness means `Opened Steam server`, after world generation and native listener creation.
+`Game server connected` only means Steam registration; joining then races world generation.
+The process-level regression in `test/test-native.test.sh` distinguishes those two signals.
+
 Proof is retained under `~/.local/state/lembitu/native-tests/<timestamp>-<mode>-<id>/`: compact
 `proof.json`, append-only `events.jsonl`, IPC commands/responses, installed-file hashes, screenshots,
 logs and generated configuration. Native quit waits for process exit before another client starts;
@@ -600,4 +604,67 @@ No full-pack gameplay or simultaneous two-client clearance is claimed.
 
 The temporary settings plugin and startup probe were removed from executable/staging locations;
 their sources and diagnostic results remain under `startup-probes/diagnostic-source/`. The
-permanent runner is unchanged and continues to fail if the expected configs are not generated.
+permanent runner continues to reject missing generated configs.
+
+### Native connection diagnosis — 2026-09-12
+
+Checkpoint commit: `3293025`. Subsequent diagnosis separated two failures:
+
+1. The coordinator launched clients on Steam registration, before the server opened its listener.
+   `Run.start_server` now waits for `Opened Steam server`. A real child-process regression failed
+   before the correction and passed afterward.
+2. After that correction, transport connected, but the client stalled during location asset loads.
+   The server closed its peer after the normal 30-second RPC timeout.
+
+Controlled comparisons used isolated 1.0.12 installations, initialized native preferences, and
+previously generated/enforced full-pack configs. Evidence directories below are under
+`/home/ra/.local/state/lembitu/join-probes/`:
+
+| Case | Result | Evidence |
+| --- | --- | --- |
+| Full pack, corrected listener readiness | 68-second client callback gap; disconnect | `20260912T181352Z-0ad3b1a8` |
+| Only client FastAssetBundleLoader removed | 75-second gap; disconnect | `20260912T182334Z-67260b2d` |
+| Only client SkadiNet stutter guard disabled | 69-second gap; disconnect | `20260912T183349Z-1d957f57` |
+| MWL removed from both diagnostic peers | Living player, control-ready, native quit | `20260912T183802Z-6d047589` |
+| BossRules removed, MWL retained | Living player, control-ready, native quit | `20260912T184522Z-7b456ca6` |
+| Official BossRules 1.0.9, no authority guard | Disconnect still reproduces | `20260912T185300Z-56e52e57` |
+| Full pack plus authority guard, fresh world | Join and reference-output checks pass; native quit | `20260912T190318Z-3d4e6d45` |
+
+BossRules calls `AltarReferenceGenerator.TryAutoRefreshReferenceConfigurationFile` from its
+`Update`. Its `IsSourceOfTruth` guard reads ServerSync state, which remains local before initial
+configuration sync. A connecting client therefore enters the authority-only reference scan.
+`TryCaptureReferenceEntry` synchronously loads each location prefab, including MWL content, and
+blocks the main thread long enough to lose the connection. Removing either package isolated the
+interaction. Official 1.0.9 and its [upstream source](https://github.com/sighsorry1029/BossRules/blob/3d4e693751fa81171bf1ffea203294366387e790/AltarReferenceGenerator.cs)
+still contain this guard. The ordinary native join path does not perform an additional asset-preparation step.
+
+`src/plugins/Lembitu.BossRules/BossRulesPlugin.cs` adds one Harmony prefix requiring
+`ZNet.instance != null && ZNet.instance.IsServer()` for this scan. The original ServerSync guard
+still runs on the host. This keeps reference discovery on native world authority rather than
+changing timeouts, skipping content, or changing altar/gameplay behavior. It preserves official
+BossRules binaries and avoids another source fork. BepInEx requires BossRules to load first; a
+missing target method fails explicitly. Retire this integration when an upstream correction
+passes the same full-pack join scenario.
+
+The fresh-world proof kept all 28 adopted packages, maintained forks, FastAssetBundleLoader and
+SkadiNet defaults enabled. Client `ZNet Start` and the connected callback both logged at 22:08:08
+host time, rather than a minute apart. The player reached control-ready alive at 25/25 health.
+Both reference files were removed from the private copies before startup: the server regenerated
+real altar entries, while the client created only its normal empty template. Native quit exited
+successfully. `joined.png` was visually inspected; `summary.json` records `ok: true`.
+
+An earlier guarded run (`20260912T185719Z-a0b146e9`) also joined but failed an incorrect diagnostic
+assertion that expected no client reference file. BossRules creates an empty template at startup.
+The final proof checks its empty data instead; no production code changed for that correction.
+
+Verification: complete build succeeds with 13 existing fork warnings and zero errors. The
+readiness regression and 35 staging/installer/configuration checks pass. The native join scenario
+is the regression seam for the authority race; a mocked ServerSync boolean would not reproduce
+the real pre-handshake asset-loading stall. This proves joining, not full gameplay acceptance or
+simultaneous two-client behavior. FastAssetBundleLoader DriveInfo errors and PvPBiomeDominions
+missing-sprite messages remain separate findings, not cleared by a successful join.
+
+The join probe is archived under `join-probes/diagnostic-source/`, outside the isolated checkout.
+Logs, configs, installed-file hashes, screenshots and summaries remain in the evidence directories.
+Private game copies were removed; the successful fresh world remains in that run’s `saved-world/`
+directory for another controlled comparison. The live server was not changed.

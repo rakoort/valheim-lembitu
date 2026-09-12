@@ -348,11 +348,12 @@ class Run:
             self.alive()
             log = self.directory / (name + '-unity.log')
             text = log.read_text(errors='replace') if log.exists() else ''
-            if 'Game server connected' in text:
-                self.event('server-ready', marker='Game server connected')
+            # Steam registration precedes world generation; hosting opens only afterward.
+            if 'Opened Steam server' in text:
+                self.event('server-ready', marker='Opened Steam server')
                 return
             time.sleep(1)
-        raise RuntimeError('server did not report Game server connected')
+        raise RuntimeError('server did not open its Steam listener after world generation')
 
     def wait_generated_configs(self, games):
         targets = list((ROOT / 'config/enforced').rglob('*.cfg'))

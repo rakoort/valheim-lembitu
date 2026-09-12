@@ -6,7 +6,7 @@ in [adr/](adr/) and the vocabulary in [../CONTEXT.md](../CONTEXT.md).
 
 Adopted update candidates were checked against live Thunderstore package APIs on **2026-09-12**.
 Development follows the latest public Valheim client/server and latest mod releases. The current
-game candidate is **1.0.12 / network 40**; Groundwork is now **1.1.10**. Older 1.0.7 results below
+game candidate is **1.0.12 / network 40**; Groundwork is **1.1.10** and BossRules **1.0.9**. Older 1.0.7 results below
 are historical, not current acceptance. Freeze only after full-pack gameplay and two-client
 acceptance pass, before launch-world creation (ADR-0007, ADR-0009).
 
@@ -21,7 +21,7 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 | sighsorry/Clan | 1.0.7 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
 | sighsorry/STU_Ward | 1.3.12 | Wards resolved against clan membership | — |
 | sighsorry/PortalRules | 1.0.5 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset |
-| sighsorry/BossRules | 1.0.8 | Boss lifecycle: despawn refunds, duplicate-summon block, boss stones | `BossRules.forsakenPowers.yml` left empty; remote power rotation off |
+| sighsorry/BossRules | 1.0.9 | Boss lifecycle: despawn refunds, duplicate-summon block, boss stones | `BossRules.forsakenPowers.yml` left empty; remote power rotation off |
 | MidnightMods/ProgressivePowers | 0.1.0 | Forsaken power mastery | Owns all power effects |
 | RandyKnapp/EpicLoot | 0.14.4 | Gear tiers: magic drops, enchanting, bounties | Progression gating answered by the progression bridge |
 | warpalicious/More_World_Locations_AIO | 5.1.0 | 185 locations, traders, waystones | Trader stock `requiredGlobalKey`/`notRequiredGlobalKey` left unset |
@@ -86,6 +86,7 @@ plugins (ADR-0002).
 | Discord relay | Joins, deaths, boss kills and contract activity over a webhook | #17 |
 | Progression bridge | Answers EpicLoot's gating from personal keys; feeds character level into its rarity roll | #27 |
 | Lembitu.Hello | Build-skew and ServerSync smoke test | #1, #2 |
+| Lembitu.BossRules | Keeps BossRules altar reference scans on native world authority, preventing client join stalls with MWL | — |
 
 ## World-permanent mods
 
@@ -124,16 +125,23 @@ is needed. Metadata came from Thunderstore package APIs; changes came from publi
 
 ### Latest public candidate — 2026-09-12
 
-The new check found Groundwork **1.1.10**; the other 27 adopted packages and maintained upstream
-fork heads remained current. All 28 packages were staged with verified hashes and dependency
-closure. Client/server moved to **1.0.12 / network 40**, and all plugins rebuilt successfully.
+The initial check found Groundwork **1.1.10**; the other 27 adopted packages and maintained upstream
+fork heads remained current then. Connection diagnosis subsequently found BossRules **1.0.9**; it
+replaces 1.0.8 in the candidate. All 28 packages were staged with verified hashes and dependency
+closure. Client/server use **1.0.12 / network 40**, and all plugins rebuilt successfully.
 
-The initial latest-game run `20260912T165242Z-full-pack-b6193d36` failed config generation.
-Diagnosis traced those Steamworks errors to a fresh native profile with no saved language, not
-missing Steam authentication. Completing native Settings setup resolved them without mod patches.
-Rerun `20260912T172840Z-full-pack-a88012d4` generated and applied the full-pack configs, then failed
-joining with `ErrorConnectFailed`. Full-pack gameplay and two-client acceptance remain open.
-Do not freeze the candidate. See [startup diagnosis](build.md#steamworks-startup-diagnosis--2026-09-12).
+The initial latest-game run failed config generation because the native profile had no saved
+language. Completing native Settings setup resolved that failure without modifying upstream mods.
+Connection diagnosis then found premature server readiness and a BossRules authority race:
+connecting clients scanned every MWL location before ServerSync established remote authority.
+The runner now waits for the native Steam listener; `Lembitu.BossRules` gates only that reference
+scan on native world authority. Official mod binaries, gameplay rules and network timeouts remain unchanged.
+
+Full-pack native joining now passes in a fresh world with every mod enabled:
+`join-probes/20260912T190318Z-3d4e6d45/`. The player reached control-ready at 25/25 health, the
+server generated its altar reference, the client retained an empty reference template, and native
+quit completed. The screenshot was visually inspected. Full gameplay and simultaneous two-client
+acceptance remain open; do not freeze. See [connection diagnosis](build.md#native-connection-diagnosis--2026-09-12).
 
 ### Historical 1.0.7 candidate screening — 2026-09-12
 
