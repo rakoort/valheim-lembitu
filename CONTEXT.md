@@ -1,6 +1,6 @@
 # valheim-lembitu
 
-A private, modded Valheim 1.0.7 server for one invited group, run as a fixed three-month **run**.
+A private, modded Valheim server for one invited group, run as a fixed three-month **run**.
 This file is the project's glossary: what the words mean when we use them in tickets, ADRs, code and
 player-facing text. The stack itself is in [docs/modstack.md](docs/modstack.md); decisions are in
 [docs/adr/](docs/adr/).
@@ -19,8 +19,8 @@ The invited players, whitelisted on the server. Fifteen people against a player 
 _Avoid_: playerbase, community
 
 **Pack**:
-The pinned set of mods and versions a player installs. One pack for the whole run; a client running
-anything else is a support problem, not a variant.
+The set of mods and versions a player installs. During development it is a candidate; after
+acceptance it is frozen for the run. A run client using anything else is a support problem, not a variant.
 _Avoid_: modpack, profile, loadout
 
 ### Clans
@@ -132,10 +132,10 @@ source.
 _Avoid_: dependency, third-party install
 
 **Fork**:
-Upstream source vendored under `src/forks/`, ported by us and maintained by us, because upstream has
-no working 1.0.7 build.
+Upstream source maintained by this project because the official mod lacks required game
+compatibility or project-specific behavior.
 _Avoid_: patch, vendored mod, port
 
 **Pin**:
-The exact upstream version a mod is fixed at for the run. Pins are chosen once, before the launch
-world exists, and then frozen.
+The exact upstream version selected for a mod. A development pin identifies a candidate for
+verification, not a freeze; run pins are the accepted versions fixed before the launch world exists.

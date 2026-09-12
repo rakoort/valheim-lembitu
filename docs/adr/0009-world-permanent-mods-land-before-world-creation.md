@@ -25,7 +25,9 @@ corrupts the *world*.
 
 - **Install the world-permanent mods before the launch world is created**, as part of #19, and
   never remove them during the run.
-- **Decide their pins at that moment**, since a later version cannot be swapped in casually either.
+- **Freeze their proven pins after full-pack and two-client acceptance** (ADR-0007), before launch
+  world creation, since a later version cannot be swapped in casually either. Development uses the
+  latest releases in disposable test worlds; world-permanence does not freeze development versions.
 - **Make the deployment work a prerequisite** (#28): MWL AIO ships an asset-bundle manifest and a
   `Bundles/` tree, and `scripts/install-plugins.sh` currently syncs DLLs only. The container's
   `rsync` has no `--delete`, so stale bundles persist in the server's own plugin directory — the

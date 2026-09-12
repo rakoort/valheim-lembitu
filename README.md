@@ -2,8 +2,9 @@
 
 Modded Valheim server: configuration, custom plugins, and forks of the mods upstream has not fixed.
 
-Plugins target Valheim 1.0.7 (network version 39) and BepInEx 5.4.23.5. The server runs a pinned
-stack of mostly-adopted mods: [docs/modstack.md](docs/modstack.md) lists every pin and the config we
+Development targets the latest stable/public Valheim client and dedicated server with the latest
+mod releases. Freeze the proven game and pack only after full-pack and two-client acceptance
+(ADR-0007), not while developing. [docs/modstack.md](docs/modstack.md) records candidate versions and the config we
 enforce, [CONTEXT.md](CONTEXT.md) defines the vocabulary, and [docs/adr/](docs/adr/) records the
 decisions worth revisiting.
 

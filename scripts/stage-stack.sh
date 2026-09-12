@@ -51,7 +51,7 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 
 # Dependencies satisfied by something other than an exact pin:
 #   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs; EpicLoot
-#     0.14.2 still declares 5.4.2333,
+#     0.14.4 still declares 5.4.2333,
 #   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot, ProgressivePowers and MWL AIO
 #     declare (docs/modstack.md).
 KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2333

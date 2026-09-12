@@ -1,7 +1,15 @@
 # Building and installing plugins
 
-Every plugin in this repo is a BepInEx 5 plugin for **Valheim 1.0.7 (network version 39)**, built as
-a .NET Framework 4.7.2 assembly because the game runs Unity's Mono runtime.
+Every plugin in this repo is a BepInEx 5 plugin for the **latest stable/public Valheim** client
+and dedicated server, built as a .NET Framework 4.7.2 assembly because the game runs Unity's Mono runtime.
+During development, refresh both game installations and all mod candidates; extract fresh references
+and rebuild before testing. Exact versions and hashes record test inputs, not a freeze. Freeze only
+after full-pack and simultaneous two-client acceptance (ADR-0007).
+
+The September 12 public-game refresh identifies server 1.0.12 / network 40 and public client build
+25253764. Full-pack and two-client acceptance of this candidate are not established by the older
+1.0.7 evidence below. Groundwork 1.1.10 replaces the earlier 1.1.9 candidate; see `docs/modstack.md`.
+These identities are dated test records, not a permanent selection or a claim about future latest releases.
 
 ## Where things live
 
@@ -42,7 +50,7 @@ playtest tickets.
 git clone https://github.com/rakoort/valheim-lembitu.git
 cd valheim-lembitu
 nix develop                      # dotnet SDK 8, curl, unzip, zip
-scripts/test-server.sh install   # game files, reference assemblies, BepInEx (a few GB, once)
+scripts/test-server.sh install   # latest public server, fresh references, BepInEx (also updates)
 dotnet build                     # every plugin -> dist/plugins/
 scripts/stage-stack.sh           # every adopted mod at its pin -> dist/{plugins,patchers,config}/
 scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx
@@ -306,7 +314,8 @@ self-contained binary pinned by hash.
 
 Chainload is proven by the BepInEx banner and the plugin's own lines in the server log. The last two
 are ServerSync: its RPC registered on `ZNet.Awake`, and a synced config value broadcast without the
-`MissingFieldException` a pre-1.0 build would throw:
+`MissingFieldException` a pre-1.0 build would throw. This September 9 log is historical 1.0.7 proof,
+not acceptance of the latest public game:
 
 ```
 [Message:   BepInEx] BepInEx 5.4.23.5 - valheim_server
@@ -327,8 +336,9 @@ succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed
 
 ## Headless test client
 
-`scripts/test-client.sh run` requires a logged-in Steam client, the pinned 1.0.7 game installation,
-and a GPU-backed X display. Its Weston headless launcher uses `--renderer=gl --fake-seat --xwayland`.
+`scripts/test-client.sh run` requires a logged-in Steam client, the latest stable/public game
+installation matching the test server, and a GPU-backed X display. Its Weston headless launcher
+uses `--renderer=gl --fake-seat --xwayland`.
 The virtual input seat is required: without it, Xwayland 24.1.12 aborts in `xwl_cursor_warped_to`
 when a client warps the pointer. Valheim then aborts after losing its display; its Bumblelion
 thread stack alone does not identify the original display failure.
@@ -342,11 +352,27 @@ even with BepInEx disabled, while OpenGL reached the menu and rendered native ga
 does not establish compatibility of every mod’s bundled shaders; the full-pack attempt below
 reported unavailable shader platforms.
 
-A licensed 1.0.7 client was restored separately at
-`/home/ra/.cache/valheim-lembitu/client-1.0.7` using Linux depot 892971, manifest
-8489898024822656053. Its network version is 39. Keep it outside Steam’s managed installation,
-which had advanced to 1.0.12/network 40; do not rebuild against the newer game as a workaround.
-The launcher now defaults to this isolated pinned path, not Steam’s mutable library.
+Update the licensed Steam installation on the public branch, then copy that current installation
+into `~/.cache/valheim-lembitu/client` for disposable testing. On astral-bicep its source is
+`/home/ra/.local/share/Steam/steamapps/common/Valheim`. Both the launcher and native runner default
+to the version-neutral cache path; `VALHEIM_CLIENT_DIR` can select another current test copy.
+Refresh that copy after Steam updates, update the dedicated server with `scripts/test-server.sh install`,
+and rebuild against fresh references. Keep the live server and historical evidence untouched.
+
+Before loading mods on a fresh Linux profile, complete the native first-run settings setup:
+launch the current client without gameplay mods, open **Settings**, choose the language, press
+**OK**, then quit normally. Merely reaching the menu does not persist the language preference.
+Do not force `SteamAPI.Init` earlier or patch out the exception. See the diagnosis below.
+
+Use a dedicated initialized test preference profile, separate from the Steam desktop profile:
+`export XDG_CONFIG_HOME="$HOME/.cache/valheim-lembitu/client-preferences"`. Use this same environment
+for first-run setup and later tests. The initialized profile on astral-bicep was created through
+Valheim's native Settings handlers, not by injecting a language key. It is not a game-version freeze.
+
+**Historical restoration, not current installation instructions:** the earlier licensed 1.0.7
+client at `/home/ra/.cache/valheim-lembitu/client-1.0.7` came from Linux depot 892971, manifest
+8489898024822656053, network 39. Steam had already advanced to 1.0.12/network 40. The old instruction
+to stay on that archived client rather than rebuild against the newer game is superseded by ADR-0007.
 
 ### Native gameplay control
 
@@ -358,7 +384,8 @@ harness-only installation must include that library too. Unity’s runtime `Json
 nested response state in the first real-client run, so it is not used for this protocol.
 
 ```sh
-export VALHEIM_CLIENT_DIR="$HOME/.cache/valheim-lembitu/client-1.0.7"
+export XDG_CONFIG_HOME="$HOME/.cache/valheim-lembitu/client-preferences"
+export VALHEIM_CLIENT_DIR="$HOME/.cache/valheim-lembitu/client"
 export LEMBITU_CHARACTER=harness
 scripts/test-client.sh run --control-dir "$HOME/.local/state/lembitu/control-a" 127.0.0.1:2466
 
@@ -396,7 +423,7 @@ Commands use observed IDs, not guessed object names:
 | `ui` | `target` = `inventory`/`map`, boolean `value`; or observed button ID with `value:true` |
 | `screenshot` | `target` = new absolute image path; native screen capture |
 | `fixture.spawn` | Prefab `target` and absolute `x`/`y`/`z` within 20 m; requires launcher `--fixtures` |
-| `quit` | Exit this client; `state` is null and no local player is required |
+| `quit` | Exit this client; `state` is null; available before readiness and after startup failure, without a local player |
 
 Fixtures arrange disposable-world objects; they do not prove gameplay. Assert movement, pickup,
 equipment, material consumption or attack results separately. Entity/button IDs belong to one
@@ -412,10 +439,43 @@ directory. Responses remain as evidence. A timeout does **not** cancel a publish
 inspect that UUID’s response before retrying. Exit codes: 0 success, 2 input, 3 native/startup
 rejection, 4 IPC failure, 5 timeout, 6 assertion failure, 130 interruption.
 
-### Verification status
+### Repeatable native acceptance
 
-Verified on September 12 against a real isolated 1.0.7 client, its dedicated server, BepInEx,
-the harness and pinned JsonDotNET. No direct damage, XP grants or player teleportation were used.
+Run the permanent coordinator on the Linux test host after building and staging `dist/`:
+
+```sh
+export XDG_CONFIG_HOME="$HOME/.cache/valheim-lembitu/client-preferences"
+nix shell nixpkgs#python3 --command python3 scripts/test-native.py \
+  --mode full-pack --port 2486 --repeat 2
+
+# Explicit isolation for diagnosis; never counts as full-pack acceptance.
+nix shell nixpkgs#python3 --command python3 scripts/test-native.py \
+  --mode minimal --port 2496 --repeat 2
+```
+
+Steam must already be logged in, the native preference profile initialized as above, and a
+GPU-backed X display available (`--display :0`). The coordinator copies the current game installations
+into private working directories. Each
+repetition gets fresh worlds, characters, save directories and IPC. It uses the existing launchers;
+`test-client.sh run --save-dir DIR --log-file FILE` forwards absolute native storage paths.
+Full-pack mode first generates configuration in a disposable world, applies the existing enforced
+configuration merger, then starts a separate measured world. Minimal mode installs only the
+harness and JsonDotNET. No source installation or live server is modified.
+
+Proof is retained under `~/.local/state/lembitu/native-tests/<timestamp>-<mode>-<id>/`: compact
+`proof.json`, append-only `events.jsonl`, IPC commands/responses, installed-file hashes, screenshots,
+logs and generated configuration. Native quit waits for process exit before another client starts;
+an acknowledgement alone does not mean Unity finished saving and unmounting Steam storage.
+The script returns nonzero on failure and stops only process groups it launched. Disposable game
+copies and saves are removed unless `--keep-work` is set. Inspect `skills.png` and `combat.png`
+visually; screenshot creation alone is not rendering proof. Full-pack mode does not silently
+fall back to minimal, and neither mode proves simultaneous two-client behavior.
+
+### Historical verification status — 1.0.7
+
+The following September 12 results used a real isolated 1.0.7 client, its dedicated server,
+BepInEx, the harness and pinned JsonDotNET. They remain evidence of that build only, not current
+public-game acceptance. No direct damage, XP grants or player teleportation were used.
 
 - Movement advanced 5.47 metres through native controls.
 - Inventory/map toggles and an observed Skills button worked; the resulting Skills panel was
@@ -442,3 +502,102 @@ join attempt but returned `ErrorConnectFailed`; the running test server logged a
 Its client also logged Fast_AssetBundle_Loader `DriveInfo` failures, STU_Ward accessing Steamworks
 before initialization, unresolved MWL mock references, unavailable shader platforms, and BoneMod
 logout exceptions. These observations are not a demonstrated causal diagnosis of the timeout.
+
+### Historical updated candidate: 1.0.7 repeatable verification — 2026-09-12
+
+Baseline work was committed as `cd0d00f` before updates. All ten adopted updates were staged and
+EpicMMOSystem 1.9.66 was integrated while retaining custom behavior. The complete build passed
+with 13 fork warnings; the changed harness subsequently built with zero warnings or errors.
+The staging, installer and configuration suites passed 35 checks. The old test that pinned Clan
+1.0.5 and the current package count was removed, not repinned.
+
+The permanent runner completed **two fresh minimal-mode repetitions**, exit 0, in 13m28s:
+`native-tests/20260912T155719Z-minimal-27512e6b/` under `/home/ra/.local/state/lembitu/`.
+The invocation used `--mode minimal --port 2496 --repeat 2 --startup-timeout 360`. Both passed
+fixture opt-in refusal, wrong-password rejection, native quit after failed startup, movement, PvP
+toggles, inventory/map/Skills UI, rejection boundaries, six wood pickups, club crafting/equipment,
+observed Greydwarf damage, natural death/respawn, movement afterward, and native shutdown.
+Skills and combat screenshots from both repetitions were inspected; world/UI and combat feedback
+were visible. This does not validate the full pack's shaders or simultaneous two-client behavior.
+
+The runner exposed a shutdown bug: signalling a client immediately after quit acknowledgement
+interrupted Unity shutdown; later launches reported an already-open Steam storage batch. The
+runner now waits for native process exit and uses native quit even after failed startup. The
+test Steam client was restarted once, retaining its cached login, to clear the earlier stuck
+batch. Both final repetitions then created fresh characters and exited cleanly without a restart.
+No timing-sensitive requirement to catch a player-less respawn frame remains; failed-startup quit
+covers the no-local-player boundary deterministically.
+
+The final **full-pack** invocation used `--mode full-pack --port 2486 --repeat 2
+--startup-timeout 360`. Session `native-tests/20260912T161105Z-full-pack-03bc47f8/` exited 1
+at configuration generation: the client never created `sighsorry.Clan.cfg` or
+`sighsorry.InventorySlots.cfg`. STU_Ward logged a Steamworks-before-initialization startup
+exception. No measured full-pack gameplay ran. Cleanup sent native quit, observed client exit 0,
+stopped its server with exit 0, and removed the disposable game/world copies. Evidence remains.
+
+Groundwork 1.1.9 also had a confirmed static field/property mismatch against the then-selected 1.0.7;
+Hoe/Cultivator placement was not exercised. That candidate was not cleared, and #10 remained open.
+Final process inspection for that run found only the existing live server, PID 576639;
+the authenticated test Steam session and display services were left running.
+
+### Latest public candidate verification — 2026-09-12
+
+The premature development freeze was removed. Client and server now use **1.0.12 / network 40**.
+Steam client build `25253764` matched the live public branch; depot `892971` manifest was
+`6181039652481492267`. The server updater downloaded public depot `896661` manifest
+`9055200629726788899`. These are test identities, not frozen launch versions.
+
+All 28 adopted packages were rechecked and staged; Groundwork advanced again to **1.1.10**.
+Maintained fork upstream heads remained current. Game references were refreshed and verified
+against the server installation. All projects rebuilt successfully: 13 warnings, zero errors.
+The staging/installer/configuration suites passed all 35 checks.
+
+The full-pack command used `--mode full-pack --port 2486 --repeat 2 --startup-timeout 360`.
+Evidence: `/home/ra/.local/state/lembitu/native-tests/20260912T165242Z-full-pack-b6193d36/`.
+Client logs confirm runtime 1.0.12 and compiled network version 40. The run exited 1 during
+configuration generation: Clan and InventorySlots still failed before creating their configs;
+their stacks and STU_Ward report Steamworks access before initialization. Steam initialized
+later in the same client log. Updating the game did not resolve these startup failures.
+
+No measured full-pack gameplay ran, and prior minimal-mode passes remain 1.0.7 evidence only.
+The owned client exited 0 via native quit; its server exited 0; disposable work was removed.
+Logs and proof remain. Continue latest-version development; do not freeze this failing candidate.
+
+### Steamworks startup diagnosis — 2026-09-12
+
+The failure was reproduced before any server join in about 15 seconds. Removing the harness
+did not help. A minimized client with only Clan and no third-party patchers still failed.
+The trigger was an absent native `language` preference: `Localization.SetStartupLanguage` calls
+`PlatformPrefs.GetString`; its missing-key migration calls `SteamUtils.IsSteamRunningOnSteamDeck`.
+BepInEx loads plugins during `GameObject` initialization, before Valheim initializes Steamworks.
+An already-saved language bypasses that migration. This is not failed Steam authentication.
+
+Controlled isolated profiles, identical game and mod binaries:
+
+| Probe | Result | Evidence directory under `~/.local/state/lembitu/startup-probes/` |
+| --- | --- | --- |
+| Clan only, no harness/patchers, missing language | Missing Clan config; one Steamworks exception | `20260912T171951Z-3af18fca` |
+| Same setup, only saved language changed | Clan config created; zero Steamworks exceptions | `20260912T171956Z-6591c261` |
+| Full pack with saved language | All three configs created; zero Steamworks exceptions | `20260912T172026Z-88fe83be` |
+
+The language-only intervention was diagnostic, not the installed correction. Native first-run
+setup then called `FejdStartup.OnButtonSettings` and `Settings.OnOk`, saved the actual settings,
+and exited cleanly: `20260912T172704Z-e70c35ae`. Its `native-settings.png` was inspected.
+That initialized profile was copied to `~/.cache/valheim-lembitu/client-preferences`. No upstream
+mod binary or Steamworks initialization order was changed. The normal runner still rejects
+missing generated configs, so a return of the original failure remains visible.
+
+File-open tracing found this Linux player reading `unity3d/unknown/unknown/prefs`, not the
+`IronGate/Valheim/prefs` save-directory copy. Do not guess the preference filename or hand-edit it;
+native Settings writes the effective store. The user's existing desktop preferences were untouched.
+
+The original full-pack runner was repeated using the natively initialized preference profile:
+`native-tests/20260912T172840Z-full-pack-a88012d4/`. It passed config generation and enforced
+configuration application. Neither the config-generation nor measured client boot logged the
+original Steamworks-before-initialization or STU_Ward startup errors. It then failed at joining
+with `ErrorConnectFailed`; this does not establish the cause of that separate connection failure.
+No full-pack gameplay or simultaneous two-client clearance is claimed.
+
+The temporary settings plugin and startup probe were removed from executable/staging locations;
+their sources and diagnostic results remain under `startup-probes/diagnostic-source/`. The
+permanent runner is unchanged and continues to fail if the expected configs are not generated.

@@ -15,7 +15,7 @@ namespace Lembitu.Harness;
 /// requires an explicit absolute <c>-lembitu-control-dir</c>.
 ///
 /// Character creation and joining use the same engine paths as the menu. Commands execute on
-/// Unity's main thread after a local player has spawned.
+/// Unity's main thread after a local player has spawned; quit remains available during startup.
 /// </summary>
 [BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]
 public sealed class HarnessPlugin : BaseUnityPlugin

@@ -102,6 +102,8 @@ def request(directory, command, timeout):
         if status is not None:
             if not isinstance(status, dict) or type(status.get("ready")) is not bool:
                 raise Failure(4, "invalid harness status", status=status)
+            if command["action"] == "quit":
+                break
             if status.get("error"):
                 raise Failure(3, "harness startup failed", status=status)
             if status["ready"]:
@@ -134,7 +136,7 @@ def request(directory, command, timeout):
                 raise Failure(4, "invalid harness response", id=identity, response=response)
             return response
         status = read_json(directory / "status.json")
-        if isinstance(status, dict) and status.get("error"):
+        if command["action"] != "quit" and isinstance(status, dict) and status.get("error"):
             raise Failure(3, "harness failed during command", id=identity, status=status)
         wait_pause(deadline, "response (command may still execute)", id=identity,
                    response_path=str(response_path))

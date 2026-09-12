@@ -1,46 +1,48 @@
 # The mod stack
 
-What the server runs, at which version, and what we changed about each one's defaults. This file is
-the source of truth for pins; the reasoning behind the shape is in [adr/](adr/) and the vocabulary
-in [../CONTEXT.md](../CONTEXT.md).
+What the development candidate runs, at which version, and what we changed about each default.
+This file records exact versions for reproducible tests, not a prelaunch freeze. The reasoning is
+in [adr/](adr/) and the vocabulary in [../CONTEXT.md](../CONTEXT.md).
 
-Versions below were verified against Thunderstore on **2026-09-10 07:46 UTC**. Re-run the check
-before the launch world is created (ADR-0009), then freeze: the pack does not move during the run
-(ADR-0007).
+Adopted update candidates were checked against live Thunderstore package APIs on **2026-09-12**.
+Development follows the latest public Valheim client/server and latest mod releases. The current
+game candidate is **1.0.12 / network 40**; Groundwork is now **1.1.10**. Older 1.0.7 results below
+are historical, not current acceptance. Freeze only after full-pack gameplay and two-client
+acceptance pass, before launch-world creation (ADR-0007, ADR-0009).
 
 ## Adopted upstream
 
-Every mod here is installed on the server *and* in the pack, at exactly this version. "Enforced
-config" is a deliberate deviation from the mod's default, and each one belongs in server-locked
-config rather than a player's file.
+Every mod here is intended for the server *and* client pack at exactly this version (BoneMod is
+client-side). Candidate staging is not deployment or verification. "Enforced config" is a deliberate
+deviation from the defaults and belongs in server-locked config rather than a player's file.
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
-| sighsorry/Clan | 1.0.5 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
-| sighsorry/STU_Ward | 1.3.11 | Wards resolved against clan membership | — |
-| sighsorry/PortalRules | 1.0.4 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset |
+| sighsorry/Clan | 1.0.7 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
+| sighsorry/STU_Ward | 1.3.12 | Wards resolved against clan membership | — |
+| sighsorry/PortalRules | 1.0.5 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset |
 | sighsorry/BossRules | 1.0.8 | Boss lifecycle: despawn refunds, duplicate-summon block, boss stones | `BossRules.forsakenPowers.yml` left empty; remote power rotation off |
 | MidnightMods/ProgressivePowers | 0.1.0 | Forsaken power mastery | Owns all power effects |
-| RandyKnapp/EpicLoot | 0.14.2 | Gear tiers: magic drops, enchanting, bounties | Progression gating answered by the progression bridge |
+| RandyKnapp/EpicLoot | 0.14.4 | Gear tiers: magic drops, enchanting, bounties | Progression gating answered by the progression bridge |
 | warpalicious/More_World_Locations_AIO | 5.1.0 | 185 locations, traders, waystones | Trader stock `requiredGlobalKey`/`notRequiredGlobalKey` left unset |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | sighsorry/CreatureManager | 1.1.13 | Karma and Enforcer encounters | Creature cloning and customisation off |
 | sighsorry/AdditiveDamageModifier | 1.2.4 | Additive resistances, player minimum-damage floor | — |
-| turbero/PvPBiomeDominions | 1.7.6 | PvP death and retention rules | Biome-forced PvP off everywhere |
+| turbero/PvPBiomeDominions | 1.7.7 | PvP death and retention rules | Biome-forced PvP off everywhere |
 | sighsorry/CaptainValheim | 1.0.10 | Shields as active weapons | — |
 | sighsorry/SecondaryAttacks | 1.2.4 | Secondary attacks for other weapon classes | — |
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
-| sighsorry/Groundwork | 1.1.8 | Farming and terrain tools scaling with skill | — |
+| sighsorry/Groundwork | 1.1.10 | Farming and terrain tools scaling with skill | — |
 | sighsorry/RepairRequiresMaterials | 1.0.4 | Repairs cost materials; incinerator dismantling | — |
-| sighsorry/VeiledRecipes | 1.1.3 | Recipes hidden until discovered | — |
-| sighsorry/InventorySlots | 1.4.8 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
+| sighsorry/VeiledRecipes | 1.1.4 | Recipes hidden until discovered | — |
+| sighsorry/InventorySlots | 1.4.10 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
 | turbero/DetailedLevels | 2.1.2 | Skill progress readout | — |
 | sighsorry/AdminQoL | 1.1.3 | Admin console GUI and item sets | — |
-| sighsorry/DataForge | 1.3.2 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
+| sighsorry/DataForge | 1.3.3 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
 | sighsorry/SkadiNet | 1.1.3 | Peer-aware network pacing, dungeon-layer filtering | — |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.4 | Vanilla state and teardown bug fixes | — |
 | sighsorry/Fast_AssetBundle_Loader | 1.0.7 | Startup asset-bundle caching | — |
-| TOYNBEE/BoneMod | 1.0.1 | Cosmetic bone scaling (client-side) | — |
+| TOYNBEE/BoneMod | 1.0.2 | Cosmetic bone scaling (client-side) | — |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot, ProgressivePowers and MWL AIO |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
 | ValheimModding/YamlDotNet | 16.3.1 | Library | — |
@@ -51,13 +53,13 @@ These were forked because upstream had no verified working 1.0.7 build at the ti
 fork lives in `src/forks/<Name>/` with an `UPSTREAM.md` recording the exact commit, licence and
 changes; see [build.md](build.md) and `../src/forks/README.md`. ValheimRAFT remains planned.
 
-**2026-09-12 update check:** upstream EpicMMOSystem 1.9.66 now declares 1.0.7 support. It is a
-replacement/rebase candidate, not an adopted pin: our integration removals, fermenter behavior and
-XP-table changes still need comparison. The table below continues to record our fork origins.
+**2026-09-12 update:** EpicMMOSystem now incorporates upstream 1.9.66. We retain the fork for
+our integration removals, vanilla-fermenter behavior and pruned XP tables. Native creature additions
+and database migration were imported; see its `UPSTREAM.md` for the complete comparison.
 
 | Fork | Forked from | Why | Ticket |
 | --- | --- | --- | --- |
-| EpicMMOSystem | `Wacky-Mole/WackyEpicMMOSystem@09d0e25` = 1.9.62, MIT-0 | Character level curve; upstream last touched 2026-09-06 with no 1.0 work | #5 |
+| EpicMMOSystem | `Wacky-Mole/WackyEpicMMOSystem@e3de877` = 1.9.66, MIT-0 | Character level curve with project-specific integrations, fermenter and XP-table policy | #5 |
 | ItemRequiresSkillLevel | `Wacky-Mole/ItemRequiresSkillLevel@be31aa9` = 1.4.6, no licence stated | Gates crafting and equipping on character level; upstream stale since May | #4 |
 | MaxPlayerCount | `AzumattDev/MaxPlayerCount@4482e27` = 1.2.4 source, pinned release 1.2.5, MIT-0 | Player cap above 10, raised to 20 | #9 |
 | ValheimRAFT | 4.2.2, Jotunn 2.27.0, no pack pin | Ships and anchoring; cannons and their projectile system disabled | #26 |
@@ -96,10 +98,11 @@ different reason: removing them destroys player gear or progress rather than cor
 
 ## Upstream update check — 2026-09-12
 
-All 33 tracked Thunderstore packages were checked: the 28 lock entries, three maintained plugin
-forks, planned ValheimRAFT, and BepInExPack. Eleven have newer releases; 22 remain current.
-Pins above are unchanged. The [complete comparison](https://github.com/rakoort/valheim-lembitu/issues/10#issuecomment-5646354590)
-is recorded on #10; newer releases have not passed the runtime gate below.
+Historical pre-update comparison: all 33 tracked Thunderstore packages were checked — the 28 lock
+entries, three maintained plugin forks, planned ValheimRAFT, and BepInExPack. Eleven had newer
+releases; 22 remained current. The [complete comparison](https://github.com/rakoort/valheim-lembitu/issues/10#issuecomment-5646354590)
+is recorded on #10. The table preserves the old-pin → latest comparison; the adopted pins above
+now include all ten adopted updates, which have not passed the runtime gate below.
 
 | Package | Pin → latest | Relevant change |
 | --- | --- | --- |
@@ -119,19 +122,60 @@ Fast_AssetBundle_Loader remains 1.0.7; no newer package fixes the observed Linux
 ServerSync v1.20 says “Recompile for 1.0” but tags our existing source commit, so no source update
 is needed. Metadata came from Thunderstore package APIs; changes came from publisher changelogs.
 
+### Latest public candidate — 2026-09-12
+
+The new check found Groundwork **1.1.10**; the other 27 adopted packages and maintained upstream
+fork heads remained current. All 28 packages were staged with verified hashes and dependency
+closure. Client/server moved to **1.0.12 / network 40**, and all plugins rebuilt successfully.
+
+The initial latest-game run `20260912T165242Z-full-pack-b6193d36` failed config generation.
+Diagnosis traced those Steamworks errors to a fresh native profile with no saved language, not
+missing Steam authentication. Completing native Settings setup resolved them without mod patches.
+Rerun `20260912T172840Z-full-pack-a88012d4` generated and applied the full-pack configs, then failed
+joining with `ErrorConnectFailed`. Full-pack gameplay and two-client acceptance remain open.
+Do not freeze the candidate. See [startup diagnosis](build.md#steamworks-startup-diagnosis--2026-09-12).
+
+### Historical 1.0.7 candidate screening — 2026-09-12
+
+The initial metadata check confirmed all ten adopted updates above as latest and active then.
+`scripts/stage-stack.sh` fetched and staged all 28 packages, recorded ten new SHA-256 hashes,
+verified the other 18 against the lock, and passed declared dependency closure with the existing
+BepInEx and Jotunn overrides. This proves package staging, not game compatibility.
+
+Groundwork 1.1.9 was included, but static screening with the ILSpy commands in
+[build.md](build.md#screening-a-prebuilt-dll-against-the-game) found a concrete API mismatch:
+`Groundwork.GameAccess.BypassCheatChecks` calls
+`PlayerProfile.get_s_bypassCheatChecks()`, while the then-current 1.0.7 reference assembly exposed
+`public static bool s_bypassCheatChecks` as a field, with no property getter. This matches the
+publisher's [1.0.12 changelog](https://thunderstore.io/c/valheim/p/sighsorry/Groundwork/changelog/).
+That placement path could not resolve the call on 1.0.7. The game has since been updated rather
+than held back for this mismatch, and Groundwork updated to 1.1.10. Hoe/Cultivator placement still
+requires runtime acceptance; this old mismatch alone does not establish a current-version blocker.
+
+The final 1.0.7 full-pack run `20260912T161105Z-full-pack-03bc47f8` failed configuration generation:
+the client never created `sighsorry.Clan.cfg` or `sighsorry.InventorySlots.cfg`. STU_Ward also
+logged a Steamworks-before-initialization startup exception. No full-pack gameplay passed.
+The runner shut down both owned processes with exit 0 and removed its disposable work.
+
+The same permanent runner passed two fresh **minimal** repetitions in
+`20260912T155719Z-minimal-27512e6b`, covering native movement/UI, pickup/crafting, club damage,
+death/respawn, password rejection and graceful shutdown. This isolates the harness from mods;
+it does not clear the full pack or simultaneous two-client acceptance. Full evidence and commands
+are in [build.md](build.md#historical-updated-candidate-107-repeatable-verification--2026-09-12).
+
 ## Verification gate
 
-No mod enters the pack until it has, on our own 1.0.7 test server:
+No candidate mod is cleared for the launch pack until it has, on the current public test game:
 
 1. loaded with no `MissingFieldException` or `MissingMethodException`,
 2. broadcast its synced config without throwing — the failure mode ADR-0002 exists for,
 3. survived a two-client session (#10).
 
-Installing and verifying the pinned stack is #25. Package hashes are pinned in
+Installing and verifying the current candidate is #25. Package hashes are recorded in
 [modstack.lock.json](modstack.lock.json); `scripts/stage-stack.sh` verifies every download
 against it and refuses a re-published zip under the same version number.
 
-## Verification record
+## Historical verification record
 
 **2026-09-10, #25**: the whole stack installed from `scripts/stage-stack.sh` onto the 1.0.7 test
 server on astral-bicep and booted twice. Result per mod — gate item 1 proven; gate item 2 proven

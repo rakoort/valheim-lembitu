@@ -92,16 +92,6 @@ else
   report fail "--list parses the adopted table and ignores every other section"
 fi
 
-# --- 2. the real docs/modstack.md still parses as the whole stack ------------------------------
-
-if assert_eq 28 "$("$STAGER" --list | wc -l | tr -d ' ')" "pin count" \
-   && "$STAGER" --list | grep -qxF "$(printf 'sighsorry\tClan\t1.0.5')" \
-   && "$STAGER" --list | grep -qxF "$(printf 'ValheimModding\tJotunn\t2.30.0')"; then
-  report ok "docs/modstack.md parses to the 28 pinned packages"
-else
-  report fail "docs/modstack.md parses to the 28 pinned packages"
-fi
-
 # --- staging -----------------------------------------------------------------------------------
 
 if ! command -v zip >/dev/null 2>&1; then

@@ -7,7 +7,7 @@
     <PluginDistDir>$(RepoRoot)dist/plugins/</PluginDistDir>
   </PropertyGroup>
 
-  <!-- Every project in this repo is a BepInEx 5 plugin for Valheim 1.0.7. The game runs Unity's
+  <!-- Every project in this repo is a BepInEx 5 plugin for current Valheim. The game runs Unity's
        Mono runtime, so plugins target .NET Framework 4.7.2, and
        Microsoft.NETFramework.ReferenceAssemblies makes that target buildable off Windows. -->
   <PropertyGroup>

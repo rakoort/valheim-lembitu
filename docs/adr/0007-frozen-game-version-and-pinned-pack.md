@@ -1,6 +1,7 @@
 # ADR-0007: The game version and the pack are frozen for the run
 
 Date: 2026-09-10
+Revised: 2026-09-12 — freeze only after acceptance, not during development
 Status: Accepted
 Issues: #19, #21, #23
 
@@ -20,11 +21,18 @@ either desyncs, crashes on missing prefabs, or silently loses the rules that mod
 
 ## Decision
 
-- **Freeze the game at 1.0.7 for the whole run.** Automatic update on restart is disabled on the
-  server, and the install checklist tells players to disable Steam auto-update for Valheim.
-- **Freeze the pack.** Pins in `docs/modstack.md` are re-checked once, immediately before the launch
-  world is created, and then fixed. A newer upstream release is not adopted mid-run unless it fixes
-  something that is actually broken for us.
+- **Develop on the latest stable/public game and latest mod releases.** Update both the test
+  client and dedicated server, refresh references, and rebuild maintained forks while preserving
+  their custom behavior. Do not hold development on an archived client to fit an older server.
+- **Freeze the proven game and pack together only after everything works.** Full-pack acceptance
+  and simultaneous two-client acceptance must pass on the same candidate before freezing it and
+  creating the launch world. Re-check public releases before that gate; changes require a new gate.
+  Exact versions, build IDs, manifests and hashes recorded during development identify test inputs,
+  not an approved freeze. No game version is selected for the run yet.
+- **Keep the accepted versions for the whole run.** Only after acceptance, arrange controlled
+  client/server installations and disable automatic server updates so the tested combination does
+  not drift. A newer upstream release is not adopted mid-run unless it fixes something actually
+  broken for us and the replacement passes acceptance.
 - **Everything ships at launch.** No planned content injections, so there is no mid-run pack update
   to coordinate across fifteen non-technical players.
 - **Player cap 20**, above a fifteen-player roster, so a full evening never refuses anyone.
@@ -32,6 +40,9 @@ either desyncs, crashes on missing prefabs, or silently loses the rules that mod
   in #20 and stay on the frozen version.
 
 ## Consequences
+
+- The original 1.0.7 selection was premature and is superseded by this revision. Existing 1.0.7
+  logs, manifests and failed candidate results remain historical evidence, not current acceptance.
 
 - Upstream bug fixes published during the run are declined by default. That is the cost of the
   freeze, and it is cheaper than a mid-run cutover on an irreversible stack.

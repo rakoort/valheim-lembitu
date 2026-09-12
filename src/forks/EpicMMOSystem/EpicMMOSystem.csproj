@@ -10,7 +10,7 @@
     <PluginDisplayName>EpicMMOSystem</PluginDisplayName>
     <AssemblyName>EpicMMOSystem</AssemblyName>
     <RootNamespace>EpicMMOSystem</RootNamespace>
-    <Version>1.9.62</Version>
+    <Version>1.9.66</Version>
     <!-- Upstream is LangVersion 10 with partial annotations, and the ServerSync source compiled
          in here is fully annotated: "annotations" accepts both and warns on neither. -->
     <Nullable>annotations</Nullable>

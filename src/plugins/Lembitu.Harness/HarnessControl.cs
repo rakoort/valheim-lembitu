@@ -61,13 +61,13 @@ internal sealed class HarnessControl
 
     public void Tick()
     {
-        if (!ready) return;
+        if (ready && (ZNet.instance == null || ZNet.GetConnectionStatus() != ZNet.ConnectionStatus.Connected))
+            Fail("connection lost");
         try
         {
-            if (ZNet.instance == null || ZNet.GetConnectionStatus() != ZNet.ConnectionStatus.Connected)
-                throw new InvalidOperationException($"connection lost: {ZNet.GetConnectionStatus()}");
             if (operation != null)
             {
+                if (!ready && request!.action != "quit") throw new InvalidOperationException("harness is not ready");
                 if (!operation.MoveNext()) Complete("");
                 return;
             }
@@ -89,6 +89,7 @@ internal sealed class HarnessControl
                 request = parsed;
                 File.Delete(path);
                 fixtureSpawned = "";
+                if (parsed.action != "quit" && !ready) throw new InvalidOperationException("harness is not ready");
                 operation = Execute(parsed);
                 if (!operation.MoveNext()) Complete("");
                 break;

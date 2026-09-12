@@ -4,6 +4,9 @@ Date: 2026-09-09
 Status: Accepted
 Issue: #1
 
+The 1.0.7 versions below record the original toolchain proof. Development now targets the latest
+stable/public client and server; version selection and the post-acceptance freeze follow ADR-0007.
+
 ## Context
 
 We need to build BepInEx plugins for a modded Valheim 1.0.7 server (network version 39), from a

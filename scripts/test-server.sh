@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run a Valheim 1.0.7 dedicated server with the plugins from dist/plugins/ loaded, so a plugin can
+# Run a current Valheim dedicated server with the plugins from dist/plugins/ loaded, so a plugin can
 # be proven to chainload before it goes near the live server.
 #
 #   scripts/test-server.sh install                     game files, reference assemblies, BepInEx, plugins

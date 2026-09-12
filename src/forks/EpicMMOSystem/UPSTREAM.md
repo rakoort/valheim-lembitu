@@ -8,8 +8,8 @@ modify its XP, and the progression bridge (#27) feeds its creature levels into E
 | | |
 | --- | --- |
 | Upstream | <https://github.com/Wacky-Mole/WackyEpicMMOSystem> |
-| Forked at | `09d0e252862ddb03685052440070cf5d0504de86` (2026-09-06, commit message "1.9.62") |
-| Version | `1.9.62` — the pinned Thunderstore release `WackyMole/WackyEpicMMOSystem 1.9.62`, uploaded fourteen seconds after that commit |
+| Forked at | `09d0e252862ddb03685052440070cf5d0504de86` (2026-09-06, "1.9.62"); updated through `e3de877cefbc3260ac8d1fe9410b3f221046b05e` (1.9.66) |
+| Version | `1.9.66` — latest official `WackyMole/WackyEpicMMOSystem` release verified 2026-09-12; uploaded 2026-09-10 |
 | Licence | MIT-0, `LICENSE.txt` in this directory (copied verbatim from upstream) |
 | Built for | Valheim 1.0.7 (network version 39), BepInEx 5.4.23.5 |
 
@@ -23,13 +23,14 @@ package" means.
 
 ## Why this fork exists
 
-Upstream declares BepInEx `5.4.2202` and has shipped no 1.0-era build (ADR-0003). Beyond the
-recompile, three things had to be fixed or removed for this server.
+Upstream 1.9.66 now targets Valheim 1.0.7, although its package still declares BepInEx
+`5.4.2202`. We retain the fork for the integration removals, vanilla fermenter, curated XP
+tables and source-built shared libraries below, not merely for a recompile.
 
 ## What upstream's git tree does not build
 
-Worth knowing before re-forking: **HEAD does not reproduce the shipped 1.9.62 assembly.** Two
-things the released DLL contains are absent from the repository:
+The original 1.9.62 git tree did not reproduce its shipped assembly. Two things the released
+DLL contains are absent from the repository (still recovered locally for 1.9.66):
 
 - `ColorUtil`, a global class the GUI calls. Recovered by decompiling the release; it lives at
   `ColorUtil.cs` in this directory.
@@ -88,7 +89,7 @@ won: it is what the pin actually is.
      already enforces versions through `MinimumRequiredVersion` (which this fork sets), and two
      handshakes on one RPC is a bug waiting for a client to trip over it.
 4. **The custom fermenter piece is dropped, and the XP meads brew in the vanilla fermenter.**
-   PieceManager's custom build categories do not work on 1.0.7: it treats
+   The PieceManager bundled with the original 1.9.62 release does not work on 1.0.7: it treats
    `PieceTable.m_availablePieces` as a list of lists and writes `Hud.m_buildCategoryNames`, neither
    of which exists any more. That is the same piece-category breakage `docs/modstack.md` records as
    an open unknown for Jotunn 2.30.0, and fixing it is a third-party library port in its own right
@@ -123,6 +124,50 @@ won: it is what the pin actually is.
    netstandard 2.1, which a net472 assembly cannot use. The only code that wanted it was
    `StatusEffectManager`'s "icon from an embedded PNG" path, which this fork has no PNG for — every
    icon comes from an asset bundle — so that one method is gone.
+
+## Upstream 1.9.66 integration (2026-09-12)
+
+Compared every file in `09d0e252862ddb03685052440070cf5d0504de86..e3de877cefbc3260ac8d1fe9410b3f221046b05e`,
+including the packaged assemblies. The official Thunderstore DLL matches the repository
+release DLL byte-for-byte: SHA-256
+`bfe453b4a06e40b9a79122211fa23d0c57ea2f5aad7a370f6d67f51c19db4d89`.
+The downloaded 1.9.66 ZIP SHA-256 is
+`c9ce9bae2ea36115ea8a410ec5b5a0523a9e4b915373baf95b13d814be94b9fb`.
+
+- **Imported `Data/Default.json`:** all 16 new native creature entries, including the Deep
+  North creatures and FrozenKing; all upstream values unchanged. The table now has 95 entries.
+  Retained our `Chick` → `Chicken` correction and empty `Players.json`.
+- **Imported `LevelSystem/DataMonsters.cs` migration:** 1.9.60 and 1.9.65 table markers now
+  upgrade to 1.9.66. Fresh installs write 1.9.66; current tables and NO/STOP opt-outs stay
+  untouched. Still deploys only Default and NonCombat, leaving custom tables alone.
+- **Retained our biome compatibility fix:** upstream now uses `GetCurrentBiome()`, whose
+  pinned-game implementation is `return m_currentBiome.Biome`. Our existing null-safe sector
+  read provides the same biome without losing its guard. No additional orb behavior changed.
+- **Imported identity/release metadata:** the project version supplies both plugins and
+  ServerSync versions through `PluginInfo`; upstream Plugin.cs/manifest version changes and
+  changelog/README table-version notes are represented here rather than copied as packaging.
+- **Excluded `Data/SeaAnimals.json`:** its sole change removes the modded Seal entry now
+  superseded by the native Default entry. This mod-only table is already absent here.
+- **Excluded `Libs/PieceManager.dll`:** 1.3.0 adds the new build-menu categories/usage tags,
+  category refresh, queued snapshots, updated object searches and snap-point handling. These
+  changes apply only to the custom station we deliberately removed; it remains removed even
+  though upstream now ports its library. No binary or source from PieceManager is restored.
+- **Excluded `Libs/ServerSync.dll`:** the release delta recompiles the broadcast constant for
+  1.0. Our shared source already compiles against that constant; retain the shared import.
+- **Excluded release binaries and archives:** inspected the changed 1.9.62 ZIP, new 1.9.63
+  and 1.9.66 ZIPs and current DLL; deploy our source build, not upstream bundled binaries.
+  Decompiling base and current DLLs found no behavioral changes to ItemManager,
+  StatusEffectManager, LocalizationManager, AnimationSpeedManager or ColorUtil after ignoring
+  generated nullable decorations. Additional game-call signature changes in the release
+  (Message and ConsoleCommand optional arguments) are supplied by recompilation of our source.
+
+Verification: `dotnet build src/forks/EpicMMOSystem/EpicMMOSystem.csproj` succeeds against
+the extracted Valheim 1.0.7/network 39 references (13 warnings, no errors). A throwaway C#
+smoke harness executed the actual table-deployment block for fresh, 1.9.60, 1.9.65, 1.9.66,
+NO and stop markers, checking replacement/preservation and custom-table preservation. All
+95 native records were compared with upstream, allowing only the Chicken correction. No
+existing script tests reference this fork version; native server/client verification is
+performed by the stack testing workflow, not by this isolated build.
 
 ## What this fork owes other tickets
 
