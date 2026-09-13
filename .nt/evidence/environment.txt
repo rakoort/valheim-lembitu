@@ -1,0 +1,47 @@
+Ticket: rakoort/valheim-lembitu#38
+Input source: rakoort/valheim-lembitu 5b1d89d507a0a8edc4ac06c00d1cf25a73083a64
+Host runtime observation: astral-tricep, x86_64 Linux/NixOS.
+Measured executable: Valheim dedicated l-1.0.12/network 40; Unity 6000.0.75f1.
+Depot manifests copied with cached installation: 896661/9055200629726788899; 1006/6403079453713498174.
+No new public release query performed. The cache was copied, not modified.
+BepInExPack 5.4.2350; BepInEx 5.4.23.5; zero plugins.
+Source installation: /home/ra/.cache/valheim-lembitu/server/
+Owned installation: <RUN_WORKSPACE>/.nt/server/
+No client, no crossplay, no live server changes. GPU rendered views unexercised.
+
+Preparation (run from supplied workspace):
+rsync -a --exclude=BepInEx/plugins --exclude=BepInEx/config --exclude=LogOutput.log --exclude=*.log --exclude=worlds_local --exclude=characters_local /home/ra/.cache/valheim-lembitu/server/ .nt/server/
+mkdir -p .nt/evidence .nt/saves .nt/preferences
+After generating BepInEx config, set only Logging.Disk.WriteUnityLog=true in the owned config. Exact measured config is BepInEx.cfg beside this file.
+ss -lunp "sport >= :2590 and sport <= :2592"
+Observed no listeners before second and final launch. Initial Python socket preflight failed because python3 was absent; it was not a successful reservation. These are observations, not protection against another process racing for the ports.
+
+Final measured invocation:
+VALHEIM_TEST_DIR="$PWD/.nt/server" XDG_CONFIG_HOME="$PWD/.nt/preferences" timeout --signal=INT --kill-after=30s 120s bash scripts/test-server.sh run -name RenderingProbe -port 2590 -world RenderingCapture -password probe38 -public 0 -savedir "$PWD/.nt/saves" -logFile "$PWD/.nt/evidence/server-unity.log" > .nt/evidence/capture-console.log 2>&1
+probe38 is a disposable test password, not a real credential.
+Result: timeout exit 124 after 122.92 seconds; normal SIGINT shutdown completed before kill-after.
+BepInEx startup complete, NullGfxDevice, named rendering warnings, Opened Steam server at 22:26:43, native shutdown at 22:28:00, Steam manager destruction at 22:28:03. No client joined.
+Final ss command above showed no remaining listeners.
+
+Earlier setup attempts:
+1. Same owned runner with steam-run and -nographics -batchmode, world RenderingProbe, 180-second bound; stopped the owned PID with SIGINT after 45.72 seconds. Do not call this a startup failure: the early read was incomplete.
+2. Bare runner without those flags, same RenderingProbe world, 180-second bound; stopped the owned PID with SIGINT after 45.76 seconds. Observed owned UDP listeners. Generated default BepInEx config excluded Unity events from its disk log; final measurement explicitly enabled them.
+No initial attempt establishes absence of a warning. Only the final complete paired logs support the classification.
+
+SHA256 of tested binaries/config:
+afdc1feb7b381da99ba43c25cf75b211068ee8f778a187951f5ca644faf819cc  valheim_server.x86_64
+66c4643dd702e726ed85abcb17e50923cd1de259d58e5536e5eed4647249e268  UnityPlayer.so
+1231fc2ffdbe6038ba622b8646c2084980d06962e5f8521ae5a0b886be0f1c61  valheim_server_Data/Managed/assembly_valheim.dll
+f09821b2a7b990c6f50c5ef23229635303ce675374b70edc6f5a9b960cb818e3  BepInEx/core/BepInEx.dll
+3d57dfda8c47fecf676f76694c6e10ac5c9e793e3982876f39a4884ed27d9bcb  BepInEx/config/BepInEx.cfg
+
+Retained artifacts:
+server-unity.log: full measured Unity output, workspace path and server identity redacted.
+server-LogOutput.log: paired BepInEx output, same redaction. Line count and ordering preserved.
+warning-index.json: literal warning-family occurrence line numbers in those two files; not causal proof.
+BepInEx.cfg: exact measured disposable config, not a product configuration change.
+
+Missing comparison:
+Read of /home/ra/.local/state/lembitu/native-tests failed, as did the exact amendment-104 path /home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/run-1/ and parent /home/ra/.local/state/lembitu. A glob under /home/ra/.local/state for that run identity found no files.
+gh issue view 49/52/53 --repo rakoort/valheim-lembitu --comments --json comments returned no comments. #40 comment https://github.com/rakoort/valheim-lembitu/issues/40#issuecomment-5654964985 reports completed full-Pack acceptance, not per-family client rendering comparisons. docs/build.md's #37 record also says retained files were unavailable on this Worker.
+Amendment 104 forbids client launch while another title uses the shared Steam account. Need supplied paired retained logs and #49/#52 rendered views; not permission to launch a client.

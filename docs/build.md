@@ -332,6 +332,46 @@ Registered 'lembitu.hello ConfigSync' RPC - waiting for incoming connections
 `DllNotFoundException: libParty.so` and the early `SteamNetworkingUtils004` warning also occur
 on an unmodded dedicated server. This identifies neither as a mod regression, but does not
 by itself establish harmlessness. See the bounded Steam-only disposition below.
+
+Rendering/video noise also needs a bounded disposition, not blanket suppression. The September 13
+#38 owned zero-plugin dedicated probe used public 1.0.12/network 40, Unity 6000.0.75f1,
+BepInExPack 5.4.2350, game depot 896661 manifest `9055200629726788899` and Steamworks
+depot 1006 manifest `6403079453713498174`. This is a fresh runtime observation of that
+installed build, not a new public-release query or a full-Pack/client test.
+
+The ordinary `scripts/test-server.sh run` path selected `NullGfxDevice` without adding
+`-nographics`. It used an owned installation, fresh `RenderingCapture` world, explicit save
+and preference directories, Steam-only transport and port 2590. The probe enabled
+`Logging.Disk.WriteUnityLog` only in its disposable BepInEx config to retain Unity events.
+Both Unity output and BepInEx `LogOutput.log` are retained in the #38 Handback evidence.
+
+| Warning family (fresh occurrence count) | Initialization phase and subsystem | Bounded server observation |
+| --- | --- | --- |
+| HDR reflection texture unsupported (3) | First startup scene (1), transition into world scene (2), reflection probes | Explicitly disables HDR; no renderer exists in this process. |
+| `Hidden/VideoDecode` missing (1) | Startup scene before world argument handling, video materials | Five missing decode passes: `YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`. |
+| `Hidden/VideoComposite` missing (1) | Same startup phase, video compositing | Missing `Default` pass; two zero-pass custom-render-path errors bracket the two missing materials. Intro cinematic subsequently fails. |
+| `Hidden/Dof/DepthOfFieldHdr` unsupported (2), effect disabled (2) | Startup camera, then world camera after `ZNet Start` | Depth-of-field disables itself on each camera initialization. |
+| `Hidden/SunShaftsComposite` and `Hidden/SimpleClear` unsupported (2 each), effect disabled (2) | Same two camera initialization phases | Sun-shafts effect disables itself; two occurrences are not two independently established defects. |
+| AmplifyOcclusion CopyTexture unsupported (2) | Startup camera, then world initialization before `Zonesystem Start` | Explicitly disables CacheAware optimization. |
+| AmplifyOcclusion GBuffer normals unavailable (1) | World camera after Steam registration, before location generation | Explicitly switches to Camera source rather than requiring deferred shading. |
+| `AsyncResourceUpload failed` (2) | First scene asset loading before GPU identification | Observed with the null device; exact asset and cause remain unestablished. |
+| IMGUI module stripped (4) | Startup and world scene component callbacks | Explicitly reports that `OnGUI` cannot run because the module is stripped. |
+
+All these messages preceded `Opened Steam server`; the probe then remained open for
+77 seconds and handled timed SIGINT through `ZNet Shutdown`, socket disposal and Steam
+manager destruction. The timeout returned 124 as designed, not a spontaneous server crash.
+This proves startup/idle hosting despite the messages, not successful client joining or
+rendering. It does not attribute unrelated missing-script or world-placement warnings.
+
+**Client comparison and accepted-noise status remain unverified.** Lead amendment 104
+attributes matching named families to retained full-Pack run
+`20260913T154603Z-full-pack-497266e6/run-1`; its supplied evidence directory was absent
+on astral-tricep when inspected. Neither those client logs nor #49/#52 views were available
+for an individual comparison. No client launch is authorized on this host while its shared
+Steam account is in use. Do not label any row dedicated-server-only or finally accepted noise
+from this probe alone. Obtain the retained paired logs and relevant views; real client
+defects remain #31. No shaders, initialization paths or log filters were changed.
+
 `GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP
 ports in the documented setup, usually the barebones server.
 
