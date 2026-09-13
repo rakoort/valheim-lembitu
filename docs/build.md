@@ -345,17 +345,17 @@ and preference directories, Steam-only transport and port 2590. The probe enable
 `Logging.Disk.WriteUnityLog` only in its disposable BepInEx config to retain Unity events.
 Both Unity output and BepInEx `LogOutput.log` are retained in the #38 Handback evidence.
 
-| Warning family (fresh occurrence count) | Initialization phase and subsystem | Bounded server observation |
+| Warning family (fresh occurrence count) | Initialization phase and subsystem | Accepted-noise disposition in the measured dedicated topology |
 | --- | --- | --- |
-| HDR reflection texture unsupported (3) | First startup scene (1), transition into world scene (2), reflection probes | Explicitly disables HDR; no renderer exists in this process. |
-| `Hidden/VideoDecode` missing (1) | Startup scene before world argument handling, video materials | Five missing decode passes: `YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`. |
-| `Hidden/VideoComposite` missing (1) | Same startup phase, video compositing | Missing `Default` pass; two zero-pass custom-render-path errors bracket the two missing materials. Intro cinematic subsequently fails. |
-| `Hidden/Dof/DepthOfFieldHdr` unsupported (2), effect disabled (2) | Startup camera, then world camera after `ZNet Start` | Depth-of-field disables itself on each camera initialization. |
-| `Hidden/SunShaftsComposite` and `Hidden/SimpleClear` unsupported (2 each), effect disabled (2) | Same two camera initialization phases | Sun-shafts effect disables itself; two occurrences are not two independently established defects. |
-| AmplifyOcclusion CopyTexture unsupported (2) | Startup camera, then world initialization before `Zonesystem Start` | Explicitly disables CacheAware optimization. |
-| AmplifyOcclusion GBuffer normals unavailable (1) | World camera after Steam registration, before location generation | Explicitly switches to Camera source rather than requiring deferred shading. |
-| `AsyncResourceUpload failed` (2) | First scene asset loading before GPU identification | Observed with the null device; exact asset and cause remain unestablished. |
-| IMGUI module stripped (4) | Startup and world scene component callbacks | Explicitly reports that `OnGUI` cannot run because the module is stripped. |
+| HDR reflection texture unsupported (3) | First startup scene (1), transition into world scene (2), reflection probes | Explicit HDR disable on the null renderer; accepted for dedicated hosting, absent from compared rendered clients. |
+| `Hidden/VideoDecode` missing (1) | Startup scene before world argument handling, video materials | Five missing decode passes (`YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`) serve video output, not hosting. Accepted in this no-renderer path; VideoDecode absent from compared clients. |
+| `Hidden/VideoComposite` missing (1) | Same startup phase, video compositing | Missing `Default` pass; two zero-pass errors bracket the video materials and intro cinematic subsequently fails. No video output is required for dedicated hosting; accepted here, VideoComposite absent from compared clients. |
+| `Hidden/Dof/DepthOfFieldHdr` unsupported (2), effect disabled (2) | Startup camera, then world camera after `ZNet Start` | Explicitly disables depth-of-field twice; accepted camera fallback, absent from compared rendered clients. |
+| `Hidden/SunShaftsComposite` and `Hidden/SimpleClear` unsupported (2 each), effect disabled (2) | Same two camera initialization phases | Explicitly disables sun-shafts; both shader families absent from compared clients. Accepted fallback, not two independent defects. |
+| AmplifyOcclusion CopyTexture unsupported (2) | Startup camera, then world initialization before `Zonesystem Start` | Explicitly disables CacheAware optimization; accepted without a renderer, AmplifyOcclusion absent from compared clients. |
+| AmplifyOcclusion GBuffer normals unavailable (1) | World camera after Steam registration, before location generation | Explicitly switches to Camera source rather than deferred shading; accepted fallback, GBuffer warning absent from compared clients. |
+| `AsyncResourceUpload failed` (2) | First scene asset loading before GPU identification | Accepted as observed no-renderer startup noise: hosting continues and the family is absent from compared clients. Exact asset/cause remains unestablished; this is not a claimed explicit fallback. |
+| IMGUI module stripped (4) | Startup and world scene component callbacks | Explicitly skips `OnGUI` because IMGUI is stripped; accepted for dedicated hosting, IMGUI absent from compared clients. Retained full-Pack servers have 5 matches each, not this probe’s 4. |
 
 All these messages preceded `Opened Steam server`; the probe then remained open for
 77 seconds and handled timed SIGINT through `ZNet Shutdown`, socket disposal and Steam
@@ -363,14 +363,30 @@ manager destruction. The timeout returned 124 as designed, not a spontaneous ser
 This proves startup/idle hosting despite the messages, not successful client joining or
 rendering. It does not attribute unrelated missing-script or world-placement warnings.
 
-**Client comparison and accepted-noise status remain unverified.** Lead amendment 104
-attributes matching named families to retained full-Pack run
-`20260913T154603Z-full-pack-497266e6/run-1`; its supplied evidence directory was absent
-on astral-tricep when inspected. Neither those client logs nor #49/#52 views were available
-for an individual comparison. No client launch is authorized on this host while its shared
-Steam account is in use. Do not label any row dedicated-server-only or finally accepted noise
-from this probe alone. Obtain the retained paired logs and relevant views; real client
-defects remain #31. No shaders, initialization paths or log filters were changed.
+**Dedicated-server-only occurrence is established for this comparison.**
+[Lead measurement, supplied by amendment 105](https://github.com/rakoort/valheim-lembitu/issues/38#issuecomment-5655601860)
+compares retained full-Pack run `20260913T154603Z-full-pack-497266e6` on the Brain,
+public 1.0.12/network 40, client build 25253764. All ten posted patterns have zero
+matches in both rendered-client Unity repetitions and the posted run-1 client BepInEx
+column; amendment 105 also reports zero in run-2 client BepInEx. Both retained server
+Unity logs contain every family. These are Lead measurements, not Worker executions.
+The posted server counts are HDR 3, VideoDecode 1, VideoComposite 1, DepthOfFieldHdr 2,
+SunShaftsComposite 2, SimpleClear 2, AmplifyOcclusion 3, GBuffer Normals 1,
+AsyncResourceUpload 2 and IMGUI 5 in each repetition. AmplifyOcclusion includes GBuffer;
+the patterns overlap and must not be summed as independent defects.
+
+The Lead’s positive control finds 118 case-insensitive `shader` and 47 `not supported`
+hits in the same rendered-client Unity log, including #31 families. Thus the zero rows
+come from a log that records rendering problems, not a silent capture. Together with
+this probe’s null-device context, explicit effect fallbacks where logged, and hosting
+after every warning, the comparison supports each bounded accepted-noise entry above.
+No shader, initialization path or log filter was changed; real client defects remain #31.
+
+Limits: retained log-level comparison, not fresh client execution, universal absence,
+or a #49/#52 per-view walkthrough. Those views were not posted when measured. This
+does not prove crossplay, concurrency or capacity. The retained directory remains
+unreadable on astral-tricep; use the cited measurement rather than seeking wider access.
+Client launch is still forbidden while the shared Steam account is in use.
 
 `GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP
 ports in the documented setup, usually the barebones server.

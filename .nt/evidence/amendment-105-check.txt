@@ -1,0 +1,21 @@
+Amendment: message 105, rakoort/valheim-lembitu#38.
+Source comparison: https://github.com/rakoort/valheim-lembitu/issues/38#issuecomment-5655601860
+Retrieved with: gh api repos/rakoort/valheim-lembitu/issues/comments/5655601860 --jq .body
+Attribution: Lead measurement on the Brain of retained 20260913T154603Z-full-pack-497266e6 artifacts, public 1.0.12/network 40, client build 25253764. Not this Worker's execution.
+All ten published patterns are absent from both client Unity repetitions and run-1 client BepInEx. Amendment 105 also states zero for run-2 BepInEx. Published server counts in each repetition: HDR 3, VideoDecode 1, VideoComposite 1, DepthOfFieldHdr 2, SunShaftsComposite 2, SimpleClear 2, AmplifyOcclusion 3, GBuffer Normals 1, AsyncResourceUpload 2, IMGUI 5. AmplifyOcclusion includes GBuffer; not independent additive counts.
+Positive control from the same source: client Unity has 118 case-insensitive shader hits and 47 not-supported hits, including #31 families.
+Limits: retained log-level comparison, no fresh client execution, no #49/#52 per-view walkthrough, no concurrency/capacity/crossplay proof. Client launch remains forbidden. Exact AsyncResourceUpload asset/cause remains unestablished.
+
+Declared command from docs/agents/check.conf:
+set -e; for t in test/*.test.sh; do bash "$t"; done
+First execution on bare host: exit 127. Config checks 6 passed, installer checks 20 passed; staging parser 1 passed but remaining staging checks skipped without zip; native check could not find python3. This was a setup failure, not a product defect.
+
+Resolved environment without repository changes:
+nix shell --inputs-from . nixpkgs#python3 nixpkgs#zip --command bash -c 'set -e; for t in test/*.test.sh; do bash "$t"; done'
+Actual result: exit 0, 5.64 seconds total.
+- apply-enforced-config: 6 passed, 0 failed.
+- install-plugins: 20 passed, 0 failed.
+- staging: 11 passed, 0 failed; no skips.
+- native coordinator regression: Ran 1 test in 3.036s; OK.
+Nix provided Python 3.14.7 from the repository input; no lockfile or product changes were made for the environment.
+This exercises existing repository checks after the documentation edit, not a new game/client run. The original server evidence remains at cd62d900c3c562de84e6d25d27003bf0424cf64b and is unchanged.
