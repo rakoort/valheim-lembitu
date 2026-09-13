@@ -329,10 +329,43 @@ Registered 'lembitu.hello ConfigSync' RPC - waiting for incoming connections
 
 `BepInEx/LogOutput.log` in the server directory keeps the same output.
 
-Vanilla noise to ignore: `DllNotFoundException: libParty.so` and
-`[S_API FAIL] Tried to access Steam interface SteamNetworkingUtils004 before SteamAPI_Init
-succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed` followed by
-`Steam is not initialized` means the UDP ports are taken — usually by the barebones server.
+`DllNotFoundException: libParty.so` and the early `SteamNetworkingUtils004` warning also occur
+on an unmodded dedicated server. This identifies neither as a mod regression, but does not
+by itself establish harmlessness. See the bounded Steam-only disposition below.
+`GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP
+ports in the documented setup, usually the barebones server.
+
+### Steam-only Party dependency investigation — 2026-09-13
+
+Ticket #37 reproduced the exception on an owned, anonymously downloaded public Linux server:
+Valheim 1.0.12/network 40, depot 896661 manifest `9055200629726788899`, Steamworks depot 1006
+manifest `6403079453713498174`, BepInExPack 5.4.2350, zero plugins. The bare NixOS launch
+used port 2580, `-public 0`, explicit disposable saves and no `-crossplay`.
+
+The native stack is `PlayFabMultiplayerManager.Start` → `_Initialize` → `InitializeImpl` →
+`PartyCSharpSDK.SDK.PartyInitialize` → `PFPInterop.PartyInitialize`. Inspection of the exact
+downloaded assemblies with ILSpy 9.1 shows that this component starts Party independently
+of the selected transport. `ZNet.m_onlineBackend` defaults to Steamworks; dedicated
+`FejdStartup` argument parsing selects PlayFab only with `-crossplay`. `ZNet.OpenServer`
+selects `ZSteamSocket` for Steamworks, and `ZPlayFabSocket` for PlayFab. Its Steam connection
+overloads also construct `ZSteamSocket`. The `ZPlayFabMatchmaking.Initialize` call in
+`ZNet.Awake` only sets a join-code value; it is not the failing native initialization.
+
+The depot includes lowercase `valheim_server_Data/Plugins/libparty.so`; the managed import
+spells `libParty.so`. Bare-host `ldd` reports missing libatomic, PulseAudio libraries, zlib
+and libstdc++; `steam-run ldd` resolves them. The same unmodified game under `steam-run`
+opened a Steam listener without the exception. Do not infer an absent depot file or add a
+case-alias from the exception text alone. The bare run also reached `Opened Steam server`
+after the exception, and shut down with PlayFab matchmaking still `Uninitialized`.
+
+Disposition: retain the shipped libraries and Steam-only transport; no packaging patch,
+exception suppression or crossplay workaround. The failure is in the unused Party
+transport initialization, not the selected Steam listener. This is bounded hosting
+evidence, **not completed Ticket acceptance**: the required post-decision actual Steam join
+remains blocked on an isolated licensed current client, authenticated Steam and GPU-backed
+display on the Worker. #40 supplies earlier September 13 full-Pack joining evidence;
+#53 has no completed robustness evidence to substitute. Neither proves a new join after
+this decision or crossplay. The Ticket Handback retains hashes, logs and replay commands.
 
 ## Headless test client
 
