@@ -359,13 +359,28 @@ case-alias from the exception text alone. The bare run also reached `Opened Stea
 after the exception, and shut down with PlayFab matchmaking still `Uninitialized`.
 
 Disposition: retain the shipped libraries and Steam-only transport; no packaging patch,
-exception suppression or crossplay workaround. The failure is in the unused Party
-transport initialization, not the selected Steam listener. This is bounded hosting
-evidence, **not completed Ticket acceptance**: the required post-decision actual Steam join
-remains blocked on an isolated licensed current client, authenticated Steam and GPU-backed
-display on the Worker. #40 supplies earlier September 13 full-Pack joining evidence;
-#53 has no completed robustness evidence to substitute. Neither proves a new join after
-this decision or crossplay. The Ticket Handback retains hashes, logs and replay commands.
+exception suppression or crossplay workaround. The failure is in unused Party transport
+initialization, not the selected Steam listener. Existing unmodded-server observations
+above and in `docs/wiki/native-testing.md:33` are corroboration, not a new vanilla test.
+
+Lead amendment 102 authorizes reusing the September 13 #40 full-Pack hosting/joining
+evidence for criterion three instead of launching another client. That acceptance used
+public 1.0.12/network 40, client build 25253764, all 28 packages and BossRules 1.0.10;
+both fresh-world repetitions passed all 11 checks. The retained run identity is
+`20260913T154603Z-full-pack-497266e6`. On the Brain, its evidence root is
+`/home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/`.
+Lead reports exactly one `libParty` hit in `run-1/server-unity.log`;
+`run-1/server-LogOutput.log` is the paired BepInEx log, and `run-2/` retains the second
+repetition. This is a current-build occurrence alongside successful native joining,
+not only the older unmodded observation. The count is attributed to Lead; these Brain
+files were not available for direct reading on this Worker.
+
+Together, the current-build source trace, fresh owned Steam hosting and authorized
+retained #40 joining evidence support the unused-backend disposition. No fresh client
+join is claimed by #37. Do not launch a client on astral-tricep: its active Proton title
+shares a Steam account with astral-bicep, and another session could evict it. #53 supplies
+no completed robustness result. None of this establishes crossplay, capacity or
+concurrent multiplayer. The Ticket Handback retains hashes, logs and replay commands.
 
 ## Headless test client
 
