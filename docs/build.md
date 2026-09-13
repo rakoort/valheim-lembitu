@@ -329,10 +329,58 @@ Registered 'lembitu.hello ConfigSync' RPC - waiting for incoming connections
 
 `BepInEx/LogOutput.log` in the server directory keeps the same output.
 
-Vanilla noise to ignore: `DllNotFoundException: libParty.so` and
-`[S_API FAIL] Tried to access Steam interface SteamNetworkingUtils004 before SteamAPI_Init
-succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed` followed by
-`Steam is not initialized` means the UDP ports are taken — usually by the barebones server.
+`DllNotFoundException: libParty.so` and the early `SteamNetworkingUtils004` warning also occur
+on an unmodded dedicated server. This identifies neither as a mod regression, but does not
+by itself establish harmlessness. See the bounded Steam-only disposition below.
+`GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP
+ports in the documented setup, usually the barebones server.
+
+### Steam-only Party dependency investigation — 2026-09-13
+
+Ticket #37 reproduced the exception on an owned, anonymously downloaded public Linux server:
+Valheim 1.0.12/network 40, depot 896661 manifest `9055200629726788899`, Steamworks depot 1006
+manifest `6403079453713498174`, BepInExPack 5.4.2350, zero plugins. The bare NixOS launch
+used port 2580, `-public 0`, explicit disposable saves and no `-crossplay`.
+
+The native stack is `PlayFabMultiplayerManager.Start` → `_Initialize` → `InitializeImpl` →
+`PartyCSharpSDK.SDK.PartyInitialize` → `PFPInterop.PartyInitialize`. Inspection of the exact
+downloaded assemblies with ILSpy 9.1 shows that this component starts Party independently
+of the selected transport. `ZNet.m_onlineBackend` defaults to Steamworks; dedicated
+`FejdStartup` argument parsing selects PlayFab only with `-crossplay`. `ZNet.OpenServer`
+selects `ZSteamSocket` for Steamworks, and `ZPlayFabSocket` for PlayFab. Its Steam connection
+overloads also construct `ZSteamSocket`. The `ZPlayFabMatchmaking.Initialize` call in
+`ZNet.Awake` only sets a join-code value; it is not the failing native initialization.
+
+The depot includes lowercase `valheim_server_Data/Plugins/libparty.so`; the managed import
+spells `libParty.so`. Bare-host `ldd` reports missing libatomic, PulseAudio libraries, zlib
+and libstdc++; `steam-run ldd` resolves them. The same unmodified game under `steam-run`
+opened a Steam listener without the exception. Do not infer an absent depot file or add a
+case-alias from the exception text alone. The bare run also reached `Opened Steam server`
+after the exception, and shut down with PlayFab matchmaking still `Uninitialized`.
+
+Disposition: retain the shipped libraries and Steam-only transport; no packaging patch,
+exception suppression or crossplay workaround. The failure is in unused Party transport
+initialization, not the selected Steam listener. Existing unmodded-server observations
+above and in `docs/wiki/native-testing.md:33` are corroboration, not a new vanilla test.
+
+Lead amendment 102 authorizes reusing the September 13 #40 full-Pack hosting/joining
+evidence for criterion three instead of launching another client. That acceptance used
+public 1.0.12/network 40, client build 25253764, all 28 packages and BossRules 1.0.10;
+both fresh-world repetitions passed all 11 checks. The retained run identity is
+`20260913T154603Z-full-pack-497266e6`. On the Brain, its evidence root is
+`/home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/`.
+Lead reports exactly one `libParty` hit in `run-1/server-unity.log`;
+`run-1/server-LogOutput.log` is the paired BepInEx log, and `run-2/` retains the second
+repetition. This is a current-build occurrence alongside successful native joining,
+not only the older unmodded observation. The count is attributed to Lead; these Brain
+files were not available for direct reading on this Worker.
+
+Together, the current-build source trace, fresh owned Steam hosting and authorized
+retained #40 joining evidence support the unused-backend disposition. No fresh client
+join is claimed by #37. Do not launch a client on astral-tricep: its active Proton title
+shares a Steam account with astral-bicep, and another session could evict it. #53 supplies
+no completed robustness result. None of this establishes crossplay, capacity or
+concurrent multiplayer. The Ticket Handback retains hashes, logs and replay commands.
 
 ## Headless test client
 

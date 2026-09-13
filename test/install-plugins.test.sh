@@ -391,5 +391,45 @@ else
   report fail "a removal that fails inside the container keeps the ledger for retry"
 fi
 
+# --- 19. dedicated installation works without programmable completion -------------------------
+
+SERVER_REPO="$WORK/server checkout"
+mkdir -p "$SERVER_REPO/scripts/lib" "$SERVER_REPO/cache" "$SERVER_REPO/server" \
+  "$SERVER_REPO/lib/bepinex/pack/BepInExPack_Valheim/doorstop_libs" \
+  "$SERVER_REPO/lib/bepinex/pack/BepInExPack_Valheim/BepInEx"
+cp "$REPO_ROOT/scripts/test-server.sh" "$INSTALLER" "$SERVER_REPO/scripts/"
+cp "$REPO_ROOT/scripts/lib/ledger.sh" "$SERVER_REPO/scripts/lib/"
+# Only downloading and reference extraction are fixtures; deploy through the real installer.
+printf '#!/usr/bin/env bash\nexit 0\n' > "$SERVER_REPO/cache/DepotDownloader"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$SERVER_REPO/scripts/extract-refs.sh"
+chmod +x "$SERVER_REPO/cache/DepotDownloader" "$SERVER_REPO/scripts/extract-refs.sh"
+PACK="$SERVER_REPO/lib/bepinex/pack/BepInExPack_Valheim"
+touch "$PACK/doorstop_config.ini" "$PACK/.doorstop_version" "$PACK/start_server_bepinex.sh" \
+  "$SERVER_REPO/server/valheim_server.x86_64"
+printf 'enable -n compgen\n' > "$SERVER_REPO/no-completion.bash"
+server_install() {
+  BASH_ENV="$SERVER_REPO/no-completion.bash" VALHEIM_TEST_CACHE="$SERVER_REPO/cache" \
+    VALHEIM_TEST_DIR="$SERVER_REPO/server" bash "$SERVER_REPO/scripts/test-server.sh" install
+}
+mkdir -p "$SERVER_REPO/dist/plugins/FixtureBundle"
+printf 'fixture payload' > "$SERVER_REPO/dist/plugins/FixtureBundle/plugin.dll"
+if server_install >"$WORK/server-out" 2>&1 \
+   && cmp -s "$SERVER_REPO/dist/plugins/FixtureBundle/plugin.dll" \
+     "$SERVER_REPO/server/BepInEx/plugins/FixtureBundle/plugin.dll"; then
+  report ok "dedicated install deploys built plugins without compgen"
+else
+  cat "$WORK/server-out" >&2
+  report fail "dedicated install deploys built plugins without compgen"
+fi
+rm -rf "$SERVER_REPO/dist" "$SERVER_REPO/server/BepInEx/plugins"
+if server_install >"$WORK/server-out" 2>&1 \
+   && [[ ! -e "$SERVER_REPO/server/BepInEx/plugins" ]]; then
+  report ok "dedicated install without built plugins still succeeds"
+else
+  cat "$WORK/server-out" >&2
+  report fail "dedicated install without built plugins still succeeds"
+fi
+
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
