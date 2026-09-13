@@ -14,51 +14,51 @@
 [Message:   BepInEx] Chainloader started
 [Info   :   BepInEx] 0 plugins to load
 [Message:   BepInEx] Chainloader startup complete
-[Info   : Unity Log] 09/13/2026 22:26:01: Set background loading budget to Low
+[Info   : Unity Log] 09/13/2026 22:52:55: Set background loading budget to Low
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loading first scene!
+[Info   : Unity Log] 09/13/2026 22:52:55: Loading first scene!
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Preferences initialized! Activating first scene!
+[Info   : Unity Log] 09/13/2026 22:52:55: Preferences initialized! Activating first scene!
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loading: Starting to load scene: start.unity (169d7618616154c03be07e9ad3af5893)
+[Info   : Unity Log] 09/13/2026 22:52:55: Loading: Starting to load scene: start.unity (169d7618616154c03be07e9ad3af5893)
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Set background loading budget to Normal
+[Info   : Unity Log] 09/13/2026 22:52:55: Set background loading budget to Normal
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #0 - 'localization' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #0 - 'localization' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #1 - 'localization_extra' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #1 - 'localization_extra' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #2 - 'heightmap_message' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #2 - 'heightmap_message' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #3 - 'localization_witch' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #3 - 'localization_witch' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #4 - 'localization_ashlands' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #5 - 'localization_deepnorth' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #5 - 'localization_deepnorth' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #6 - 'localization_captions' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #6 - 'localization_captions' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #7 - 'localization_warriortitles' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #7 - 'localization_warriortitles' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #8 - 'localization_combatupdate' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #8 - 'localization_combatupdate' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #9 - 'localization_ps' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #9 - 'localization_ps' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #10 - 'localization_celebrationupdate' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #10 - 'localization_celebrationupdate' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #11 - 'localization_xbox' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #11 - 'localization_xbox' language: 'English'
 
-[Info   : Unity Log] 09/13/2026 22:26:01: Loaded localization file #12 - 'localization_switch' language: 'English'
+[Info   : Unity Log] 09/13/2026 22:52:55: Loaded localization file #12 - 'localization_switch' language: 'English'
 
 [Error  : Unity Log] AsyncResourceUpload failed.
 [Error  : Unity Log] AsyncResourceUpload failed.
-[Info   : Unity Log] 09/13/2026 22:26:05: Set background loading budget to High
+[Info   : Unity Log] 09/13/2026 22:52:59: Set background loading budget to High
 
-[Info   : Unity Log] 09/13/2026 22:26:05: GPU Device: 0000:0000 (Unknown)
+[Info   : Unity Log] 09/13/2026 22:52:59: GPU Device: 0000:0000 (Unknown)
 
-[Info   : Unity Log] 09/13/2026 22:26:05: Loading: Done, Total time: -4.145698
+[Info   : Unity Log] 09/13/2026 22:52:59: Loading: Done, Total time: -4.149789
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Set background loading budget to Low
+[Info   : Unity Log] 09/13/2026 22:53:12: Set background loading budget to Low
 
 [Warning: Unity Log] HDR Render Texture not supported, disabling HDR on reflection probe.
 [Error  : Unity Log] This custom render path shader needs to have at least 1 passes.
@@ -71,52 +71,52 @@
 [Error  : Unity Log] This custom render path shader needs to have at least 1 passes.
 [Error  : Unity Log] Could not find material Hidden/VideoComposite. Make sure the Video shaders are included in your build, in the Built-in Shader Settings section of the Graphics Settings.
 [Error  : Unity Log] Could not find video decode shader pass Default in shader <not found>
-[Warning: Unity Log] 09/13/2026 22:26:18: Missing audio clip in music respawn
+[Warning: Unity Log] 09/13/2026 22:53:12: Missing audio clip in music respawn
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Setting -savedir to: <RUN_WORKSPACE>/.nt/saves
+[Info   : Unity Log] 09/13/2026 22:53:12: Setting -savedir to: <RUN_WORKSPACE>/.nt/saves
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Setting -logfile to: <RUN_WORKSPACE>/.nt/evidence/server-unity.log
+[Info   : Unity Log] 09/13/2026 22:53:12: Setting -logfile to: <RUN_WORKSPACE>/.nt/review-fix-raw/server-unity.log
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Get create world RenderingCapture
+[Info   : Unity Log] 09/13/2026 22:53:12: Get create world RenderingReviewFix
 
-[Info   : Unity Log] 09/13/2026 22:26:18: SaveSystem.Reload for World is done [10ms]
+[Info   : Unity Log] 09/13/2026 22:53:12: SaveSystem.Reload for World is done [1ms]
 
-[Info   : Unity Log] 09/13/2026 22:26:18:  creating
+[Info   : Unity Log] 09/13/2026 22:53:12:  creating
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Using environment steamid 892970
+[Info   : Unity Log] 09/13/2026 22:53:12: Using environment steamid 892970
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Using steam APPID:892970
+[Info   : Unity Log] 09/13/2026 22:53:12: Using steam APPID:892970
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Server ID <REDACTED>
+[Info   : Unity Log] 09/13/2026 22:53:12: Server ID <REDACTED>
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Authentication:k_ESteamNetworkingAvailability_Waiting
+[Info   : Unity Log] 09/13/2026 22:53:12: Authentication:k_ESteamNetworkingAvailability_Waiting
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Steam game server initialized
+[Info   : Unity Log] 09/13/2026 22:53:12: Steam game server initialized
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Valheim version: l-1.0.12 (network version 40)
+[Info   : Unity Log] 09/13/2026 22:53:12: Valheim version: l-1.0.12 (network version 40)
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Worldgenerator version setup:2
+[Info   : Unity Log] 09/13/2026 22:53:12: Worldgenerator version setup:2
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Console: Valheim l-1.0.12 (network version 40)
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: Valheim l-1.0.12 (network version 40)
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Console: 
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: 
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Console: type "help" - for commands
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: type "help" - for commands
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Console: 
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: 
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Render threading mode:SingleThreaded
+[Info   : Unity Log] 09/13/2026 22:53:12: Render threading mode:SingleThreaded
 
 [Warning: Unity Log] [AmplifyOcclusion] System does not support CopyTexture. CacheAware will be disabled.
-[Info   : Unity Log] 09/13/2026 22:26:18: SaveSystem.Reload for Character is done [0ms]
+[Info   : Unity Log] 09/13/2026 22:53:12: SaveSystem.Reload for Character is done [0ms]
 
-[Info   : Unity Log] 09/13/2026 22:26:18: SaveSystem.Reload for World is done [1ms]
+[Info   : Unity Log] 09/13/2026 22:53:12: SaveSystem.Reload for World is done [7ms]
 
-[Error  : Unity Log] 09/13/2026 22:26:18: Failed to play intro cinematic
+[Error  : Unity Log] 09/13/2026 22:53:12: Failed to play intro cinematic
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Sending PlayFab login request (attempt 1)
+[Info   : Unity Log] 09/13/2026 22:53:12: Sending PlayFab login request (attempt 1)
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Login postponed until ID has been set.
+[Info   : Unity Log] 09/13/2026 22:53:12: Login postponed until ID has been set.
 
 [Info   : Unity Log] The shader Hidden/Dof/DepthOfFieldHdr (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) is not supported on this platform!
 [Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) has been disabled as it's not supported on the current platform.
@@ -130,173 +130,173 @@ PlayFab.Party.PlayFabMultiplayerManager.InitializeImpl () (at <404aa553a35d4dcb8
 PlayFab.Party.PlayFabMultiplayerManager._Initialize () (at <404aa553a35d4dcb8f3cef585dce8643>:0)
 PlayFab.Party.PlayFabMultiplayerManager.Start () (at <404aa553a35d4dcb8f3cef585dce8643>:0)
 
-[Info   : Unity Log] 09/13/2026 22:26:18: Starting music menu
+[Info   : Unity Log] 09/13/2026 22:53:12: Starting music menu
 
 [Warning: Unity Log] HDR Render Texture not supported, disabling HDR on reflection probe.
 [Warning: Unity Log] HDR Render Texture not supported, disabling HDR on reflection probe.
-[Info   : Unity Log] 09/13/2026 22:26:19: Audioman already exist, destroying self
+[Info   : Unity Log] 09/13/2026 22:53:12: Audioman already exist, destroying self
 
-[Info   : Unity Log] 09/13/2026 22:26:19: Console: Valheim l-1.0.12 (network version 40)
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: Valheim l-1.0.12 (network version 40)
 
-[Info   : Unity Log] 09/13/2026 22:26:19: Console: 
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: 
 
-[Info   : Unity Log] 09/13/2026 22:26:19: Console: type "help" - for commands
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: type "help" - for commands
 
-[Info   : Unity Log] 09/13/2026 22:26:19: Console: 
+[Info   : Unity Log] 09/13/2026 22:53:12: Console: 
 
-[Info   : Unity Log] 09/13/2026 22:26:19: isModded: True
+[Info   : Unity Log] 09/13/2026 22:53:12: isModded: True
 
-[Info   : Unity Log] 09/13/2026 22:26:19: Zonesystem Awake 17114
+[Info   : Unity Log] 09/13/2026 22:53:12: Zonesystem Awake 17315
 
-[Info   : Unity Log] 09/13/2026 22:26:19: DungeonDB Awake 17114
+[Info   : Unity Log] 09/13/2026 22:53:12: DungeonDB Awake 17315
 
-[Info   : Unity Log] 09/13/2026 22:26:19: Worldgenerator version setup:2
+[Info   : Unity Log] 09/13/2026 22:53:13: Worldgenerator version setup:2
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: /w [text] - Whisper
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: /w [text] - Whisper
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: /s [text] - Shout
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: /s [text] - Shout
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: /die - Kill yourself
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: /die - Kill yourself
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: /resetspawn - Reset spawn point
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: /resetspawn - Reset spawn point
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: /[emote]
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: /[emote]
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: Emotes: wave, sit, challenge, cheer, nonono, thumbsup, point, blowkiss, bow, cower, cry, despair, flex, comehere, headbang, kneel, laugh, roar, shrug, dance, relax, toast, rest, vibe, loveyou
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: Emotes: wave, sit, challenge, cheer, nonono, thumbsup, point, blowkiss, bow, cower, cry, despair, flex, comehere, headbang, kneel, laugh, roar, shrug, dance, relax, toast, rest, vibe, loveyou
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Console: 
+[Info   : Unity Log] 09/13/2026 22:53:14: Console: 
 
 [Warning: Unity Log] [AmplifyOcclusion] System does not support CopyTexture. CacheAware will be disabled.
-[Info   : Unity Log] 09/13/2026 22:26:21: Zonesystem Start 17114
+[Info   : Unity Log] 09/13/2026 22:53:15: Zonesystem Start 17315
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Added 3 locations, 0 vegetations, 0 environments, 0 biome env-setups, 0 clutter  from main
+[Info   : Unity Log] 09/13/2026 22:53:15: Added 3 locations, 0 vegetations, 0 environments, 0 biome env-setups, 0 clutter  from main
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Added 2 locations, 0 vegetations, 2 environments, 0 biome env-setups, 0 clutter  from main
+[Info   : Unity Log] 09/13/2026 22:53:15: Added 2 locations, 0 vegetations, 2 environments, 0 biome env-setups, 0 clutter  from main
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Added 27 locations, 25 vegetations, 5 environments, 1 biome env-setups, 3 clutter  from main
+[Info   : Unity Log] 09/13/2026 22:53:15: Added 27 locations, 25 vegetations, 5 environments, 1 biome env-setups, 3 clutter  from main
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Added 4 locations, 0 vegetations, 1 environments, 0 biome env-setups, 0 clutter  from main
+[Info   : Unity Log] 09/13/2026 22:53:15: Added 4 locations, 0 vegetations, 1 environments, 0 biome env-setups, 0 clutter  from main
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Added 25 locations, 33 vegetations, 8 environments, 2 biome env-setups, 2 clutter  from main
+[Info   : Unity Log] 09/13/2026 22:53:15: Added 25 locations, 33 vegetations, 8 environments, 2 biome env-setups, 2 clutter  from main
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Added 25 locations, 35 vegetations, 12 environments, 1 biome env-setups, 2 clutter  from main
+[Info   : Unity Log] 09/13/2026 22:53:15: Added 25 locations, 35 vegetations, 12 environments, 1 biome env-setups, 2 clutter  from main
 
-[Info   : Unity Log] 09/13/2026 22:26:21: DungeonDB Start 17114
+[Info   : Unity Log] 09/13/2026 22:53:15: DungeonDB Start 17315
 
-[Info   : Unity Log] 09/13/2026 22:26:21: ZRpc timeout set to 30s 
+[Info   : Unity Log] 09/13/2026 22:53:15: ZRpc timeout set to 30s 
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Loading: ZNet Start
+[Info   : Unity Log] 09/13/2026 22:53:15: Loading: ZNet Start
 
-[Info   : Unity Log] 09/13/2026 22:26:21: Load world: RenderingCapture (RenderingCapture)
+[Info   : Unity Log] 09/13/2026 22:53:15: Load world: RenderingReviewFix (RenderingReviewFix)
 
-[Info   : Unity Log] 09/13/2026 22:26:21:   missing <RUN_WORKSPACE>/.nt/saves/worlds_local/RenderingCapture.db
+[Info   : Unity Log] 09/13/2026 22:53:15:   missing <RUN_WORKSPACE>/.nt/saves/worlds_local/RenderingReviewFix.db
 
-[Info   : Unity Log] 09/13/2026 22:26:25: Setting up generating loading indicator
+[Info   : Unity Log] 09/13/2026 22:53:18: Setting up generating loading indicator
 
 [Info   : Unity Log] The shader Hidden/Dof/DepthOfFieldHdr (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) is not supported on this platform!
 [Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) has been disabled as it's not supported on the current platform.
 [Info   : Unity Log] The shader Hidden/SunShaftsComposite (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
 [Info   : Unity Log] The shader Hidden/SimpleClear (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
 [Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) has been disabled as it's not supported on the current platform.
-[Info   : Unity Log] 09/13/2026 22:26:25: Game server connected
+[Info   : Unity Log] 09/13/2026 22:53:18: Game server connected
 
 [Warning: Unity Log] [AmplifyOcclusion] GBuffer Normals only available in Camera Deferred Shading mode. Switched to Camera source.
-[Info   : Unity Log] 09/13/2026 22:26:25: Loading: Generating locations
+[Info   : Unity Log] 09/13/2026 22:53:19: Loading: Generating locations
 
-[Warning: Unity Log] 09/13/2026 22:26:27: Location GoblinCamp2 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 166 out of 200 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:20: Failed to place all SwampRuin2, placed 27 out of 30 with 0 tries in 00:00:00.1082000
 
-[Warning: Unity Log] 09/13/2026 22:26:27: Failed to place all GoblinCamp2, placed 166 out of 200 with 0 tries in 00:00:00.8229340
+[Warning: Unity Log] 09/13/2026 22:53:21: Location GoblinCamp2 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 197 out of 200 with 0)
 
-[Warning: Unity Log] 09/13/2026 22:26:28: Location StoneTower3 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 50 out of 50 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:21: Failed to place all GoblinCamp2, placed 197 out of 200 with 0 tries in 00:00:00.8378050
 
-[Warning: Unity Log] 09/13/2026 22:26:30: Location Crypt4 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 198 out of 200 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:23: Location Crypt4 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 170 out of 200 with 0)
 
-[Warning: Unity Log] 09/13/2026 22:26:30: Failed to place all Crypt4, placed 198 out of 200 with 0 tries in 00:00:00.5701710
+[Warning: Unity Log] 09/13/2026 22:53:23: Failed to place all Crypt4, placed 170 out of 200 with 0 tries in 00:00:00.6536940
 
-[Warning: Unity Log] 09/13/2026 22:26:31: Failed to place all ShipSetting01, placed 77 out of 100 with 0 tries in 00:00:00.2923350
+[Warning: Unity Log] 09/13/2026 22:53:23: Failed to place all SwampHut3, placed 46 out of 50 with 0 tries in 00:00:00.0501710
 
-[Warning: Unity Log] 09/13/2026 22:26:32: Failed to place all MountainWell1, placed 12 out of 25 with 0 tries in 00:00:00.3498840
+[Warning: Unity Log] 09/13/2026 22:53:24: Failed to place all StoneTowerRuins05, placed 46 out of 50 with 0 tries in 00:00:00.2702520
 
-[Warning: Unity Log] 09/13/2026 22:26:32: Failed to place all Runestone_Mountains, placed 75 out of 100 with 0 tries in 00:00:00.3273900
+[Warning: Unity Log] 09/13/2026 22:53:25: Failed to place all MountainWell1, placed 13 out of 25 with 0 tries in 00:00:00.3209680
 
-[Warning: Unity Log] 09/13/2026 22:26:32: Failed to place all CombatRuin01, placed 2 out of 5 with 0 tries in 00:00:00.1235580
+[Warning: Unity Log] 09/13/2026 22:53:26: Failed to place all Runestone_Mountains, placed 66 out of 100 with 0 tries in 00:00:00.3149270
 
-[Warning: Unity Log] 09/13/2026 22:26:33: Failed to place all TarPit1, placed 54 out of 100 with 0 tries in 00:00:00.2842490
+[Warning: Unity Log] 09/13/2026 22:53:26: Failed to place all TarPit1, placed 79 out of 100 with 0 tries in 00:00:00.3084450
 
-[Warning: Unity Log] 09/13/2026 22:26:33: Failed to place all TarPit2, placed 5 out of 16 with 0 tries in 00:00:00.2798900
+[Warning: Unity Log] 09/13/2026 22:53:26: Failed to place all TarPit2, placed 14 out of 16 with 0 tries in 00:00:00.2984520
 
-[Warning: Unity Log] 09/13/2026 22:26:33: Failed to place all TarPit3, placed 95 out of 100 with 0 tries in 00:00:00.2628140
+[Warning: Unity Log] 09/13/2026 22:53:27: Failed to place all MountainCave02, placed 110 out of 120 with 0 tries in 00:00:00.2242940
 
-[Warning: Unity Log] 09/13/2026 22:26:34: Failed to place all MountainCave02, placed 114 out of 120 with 0 tries in 00:00:00.2348890
+[Warning: Unity Log] 09/13/2026 22:53:30: Location NorthVillage took more than 0.5 seconds to place, check spawn conditions to improve! (placed 51 out of 135 with 0)
 
-[Warning: Unity Log] 09/13/2026 22:26:35: Failed to place all Mistlands_Giant1, placed 218 out of 250 with 0 tries in 00:00:00.3586660
+[Warning: Unity Log] 09/13/2026 22:53:30: Failed to place all NorthVillage, placed 51 out of 135 with 0 tries in 00:00:00.7760660
 
-[Warning: Unity Log] 09/13/2026 22:26:37: Location NorthVillage took more than 0.5 seconds to place, check spawn conditions to improve! (placed 38 out of 135 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:31: Failed to place all WoodVillage2, placed 3 out of 15 with 0 tries in 00:00:00.1718670
 
-[Warning: Unity Log] 09/13/2026 22:26:37: Failed to place all NorthVillage, placed 38 out of 135 with 0 tries in 00:00:00.6953150
+[Warning: Unity Log] 09/13/2026 22:53:32: Failed to place all StoneTowerRuins08_sunk, placed 7 out of 10 with 0 tries in 00:00:00.2334230
 
-[Warning: Unity Log] 09/13/2026 22:26:38: Failed to place all WoodVillage2, placed 0 out of 15 with 0 tries in 00:00:00.1530650
+[Warning: Unity Log] 09/13/2026 22:53:32: Failed to place all StoneTowerRuins09_sunk, placed 3 out of 10 with 0 tries in 00:00:00.2332880
 
-[Warning: Unity Log] 09/13/2026 22:26:39: Failed to place all StoneTowerRuins08_sunk, placed 6 out of 10 with 0 tries in 00:00:00.2497410
+[Warning: Unity Log] 09/13/2026 22:53:32: Failed to place all StoneTowerRuins10_sunk, placed 0 out of 10 with 0 tries in 00:00:00.2264230
 
-[Warning: Unity Log] 09/13/2026 22:26:39: Failed to place all StoneTowerRuins09_sunk, placed 2 out of 10 with 0 tries in 00:00:00.2411010
+[Warning: Unity Log] 09/13/2026 22:53:32: Failed to place all SwampHut1_1, placed 39 out of 50 with 0 tries in 00:00:00.1677190
 
-[Warning: Unity Log] 09/13/2026 22:26:39: Failed to place all StoneTowerRuins10_sunk, placed 5 out of 10 with 0 tries in 00:00:00.2398980
+[Warning: Unity Log] 09/13/2026 22:53:33: Failed to place all SwampHut2_1, placed 2 out of 50 with 0 tries in 00:00:00.1660170
 
-[Warning: Unity Log] 09/13/2026 22:26:39: Failed to place all SwampHut1_1, placed 26 out of 50 with 0 tries in 00:00:00.2047990
+[Warning: Unity Log] 09/13/2026 22:53:33: Failed to place all SwampHut3_1, placed 2 out of 50 with 0 tries in 00:00:00.1645700
 
-[Warning: Unity Log] 09/13/2026 22:26:40: Failed to place all SwampHut2_1, placed 5 out of 50 with 0 tries in 00:00:00.2051590
+[Warning: Unity Log] 09/13/2026 22:53:33: Failed to place all StoneTowerRuins05_leet, placed 1 out of 10 with 0 tries in 00:00:00.1556330
 
-[Warning: Unity Log] 09/13/2026 22:26:40: Failed to place all SwampHut3_1, placed 2 out of 50 with 0 tries in 00:00:00.2133560
+[Warning: Unity Log] 09/13/2026 22:53:33: Failed to place all GoblinCamp2_1, placed 0 out of 5 with 0 tries in 00:00:00.0125320
 
-[Warning: Unity Log] 09/13/2026 22:26:40: Failed to place all GoblinCamp2_1, placed 0 out of 5 with 0 tries in 00:00:00.0118470
+[Warning: Unity Log] 09/13/2026 22:53:34: Location GoblinHut02 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 14 out of 30 with 0)
 
-[Warning: Unity Log] 09/13/2026 22:26:41: Location GoblinHut01 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 14 out of 30 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:34: Failed to place all GoblinHut02, placed 14 out of 30 with 0 tries in 00:00:00.7130680
 
-[Warning: Unity Log] 09/13/2026 22:26:41: Failed to place all GoblinHut01, placed 14 out of 30 with 0 tries in 00:00:00.7174980
+[Warning: Unity Log] 09/13/2026 22:53:35: Location GoblinHut03 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 4 out of 20 with 0)
 
-[Warning: Unity Log] 09/13/2026 22:26:41: Location GoblinHut02 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 4 out of 30 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:35: Failed to place all GoblinHut03, placed 4 out of 20 with 0 tries in 00:00:00.7128910
 
-[Warning: Unity Log] 09/13/2026 22:26:41: Failed to place all GoblinHut02, placed 4 out of 30 with 0 tries in 00:00:00.7032150
+[Warning: Unity Log] 09/13/2026 22:53:35: Failed to place all TarPit1_1, placed 0 out of 50 with 0 tries in 00:00:00.3323150
 
-[Warning: Unity Log] 09/13/2026 22:26:42: Location GoblinHut03 took more than 0.5 seconds to place, check spawn conditions to improve! (placed 2 out of 20 with 0)
+[Warning: Unity Log] 09/13/2026 22:53:35: Failed to place all TarPit2_1, placed 0 out of 20 with 0 tries in 00:00:00.3341250
 
-[Warning: Unity Log] 09/13/2026 22:26:42: Failed to place all GoblinHut03, placed 2 out of 20 with 0 tries in 00:00:00.7134710
+[Warning: Unity Log] 09/13/2026 22:53:36: Failed to place all TarPit3_1, placed 0 out of 100 with 0 tries in 00:00:00.3289630
 
-[Warning: Unity Log] 09/13/2026 22:26:42: Failed to place all TarPit1_1, placed 2 out of 50 with 0 tries in 00:00:00.2986020
+[Warning: Unity Log] 09/13/2026 22:53:36: There are 5 that take a long time to generate (over 0.5 sec). Total slow location time is 3.7 seconds that could be saved on world gen!
 
-[Warning: Unity Log] 09/13/2026 22:26:43: Failed to place all TarPit2_1, placed 0 out of 20 with 0 tries in 00:00:00.3028610
+[Info   : Unity Log] 09/13/2026 22:53:36: Registering lobby
 
-[Warning: Unity Log] 09/13/2026 22:26:43: Failed to place all TarPit3_1, placed 6 out of 100 with 0 tries in 00:00:00.3053330
+[Info   : Unity Log] 09/13/2026 22:53:36: Opened Steam server
 
-[Warning: Unity Log] 09/13/2026 22:26:43: There are 7 that take a long time to generate (over 0.5 sec). Total slow location time is 4.8 seconds that could be saved on world gen!
+[Info   : Unity Log] 09/13/2026 22:53:36: Loading: Done. Total seconds sinze ZNet start: 21.003915, Genloc duration: 17083.649 ms, (Total genloc time: 00:00:17.1616340, locations: 183, iterations: 0)
 
-[Info   : Unity Log] 09/13/2026 22:26:43: Registering lobby
+[Info   : Unity Log] 09/13/2026 22:54:54: Game - OnApplicationQuit
 
-[Info   : Unity Log] 09/13/2026 22:26:43: Opened Steam server
+[Info   : Unity Log] 09/13/2026 22:54:54: Available space to current user: 1694368477184. Saving is blocked if below: 213909504 bytes. Warnings are given if below: 427819008
 
-[Info   : Unity Log] 09/13/2026 22:26:43: Loading: Done. Total seconds sinze ZNet start: 22.119501, Genloc duration: 18129.8 ms, (Total genloc time: 00:00:18.2098390, locations: 183, iterations: 0)
+[Info   : Unity Log] 09/13/2026 22:54:54: Shutting down
 
-[Info   : Unity Log] 09/13/2026 22:28:00: Game - OnApplicationQuit
+[Info   : Unity Log] 09/13/2026 22:54:54: ZNet Shutdown
 
-[Info   : Unity Log] 09/13/2026 22:28:00: Available space to current user: 1694456823808. Saving is blocked if below: 213909504 bytes. Warnings are given if below: 427819008
+[Info   : Unity Log] 09/13/2026 22:54:54: GetSaveClonePerChunk. Calculated number of actual chunk files: 1  Number of dirty chunks to save: 1 [3ms]
 
-[Info   : Unity Log] 09/13/2026 22:28:00: Shutting down
+[Info   : Unity Log] 09/13/2026 22:54:54: PrepareSave: ZDOExtraData.PrepareSave done [4ms]
 
-[Info   : Unity Log] 09/13/2026 22:28:00: ZNet Shutdown
+[Info   : Unity Log] 09/13/2026 22:54:54: Unloading unused assets
 
-[Info   : Unity Log] 09/13/2026 22:28:00: GetSaveClonePerChunk. Calculated number of actual chunk files: 1  Number of dirty chunks to save: 1 [1ms]
-
-[Info   : Unity Log] 09/13/2026 22:28:00: PrepareSave: ZDOExtraData.PrepareSave done [3ms]
-
-[Info   : Unity Log] 09/13/2026 22:28:00: Unloading unused assets
-
-[Info   : Unity Log] 09/13/2026 22:28:00: Sending disconnect msg
+[Info   : Unity Log] 09/13/2026 22:54:54: Sending disconnect msg
 
 [Info   : Unity Log] ZPlayFabMatchmaking::UnregisterServer - unregistering server now. State: Uninitialized
-[Info   : Unity Log] 09/13/2026 22:28:00: Disposing socket
+[Info   : Unity Log] 09/13/2026 22:54:54: Disposing socket
 
-[Info   : Unity Log] 09/13/2026 22:28:00: Stopping listening socket
+[Info   : Unity Log] 09/13/2026 22:54:54: Stopping listening socket
 
+[Info   : Unity Log] 09/13/2026 22:54:54: Last socket, unregistering callback
 
-[Showing lines 1-300 of 313. Use :301 to continue]
+[Info   : Unity Log] 09/13/2026 22:54:54: ZSteamSocket  UnregisterGlobalCallbacks, existing sockets:0
+
+[Info   : Unity Log] 09/13/2026 22:54:54: Stopping build thread
+
+[Info   : Unity Log] 09/13/2026 22:54:56: Steam manager on destroy
+

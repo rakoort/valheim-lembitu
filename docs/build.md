@@ -340,25 +340,29 @@ depot 1006 manifest `6403079453713498174`. This is a fresh runtime observation o
 installed build, not a new public-release query or a full-Pack/client test.
 
 The ordinary `scripts/test-server.sh run` path selected `NullGfxDevice` without adding
-`-nographics`. It used an owned installation, fresh `RenderingCapture` world, explicit save
+`-nographics`. Its replacement capture used an owned installation, fresh `RenderingReviewFix` world, explicit save
 and preference directories, Steam-only transport and port 2590. The probe enabled
 `Logging.Disk.WriteUnityLog` only in its disposable BepInEx config to retain Unity events.
-Both Unity output and BepInEx `LogOutput.log` are retained in the #38 Handback evidence.
+Amendments 106/107 replace the initially truncated BepInEx extraction with a new complete
+paired measurement through the same launcher at source `e9d22a15ec5c86a5f2d21c062f9c015290c80ebe`.
+Byte-based retention records full-source hashes, redacted hashes and unchanged newline counts:
+251 Unity lines and 302 BepInEx lines, without reader framing. The old missing tail was
+not reconstructed. Replacement provenance and indexes are retained in the #38 Handback evidence.
 
-| Warning family (fresh occurrence count) | Initialization phase and subsystem | Accepted-noise disposition in the measured dedicated topology |
+| Warning family (fresh occurrence count) | Initialization phase and subsystem | Bounded no-renderer finding; required view comparison unverified |
 | --- | --- | --- |
-| HDR reflection texture unsupported (3) | First startup scene (1), transition into world scene (2), reflection probes | Explicit HDR disable on the null renderer; accepted for dedicated hosting, absent from compared rendered clients. |
-| `Hidden/VideoDecode` missing (1) | Startup scene before world argument handling, video materials | Five missing decode passes (`YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`) serve video output, not hosting. Accepted in this no-renderer path; VideoDecode absent from compared clients. |
-| `Hidden/VideoComposite` missing (1) | Same startup phase, video compositing | Missing `Default` pass; two zero-pass errors bracket the video materials and intro cinematic subsequently fails. No video output is required for dedicated hosting; accepted here, VideoComposite absent from compared clients. |
-| `Hidden/Dof/DepthOfFieldHdr` unsupported (2), effect disabled (2) | Startup camera, then world camera after `ZNet Start` | Explicitly disables depth-of-field twice; accepted camera fallback, absent from compared rendered clients. |
-| `Hidden/SunShaftsComposite` and `Hidden/SimpleClear` unsupported (2 each), effect disabled (2) | Same two camera initialization phases | Explicitly disables sun-shafts; both shader families absent from compared clients. Accepted fallback, not two independent defects. |
-| AmplifyOcclusion CopyTexture unsupported (2) | Startup camera, then world initialization before `Zonesystem Start` | Explicitly disables CacheAware optimization; accepted without a renderer, AmplifyOcclusion absent from compared clients. |
-| AmplifyOcclusion GBuffer normals unavailable (1) | World camera after Steam registration, before location generation | Explicitly switches to Camera source rather than deferred shading; accepted fallback, GBuffer warning absent from compared clients. |
-| `AsyncResourceUpload failed` (2) | First scene asset loading before GPU identification | Accepted as observed no-renderer startup noise: hosting continues and the family is absent from compared clients. Exact asset/cause remains unestablished; this is not a claimed explicit fallback. |
-| IMGUI module stripped (4) | Startup and world scene component callbacks | Explicitly skips `OnGUI` because IMGUI is stripped; accepted for dedicated hosting, IMGUI absent from compared clients. Retained full-Pack servers have 5 matches each, not this probe’s 4. |
+| HDR reflection texture unsupported (3) | First startup scene (1), transition into world scene (2), reflection probes | Explicit HDR disable on the null renderer; absent from compared rendered-client logs. |
+| `Hidden/VideoDecode` missing (1) | Startup scene before world argument handling, video materials | Five missing decode passes (`YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`) concern unavailable video output; hosting continues; VideoDecode absent from compared client logs. |
+| `Hidden/VideoComposite` missing (1) | Same startup phase, video compositing | Missing `Default` pass; two zero-pass errors bracket the video materials and intro cinematic subsequently fails. Hosting continues; VideoComposite absent from compared client logs. |
+| `Hidden/Dof/DepthOfFieldHdr` unsupported (2), effect disabled (2) | Startup camera, then world camera after `ZNet Start` | Explicitly disables depth-of-field twice; family absent from compared rendered-client logs. |
+| `Hidden/SunShaftsComposite` and `Hidden/SimpleClear` unsupported (2 each), effect disabled (2) | Same two camera initialization phases | Explicitly disables sun-shafts; both shader families absent from compared client logs. Repeated initialization, not two independent defects. |
+| AmplifyOcclusion CopyTexture unsupported (2) | Startup camera, then world initialization before `Zonesystem Start` | Explicitly disables CacheAware optimization; AmplifyOcclusion absent from compared client logs. |
+| AmplifyOcclusion GBuffer normals unavailable (1) | World camera after Steam registration, before location generation | Explicitly switches to Camera source rather than deferred shading; GBuffer warning absent from compared client logs. |
+| `AsyncResourceUpload failed` (2) | First scene asset loading before GPU identification | Hosting continues and the family is absent from compared client logs. Exact asset/cause remains unestablished; no explicit fallback is claimed. |
+| IMGUI module stripped (4) | Startup and world scene component callbacks | Explicitly skips `OnGUI` because IMGUI is stripped; absent from compared client logs. Retained full-Pack servers have 5 matches each, not this probe’s 4. |
 
 All these messages preceded `Opened Steam server`; the probe then remained open for
-77 seconds and handled timed SIGINT through `ZNet Shutdown`, socket disposal and Steam
+78 seconds and handled timed SIGINT through `ZNet Shutdown`, socket disposal and Steam
 manager destruction. The timeout returned 124 as designed, not a spontaneous server crash.
 This proves startup/idle hosting despite the messages, not successful client joining or
 rendering. It does not attribute unrelated missing-script or world-placement warnings.
@@ -379,14 +383,20 @@ The Lead’s positive control finds 118 case-insensitive `shader` and 47 `not su
 hits in the same rendered-client Unity log, including #31 families. Thus the zero rows
 come from a log that records rendering problems, not a silent capture. Together with
 this probe’s null-device context, explicit effect fallbacks where logged, and hosting
-after every warning, the comparison supports each bounded accepted-noise entry above.
+after every warning, the comparison supports each bounded no-renderer finding above.
 No shader, initialization path or log filter was changed; real client defects remain #31.
 
-Limits: retained log-level comparison, not fresh client execution, universal absence,
-or a #49/#52 per-view walkthrough. Those views were not posted when measured. This
-does not prove crossplay, concurrency or capacity. The retained directory remains
-unreadable on astral-tricep; use the cited measurement rather than seeking wider access.
-Client launch is still forbidden while the shared Steam account is in use.
+**Required #49/#52 per-view comparison remains explicitly unverified for every family.**
+Review round 1 accepted the log-level comparison but identified the missing rendered views.
+Lead amendment 107 reports a handback-time re-check: both scenario Tickets remain open
+in the client-gated Milestone and have zero posted comments/views. Producing those views
+would require an unauthorized client launch on either Worker while the shared Steam
+account has a live Proton session. Do not produce, simulate or substitute for those views.
+No completed acceptance is claimed; the view requirement has not been removed. Its
+disposition belongs to Review/Lead and any scope change to Specify through the Desk.
+The log-level dedicated-server-only separation stands, without a fresh client execution
+or universal absence claim. Crossplay, concurrency and capacity remain unproven.
+Client rendering defects remain #31; client launch is still forbidden.
 
 `GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP
 ports in the documented setup, usually the barebones server.

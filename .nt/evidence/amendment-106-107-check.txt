@@ -1,0 +1,49 @@
+warning: Git tree '/home/ra/.local/share/thurbox/worktrees/1a170c589182c98d/nt-38-classify-dedicated-server-rendering-and-video-wa' is dirty
+pass: entries change in their section, same-named keys elsewhere survive
+pass: an enforced config is idempotent and reports nothing to do
+pass: a missing key is appended under a re-declared section
+pass: an overlay with no generated target aborts
+pass: data files replace their target wholesale
+pass: an overlay entry outside a section aborts
+
+6 passed, 0 failed
+pass: fresh install deploys DLLs and trees, manifest lists every file
+pass: prune removes stale DLL and tree, ledger records them
+pass: prune leaves every foreign file and its directory alone
+pass: an old plugins/ manifest is migrated with the prefix and still prunes
+pass: a no-op run writes no ledger
+pass: an updated file is recopied
+pass: patchers/ and config/ deploy from dist and prune when retired
+pass: a plugins/ target is refused with the correct target named
+pass: a symlink in dist/plugins/ is an error
+pass: an empty dist/plugins/ is an error
+pass: a trailing slash on the target directory is accepted
+pass: a dotfile in dist/plugins/ is refused
+pass: adopting a foreign path of the same name warns and overwrites
+pass: prune-mirror replays the ledger in the container and clears it
+pass: non-plugins ledger entries are spent without touching the container
+pass: a ledger entry outside the plugins directory aborts prune-mirror
+pass: prune-mirror without a ledger does nothing
+pass: a removal that fails inside the container keeps the ledger for retry
+pass: dedicated install deploys built plugins without compgen
+pass: dedicated install without built plugins still succeeds
+
+20 passed, 0 failed
+pass: --list parses the adopted table and ignores every other section
+pass: root, plugins/, patchers/ and config/ shapes stage into per-package dist trees
+pass: restaging wipes the package directory first
+pass: a dropped pin retires its staged trees
+pass: the lock mirrors the current pin set and drops retired pins
+pass: a recorded lock verifies matching zips and stays byte-identical
+pass: a zip whose bytes moved under a pinned version is refused
+pass: pinned dependencies and documented overrides satisfy the closure
+pass: a dependency outside the pin list and the overrides aborts staging
+pass: a dependency version that is only a prefix of a pin is refused
+pass: an unexpected package shape aborts before staging anything
+
+11 passed, 0 failed
+.
+----------------------------------------------------------------------
+Ran 1 test in 3.069s
+
+OK

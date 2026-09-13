@@ -1,47 +1,39 @@
-Ticket: rakoort/valheim-lembitu#38
-Input source: rakoort/valheim-lembitu 5b1d89d507a0a8edc4ac06c00d1cf25a73083a64
-Host runtime observation: astral-tricep, x86_64 Linux/NixOS.
-Measured executable: Valheim dedicated l-1.0.12/network 40; Unity 6000.0.75f1.
-Depot manifests copied with cached installation: 896661/9055200629726788899; 1006/6403079453713498174.
-No new public release query performed. The cache was copied, not modified.
-BepInExPack 5.4.2350; BepInEx 5.4.23.5; zero plugins.
-Source installation: /home/ra/.cache/valheim-lembitu/server/
-Owned installation: <RUN_WORKSPACE>/.nt/server/
-No client, no crossplay, no live server changes. GPU rendered views unexercised.
+Ticket: rakoort/valheim-lembitu#38; replacement measurement for amendments 106/107.
+Executed source: rakoort/valheim-lembitu e9d22a15ec5c86a5f2d21c062f9c015290c80ebe (documentation/evidence working changes only).
+Original Packet input: 5b1d89d507a0a8edc4ac06c00d1cf25a73083a64.
+Host: astral-tricep, x86_64 Linux/NixOS.
+Valheim dedicated l-1.0.12/network 40; Unity 6000.0.75f1; BepInEx 5.4.23.5/pack 5.4.2350.
+Same executable/config SHA256 values as the prior measurement; capture-integrity.json records all five measured hashes.
+Cached depot provenance from the prior measurement: 896661/9055200629726788899 and 1006/6403079453713498174. No new public-release query claimed.
+Zero plugins, no third-party patchers; explicit owned world/save/preferences; Steam-only, UDP 2590. No client launch or live server changes.
 
-Preparation (run from supplied workspace):
-rsync -a --exclude=BepInEx/plugins --exclude=BepInEx/config --exclude=LogOutput.log --exclude=*.log --exclude=worlds_local --exclude=characters_local /home/ra/.cache/valheim-lembitu/server/ .nt/server/
-mkdir -p .nt/evidence .nt/saves .nt/preferences
-After generating BepInEx config, set only Logging.Disk.WriteUnityLog=true in the owned config. Exact measured config is BepInEx.cfg beside this file.
+Correction of prior evidence:
+At e9d22a1, server-LogOutput.log contained a reader extraction: 300 original lines followed by a blank/footer rather than the original 313-line file. The original local file was deleted during cleanup. Its claimed complete, line-preserving provenance was false. Neither its missing tail nor old line indexes are reconstructed here. Both current log files and warning-index.json come from this new paired measurement, replacing the old pair. The old commit remains historical, not complete paired proof.
+
+Preparation, from the assigned workspace:
+rsync -a --exclude=BepInEx/plugins --exclude=BepInEx/patchers --exclude=BepInEx/config --exclude=LogOutput.log --exclude=*.log --exclude=worlds_local --exclude=characters_local /home/ra/.cache/valheim-lembitu/server/ .nt/server/
+mkdir -p .nt/server/BepInEx/config .nt/review-fix-raw .nt/saves .nt/preferences
+cp .nt/evidence/BepInEx.cfg .nt/server/BepInEx/config/BepInEx.cfg
 ss -lunp "sport >= :2590 and sport <= :2592"
-Observed no listeners before second and final launch. Initial Python socket preflight failed because python3 was absent; it was not a successful reservation. These are observations, not protection against another process racing for the ports.
+Observed no listeners before launch and after exit. This is an observation, not a reservation against races.
 
-Final measured invocation:
-VALHEIM_TEST_DIR="$PWD/.nt/server" XDG_CONFIG_HOME="$PWD/.nt/preferences" timeout --signal=INT --kill-after=30s 120s bash scripts/test-server.sh run -name RenderingProbe -port 2590 -world RenderingCapture -password probe38 -public 0 -savedir "$PWD/.nt/saves" -logFile "$PWD/.nt/evidence/server-unity.log" > .nt/evidence/capture-console.log 2>&1
+Actual invocation:
+VALHEIM_TEST_DIR="$PWD/.nt/server" XDG_CONFIG_HOME="$PWD/.nt/preferences" timeout --signal=INT --kill-after=30s 120s bash scripts/test-server.sh run -name RenderingProbe -port 2590 -world RenderingReviewFix -password probe38 -public 0 -savedir "$PWD/.nt/saves" -logFile "$PWD/.nt/review-fix-raw/server-unity.log" > .nt/review-fix-raw/console.log 2>&1
 probe38 is a disposable test password, not a real credential.
-Result: timeout exit 124 after 122.92 seconds; normal SIGINT shutdown completed before kill-after.
-BepInEx startup complete, NullGfxDevice, named rendering warnings, Opened Steam server at 22:26:43, native shutdown at 22:28:00, Steam manager destruction at 22:28:03. No client joined.
-Final ss command above showed no remaining listeners.
+Result: planned timeout exit 124 after 122.75 seconds; native SIGINT shutdown, no forced-kill evidence.
+Opened Steam server at 22:53:36; OnApplicationQuit/ZNet Shutdown at 22:54:54; Steam manager destruction at 22:54:56. 78 seconds idle hosting after open. No joined client.
 
-Earlier setup attempts:
-1. Same owned runner with steam-run and -nographics -batchmode, world RenderingProbe, 180-second bound; stopped the owned PID with SIGINT after 45.72 seconds. Do not call this a startup failure: the early read was incomplete.
-2. Bare runner without those flags, same RenderingProbe world, 180-second bound; stopped the owned PID with SIGINT after 45.76 seconds. Observed owned UDP listeners. Generated default BepInEx config excluded Unity events from its disk log; final measurement explicitly enabled them.
-No initial attempt establishes absence of a warning. Only the final complete paired logs support the classification.
+Capture, after process exit:
+bun .nt/evidence/retain-pair.js
+This instrument reads complete bytes with Bun.file, verifies lossless UTF-8 decoding, redacts workspace paths and server identity without changing newlines, writes exact redacted bytes, rereads and compares all bytes, rejects reader framing, and requires native hosting/shutdown markers. Chainloader completion is required only in BepInEx output; an initial overly broad Unity marker requirement failed before any output was replaced and was corrected. The successful run is the capture evidence.
+Unity: 251 newline-terminated lines, 20069 original bytes, 19198 redacted bytes.
+BepInEx: 302 newline-terminated lines, 18132 original bytes, 17837 redacted bytes.
+The new BepInEx log's 302-line size does not make it the old 302-line extraction: it has complete byte lineage and no reader footer. Its final native message is Steam manager destruction at line 301, followed by the original blank line.
+Original and redacted SHA256 values, full-source-read/line-preservation/byte-equality checks, tested binary hashes and lifecycle indexes: capture-integrity.json.
+Current redacted logs: server-unity.log and server-LogOutput.log. warning-index.json indexes the replacement files, including the intro cinematic message. BepInEx.cfg is unchanged.
 
-SHA256 of tested binaries/config:
-afdc1feb7b381da99ba43c25cf75b211068ee8f778a187951f5ca644faf819cc  valheim_server.x86_64
-66c4643dd702e726ed85abcb17e50923cd1de259d58e5536e5eed4647249e268  UnityPlayer.so
-1231fc2ffdbe6038ba622b8646c2084980d06962e5f8521ae5a0b886be0f1c61  valheim_server_Data/Managed/assembly_valheim.dll
-f09821b2a7b990c6f50c5ef23229635303ce675374b70edc6f5a9b960cb818e3  BepInEx/core/BepInEx.dll
-3d57dfda8c47fecf676f76694c6e10ac5c9e793e3982876f39a4884ed27d9bcb  BepInEx/config/BepInEx.cfg
-
-Retained artifacts:
-server-unity.log: full measured Unity output, workspace path and server identity redacted.
-server-LogOutput.log: paired BepInEx output, same redaction. Line count and ordering preserved.
-warning-index.json: literal warning-family occurrence line numbers in those two files; not causal proof.
-BepInEx.cfg: exact measured disposable config, not a product configuration change.
-
-Missing comparison:
-Read of /home/ra/.local/state/lembitu/native-tests failed, as did the exact amendment-104 path /home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/run-1/ and parent /home/ra/.local/state/lembitu. A glob under /home/ra/.local/state for that run identity found no files.
-gh issue view 49/52/53 --repo rakoort/valheim-lembitu --comments --json comments returned no comments. #40 comment https://github.com/rakoort/valheim-lembitu/issues/40#issuecomment-5654964985 reports completed full-Pack acceptance, not per-family client rendering comparisons. docs/build.md's #37 record also says retained files were unavailable on this Worker.
-Amendment 104 forbids client launch while another title uses the shared Steam account. Need supplied paired retained logs and #49/#52 rendered views; not permission to launch a client.
+Findings and limits:
+Named warning counts agree with the previous complete Unity observation and Review's independent table. IMGUI is Unity-only (4 fresh matches; retained full-Pack servers 5). No re-litigation of Review-accepted log comparisons or initialization attribution.
+Lead comparison: https://github.com/rakoort/valheim-lembitu/issues/38#issuecomment-5655601860
+Independent Review: https://github.com/rakoort/valheim-lembitu/issues/38#issuecomment-5655688638
+The per-family log-level separation stands. Required individual #49/#52 rendered-view comparison remains explicitly unverified. Amendment 107 reports no posted views and no authority to produce them on either Worker. No simulated/proxy views, Ticket body change, or removal of the requirement. Review/Lead disposition and any Specify/Desk scope decision remain outside this Run.
