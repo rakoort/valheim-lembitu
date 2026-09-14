@@ -169,6 +169,15 @@ NO and stop markers, checking replacement/preservation and custom-table preserva
 existing script tests reference this fork version; native server/client verification is
 performed by the stack testing workflow, not by this isolated build.
 
+## Warning cleanup (#39, 2026-09-14)
+
+Removed the dead `playerdead` local left by our Groups integration removal, the unused
+`Data/customlevel.cs` prototype classes, and disabled scroll-zoom fields/code in `Scripts/Drag.cs`.
+The active drag handlers, saved positions and XP awards are unchanged. No discovery API was
+replaced and no warning was suppressed. The full build moves from 13 warnings to eight;
+`docs/wiki/building.md` classifies every diagnostic and explains the retained library defaults
+and ordered container discovery. Native client preservation remains unverified.
+
 ## What this fork owes other tickets
 
 - **`API.EMMOS_API` and the known-text keys are a contract.** `int GetLevel()`,

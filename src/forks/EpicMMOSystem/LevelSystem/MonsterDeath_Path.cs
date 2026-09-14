@@ -37,7 +37,6 @@ public static class MonsterDeath_Path
         int level = pkg.ReadInt();
         bool isBoss = pkg.ReadBool();
         Vector3 position = pkg.ReadVector3();
-        bool playerdead  = false;
         var MobisBoss = isBoss;
         int monsterLevel = 1;
         int playerExp = 0;
@@ -46,7 +45,6 @@ public static class MonsterDeath_Path
         if (monsterName == "Player(Clone)")
         {
             EpicMMOSystem.MLLogger.LogInfo("You Killed Player - PVP");
-            playerdead = true;
             // monsterLevel = level;
             playerExp = level;
             LevelSystem.Instance.AddExp(playerExp, true);

@@ -40,3 +40,31 @@ The current buildable projects under `src/` are:
 - **Broad Unity references need exclusions.** EpicMMOSystem uses a wildcard rather than maintaining a large module list, but excludes shared references to avoid duplicates. `UnityEngine.ImageConversionModule` is also excluded: it targets netstandard 2.1 and causes CS1705 for net472 (`src/forks/EpicMMOSystem/EpicMMOSystem.csproj:49-59`; `docs/build.md:128-139`).
 - **Preserve upstream code rather than rewriting it to silence nullable warnings.** Forks use `Nullable=annotations`; disabling annotations instead reports imported ServerSync's `?` annotations as CS8632. Recorded successful builds still had 13 existing fork warnings, so historical success is not a claim of a warning-free build (`src/forks/README.md:20-27`; `docs/build.md:663-666`).
 - **Compile-time library resolution does not prove runtime binding.** Strong-named .NET Framework libraries bind by exact assembly version. The YamlDotNet Thunderstore package numbered 16.3.1 contains library 16.3.0; the fork therefore pins `[16.3.0]` and excludes runtime assets rather than floating to a newer incompatible library or shipping another copy (`src/forks/ItemRequiresSkillLevel/ItemRequiresSkillLevel.csproj:19-26`; `docs/build.md:141-155`).
+
+## Fork warning review — 2026-09-14 (#39)
+
+The complete build against freshly extracted public Valheim 1.0.12/network 40 references
+reported 13 warnings at `be90c57a4336de89f45b6124f999a4694054d729`. The cleanup removes five,
+leaving eight intentionally visible diagnostics. This is not native player-path acceptance.
+
+| Diagnostic and member (EpicMMOSystem-relative path) | Ownership, reachability and disposition |
+| --- | --- |
+| CS0219 `LevelSystem/MonsterDeath_Path.cs`: `playerdead` | Upstream local left dead by our Groups-sharing removal. Delete its two constant stores; preserve RPC reads, XP awards and all branches. |
+| CS0169 `Data/customlevel.cs`: `CustomLevel.level` | Upstream unfinished custom-table implementation. Neither class has repository consumers; private methods never run. Delete the entire orphan file, not just its field. Active level calculations remain in `LevelSystem/LevelSystem.cs`. |
+| CS0414 `Scripts/Drag.cs`: `minimumScale` | Upstream scroll-zoom remnant; only reader is commented out. Remove with disabled scroll code. |
+| CS0414 `Scripts/Drag.cs`: `maximumScale` | Same disabled zoom path. Remove; active drag bounds and position persistence stay unchanged. |
+| CS0414 `Scripts/Drag.cs`: `scaleStep` | Same disabled zoom path. Remove along with write-only `size`/`_scale` state. Native panel verification remains required. |
+| CS0618 `Libs/ItemManager/Item.cs`: `ApplyToAllInstances` discovery | Vendored upstream library, reachable through item-stat configuration callbacks. Retain `FindObjectsOfType<Container>()`: active-container discovery and InstanceID ordering must be preserved. No native inventory/config-refresh comparison is available; do not switch to unsorted discovery. |
+| CS0649 `Libs/ItemManager/Item.cs`: `Configurable` | Vendored upstream nullable override. Its null value selects `DefaultConfigurability`; startup reads it when registering item configuration. Retain this live default/override seam. |
+| CS0649 `Libs/ItemManager/RequiredResourceList.cs`: `Free` | Vendored upstream recipe flag. False controls cost configuration and disables empty-cost recipes. Retain; unassigned does not mean unread. |
+| CS0649 `Libs/ItemManager/Trade.cs`: `Trader` | Vendored upstream default `None`; read during trader configuration/registration. Retain so items are not implicitly sold. |
+| CS0649 `Libs/ItemManager/Trade.cs`: `Price` | Vendored upstream zero default feeds trader configuration when enabled. Retain alongside the trader configuration seam. |
+| CS0649 `Libs/ItemManager/Trade.cs`: `RequiredGlobalKey` | Vendored upstream null default becomes an empty key for configurable trading. Retain the optional gate. |
+| CS0649 `Libs/ItemManager/Conversion.cs`: `Input` | Vendored upstream conversion descriptor, consumed by configuration and recipe registration. No conversion descriptors are constructed by this fork; custom XP meads use the separate vanilla-fermenter path. Retain the coherent vendored descriptor/registration seam rather than partially deleting its field. |
+| CS0649 `Libs/StatusEffectManager/CustomSE.cs`: `Type` | Vendored upstream default `Equip`, read by `AddSEToPrefab`. That registration helper has no fork caller: XP effects use `EffectPatches` instead. Retain the coherent library registration seam; do not infer an XP-consumption bug from this warning. |
+
+Library provenance is recorded in `src/forks/EpicMMOSystem/UPSTREAM.md`: recovered bundled
+sources, checked against upstream 1.9.66 (`e3de877cefbc3260ac8d1fe9410b3f221046b05e`).
+No suppression or explicit default initializer was added to hide a diagnostic. The unchanged
+discovery call is not an ordering experiment. Player XP, panel dragging/restoration and inventory
+refresh need the licensed GPU-backed client and relevant #47/#50/#41 sequences before acceptance.
