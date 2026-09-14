@@ -48,6 +48,24 @@ Consume the retained full-Pack evidence on astral-bicep at `/home/ra/.local/stat
 
 Retain one comparison row per family, identifying the inspected scenario view, corresponding log evidence and outcome. Mark unexercised or unavailable views explicitly unverified; missing artifacts or zero log matches do not prove visual correctness. Route real client rendering defects to #31. If AsyncResourceUpload appears in rendered-client logs, refer to #59 rather than carrying forward its bounded accepted-noise classification.
 
+## Capture integrity instrument (#56)
+
+Use `scripts/retain-pair.js` for new paired-log captures; the old `.nt/evidence/retain-pair.js`
+at #38 candidate `2a91e6d7bb869ebf830b65ef2ed3ea996341de25` is historical evidence, not the maintained tool.
+After the owned server exits, run `bun /absolute/repo/scripts/retain-pair.js SOURCE_SHA RUN_NAME`
+from its workspace. Supply the measured source commit and a new run name. Inputs retain the original layout:
+Unity log at `.nt/review-fix-raw/server-unity.log`, BepInEx log at `.nt/server/BepInEx/LogOutput.log`,
+and server binaries/config under `.nt/server/`. Bun is required.
+
+The instrument creates a new `.nt/evidence/` directory and refuses an existing one; it never rewrites
+old captures. Full-read integrity compares byte length with source sizes before/after reading and checks
+file identity and modification metadata. This detects observed source changes, not arbitrary concurrent
+rewrites; capture only stopped servers. The other flags measure newline preservation, retained-byte
+equality and absence of reader framing. Failed integrity or lifecycle checks produce the capture report
+before a nonzero exit; input decoding or I/O failures may abort without a complete report.
+`test/retain-pair.test.sh` exercises successful retention, reader framing, real redaction line loss and
+refusal to overwrite an earlier bundle. These fixtures prove the instrument, not game rendering.
+
 ## Lessons
 
 - **Separate accepted log evidence from scenario views.** Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38), the per-family rendered-client log-level separation is the accepted required comparison for #38. The per-scenario rendered-view comparison transfers to [#49](https://github.com/rakoort/valheim-lembitu/issues/49) and [#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance. No #49/#52 view is claimed to have been produced or compared.
