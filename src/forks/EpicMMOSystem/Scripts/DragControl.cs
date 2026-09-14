@@ -5,6 +5,8 @@ using UnityEngine.EventSystems;
 
 namespace EpicMMOSystem
 {
+// Owns HUD position settings and the prefab-facing BeginDrag/Drag/OnEndDrag callbacks.
+// Keep its delayed initialization and HUD-specific zero handling; see UPSTREAM.md #62.
 public class DragControl : MonoBehaviour //IBeginDragHandler//, IDragHandler, IEndDragHandler
     {
     private RectTransform window;

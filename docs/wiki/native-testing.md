@@ -66,6 +66,46 @@ before a nonzero exit; input decoding or I/O failures may abort without a comple
 `test/retain-pair.test.sh` exercises successful retention, reader framing, real redaction line loss and
 refusal to overwrite an earlier bundle. These fixtures prove the instrument, not game rendering.
 
+## EpicMMO panel drag ownership (#62, 2026-09-14)
+
+The three controllers retain separate contracts, as permitted by #62. The per-controller rationale
+and live source callers are in [EpicMMOSystem's maintenance notes](../../src/forks/EpicMMOSystem/UPSTREAM.md#panel-drag-ownership-62).
+Only comments and documentation changed; no drag implementation, serialized type, setting or caller changed.
+
+Native evidence on astral-tricep is retained under
+`/home/ra/.cache/valheim-lembitu/ticket-62-20260914/`. The source base is
+`ca45304f1ce1ce2ea610842912ffdfc8c5f5104f`, with the three ownership comments applied before
+the measured build. `candidate-binary-identity.sha256` identifies the rebuilt EpicMMOSystem DLL
+and both deployed copies; the client copy matched with `cmp`. The real client/server ran
+Valheim l-1.0.12/network 40, with the isolated retained #61 Pack and a temporary diagnostic plugin.
+`installed-binaries.json` records deployed DLL hashes, including that diagnostic.
+
+`verify.py` produced 16 passing assertions in `verification.json`:
+
+- PointPanel moved from `(0, 0)` to `(-250, -30)`; NavigatePanel moved from `(0, 100)` to `(200, 300)`.
+  Settings remained unchanged during drag and matched the new positions at drag end.
+- Native screen clamping held NavigatePanel at the top/left and PointPanel at the bottom/right
+  of the 1600×900 surface, allowing floating-point rounding below 0.001 pixels.
+- Both panels restored nonzero settings after deliberate position perturbation. The default
+  restore skipped a zero setting; explicit restore applied zero. Saved positions were then restored.
+- After a normal client quit and fresh client launch, both panels reopened at their saved positions.
+  This checks client UI-config persistence, not character/world fixture reuse.
+
+The temporary probe invoked the production `OnBeginDrag`, `OnDrag`, `OnEndDrag` and `RestoreWindow`
+methods on the live panel components from Unity Update. Pointer coordinates came from the real
+client; assertions ran outside Unity. `final-saved.png` and `restarted-restored.png` were visually
+inspected: the attributes panel remained readable at its moved position and the navigation bar
+remained at its saved location behind it. `native-restore/events.jsonl` retains native quit/exit evidence.
+
+Verification boundaries: injected X button drags did not move the panels. The held-button probe
+recorded a focused game, PointPanel raycast hits, `InputSystemUIInputModule`, and legacy
+`Input.GetMouseButton(0) == false`. Direct native callback proof does not attest physical mouse
+dispatch. Initial runs also exposed missing Python/display tooling and an unprotected character
+death; those attempts remain retained, not counted as successful drag evidence. The final probe
+enabled god mode solely to isolate UI verification from combat. No HUD-drag, FriendList,
+rendering-family, multiplayer or full-Pack acceptance is claimed. Diagnostic sources are retained
+in `diagnostic-instrumentation.tar.gz`; the deployed probe and loose diagnostic programs were removed.
+
 ## StoneOutlook restoration blocker (#32, 2026-09-14)
 
 MWL 5.1.0 omits the location definition, not an operator setting.

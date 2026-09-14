@@ -175,6 +175,26 @@ NO and stop markers, checking replacement/preservation and custom-table preserva
 existing script tests reference this fork version; native server/client verification is
 performed by the stack testing workflow, not by this isolated build.
 
+## Panel drag ownership (#62)
+
+Keep the three controllers separate: they do not own the same panel settings or interaction contract.
+The Ticket explicitly permits recorded rationale instead of consolidation; no behavior changes here.
+
+| Controller | Live caller / owner | Why it stays separate |
+| --- | --- | --- |
+| `MonoScripts.DragWindowCntrl` (`Scripts/Drag.cs`) | `MyUI_NavigationPanel.InitNavigationPanel` and `MyUI_LevelSystem.InitLevelSystem`; `LevelNavPosition` / `LevelPointPosition` | Implements EventSystem begin/drag/end on NavigatePanel and PointPanel, preserves pointer offset, clamps to the screen, saves at drag end, and restores at Start. Zero is skipped on initial restore; explicit restore can apply zero. |
+| `DragControl` (`Scripts/DragControl.cs`) | `MyUI_ExpPanel.cs` HUD restore calls and `EpicMMOSystemUI.UIReload`; `HudPanelPosition`, `ExpPanelPosition`, `HpPanelPosition`, `StaminaPanelPosition`, `EitrPanelPosition` | Retains the prefab-facing parameterless BeginDrag/Drag/OnEndDrag methods, delayed initialization, explicit Config.Save, and HUD-specific zero rules. EpicHudPanel always restores zero; the other HUD panels normally skip it. It does not own navigation/attribute positions. |
+| `DragMenu` (`Gui/Unity/DragMenu.cs`) | `MyUI_FriendList.InitFriendsList` installs separate handles on Background and Header | Moves the shared FriendList parent by event delta. It has no position setting, startup restore, pointer-offset capture, or screen clamp. Adding saved-panel semantics would change this transient UI. |
+
+`EpicMMOSystemUI.UIReload` deliberately routes HUD and navigation/attribute restoration to
+their respective owners. Commented-out drag registrations in panel sources are not live callers.
+The source survey alone does not establish which serialized prefab callbacks execute at runtime.
+Do not rename prefab-facing types/methods or unify their zero/default handling as a cleanup.
+
+Native NavigatePanel/PointPanel drag and restore evidence is recorded in
+[the native-testing wiki](../../../docs/wiki/native-testing.md). This is not verification of
+every HUD callback or FriendList behavior.
+
 ## What this fork owes other tickets
 
 - **`API.EMMOS_API` and the known-text keys are a contract.** `int GetLevel()`,

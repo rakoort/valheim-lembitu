@@ -3,6 +3,8 @@ using UnityEngine.EventSystems;
 
 namespace EpicMMOSystem.MonoScripts;
 
+// Owns bounded EventSystem dragging and saved positions for NavigatePanel/PointPanel only.
+// HUD callbacks and the transient FriendList have different contracts; see UPSTREAM.md #62.
 public class DragWindowCntrl : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler //IScrollHandler
 {
     private float size;
