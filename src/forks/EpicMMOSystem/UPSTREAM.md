@@ -65,7 +65,8 @@ won: it is what the pin actually is.
      (`ValheimModding/JsonDotNET 13.0.4`). Four call sites. Adding a second JSON library to the
      server to parse four files was the alternative.
    - **YamlDotNet** → the pinned `ValheimModding/YamlDotNet` plugin, referenced at compile time
-     only (`src/forks/ItemRequiresSkillLevel/UPSTREAM.md` records why the version reads 16.3.0).
+     only. Thunderstore 16.3.1 carries NuGet 16.3.0 (assembly version `16.0.0.0`);
+     NuGet never published 16.3.1, so the exact reference remains `[16.3.0]`.
    - **PieceManager** → dropped entirely, with the one build piece it registered; see change 4.
    - **Groups / GroupsAPI / EquipmentAndQuickSlots** → dropped with their integrations; see
      change 3.

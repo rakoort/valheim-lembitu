@@ -40,9 +40,8 @@
          loads from its plugins directory, so this fork uses that instead of adding a second.
          Exact version, matching the pin; every 13.x carries assembly version 13.0.0.0. -->
     <PackageReference Include="Newtonsoft.Json" Version="[13.0.4]" ExcludeAssets="runtime" PrivateAssets="all" />
-    <!-- The managers under Libs/ and the XP-chart loader read YAML: the same YamlDotNet the
-         server loads from its plugins directory, pinned exactly (src/forks/ItemRequiresSkillLevel
-         records why the version is 16.3.0 and not 16.3.1). -->
+    <!-- The managers under Libs/ and the XP-chart loader read YAML. The pinned Thunderstore
+         YamlDotNet 16.3.1 package carries NuGet 16.3.0 (assembly version 16.0.0.0). -->
     <PackageReference Include="YamlDotNet" Version="[16.3.0]" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 

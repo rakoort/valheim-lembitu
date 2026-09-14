@@ -28,9 +28,9 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 **Adopt upstream unless maintaining source buys something necessary.** The original 1.0.7 compatibility rationale disappeared for Clan, STU_Ward, BossRules, PvPBiomeDominions and DetailedLevels when official builds arrived. Forks remain justified only by missing compatibility or explicit project behavior, not their history (`docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md:9-40`). The maintained and planned exceptions are:
 
 - **EpicMMOSystem:** originally lacked a verified working 1.0.7 build; now incorporates upstream 1.9.66 but retains integration removals, vanilla-fermenter behavior and pruned creature XP tables (`docs/modstack.md:52-71`).
-- **ItemRequiresSkillLevel:** the stale upstream build required a fork; the old bundled ServerSync made its static constructor throw on 1.0.7. The project enforces character-level equipment rules rather than world progression (`docs/modstack.md:63-71`, `docs/modstack.md:277`, `docs/modstack.md:292-297`).
+- **ItemRequiresSkillLevel:** adopted at 1.4.7 after its current-game rebuild replaced bundled ServerSync; the compatibility-only fork is removed. The enforced YAML retains character-level equipment rules. Client behavior remains owned by #4.
 - **MaxPlayerCount:** upstream had no 1.0-era release and a stale build, while admission still used a ten-player literal. The maintained fork raises capacity to 20. It is server-only, not something players install in the Pack (`src/forks/MaxPlayerCount/UPSTREAM.md:15-32`, `docs/modstack.md:64-71`, `docs/modstack.md:300-303`).
-- **ValheimRAFT:** remains planned, without a Pack pin or an upstream 1.0-era release; it must not be mistaken for an installed, accepted fork (`docs/modstack.md:52-65`, `docs/modstack.md:101-104`, `docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md:16-19`).
+- **ValheimRAFT:** adopted at 4.3.2 for disposable-world verification, with the entire cannon prefab family disabled through server-synced config. World-permanent launch and client behavior acceptance remain owned by #26.
 - **ServerSync:** a shared-source library fork, not another mod to install. Each consuming plugin compiles its own copy from one maintained source rather than shipping a shared DLL (`docs/modstack.md:73-74`, `docs/adr/0002-serversync-vendored-as-shared-source.md:25-38`).
 
 ## Exclusions
@@ -44,7 +44,7 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 - Warfare was untouched since March 2025. HexResourceTracker, GCValheimStats, Player_Activity and EilifPaths are client-only and unenforceable; EilifPaths also changes gameplay per player.
 - Marketplace_And_Server_NPCs_Revamped is deprecated and pre-1.0; it is a design reference for the Trade Post, not a shipping package.
 
-**No planned mid-Run content injections or casual removals.** The accepted combination stays fixed; a mid-Run upstream replacement requires an actual breakage and renewed acceptance. More World Locations AIO, Max Dungeon Rooms and planned ValheimRAFT are world-permanent launch decisions, installed before launch-world creation and never removed during the Run. Retire-on-unpin is a staging mechanism, not evidence that a live save can survive removal (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:32-40`, `docs/adr/0009-world-permanent-mods-land-before-world-creation.md:9-30`).
+**No planned mid-Run content injections or casual removals.** The accepted combination stays fixed; a mid-Run upstream replacement requires an actual breakage and renewed acceptance. More World Locations AIO, Max Dungeon Rooms and ValheimRAFT are world-permanent launch decisions, installed before launch-world creation and never removed during the Run. Retire-on-unpin is a staging mechanism, not evidence that a live save can survive removal (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:32-40`, `docs/adr/0009-world-permanent-mods-land-before-world-creation.md:9-30`).
 
 ## Lessons
 
@@ -53,3 +53,70 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 **Successful staging proves bytes and declared closure, not gameplay.** Groundwork 1.1.9 passed staging but called a property getter absent from the old 1.0.7 game, which exposed a field instead. The project updated the game rather than treating that old mismatch as a current blocker. Likewise, the old ServerSync binary could load yet throw only on its first config broadcast after a game field became a constant. The verification gate therefore requires clean loading, config broadcast and a two-client session on the current game; a headless boot cannot clear client-only behavior (`docs/modstack.md:185-219`, `docs/modstack.md:285-303`, `docs/adr/0002-serversync-vendored-as-shared-source.md:9-14`).
 
 **Exercise package lifecycle failures, not just extraction.** The staging regression suite uses real zip fixtures in isolated, pre-seeded caches. It checks asset layouts and preserved build output, removal of stale version files and retired trees, unchanged locks on repeat staging, refusal of tampered bytes, rejection of missing or prefix-only dependency versions, and aborting unsupported package shapes before copying. These are the failure boundaries supporting the staging contract (`test/stage-stack.test.sh:8-10`, `test/stage-stack.test.sh:136-258`, `test/stage-stack.test.sh:260-325`).
+
+
+## Pack refresh verification — 2026-09-14 (#64)
+
+The candidate adopts the sixteen requested updates plus WackyItemRequiresSkillLevel 1.4.7
+and ValheimRAFT 4.3.2. All thirty package hashes verified, with declared dependency closure
+and no newly recorded hash. The compatibility-only ItemRequiresSkillLevel fork and its
+standalone build output are removed; its twelve enforced rules loaded from the retained YAML.
+The deleted fork's YamlDotNet rationale now lives beside EpicMMOSystem's reference.
+
+Verification used one isolated dedicated server on **astral-tricep**, with no client and no live-server changes:
+`/home/ra/.cache/valheim-lembitu/ticket-64-20260914/`. The `source/` build started at
+`f4ff4e7` plus this Ticket's staged changes. `runtime-source.sha256` matches all 137 staged
+runtime source/config inputs to that tested copy. The pre-existing, unrelated BossRules plugin
+retirement was excluded from this commit and test source. Pins and package bytes are identified
+by `docs/modstack.lock.json`; `stage.log`, `build.log`, `install.log` and `reinstall.log`
+retain the actual commands' output. The build passed with zero errors and the thirteen existing
+EpicMMO warnings. No new permanent test was needed: the regression boundary is the real server's
+cannon registration, not an assertion against configuration text.
+
+`boot.sh` used port 2496, `-public 0`, `-nographics -batchmode`, isolated preferences,
+and explicit `baseline-saves/` and `candidate-saves/` directories. Both fresh worlds reached
+`Opened Steam server` on **Valheim 1.0.12 / network 40**, then only the owned process was stopped.
+The baseline used the refreshed pack without the new cannon overlay; it logged
+`Registered HandCannon` once. Applying `scripts/apply-enforced-config.sh` set
+`[PrefabConfig] CannonPrefabs_Enabled = false`; a second application reported nothing to do
+and preserved the configuration SHA-256. The candidate logged zero cannon registrations,
+loaded `ItemRequiresSkillLevel 1.4.7` and `ValheimRAFT 4.3.2`, completed chainloading,
+and passed the existing `Lembitu.Hello` ServerSync broadcast probe.
+
+### Assembly coexistence and authority
+
+- ItemRequiresSkillLevel 1.4.7 keeps its ILRepacked ServerSync, independently of our
+  shared-source copies (ADR-0002). Upstream commit
+  [`141e5746`](https://github.com/Wacky-Mole/ItemRequiresSkillLevel/commit/141e5746aea2107cc281b45e359a7e82a0eee504)
+  replaces `ServerSync.dll`; the new package declares BepInEx 5.4.2350.
+- ValheimRAFT's standalone `ServerSync.dll` resolves from its own package directory.
+  The Mono assembly trace records this resolution while our embedded copies remain in their
+  consuming plugins. No `MissingFieldException`, `FileLoadException`, `TypeLoadException`, or
+  `Could not load file or assembly` occurred in the completed candidate BepInEx log.
+- ValheimRAFT and JsonDotNET ship different Newtonsoft.Json bytes. In this runtime neither
+  replaces the game's already-loaded `valheim_server_Data/Managed/Newtonsoft.Json.dll`,
+  assembly version **13.0.0.0**. The JsonDotNET detector reports that location, and the Mono
+  trace shows ValheimVehicles resolving that same assembly. This proves observed startup
+  coexistence, not that the pinned JsonDotNET payload became the active implementation.
+- [ValheimRAFT source `d899bc5c`](https://github.com/JNDEV0/ValheimRAFT-zolantrisFork-1.0.12/tree/d899bc5c9cb182cc5f2da416c8047c7fcffc9493)
+  initializes `ValheimRaftPlugin.ModConfigSync.IsLocked = true`.
+  `CannonPrefabConfig.EnableCannons` is a public field registered through
+  `BepInExBaseConfig.BindConfig` and `ServerSyncConfigSyncUtil.RegisterAllConfigEntries`.
+  `CannonPrefabs.OnRegister` returns before registering cannon items, projectiles and pieces
+  when disabled. No separate lock-setting key is required. Client enforcement remains #26's
+  verification surface; no multiplayer claim follows from this server-only boot.
+
+### Retained proof and limits
+
+`baseline-LogOutput.log`, `candidate-LogOutput.log`, both console logs, the effective
+`candidate-ValheimRAFT.cfg`, overlay outputs, `candidate-config-before.sha256`,
+`runtime-source.sha256`, and `proof.json` remain in the evidence directory above.
+`proof.json` records seventeen passing assertions and SHA-256 hashes of the logs;
+`verify-valheim-ticket-64.py` replays those evidence assertions. Candidate console tracing used
+`MONO_LOG_LEVEL=debug MONO_LOG_MASK=asm` to identify actual assembly resolution.
+
+Both boots still report headless shader/video errors, two `AsyncResourceUpload failed` messages,
+and `DllNotFoundException: libParty.so` from PlayFab initialization. These are not silently
+classified as repaired or as managed-library conflicts. Steam listener readiness passed.
+This Ticket does not accept client graphics, crossplay, gear-gate behavior, vehicle gameplay,
+persistence or concurrent multiplayer; #4, #26 and the feature scenarios retain that scope.

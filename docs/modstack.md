@@ -4,9 +4,9 @@ What the development candidate runs, at which version, and what we changed about
 This file records exact versions for reproducible tests, not a prelaunch freeze. The reasoning is
 in [adr/](adr/) and the vocabulary in [../CONTEXT.md](../CONTEXT.md).
 
-Adopted update candidates were checked against live Thunderstore package APIs on **2026-09-12**.
+Adopted update candidates were checked against live Thunderstore package APIs on **2026-09-14**.
 Development follows the latest public Valheim client/server and latest mod releases. The current
-game candidate is **1.0.12 / network 40**; Groundwork is **1.1.10** and BossRules **1.0.9**. Older 1.0.7 results below
+game candidate is **1.0.12 / network 40**; Groundwork is **1.1.12** and BossRules **1.0.10**. Older 1.0.7 results below
 are historical, not current acceptance. Freeze only after full-pack gameplay and two-client
 acceptance pass, before launch-world creation (ADR-0007, ADR-0009).
 
@@ -18,31 +18,33 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
-| sighsorry/Clan | 1.0.7 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
-| sighsorry/STU_Ward | 1.3.12 | Wards resolved against clan membership | — |
-| sighsorry/PortalRules | 1.0.5 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset |
-| sighsorry/BossRules | 1.0.9 | Boss lifecycle: despawn refunds, duplicate-summon block, boss stones | `BossRules.forsakenPowers.yml` left empty; remote power rotation off |
-| MidnightMods/ProgressivePowers | 0.1.0 | Forsaken power mastery | Owns all power effects |
-| RandyKnapp/EpicLoot | 0.14.4 | Gear tiers: magic drops, enchanting, bounties | Progression gating answered by the progression bridge |
+| sighsorry/Clan | 1.0.10 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
+| sighsorry/STU_Ward | 1.3.15 | Wards resolved against clan membership | — |
+| sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset |
+| sighsorry/BossRules | 1.0.10 | Boss lifecycle: despawn refunds, duplicate-summon block, boss stones | `BossRules.forsakenPowers.yml` left empty; remote power rotation off |
+| MidnightMods/ProgressivePowers | 0.3.3 | Forsaken power mastery | Owns all power effects |
+| RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, enchanting, bounties | Progression gating answered by the progression bridge |
 | warpalicious/More_World_Locations_AIO | 5.1.0 | 185 locations, traders, waystones | Trader stock `requiredGlobalKey`/`notRequiredGlobalKey` left unset |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | sighsorry/CreatureManager | 1.1.13 | Karma and Enforcer encounters | Creature cloning and customisation off |
 | sighsorry/AdditiveDamageModifier | 1.2.4 | Additive resistances, player minimum-damage floor | — |
-| turbero/PvPBiomeDominions | 1.7.7 | PvP death and retention rules | Biome-forced PvP off everywhere |
+| turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
 | sighsorry/CaptainValheim | 1.0.10 | Shields as active weapons | — |
-| sighsorry/SecondaryAttacks | 1.2.4 | Secondary attacks for other weapon classes | — |
+| sighsorry/SecondaryAttacks | 1.2.8 | Secondary attacks for other weapon classes | — |
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
-| sighsorry/Groundwork | 1.1.10 | Farming and terrain tools scaling with skill | — |
-| sighsorry/RepairRequiresMaterials | 1.0.4 | Repairs cost materials; incinerator dismantling | — |
-| sighsorry/VeiledRecipes | 1.1.4 | Recipes hidden until discovered | — |
-| sighsorry/InventorySlots | 1.4.10 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
-| turbero/DetailedLevels | 2.1.2 | Skill progress readout | — |
+| sighsorry/Groundwork | 1.1.12 | Farming and terrain tools scaling with skill | — |
+| sighsorry/RepairRequiresMaterials | 1.0.6 | Repairs cost materials; incinerator dismantling | — |
+| sighsorry/VeiledRecipes | 1.1.5 | Recipes hidden until discovered | — |
+| sighsorry/InventorySlots | 1.4.16 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
+| turbero/DetailedLevels | 2.1.3 | Skill progress readout | — |
 | sighsorry/AdminQoL | 1.1.3 | Admin console GUI and item sets | — |
-| sighsorry/DataForge | 1.3.3 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
-| sighsorry/SkadiNet | 1.1.3 | Peer-aware network pacing, dungeon-layer filtering | — |
-| sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.4 | Vanilla state and teardown bug fixes | — |
+| sighsorry/DataForge | 1.3.4 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
+| sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
+| sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
 | sighsorry/Fast_AssetBundle_Loader | 1.0.7 | Startup asset-bundle caching | — |
 | TOYNBEE/BoneMod | 1.0.2 | Cosmetic bone scaling (client-side) | — |
+| WackyMole/WackyItemRequiresSkillLevel | 1.4.7 | Character-level gates on crafting, equipping and consuming | Curated rules in `WackyMole.ItemRequiresSkillLevel.yml` |
+| team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Server-synced `CannonPrefabs_Enabled = false` |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot, ProgressivePowers and MWL AIO |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
 | ValheimModding/YamlDotNet | 16.3.1 | Library | — |
@@ -51,7 +53,7 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 
 These were forked because upstream had no verified working 1.0.7 build at the time. Each maintained
 fork lives in `src/forks/<Name>/` with an `UPSTREAM.md` recording the exact commit, licence and
-changes; see [build.md](build.md) and `../src/forks/README.md`. ValheimRAFT remains planned.
+changes; see [build.md](build.md) and `../src/forks/README.md`.
 
 **2026-09-12 update:** EpicMMOSystem now incorporates upstream 1.9.66. We retain the fork for
 our integration removals, vanilla-fermenter behavior and pruned XP tables. Native creature additions
@@ -60,15 +62,17 @@ and database migration were imported; see its `UPSTREAM.md` for the complete com
 | Fork | Forked from | Why | Ticket |
 | --- | --- | --- | --- |
 | EpicMMOSystem | `Wacky-Mole/WackyEpicMMOSystem@e3de877` = 1.9.66, MIT-0 | Character level curve with project-specific integrations, fermenter and XP-table policy | #5 |
-| ItemRequiresSkillLevel | `Wacky-Mole/ItemRequiresSkillLevel@be31aa9` = 1.4.6, no licence stated | Gates crafting and equipping on character level; upstream stale since May | #4 |
 | MaxPlayerCount | `AzumattDev/MaxPlayerCount@4482e27` = 1.2.4 source, pinned release 1.2.5, MIT-0 | Player cap above 10, raised to 20 | #9 |
-| ValheimRAFT | 4.2.2, Jotunn 2.27.0, no pack pin | Ships and anchoring; cannons and their projectile system disabled | #26 |
 
 Enforced config the forks carry, for the same reason as the adopted table above: **EpicMMOSystem**
 brews the XP meads in the vanilla fermenter (its own fermenter piece is not registered) and ships
-only the mob-XP tables for creatures this stack can spawn; **ItemRequiresSkillLevel** ships
-`config/enforced/WackyMole.ItemRequiresSkillLevel.yml`, gating the four armour tiers past bronze on
-character level and nothing on world progression (ADR-0005); **MaxPlayerCount** defaults to 20.
+only the mob-XP tables for creatures this stack can spawn; **MaxPlayerCount** defaults to 20.
+
+**2026-09-14 adoption:** ItemRequiresSkillLevel 1.4.7 rebuilt against BepInEx 5.4.2350
+and replaced its bundled ServerSync, removing the recompile justification for our fork (#64).
+The adopted package keeps `config/enforced/WackyMole.ItemRequiresSkillLevel.yml`, gating
+the four armour tiers past bronze on character level, not world progression (ADR-0005).
+ValheimRAFT 4.3.2 is now pinned for disposable-world verification, not launch acceptance (#26).
 
 `src/forks/ServerSync/` is a library fork rather than a mod: shared source compiled into our own
 plugins (ADR-0002).
