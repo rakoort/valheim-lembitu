@@ -155,6 +155,58 @@ seed/coordinate pair, client visit or persistence is claimed. After restoration,
 run the exact-candidate server generation comparison required by #32; #52 owns the
 client visit and reload.
 
+## EpicLoot Graphic dictionary warnings (#36, 2026-09-15)
+
+Retain these three Jotunn warnings without suppressing them or forking either mod.
+They concern empty runtime caches, not unresolved UI references. On Valheim
+1.0.12/network 40, EpicLoot 0.14.5 supplies all three objects under
+`_JotunnRoot/Prefabs/piece_enchantingtable/Disenchant/DisenchantRoot/`:
+
+- `Level2/Particles`
+- `Level3/Particles`
+- `Level4/Particles`
+
+Each owns `EpicLoot_UnityLib.SetRarityColor._defaultColors`, a private readonly
+`Dictionary<Graphic, Color>`. A read-only Harmony probe around Jotunn 2.30.0
+`MockManager.FixMemberReferences` observed every dictionary immediately before
+and after its warning: all six counts were zero. There were no keys, destroyed
+Graphic references or mock references in those dictionaries to resolve.
+
+The exact shipped EpicLoot DLL shows that the field starts empty. `Awake` fills
+it from `Graphics`, caching each Graphic’s current colour; `Refresh` uses that
+cache when restoring default colours. It is not a dictionary of serialized mock
+assets. Jotunn’s [2.30.0 resolver](https://github.com/Valheim-Modding/Jotunn/blob/v2.30.0/JotunnLib/Managers/MockSystem/MockManager.cs#L308-L353)
+emits the unsupported-dictionary warning before reading the field value.
+The warning therefore does not establish that any entry needs replacement.
+
+Evidence is retained on astral-tricep in
+`/home/ra/.cache/valheim-lembitu/ticket-36-20260915/`: native logs,
+`verification.json`, `installed-files.json`, `SetRarityColor.cs` and archived
+diagnostic instrumentation. The source input is
+`ac9f18c81e9a76d93391267f3e91216c34643886`; fresh server references, the complete
+build and all 30 locked package hashes were verified. This is an isolated
+dedicated-server reference-resolution investigation on ports 2536–2538, not
+client or full-Pack gameplay acceptance. The tracked local BossRules guard
+remained present; unrelated working-tree deletions were not imported.
+
+The initial copied installation contained an unpinned FastAssetBundleLoader
+patcher; that attempt was excluded and the inherited patcher removed from the
+owned copy before the measured probe. A separate baseline coordinator watched
+the console instead of the explicit Unity log and missed observed listener
+readiness; its failed coordinator result is retained, not counted as a pass.
+
+The instrumented run and a fresh uninstrumented replay both reached the native
+Steam listener and stopped their owned process groups. Each emitted three
+Graphic/Color warnings out of eleven unsupported-dictionary warnings total.
+The external verifier checked all three owner paths and six zero-entry counts;
+the uninstrumented replay contained no probe log records.
+
+This disposition covers only the three Graphic/Color dictionaries. Other
+unsupported dictionaries, including ValheimRAFT’s, are separate observations.
+No enchanting UI colours, interactions, hover/selection or reopen behaviour
+were exercised; #43 retains that client-state proof. Recheck the actual fields
+and entries after either package changes instead of accepting a matching count.
+
 ## Lessons
 
 - **Separate accepted log evidence from scenario views.** Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38), the per-family rendered-client log-level separation is the accepted required comparison for #38. The per-scenario rendered-view comparison transfers to [#49](https://github.com/rakoort/valheim-lembitu/issues/49) and [#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance. No #49/#52 view is claimed to have been produced or compared.
