@@ -349,6 +349,13 @@ succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed
 
 ## Headless test client
 
+Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38),
+the per-family rendered-client log-level separation is the accepted required comparison for #38.
+The per-scenario rendered-view comparison transfers to
+[#49](https://github.com/rakoort/valheim-lembitu/issues/49) and
+[#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance.
+No #49/#52 view is claimed to have been produced or compared.
+
 `scripts/test-client.sh run` requires a logged-in Steam client, the latest stable/public game
 installation matching the test server, and a GPU-backed X display. Its Weston headless launcher
 uses `--renderer=gl --fake-seat --xwayland`.
