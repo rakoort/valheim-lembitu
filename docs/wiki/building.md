@@ -39,3 +39,38 @@ The current buildable projects under `src/` are:
 - **Broad Unity references need exclusions.** EpicMMOSystem uses a wildcard rather than maintaining a large module list, but excludes shared references to avoid duplicates. `UnityEngine.ImageConversionModule` is also excluded: it targets netstandard 2.1 and causes CS1705 for net472 (`src/forks/EpicMMOSystem/EpicMMOSystem.csproj:49-59`; `docs/build.md:128-139`).
 - **Preserve upstream code rather than rewriting it to silence nullable warnings.** Forks use `Nullable=annotations`; disabling annotations instead reports imported ServerSync's `?` annotations as CS8632. Recorded successful builds still had 13 existing fork warnings, so historical success is not a claim of a warning-free build (`src/forks/README.md:20-27`; `docs/build.md:663-666`).
 - **Compile-time library resolution does not prove runtime binding.** Strong-named .NET Framework libraries bind by exact assembly version. The YamlDotNet Thunderstore package numbered 16.3.1 contains library 16.3.0; EpicMMOSystem therefore pins `[16.3.0]` and excludes runtime assets rather than floating to a newer incompatible library or shipping another copy (`src/forks/EpicMMOSystem/EpicMMOSystem.csproj:43-45; src/forks/EpicMMOSystem/UPSTREAM.md:67-69`; `docs/build.md:141-155`).
+
+## Container refresh API migration (#61)
+
+On September 14, 2026, `Item.ApplyToAllInstances` changed its container lookup to
+`FindObjectsByType<Container>(FindObjectsSortMode.InstanceID)` at
+`src/forks/EpicMMOSystem/Libs/ItemManager/Item.cs:1334`. Explicit sorting preserves the
+legacy refresh order. The overload still excludes inactive objects. No callback,
+player-inventory traversal, or other item traversal changed.
+
+Baseline `fdaf6a3aa2f0fe9bf6e398ef4362737bfa7e408b` and the changed source both built
+against freshly extracted public-game references on astral-tricep. Warnings fell
+from 13 to 12: the container lookup CS0618 disappeared without suppression.
+All 40 repository checks passed.
+
+Native evidence: `/home/ra/.cache/valheim-lembitu/ticket-61-20260914/` on astral-tricep.
+`baseline-build.log`, `candidate-build.log`, `identities.sha256`, `observations.txt`,
+`verification.json`, and `native-replay/` retain the build, input identities,
+measurements, IPC, logs, configuration, and visually inspected `callback.png`.
+The isolated tracked Pack included a diagnostic probe; unrelated working-tree
+changes were excluded. This is callback verification, not full-Pack acceptance.
+
+The probe changed the enabled `Mob Chunks.Weight` setting from 1 to 1.125 through
+`SettingChanged`, reaching the item-stat callback at `Item.cs:1201`. External
+assertions compared all six callback visits with the legacy traversal, including
+their order. Player inventory, a dropped item, and two active chests refreshed;
+the inactive chest remained unvisited at weight 1. The setting was restored.
+Native quit and owned-server shutdown completed.
+
+The first diagnostic selected an XP potion whose stat callbacks are disabled;
+its empty callback sequence correctly failed verification. The corrected probe
+selected an enabled stat setting. Replay used the empty configuration-generation
+world, not that failed probe’s mutated world. `attempt-1/` and `native/` retain the
+failed measurement; `replay-setup-failure/` records a separate fixture-discovery
+failure before launch. Current world saves use named directories with `.fwl2`
+checkpoints, not top-level `.fwl` files. Diagnostic code stays outside the repo.

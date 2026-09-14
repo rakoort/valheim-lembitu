@@ -1331,7 +1331,7 @@ internal class Item
 	{
 		callback(prefab.GetComponent<ItemDrop>().m_itemData);
 		string name = prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_name;
-		Inventory[] source = (from c in Player.s_players.Select((Player p) => p.GetInventory()).Concat(from c in UnityEngine.Object.FindObjectsOfType<Container>()
+		Inventory[] source = (from c in Player.s_players.Select((Player p) => p.GetInventory()).Concat(from c in UnityEngine.Object.FindObjectsByType<Container>(FindObjectsSortMode.InstanceID)
 				select c.GetInventory())
 			where c != null
 			select c).ToArray();

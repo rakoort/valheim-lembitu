@@ -60,7 +60,7 @@ won: it is what the pin actually is.
      repositories are older than the build upstream shipped (blaxxun-boop/ItemManager's master, for
      instance, has no `CraftingTable.MeadCauldron`, which this mod uses). Each keeps its author's
      MIT-0 licence text beside it. The decompiler's mangled `<guid>NullableAttribute` decorations
-     were stripped; nothing else was rewritten.
+     were stripped; later runtime API migrations are recorded below.
    - **fastJSON** → replaced by `Newtonsoft.Json`, which the stack already pins and ships
      (`ValheimModding/JsonDotNET 13.0.4`). Four call sites. Adding a second JSON library to the
      server to parse four files was the alternative.
@@ -125,6 +125,11 @@ won: it is what the pin actually is.
    netstandard 2.1, which a net472 assembly cannot use. The only code that wanted it was
    `StatusEffectManager`'s "icon from an embedded PNG" path, which this fork has no PNG for — every
    icon comes from an asset bundle — so that one method is gone.
+10. **Container refresh uses the current Unity lookup API.** `Item.ApplyToAllInstances` uses
+    `FindObjectsByType<Container>(FindObjectsSortMode.InstanceID)` instead of the deprecated
+    `FindObjectsOfType<Container>()`. InstanceID sorting preserves inventory refresh order;
+    inactive containers remain excluded. Native callback evidence is in
+    [the building wiki](../../../docs/wiki/building.md#container-refresh-api-migration-61).
 
 ## Upstream 1.9.66 integration (2026-09-12)
 
@@ -192,7 +197,7 @@ performed by the stack testing workflow, not by this isolated build.
 ## Re-forking
 
 1. Clone upstream at the new tag, and diff against this directory to see our changes in place.
-2. Re-apply changes 1–9. The compiler finds most of them; the removals are listed above.
+2. Re-apply changes 1–10. The compiler finds most of them; the removals are listed above.
 3. Check whether the release contains code the repository does not (the two items above), by
    decompiling it: `ilspycmd -p -o /tmp/emmo <EpicMMOSystem.dll>`.
 4. Re-check the vendored libraries under `Libs/` against the new release's `Libs/*.dll` the same
