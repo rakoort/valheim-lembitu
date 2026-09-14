@@ -1,0 +1,97 @@
+{
+  "sourceSha": "e9d22a15ec5c86a5f2d21c062f9c015290c80ebe",
+  "run": "amendment-106-107-fresh-pair",
+  "captures": {
+    "unity": {
+      "source": ".nt/review-fix-raw/server-unity.log",
+      "target": ".nt/evidence/server-unity.log",
+      "sourceBytes": 20069,
+      "retainedBytes": 19198,
+      "sourceSha256": "467dbc2c352e434a1334c3135fac6dae05200d8254b4a433acfeca42696751e3",
+      "retainedSha256": "8eebda4143ee90511b5a04a306fb44fbac8497ce4422817a7ee66bd5d1039ce1",
+      "newlineCount": 251,
+      "endsWithNewline": true,
+      "fullSourceRead": true,
+      "redactionPreservesLineCount": true,
+      "retainedByteEquality": true,
+      "readerFramingAbsent": true,
+      "lifecycle": [
+        {
+          "line": 14,
+          "text": "NullGfxDevice:"
+        },
+        {
+          "line": 16,
+          "text": "    Renderer: Null Device"
+        },
+        {
+          "line": 99,
+          "text": "09/13/2026 22:53:12: Valheim version: l-1.0.12 (network version 40)"
+        },
+        {
+          "line": 216,
+          "text": "09/13/2026 22:53:36: Opened Steam server"
+        },
+        {
+          "line": 218,
+          "text": "09/13/2026 22:54:54: Game - OnApplicationQuit"
+        },
+        {
+          "line": 221,
+          "text": "09/13/2026 22:54:54: ZNet Shutdown"
+        },
+        {
+          "line": 244,
+          "text": "09/13/2026 22:54:56: Steam manager on destroy"
+        }
+      ]
+    },
+    "bepinex": {
+      "source": ".nt/server/BepInEx/LogOutput.log",
+      "target": ".nt/evidence/server-LogOutput.log",
+      "sourceBytes": 18132,
+      "retainedBytes": 17837,
+      "sourceSha256": "0ff6611566dd1a5176c4797611532b80d3c919e344979a717046075ec39dbdee",
+      "retainedSha256": "8efab4ddf497691e0e86c27153ef210a19f12f0a85a36075c001d2c5e58eaf58",
+      "newlineCount": 302,
+      "endsWithNewline": true,
+      "fullSourceRead": true,
+      "redactionPreservesLineCount": true,
+      "retainedByteEquality": true,
+      "readerFramingAbsent": true,
+      "lifecycle": [
+        {
+          "line": 15,
+          "text": "[Info   :   BepInEx] 0 plugins to load"
+        },
+        {
+          "line": 96,
+          "text": "[Info   : Unity Log] 09/13/2026 22:53:12: Valheim version: l-1.0.12 (network version 40)"
+        },
+        {
+          "line": 270,
+          "text": "[Info   : Unity Log] 09/13/2026 22:53:36: Opened Steam server"
+        },
+        {
+          "line": 274,
+          "text": "[Info   : Unity Log] 09/13/2026 22:54:54: Game - OnApplicationQuit"
+        },
+        {
+          "line": 280,
+          "text": "[Info   : Unity Log] 09/13/2026 22:54:54: ZNet Shutdown"
+        },
+        {
+          "line": 301,
+          "text": "[Info   : Unity Log] 09/13/2026 22:54:56: Steam manager on destroy"
+        }
+      ]
+    }
+  },
+  "binaryHashes": {
+    "valheim_server.x86_64": "afdc1feb7b381da99ba43c25cf75b211068ee8f778a187951f5ca644faf819cc",
+    "UnityPlayer.so": "66c4643dd702e726ed85abcb17e50923cd1de259d58e5536e5eed4647249e268",
+    "valheim_server_Data/Managed/assembly_valheim.dll": "1231fc2ffdbe6038ba622b8646c2084980d06962e5f8521ae5a0b886be0f1c61",
+    "BepInEx/core/BepInEx.dll": "f09821b2a7b990c6f50c5ef23229635303ce675374b70edc6f5a9b960cb818e3",
+    "BepInEx/config/BepInEx.cfg": "3d57dfda8c47fecf676f76694c6e10ac5c9e793e3982876f39a4884ed27d9bcb"
+  }
+}

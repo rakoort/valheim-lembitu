@@ -1,0 +1,203 @@
+[
+  {
+    "family": "HDR Render Texture not supported",
+    "unityLines": [
+      76,
+      139,
+      140
+    ],
+    "bepinexLines": [
+      63,
+      135,
+      136
+    ]
+  },
+  {
+    "family": "Could not find material Hidden/VideoDecode",
+    "unityLines": [
+      78
+    ],
+    "bepinexLines": [
+      65
+    ]
+  },
+  {
+    "family": "Could not find material Hidden/VideoComposite",
+    "unityLines": [
+      85
+    ],
+    "bepinexLines": [
+      72
+    ]
+  },
+  {
+    "family": "YCbCr_To_RGB1",
+    "unityLines": [
+      79
+    ],
+    "bepinexLines": [
+      66
+    ]
+  },
+  {
+    "family": "YCbCrA_To_RGBAFull",
+    "unityLines": [
+      80
+    ],
+    "bepinexLines": [
+      67
+    ]
+  },
+  {
+    "family": "YCbCrA_To_RGBA in",
+    "unityLines": [
+      81
+    ],
+    "bepinexLines": [
+      68
+    ]
+  },
+  {
+    "family": "Flip_RGBA_To_RGBA",
+    "unityLines": [
+      82
+    ],
+    "bepinexLines": [
+      69
+    ]
+  },
+  {
+    "family": "Flip_RGBASplit_To_RGBA",
+    "unityLines": [
+      83
+    ],
+    "bepinexLines": [
+      70
+    ]
+  },
+  {
+    "family": "shader pass Default",
+    "unityLines": [
+      86
+    ],
+    "bepinexLines": [
+      73
+    ]
+  },
+  {
+    "family": "This custom render path shader",
+    "unityLines": [
+      77,
+      84
+    ],
+    "bepinexLines": [
+      64,
+      71
+    ]
+  },
+  {
+    "family": "Failed to play intro cinematic",
+    "unityLines": [
+      111
+    ],
+    "bepinexLines": [
+      115
+    ]
+  },
+  {
+    "family": "The shader Hidden/Dof/DepthOfFieldHdr",
+    "unityLines": [
+      114,
+      176
+    ],
+    "bepinexLines": [
+      121,
+      196
+    ]
+  },
+  {
+    "family": "The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField)",
+    "unityLines": [
+      115,
+      177
+    ],
+    "bepinexLines": [
+      122,
+      197
+    ]
+  },
+  {
+    "family": "The shader Hidden/SunShaftsComposite",
+    "unityLines": [
+      116,
+      178
+    ],
+    "bepinexLines": [
+      123,
+      198
+    ]
+  },
+  {
+    "family": "The shader Hidden/SimpleClear",
+    "unityLines": [
+      117,
+      179
+    ],
+    "bepinexLines": [
+      124,
+      199
+    ]
+  },
+  {
+    "family": "The image effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts)",
+    "unityLines": [
+      118,
+      180
+    ],
+    "bepinexLines": [
+      125,
+      200
+    ]
+  },
+  {
+    "family": "System does not support CopyTexture",
+    "unityLines": [
+      107,
+      159
+    ],
+    "bepinexLines": [
+      110,
+      169
+    ]
+  },
+  {
+    "family": "GBuffer Normals only available",
+    "unityLines": [
+      182
+    ],
+    "bepinexLines": [
+      203
+    ]
+  },
+  {
+    "family": "AsyncResourceUpload failed",
+    "unityLines": [
+      64,
+      65
+    ],
+    "bepinexLines": [
+      53,
+      54
+    ]
+  },
+  {
+    "family": "IMGUI module is stripped",
+    "unityLines": [
+      88,
+      106,
+      142,
+      151
+    ],
+    "bepinexLines": []
+  }
+]
