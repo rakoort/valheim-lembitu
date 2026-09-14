@@ -28,6 +28,26 @@ This page explains how the dedicated test server, headless client and native gam
 
 - **IPC files are not a process supervisor.** Use a fresh control directory per launch and one coordinator per directory. Retained `status.json` can describe a previous process. Atomic UUID requests are limited to 16 KiB; responses remain as evidence. A controller timeout does not cancel an already-published command: inspect that UUID's response before retrying. Native refusals must be asserted explicitly rather than counted as successful actions (`scripts/harness.py:94-142`; `docs/build.md:397-440`).
 
+## Transferred rendering comparison (#58)
+
+The per-family rendered-client log-level comparison is accepted for #38. The per-scenario rendered-view comparison belongs to #49 (combat/water) and #52 (generated content/world UI); no such view is claimed to have been produced or compared.
+
+Compare each scenario’s rendered views and corresponding client logs against all nine warning families in the [docs/build.md matrix at the reviewed #38 candidate](https://github.com/rakoort/valheim-lembitu/blob/2a91e6d7bb869ebf830b65ef2ed3ea996341de25/docs/build.md#L351-L361):
+
+1. HDR reflection texture unsupported.
+2. `Hidden/VideoDecode` missing, including the five decode passes: `YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`.
+3. `Hidden/VideoComposite` missing, including its `Default` pass, associated zero-pass errors and intro cinematic failure.
+4. `Hidden/Dof/DepthOfFieldHdr` unsupported and depth-of-field disabled.
+5. `Hidden/SunShaftsComposite` / `Hidden/SimpleClear` unsupported and sun-shafts disabled.
+6. AmplifyOcclusion CopyTexture unsupported / CacheAware optimization disabled.
+7. AmplifyOcclusion GBuffer normals unavailable / Camera source fallback.
+8. `AsyncResourceUpload failed` (asset/cause unestablished; #59 owns diagnosis or reclassification).
+9. IMGUI module stripped / `OnGUI` skipped.
+
+Consume the retained full-Pack evidence on astral-bicep at `/home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/`, both `run-1/` and `run-2/`. Compare `gameplay-unity.log` and `client-LogOutput.log` with paired `server-unity.log` and `config-server-unity.log`; the rendered-client comparison also covered `config-client-unity.log`, `no-fixtures-unity.log` and `wrong-password-unity.log`. These dated logs establish log-level separation, not either scenario’s rendered-view result or current Pack clearance.
+
+Retain one comparison row per family, identifying the inspected scenario view, corresponding log evidence and outcome. Mark unexercised or unavailable views explicitly unverified; missing artifacts or zero log matches do not prove visual correctness. Route real client rendering defects to #31. If AsyncResourceUpload appears in rendered-client logs, refer to #59 rather than carrying forward its bounded accepted-noise classification.
+
 ## Lessons
 
 - **Separate accepted log evidence from scenario views.** Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38), the per-family rendered-client log-level separation is the accepted required comparison for #38. The per-scenario rendered-view comparison transfers to [#49](https://github.com/rakoort/valheim-lembitu/issues/49) and [#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance. No #49/#52 view is claimed to have been produced or compared.
