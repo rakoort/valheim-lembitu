@@ -66,6 +66,55 @@ before a nonzero exit; input decoding or I/O failures may abort without a comple
 `test/retain-pair.test.sh` exercises successful retention, reader framing, real redaction line loss and
 refusal to overwrite an earlier bundle. These fixtures prove the instrument, not game rendering.
 
+## StoneOutlook restoration blocker (#32, 2026-09-14)
+
+MWL 5.1.0 omits the location definition, not an operator setting.
+`Prefabs.AddContainerPrefab` derives `MWL_StoneOutlook1` from its loot chest prefab,
+then calls `LocationDB.GetLocationConfig`. The native lookup returns null.
+`LocationDefinitions.BlackForest` omits StoneOutlook, so the chest registration fails.
+
+A read-only native probe enumerated the three embedded location-prefab bundles.
+Their only StoneOutlook asset was
+`assets/warpprojects/more world locations/blackforest pack 2/containers/mwl_stoneoutlook1_loot_chest_wood1.prefab`.
+The shipped soft-reference manifest has no StoneOutlook entry. The complete upstream
+tree at `5546c481847e3f169e5a22c12b402db8e20c5acf` has no path matching `outlook`;
+its location definitions also omit StoneOutlook. These checks do not establish that
+an older release could never supply the missing asset.
+
+Historical upstream `e643f76e93a898e343f167cfc50ab72ba46e2aec` retains
+`MWL_StoneOutlook1_Config` in `More World Locations_AIO/Src/Locations/LocationConfigs.cs`:
+Black Forest, Coastal group, minimum distance 500, altitude -2 through 1,
+minimum similar-location distance 1024, and slope rotation enabled. That revision
+has no Outlook entry in `AssetPaths.cs` or `LocationsNEW.cs`. Commit
+`9b4897fa15359477cbab2f804831bc6546c774b0` deleted those legacy files.
+Recovering the old config alone does not supply a registered, loadable location.
+
+Evidence lives on astral-tricep under
+`/home/ra/.cache/valheim-lembitu/ticket-32-20260914/`:
+`diagnostic-console.log`, `diagnostic-LogOutput.log`, `run-ticket32.py`,
+`Probe.cs`, `Probe.csproj`, and `diagnostic-saves/`. This is an isolated copy of
+the #64 diagnostic installation, with complete MWL content and public Valheim
+1.0.12/network 40. It retains earlier diagnostic plugins, including the local
+BossRules guard, and adds a read-only asset probe; it is not exact-HEAD Pack acceptance.
+The fresh world is `Ticket32Diagnostic`, ports 2506–2508. No client was launched.
+The server reached native Steam-listener readiness, then the owned process group
+was stopped. The diagnostic assertion failed: `StoneOutlook LocationConfig missing
+in native registration`.
+
+Examined SHA-256 identities:
+
+- MWL ZIP: `525c92b337b918782999d4fdec19688f144cf31981a81b0ca5ba3401da56a315`.
+- MWL DLL: `6e553376a8b0fa5774d395b79991fe49dd95a47266a37a862239389f426c5f84`.
+- Soft-reference manifest: `879003ecd4e9e4a71f752d0948c89bf576e6da57a822211d1d4a105e60cd151c`.
+
+The native probe build succeeded with zero warnings and errors.
+**#32 remains blocked, not implemented or accepted.** Restoration needs a recoverable
+location asset and registration, or a verified upstream correction. No content was
+removed, quantity override invented, or warning suppressed. No StoneOutlook placement,
+seed/coordinate pair, client visit or persistence is claimed. After restoration,
+run the exact-candidate server generation comparison required by #32; #52 owns the
+client visit and reload.
+
 ## Lessons
 
 - **Separate accepted log evidence from scenario views.** Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38), the per-family rendered-client log-level separation is the accepted required comparison for #38. The per-scenario rendered-view comparison transfers to [#49](https://github.com/rakoort/valheim-lembitu/issues/49) and [#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance. No #49/#52 view is claimed to have been produced or compared.
