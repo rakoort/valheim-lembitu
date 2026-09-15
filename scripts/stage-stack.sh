@@ -16,7 +16,7 @@
 #   zip root files           -> dist/plugins/<Mod>/...     (Thunderstore metadata is dropped)
 #   plugins/...              -> dist/plugins/<Mod>/...
 #   BepInEx/plugins/...      -> dist/plugins/<Mod>/...
-#   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (Fast_AssetBundle_Loader)
+#   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (no pinned package ships one today)
 #   BepInEx/config/...       -> dist/config/...            (Clan's emblems and emoji)
 #
 # dist/ mirrors the target BepInEx/ directory, and install-plugins.sh owns the copy into a server.
@@ -50,11 +50,12 @@ DIST_DIR="$REPO_ROOT/dist"
 CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 
 # Dependencies satisfied by something other than an exact pin:
-#   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs; EpicLoot
-#     0.14.4 still declares 5.4.2333,
-#   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot, ProgressivePowers and MWL AIO
-#     declare (docs/modstack.md).
-KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2333
+#   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs and what
+#     scripts/extract-refs.sh compiles against; three adopted packages name an older pack
+#     (EpicLoot and DiscordConnector 5.4.2333, WackyEpicMMOSystem 5.4.2202),
+#   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot declares (docs/modstack.md).
+KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
+denikson-BepInExPack_Valheim-5.4.2333
 denikson-BepInExPack_Valheim-5.4.2350
 ValheimModding-Jotunn-2.29.2"
 
@@ -88,8 +89,8 @@ parse_pins() {  # parse_pins <modstack.md>; prints "team<TAB>mod<TAB>version" pe
 
 # Dependency strings out of a package manifest.json, one per line. Hand-rolled rather than jq
 # because the dev shell has no jq, and tolerant of the UTF-8 BOM Thunderstore writes in front of
-# some manifests (Jotunn, Groundwork): the BOM only ever precedes the opening brace, so it never
-# touches the strings being extracted.
+# some manifests (Jotunn): the BOM only ever precedes the opening brace, so it never touches the
+# strings being extracted.
 manifest_deps() {  # manifest_deps <zip>
   unzip -p "$1" manifest.json 2>/dev/null | awk '
     {
@@ -186,9 +187,10 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not the count: the stack is 28 packages today, and anything far below that means
-  # the table changed shape unnoticed rather than that seven mods were deliberately retired.
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 20 ]] \
+  # A tripwire, not a lock on growth: the pack is 23 pins today, and a smaller count means the table
+  # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
+  # purpose means editing this number in the same commit.
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 23 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then

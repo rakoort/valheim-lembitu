@@ -13,11 +13,10 @@ The stack was reduced from thirty packages to twenty-three on **2026-09-15**, an
 plugin of ours except the test harness was cancelled, because upstream mods now cover the
 load-bearing behaviour (ADR-0010). What was removed and why is in [Considered and cut](#considered-and-cut).
 
-**This table is the decision, not yet the repository state.** The pins, lock entries, enforced
-config files and the deletion of the retired fork and plugins are one implementation task, tracked
-separately. Until it lands, `modstack.lock.json` still carries the old thirty-package set, the
-retired sources are still under `src/`, and `config/enforced/` still holds the BossRules overlay.
-Everything below describes what the pack becomes, and the measured evidence for it is dated.
+**This table is now the repository state** (#66). `modstack.lock.json` carries exactly these
+twenty-three pins, the retired fork and plugins are deleted from `src/`, `config/enforced/` holds
+the overlays below, and `src/forks/` contains only MaxPlayerCount. The dated measurements further
+down are the runs that established the pack, not a prediction of it.
 
 ## Adopted upstream
 
@@ -118,7 +117,9 @@ verifies every download against it and refuses a re-published zip under the same
 
 The reduced pack was staged and booted once on astral-tricep from an off-repository copy of the
 source, to answer questions the tables above depend on. This is a throwaway measurement, not the
-acceptance run: no client joined, and the repository still carries the old pins.
+acceptance run: no client joined, and the repository carried the old pins at the time. #66 then
+landed the same pack in the repository and repeated the boot with the enforced overlay in effect,
+which is the section after this one.
 
 All twenty-three packages staged with verified hashes and passed dependency closure. The build
 produced only MaxPlayerCount and Lembitu.Harness, with zero warnings and zero errors. The server
@@ -139,8 +140,9 @@ Four findings the tables above rest on:
   version marker; the stranger's XP-bonus file the retired fork emptied is simply gone upstream,
   so that overlay is unnecessary.
 - **Three adopted packages declare older dependency pins** — EpicLoot and DiscordConnector name
-  BepInEx 5.4.2333, WackyEpicMMOSystem names 5.4.2202 — so `scripts/stage-stack.sh` needs those
-  recorded as deliberate overrides before it will stage the pack.
+  BepInEx 5.4.2333, WackyEpicMMOSystem names 5.4.2202 — so `scripts/stage-stack.sh` records those
+  as deliberate overrides; without them the closure check refuses to stage the pack. #66 added
+  them.
 
 ### Config surfaces this pack uses
 

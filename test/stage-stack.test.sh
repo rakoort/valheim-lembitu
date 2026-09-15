@@ -151,7 +151,7 @@ write_file "$WORK/pkg-src/LICENSE.txt" licence
 write_file "$WORK/pkg-src/README.md" readme
 write_file "$WORK/pkg-src/CHANGELOG.md" changelog
  write_file "$WORK/pkg-src/icon.png" icon
-mkdir -p "$WORK/pkg-src/patchers"   # Fast_AssetBundle_Loader ships patchers/ at the zip root
+mkdir -p "$WORK/pkg-src/patchers"   # a package that ships patchers/ at the zip root
 write_file "$WORK/pkg-src/patchers/RootPatch.dll" root-patch
  make_pkg acme Root 1.0.0
 

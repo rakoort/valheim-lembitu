@@ -1,2 +1,0 @@
-# Enforced empty (#25, ADR-0004): ProgressivePowers owns every forsaken power effect, so BossRules
-# overrides none of them. This file replaces the shipped template, which carried modified powers.

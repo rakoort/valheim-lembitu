@@ -54,6 +54,16 @@ Constraints found while setting this up:
   startup and compares the network version it was compiled against with the one the running server
   reports, turning silent const-inlining skew into a log error.
 
+## Amendment — 2026-09-15
+
+The last clause is superseded. `Lembitu.Hello` is deleted with the pack reduction (ADR-0010): it
+existed as the first consumer of the vendored ServerSync (ADR-0002) and as the proof that a plugin
+of ours chainloads, and this project now ships no gameplay plugin to smoke-test. Nothing compares
+the compiled network version against the running server any more, so **re-extract and rebuild after
+every game update** instead of watching for a log error that will not arrive; `scripts/extract-refs.sh
+--check` is what reports the drift. `Lembitu.Harness` remains, and the mods' own loading lines are
+what a chainload is read from.
+
 ## Consequences
 
 - A Mac can build and review plugins but cannot run them; every runtime check happens on bicep.

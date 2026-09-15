@@ -97,14 +97,14 @@ rm "$OVERLAY/ghost.cfg"
 
 # --- 5. data files replace wholesale, creating their directory ---------------------------------
 
-mkdir -p "$OVERLAY/BossRules"
-printf '# enforced empty\n' > "$OVERLAY/BossRules/powers.yml"
-mkdir -p "$CFG/BossRules"
-printf -- '- effect: GP_Eikthyr\n' > "$CFG/BossRules/powers.yml"
+mkdir -p "$OVERLAY/CreatureManager"
+printf '# enforced empty\n' > "$OVERLAY/CreatureManager/creatures.yml"
+mkdir -p "$CFG/CreatureManager"
+printf -- '- prefab: EikthyrClone\n' > "$CFG/CreatureManager/creatures.yml"
 
 if run_apply \
-   && [[ "$(cat "$CFG/BossRules/powers.yml")" == "# enforced empty" ]] \
-   && grep -q '^replaced BossRules/powers.yml$' "$WORK/out"; then
+   && [[ "$(cat "$CFG/CreatureManager/creatures.yml")" == "# enforced empty" ]] \
+   && grep -q '^replaced CreatureManager/creatures.yml$' "$WORK/out"; then
   report ok "data files replace their target wholesale"
 else
   report fail "data files replace their target wholesale"

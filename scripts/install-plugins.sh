@@ -61,8 +61,8 @@ dist_files() {
 }
 
 # One line per staged tree, so a 230-file bundle tree is summarized instead of scrolled:
-#   installed plugins/Lembitu.Hello.dll
-#   removed stale plugins/More_World_Locations_AIO/ (4 files)
+#   installed plugins/MaxPlayerCount.dll
+#   removed stale plugins/ValheimRAFT/ (40 files)
 # Groups are the first two path components - tree and package - because with dist/ mirroring
 # BepInEx/ the first component alone would collapse every package into "plugins/".
 report() {  # report <verb> <relative-path>...

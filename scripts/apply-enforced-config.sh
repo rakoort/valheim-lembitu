@@ -18,8 +18,8 @@
 # a silent no-op.
 #
 # Any non-.cfg file in the overlay replaces its target wholesale - those are data files with no
-# merge semantics, such as BossRules.forsakenPowers.yml, which must hold no entries because
-# ProgressivePowers owns all power effects.
+# merge semantics, such as CreatureManager's creatures.yml, which must stay empty so a package
+# default that ships content is caught instead of silently loaded.
 #
 # The run is idempotent and says exactly what it did; a second run changes nothing.
 

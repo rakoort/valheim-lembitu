@@ -195,7 +195,7 @@ scripts/install-plugins.sh <bepinex-dir>      # sync into a server's BepInEx dir
 
 `dist/` mirrors the BepInEx directory it deploys into: `plugins/` holds our built DLLs and one
 self-contained tree per adopted mod, `patchers/` holds BepInEx patcher DLLs (no pinned package ships
-one today; Fast_AssetBundle_Loader did before it was cut), and `config/` holds config files a package ships as seeds, such as Clan's
+one today), and `config/` holds config files a package ships as seeds, such as Clan's
 emblems. The installer deploys all three trees preserving relative paths, records every file it
 installed in `.lembitu-installed` at the BepInEx root, and on the next run deletes what it
 installed before but no longer finds in `dist/` — a stale DLL, or a whole stale tree, empty

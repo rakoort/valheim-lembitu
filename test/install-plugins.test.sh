@@ -62,33 +62,36 @@ run_install() { "$INSTALLER" --dist "$WORK/dist" "$WORK/bepinex" >"$WORK/out" 2>
 # --- 1. fresh install: top-level DLLs and a whole tree, layout preserved ---------------------
 
 fresh_dist
-write_file "$WORK/dist/plugins/Lembitu.Hello.dll" hello
-mkdir -p "$WORK/dist/plugins/More_World_Locations_AIO/Bundles/sub"
-write_file "$WORK/dist/plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll" dll
-write_file "$WORK/dist/plugins/More_World_Locations_AIO/assetBundleManifest_full" manifest
-write_file "$WORK/dist/plugins/More_World_Locations_AIO/Bundles/mwl_ruins1" bundle1
-write_file "$WORK/dist/plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2" bundle2
+# One of our built DLLs at the plugins root, and a whole adopted package tree beside it: the shape
+# ValheimRAFT actually stages, a DLL with an asset directory nested below it.
+write_file "$WORK/dist/plugins/MaxPlayerCount.dll" dll
+mkdir -p "$WORK/dist/plugins/ValheimRAFT/Assets/Sails/Patterns"
+write_file "$WORK/dist/plugins/ValheimRAFT/ValheimRAFT.dll" dll
+write_file "$WORK/dist/plugins/ValheimRAFT/ValheimVehicles.dll" dll
+write_file "$WORK/dist/plugins/ValheimRAFT/Assets/Sails/sail.png" sail
+write_file "$WORK/dist/plugins/ValheimRAFT/Assets/Sails/Patterns/stripe.png" pattern
 
 if run_install \
    && expect_tree "$WORK/bepinex" \
       .lembitu-installed \
       plugins \
-      plugins/Lembitu.Hello.dll \
-      plugins/More_World_Locations_AIO \
-      plugins/More_World_Locations_AIO/Bundles \
-      plugins/More_World_Locations_AIO/Bundles/sub \
-      plugins/More_World_Locations_AIO/Bundles/mwl_ruins1 \
-      plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
-      plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll \
-      plugins/More_World_Locations_AIO/assetBundleManifest_full \
+      plugins/MaxPlayerCount.dll \
+      plugins/ValheimRAFT \
+      plugins/ValheimRAFT/Assets \
+      plugins/ValheimRAFT/Assets/Sails \
+      plugins/ValheimRAFT/Assets/Sails/Patterns \
+      plugins/ValheimRAFT/Assets/Sails/Patterns/stripe.png \
+      plugins/ValheimRAFT/Assets/Sails/sail.png \
+      plugins/ValheimRAFT/ValheimRAFT.dll \
+      plugins/ValheimRAFT/ValheimVehicles.dll \
    && expect_lines "$WORK/bepinex/.lembitu-installed" \
-      plugins/Lembitu.Hello.dll \
-      plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll \
-      plugins/More_World_Locations_AIO/assetBundleManifest_full \
-      plugins/More_World_Locations_AIO/Bundles/mwl_ruins1 \
-      plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
-   && grep -q '^installed plugins/More_World_Locations_AIO/ (4 files)$' "$WORK/out" \
-   && grep -q '^installed plugins/Lembitu.Hello.dll$' "$WORK/out" \
+      plugins/MaxPlayerCount.dll \
+      plugins/ValheimRAFT/ValheimRAFT.dll \
+      plugins/ValheimRAFT/ValheimVehicles.dll \
+      plugins/ValheimRAFT/Assets/Sails/sail.png \
+      plugins/ValheimRAFT/Assets/Sails/Patterns/stripe.png \
+   && grep -q '^installed plugins/ValheimRAFT/ (4 files)$' "$WORK/out" \
+   && grep -q '^installed plugins/MaxPlayerCount.dll$' "$WORK/out" \
    && [[ ! -e "$WORK/bepinex/.lembitu-removed" ]]; then
   report ok "fresh install deploys DLLs and trees, manifest lists every file"
 else
@@ -98,20 +101,20 @@ fi
 # --- 2. prune: stale DLL and stale tree removed, directories cleaned up ----------------------
 
 write_file "$WORK/dist/plugins/Replacement.dll" rep
-rm "$WORK/dist/plugins/Lembitu.Hello.dll"
-rm -rf "$WORK/dist/plugins/More_World_Locations_AIO"
+rm "$WORK/dist/plugins/MaxPlayerCount.dll"
+rm -rf "$WORK/dist/plugins/ValheimRAFT"
 
 if run_install \
    && expect_tree "$WORK/bepinex" \
       .lembitu-installed .lembitu-removed plugins plugins/Replacement.dll \
    && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Replacement.dll \
    && expect_lines "$WORK/bepinex/.lembitu-removed" \
-      plugins/Lembitu.Hello.dll \
-      plugins/More_World_Locations_AIO/More_World_Locations_AIO.dll \
-      plugins/More_World_Locations_AIO/assetBundleManifest_full \
-      plugins/More_World_Locations_AIO/Bundles/mwl_ruins1 \
-      plugins/More_World_Locations_AIO/Bundles/sub/mwl_ruins2 \
-   && grep -q '^removed stale plugins/More_World_Locations_AIO/ (4 files)$' "$WORK/out"; then
+      plugins/MaxPlayerCount.dll \
+      plugins/ValheimRAFT/ValheimRAFT.dll \
+      plugins/ValheimRAFT/ValheimVehicles.dll \
+      plugins/ValheimRAFT/Assets/Sails/sail.png \
+      plugins/ValheimRAFT/Assets/Sails/Patterns/stripe.png \
+   && grep -q '^removed stale plugins/ValheimRAFT/ (4 files)$' "$WORK/out"; then
   report ok "prune removes stale DLL and tree, ledger records them"
 else
   report fail "prune removes stale DLL and tree, ledger records them"
@@ -199,9 +202,11 @@ fi
 # --- 7. patchers/ and config/ deploy beside plugins/ and prune with them ---------------------
 
 fresh_dist
-mkdir -p "$WORK/dist/plugins/Root" "$WORK/dist/patchers/Fast_AssetBundle_Loader" "$WORK/dist/config/Clan/emblems"
+# No pinned package ships a patcher since Fast_AssetBundle_Loader was cut, so the fixture uses a
+# plainly-named one: the installer's patchers/ handling is what is under test, not any real mod.
+mkdir -p "$WORK/dist/plugins/Root" "$WORK/dist/patchers/ExamplePatcher" "$WORK/dist/config/Clan/emblems"
 write_file "$WORK/dist/plugins/Root/Root.dll" root
-write_file "$WORK/dist/patchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll" patcher
+write_file "$WORK/dist/patchers/ExamplePatcher/ExamplePatcher.dll" patcher
 write_file "$WORK/dist/config/Clan/emblems/cat.png" emblem
 run_install
 
@@ -209,10 +214,10 @@ ok_so_far=0
 expect_tree "$WORK/bepinex" \
    .lembitu-installed \
    config config/Clan config/Clan/emblems config/Clan/emblems/cat.png \
-   patchers patchers/Fast_AssetBundle_Loader patchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll \
+   patchers patchers/ExamplePatcher patchers/ExamplePatcher/ExamplePatcher.dll \
    plugins plugins/Root plugins/Root/Root.dll \
    && grep -q '^installed config/Clan/ (1 files)$' "$WORK/out" \
-   && grep -q '^installed patchers/Fast_AssetBundle_Loader/ (1 files)$' "$WORK/out" \
+   && grep -q '^installed patchers/ExamplePatcher/ (1 files)$' "$WORK/out" \
    && ok_so_far=1
 rm -rf "$WORK/dist/patchers" "$WORK/dist/config"
 run_install
@@ -222,7 +227,7 @@ if [[ ${ok_so_far:-0} == 1 ]] \
       plugins plugins/Root plugins/Root/Root.dll \
    && expect_lines "$WORK/bepinex/.lembitu-removed" \
       config/Clan/emblems/cat.png \
-      patchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll; then
+      patchers/ExamplePatcher/ExamplePatcher.dll; then
   report ok "patchers/ and config/ deploy from dist and prune when retired"
 else
   report fail "patchers/ and config/ deploy from dist and prune when retired"
@@ -338,7 +343,7 @@ fi
 
 # --- 15. prune-mirror spends config/ and patchers/ entries without a replay -------------------
 
-printf 'config/Clan/emblems/cat.png\npatchers/Fast_AssetBundle_Loader/FastAssetBundleLoader.dll\n' \
+printf 'config/Clan/emblems/cat.png\npatchers/ExamplePatcher/ExamplePatcher.dll\n' \
   > "$WORK/bepinex/.lembitu-removed"
 rm -f "$WORK/docker-args" "$WORK/docker-script"
 

@@ -66,23 +66,32 @@ safety (#28), a new native gameplay run, or Milestone acceptance.
 
 The Pack went from thirty packages to twenty-three, two of them new, and every planned plugin
 except the test harness was cancelled. The decision and its accepted losses are in ADR-0010; the
-resulting pin table is in [the mod stack](../modstack.md). At the time of writing this is the
-decision, not the repository state: the lock, enforced config and source deletions are one
-implementation task still to land.
+resulting pin table is in [the mod stack](../modstack.md). **Landed in the repository by #66**: the
+lock carries exactly the twenty-three pins, the enforced overlays below are committed, and
+`src/forks/EpicMMOSystem`, `src/forks/ServerSync` and `src/plugins/Lembitu.Hello` are deleted.
 
-Measured once on a disposable copy on astral-tricep, with no client and no repository changes: all
-twenty-three packages staged with verified hashes and declared closure, the build produced only
-MaxPlayerCount and Lembitu.Harness with zero errors, and the server reached `Chainloader startup
-complete` and the native Steam listener with twenty-nine plugins and no `MissingFieldException` or
-`MissingMethodException`. The thirteen remaining errors are the documented headless noise. This is
-a staging and boot measurement, not acceptance: no gameplay, no client and no two-client session.
+Two measurements on a disposable copy on astral-tricep, with no client and no live-server changes.
+The first staged and booted the pack from an off-repository copy of the source, while the repository
+still carried the old pins. The second, for #66, ran the same pack from the repository state with
+the enforced overlay applied. Both staged all twenty-three packages with verified hashes and
+declared closure, built only MaxPlayerCount and Lembitu.Harness with zero errors and zero warnings,
+and reached `Chainloader startup complete` and the native Steam listener with twenty-nine plugins,
+**no `MissingFieldException`, no `MissingMethodException`, and no line naming any cut mod**. The
+thirteen remaining errors are the documented headless noise. This is a staging and boot
+measurement, not acceptance: no gameplay, no client and no two-client session.
 
-Three findings from that boot change what the Pack has to carry. YamlDotNet keeps its place because
+Three findings from that work change what the Pack has to carry. YamlDotNet keeps its place because
 its own detector plugin loads it even though no manifest declares it. EpicMMOSystem 1.9.67 writes
 no `Players.json`, so the stranger's XP-bonus file the retired fork emptied no longer needs an
 overlay. And three adopted packages declare older BepInEx pins — EpicLoot and DiscordConnector name
-5.4.2333, WackyEpicMMOSystem names 5.4.2202 — so the staging closure check needs those recorded as
-deliberate overrides before it will stage the Pack at all.
+5.4.2333, WackyEpicMMOSystem names 5.4.2202 — which `scripts/stage-stack.sh` records as deliberate
+overrides; without them the closure check refuses to stage the Pack at all.
+
+The boot also shows the boss-tier mechanism loading rather than merely being configured:
+CreatureManager reports `12 level rule definition(s)`, which is the nine preset biomes plus `Global`,
+`Boss` and the one prefab override in `levels.yml`. The tier preset is what those nine biome rules
+are; `Bosses Follow Biome Level Preset` is what lets a regular boss use them when `Boss.level` is
+omitted. Observed boss health in a real fight still belongs to #10/#13, not to this run.
 
 
 ## Pack refresh verification — 2026-09-14 (#64)
