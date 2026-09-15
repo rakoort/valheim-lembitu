@@ -3,6 +3,9 @@ bin/
 obj/
 dist/
 __pycache__/
+# Built client packs: a ~128 MB zip plus its manifest and inventory, produced by
+# scripts/build-client-pack.sh and published as a release, never committed.
+dist-client/
 
 # Extracted reference assemblies and downloaded packs (see docs/build.md)
 lib/valheim/
