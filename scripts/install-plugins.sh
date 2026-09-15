@@ -107,7 +107,18 @@ do_install() {
   # Manifests from the plugins-only era of this script live in plugins/ with bare plugins-relative
   # paths; adopt them at the BepInEx root with the prefix they now need, or their files stop being
   # pruned the moment this version runs against an old server.
+  #
+  # That era predates the path policy, so the legacy entries are checked here, while the original is
+  # still on disk to correct. They are not traversal-shaped in practice - a legacy entry that
+  # reaches outside plugins/ would never have matched a file the old script installed - but the
+  # character allowlist is newer than the file, and refusing after the rm -f below would leave the
+  # operator nothing to edit and no way to recover the stale files it recorded.
   if [[ ! -f "$manifest" && -f "$target/plugins/.lembitu-installed" ]]; then
+    while IFS= read -r name; do
+      [[ -n "$name" ]] || continue
+      safe_ledger_entry "plugins/$name" \
+        || die "unsafe entry in $target/plugins/.lembitu-installed: $name (remove that line, then rerun)"
+    done < "$target/plugins/.lembitu-installed"
     sed 's|^|plugins/|' "$target/plugins/.lembitu-installed" > "$manifest"
     rm -f "$target/plugins/.lembitu-installed"
     if [[ -f "$target/plugins/.lembitu-removed" ]]; then
@@ -128,16 +139,32 @@ do_install() {
 
   # Remove what we installed last time and no longer build. A failure part-way cannot disown files:
   # the manifest is only rewritten after every copy has succeeded, so the next run prunes again.
-  local removed=()
+  #
+  # The manifest is our own record, but the file on disk is not guaranteed to still be ours: a hand
+  # edit, a crash or an older version can leave a traversal-shaped entry, and `rm` would then delete
+  # outside the target. Every entry is validated before the first removal, so a corrupt manifest
+  # refuses the whole run instead of pruning part-way - the ledger append and the manifest rewrite
+  # both come after this point. This is the policy dist/ and the prune-mirror ledger already use,
+  # and no manifest this script writes can fail it: names are checked before they are copied.
+  local owned=()
   if [[ -f "$manifest" ]]; then
     while IFS= read -r name; do
       [[ -n "$name" ]] || continue
+      safe_ledger_entry "$name" \
+        || die "unsafe entry in $manifest: $name (remove that line, then rerun)"
+      owned+=("$name")
+    done < "$manifest"
+  fi
+
+  local removed=()
+  if [[ ${#owned[@]} -gt 0 ]]; then
+    for name in "${owned[@]}"; do
       [[ -f "$DIST_DIR/$name" ]] && continue
       if [[ -f "$target/$name" ]]; then
         rm -- "$target/$name"
         removed+=("$name")
       fi
-    done < "$manifest"
+    done
   fi
   if [[ ${#removed[@]} -gt 0 ]]; then
     printf '%s\n' "${removed[@]}" >> "$target/.lembitu-removed"

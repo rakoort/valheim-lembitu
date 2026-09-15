@@ -207,6 +207,19 @@ installed before but no longer finds in `dist/` — a stale DLL, or a whole stal
 directories included. Files it did not install are never touched, and a directory that still holds
 a foreign file survives pruning. `test/install-plugins.test.sh` pins all of this down.
 
+Pruning is driven by the manifest alone, so the manifest is the one input that can delete outside
+the target. Every entry is checked before the first removal against the same path policy `dist/`
+names and the prune ledger already use: a name outside the allowed characters, or a traversal-shaped
+one (`.`, `..`, a leading-dot component, or an absolute path), aborts the run and names the offending
+line. Because the check happens before any removal, a corrupt manifest refuses the whole run rather
+than pruning part-way and leaving the manifest describing files that are already gone.
+
+Only two places write that manifest, and both are checked: the install itself validates each name
+before copying it, and the plugins/-era migration validates the legacy entries before it rewrites
+them — while the legacy file is still on disk to correct, since refusing after removing it would
+leave nothing to edit. So a reported entry means the manifest was edited by hand or left by another
+tool; delete the reported line and rerun.
+
 `dist/` is the installer's source of truth and the build only ever adds to it, so run `dotnet clean`
 (which empties `dist/`) after renaming or deleting a plugin. Otherwise the old DLL is still there to
 install, which is how you end up with two plugins claiming one GUID. An empty `dist/plugins/` is an
