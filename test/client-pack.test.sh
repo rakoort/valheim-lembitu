@@ -78,6 +78,21 @@ MD
 
 CACHE="$WORK/cache"; mkdir -p "$CACHE"
 
+# A BepInEx loader fixture. The builder copies the loader from lib/bepinex/pack/, which a clean
+# checkout does not have (it is gitignored and reproduced by scripts/extract-refs.sh), so the tests
+# point the builder at a fixture pack through the same variable the builder uses.
+BEPINEX_PACK="$WORK/bepinex-pack/BepInExPack_Valheim"
+mkdir -p "$BEPINEX_PACK/BepInEx/core" "$BEPINEX_PACK/doorstop_libs"
+printf 'preloader\n' > "$BEPINEX_PACK/BepInEx/core/BepInEx.Preloader.dll"
+printf 'bepinex\n'   > "$BEPINEX_PACK/BepInEx/core/BepInEx.dll"
+printf 'harmony\n'   > "$BEPINEX_PACK/BepInEx/core/0Harmony.dll"
+printf 'doorstop\n'  > "$BEPINEX_PACK/doorstop_config.ini"
+printf 'winhttp\n'   > "$BEPINEX_PACK/winhttp.dll"
+printf 'sh\n'        > "$BEPINEX_PACK/start_game_bepinex.sh"
+printf 'so\n'        > "$BEPINEX_PACK/doorstop_libs/libdoorstop_x64.so"
+printf 'dylib\n'     > "$BEPINEX_PACK/doorstop_libs/libdoorstop_x64.dylib"
+mkdir -p "$BEPINEX_PACK/BepInEx/config"
+
 make_zip() {  # make_zip <zip> <entry:content>...
   local zip=$1; shift
   local dir; dir="$(mktemp -d "$WORK/z.XXXXXX")"
@@ -111,6 +126,7 @@ LOCK="$WORK/lock.json"
 
 build() {  # build <out> [extra args...]
   local out=$1; shift
+  BEPINEX_PACK="$BEPINEX_PACK" \
   "$BUILDER" --out "$out" --version t --pins "$WORK/modstack.md" --cache "$CACHE" --lock "$LOCK" "$@" \
     > "$WORK/out" 2>&1
 }
@@ -121,15 +137,53 @@ OUT1="$WORK/out1"
 if build "$OUT1"; then
   archive="$OUT1/lembitu-client-pack-t.zip"
   listing="$(unzip -Z1 "$archive")"
-  if grep -qx 'plugins/BoneMod/BoneMod.dll' <<<"$listing" \
-     && grep -qx 'plugins/Clan/Clan.dll' <<<"$listing" \
-     && grep -qx 'config/Clan/emblem.png' <<<"$listing"; then
+  if grep -qx 'BepInEx/plugins/BoneMod/BoneMod.dll' <<<"$listing" \
+     && grep -qx 'BepInEx/plugins/Clan/Clan.dll' <<<"$listing" \
+     && grep -qx 'BepInEx/config/Clan/emblem.png' <<<"$listing"; then
     report ok "stages the client-side packages and their config seeds"
   else
     report fail "stages the client-side packages and their config seeds"
   fi
 else
   report fail "stages the client-side packages and their config seeds"
+fi
+
+# --- 1c. mods are nested under BepInEx, not at the game root ----------------------------------
+# The second half of the same defect: a `plugins/` directory at the game root extracts cleanly,
+# contains every mod, and loads nothing at all, because the loader only reads BepInEx/plugins/.
+if build "$OUT1"; then
+  listing="$(unzip -Z1 "$OUT1/lembitu-client-pack-t.zip")"
+  if ! grep -qE '^(plugins|patchers|config)/' <<<"$listing" \
+     && grep -qE '^BepInEx/plugins/' <<<"$listing"; then
+    report ok "nests the mods under BepInEx/ instead of the game root"
+  else
+    report fail "nests the mods under BepInEx/ instead of the game root"
+  fi
+else
+  report fail "nests the mods under BepInEx/ instead of the game root"
+fi
+
+# --- 1b. the archive is a complete, runnable install ------------------------------------------
+# The defect this guards: a zip of mods with no BepInEx loader. It extracts cleanly, contains every
+# mod, and produces a vanilla client — which this server refuses at the handshake. Every required
+# piece is asserted, including a doorstop library per platform, because shipping one platform's
+# library silently breaks the others.
+
+if build "$OUT1"; then
+  listing="$(unzip -Z1 "$OUT1/lembitu-client-pack-t.zip")"
+  missing=""
+  for f in BepInEx/core/BepInEx.Preloader.dll BepInEx/core/BepInEx.dll BepInEx/core/0Harmony.dll \
+           doorstop_config.ini winhttp.dll doorstop_libs/libdoorstop_x64.so \
+           doorstop_libs/libdoorstop_x64.dylib; do
+    grep -qx "$f" <<<"$listing" || missing="$missing $f"
+  done
+  if [ -z "$missing" ]; then
+    report ok "ships the BepInEx loader so the archive is a complete install"
+  else
+    report fail "ships the BepInEx loader so the archive is a complete install (missing:$missing)"
+  fi
+else
+  report fail "ships the BepInEx loader so the archive is a complete install"
 fi
 
 # --- 2. the manifest is valid JSON naming the exclusions and the pins -------------------------
@@ -150,7 +204,7 @@ fi
 # --- 3. the file inventory lists what a player installs, and nothing else --------------------
 
 versions="$OUT1/lembitu-client-pack-t.versions.txt"
-if grep -q 'plugins/BoneMod/BoneMod.dll' "$versions" && ! grep -q 'staged-dirs' "$versions"; then
+if grep -q 'BepInEx/plugins/BoneMod/BoneMod.dll' "$versions" && ! grep -q 'staged-dirs' "$versions"; then
   report ok "writes a per-file inventory with hashes and no builder bookkeeping"
 else
   report fail "writes a per-file inventory with hashes and no builder bookkeeping"

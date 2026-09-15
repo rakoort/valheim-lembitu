@@ -5,8 +5,21 @@
 #   scripts/build-client-pack.sh [--out <dir>] [--version <label>]
 #                               [--pins <file>] [--cache <dir>] [--lock <file>]
 #
-# The client Pack is the adopted pin list, staged into a BepInEx-shaped tree and archived for
-# distribution. It is NOT the server's dist/: two things differ, and both matter.
+# The archive is a COMPLETE client install, shaped like the game's own folder. A player copies their
+# Valheim install, extracts this archive into that copy, and launches. Nothing else: no BepInEx
+# install step, no mod manager, no per-mod download.
+#
+# That means the archive carries three things, and all three are required:
+#
+#   BepInEx loader   BepInEx/, doorstop_libs/, doorstop_config.ini, winhttp.dll and the launcher
+#                    scripts, from the same pinned BepInExPack_Valheim the server deploys. Without
+#                    these the plugins are inert files in a folder and the game refuses to load
+#                    them: a player who extracts only mods gets a vanilla client, which this
+#                    server rejects outright at the handshake.
+#   plugins/         the adopted pin list, plus every package's assets and config seeds.
+#   config/          the package-supplied config seeds, and the client-relevant locked settings.
+#
+# It is NOT the server's dist/: two things differ, and both matter.
 #
 #   MaxPlayerCount   server-only. Every surface it patches - the admission literal in
 #                    ZNet.RPC_PeerInfo, the Steam capacity prefix, the PlayFab lobby request - runs
@@ -21,13 +34,17 @@
 #
 # Staging is delegated to scripts/stage-stack.sh, which owns pin parsing, hash verification,
 # dependency closure and the package-layout normalisation. This script adds what is specific to a
-# player-facing distribution: the exclusions, the assertions that they hold, a manifest a player's
-# install can be checked against, and the archive.
+# player-facing distribution: the loader, the exclusions, the assertions that they hold, a manifest
+# a player's install can be checked against, and the archive.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STAGER="$REPO_ROOT/scripts/stage-stack.sh"
+# The loader, from the same pinned pack scripts/extract-refs.sh downloads and the server deploys.
+# Overridable so the test suite can supply a fixture: lib/ is gitignored, so a clean checkout has no
+# pack and a test that needed the real one could never run.
+BEPINEX_PACK="${BEPINEX_PACK:-$REPO_ROOT/lib/bepinex/pack/BepInExPack_Valheim}"
 
 OUT="dist-client"
 VERSION=""
@@ -109,6 +126,43 @@ if ! "$STAGER" --dist "$stage" "${PINS_ARGS[@]}" > "$stage/stage.log" 2>&1; then
 fi
 tail -3 "$stage/stage.log" >&2
 
+# --- the loader, and the install shape ---------------------------------------------------------
+#
+# The mods are dormant files until a BepInEx loader is present to load them, so the archive ships
+# the loader too. Copying the pinned pack wholesale is deliberate: picking files out of it would be
+# a second, silently-drifting definition of "a working BepInEx install". The server-only launcher is
+# dropped, because a player runs the game, not a dedicated server.
+[[ -d "$BEPINEX_PACK" ]] || die "no BepInEx pack at $BEPINEX_PACK; run scripts/extract-refs.sh first"
+cp -a "$BEPINEX_PACK/BepInEx" "$stage/"
+cp -a "$BEPINEX_PACK/doorstop_libs" "$stage/"
+cp -a "$BEPINEX_PACK/doorstop_config.ini" "$stage/"
+[[ -f "$BEPINEX_PACK/.doorstop_version" ]] && cp -a "$BEPINEX_PACK/.doorstop_version" "$stage/"
+cp -a "$BEPINEX_PACK/winhttp.dll" "$stage/"
+cp -a "$BEPINEX_PACK/start_game_bepinex.sh" "$stage/"
+chmod +x "$stage/start_game_bepinex.sh"
+
+# The stager writes a `dist/`-shaped tree, which mirrors the *BepInEx directory*: `dist/plugins`,
+# `dist/patchers`, `dist/config`. That is what scripts/install-plugins.sh expects, and it is one
+# level too shallow for a game folder. Nesting them under BepInEx/ is what turns two layouts that
+# both look plausible into the one BepInEx actually loads from: at the game root, `plugins/` next to
+# the game binary is an inert folder, while `BepInEx/plugins/` is where the loader looks.
+for tree in plugins patchers config; do
+  [[ -e "$stage/$tree" ]] || continue
+  mkdir -p "$stage/BepInEx"
+  if [[ -d "$stage/BepInEx/$tree" ]]; then
+    # A package's file may collide with the loader's own. The package's copy is the one the mod
+    # reads, so it wins — but the collision is reported, because a silent overwrite of a loader file
+    # is the kind of change that only shows up as a broken install later.
+    while IFS= read -r f; do
+      [[ -e "$stage/BepInEx/$tree/$f" ]] && printf 'note: BepInEx/%s/%s overrides a loader file\n' "$tree" "$f" >&2
+    done < <(cd "$stage/$tree" && find . -type f -printf '%P\n')
+    cp -a "$stage/$tree/." "$stage/BepInEx/$tree/"
+    rm -rf "$stage/$tree"
+  else
+    mv "$stage/$tree" "$stage/BepInEx/$tree"
+  fi
+done
+
 # --- assertions --------------------------------------------------------------------------------
 
 # Absence: our server-only plugin and our test harness must not be in a player's pack. The search
@@ -125,8 +179,42 @@ for name in "${REQUIRED[@]}"; do
 done
 
 # The pack must not be empty: an empty distribution installs nothing and looks successful.
-( cd "$stage" && find plugins -mindepth 2 -type f | grep -q . ) \
-  || die "client pack staged no package files"
+( cd "$stage" && find BepInEx/plugins -mindepth 2 -type f | grep -q . ) \
+  || die "client pack staged no package files under BepInEx/plugins"
+
+# Nothing may sit at the game root except the loader's own files. A `plugins/` or `config/` at the
+# root extracts cleanly, contains every mod, and loads nothing: the loader only reads BepInEx/.
+for stray in plugins patchers config; do
+  [[ -e "$stage/$stray" ]] && die "client pack has $stray/ at the game root; it must live under BepInEx/"
+done
+
+# The install must be complete enough to run. These are the checks whose absence produced a release
+# that looked fine and could not work: a zip of mods with no loader. Launching such an install gives
+# a vanilla client, which this server refuses at the handshake, and nothing in the player's folder
+# explains why.
+for required in \
+  "BepInEx/core/BepInEx.Preloader.dll" \
+  "BepInEx/core/BepInEx.dll" \
+  "BepInEx/core/0Harmony.dll" \
+  "doorstop_config.ini" \
+  "winhttp.dll" \
+  "BepInEx/plugins/BoneMod"; do
+  [[ -e "$stage/$required" ]] || die "client pack is missing $required; a player could not run it"
+done
+# At least one doorstop library per supported platform: a Windows player needs the DLL, a Linux
+# player the .so, and a Mac player the .dylib. Shipping only one silently breaks the others.
+for lib in libdoorstop_x64.so libdoorstop_x64.dylib; do
+  [[ -e "$stage/doorstop_libs/$lib" ]] \
+    || die "client pack is missing doorstop_libs/$lib; that platform could not load any plugin"
+done
+[[ -e "$stage/winhttp.dll" ]] \
+  || die "client pack is missing winhttp.dll; a Windows player could not load any plugin"
+
+# The loader must not be the only thing that is version-consistent: the plugins the server enforces
+# are checked above by name, and the loader is pinned by scripts/extract-refs.sh. Record which
+# loader this pack carries so a mismatch is visible rather than inferred.
+loader_version="$(sed -n 's/^BEPINEX_PACK_VERSION="\([^"]*\)".*$/\1/p' "$REPO_ROOT/scripts/extract-refs.sh" | head -1)"
+[[ -n "$loader_version" ]] || die "cannot read BEPINEX_PACK_VERSION from scripts/extract-refs.sh"
 
 # --- manifest ----------------------------------------------------------------------------------
 
@@ -155,6 +243,9 @@ done < <("$STAGER" --list "${PINS_ARGS[@]}")
   printf '  "pack": "valheim-lembitu client",\n'
   printf '  "version": "%s",\n' "$VERSION"
   printf '  "built_utc": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf '  "complete_install": true,\n'
+  printf '  "bepinex_pack": "%s",\n' "$loader_version"
+  printf '  "install_shape": "extract into a copy of the Valheim game folder",\n'
   printf '  "excluded_server_only": ['
   sep=""
   for name in "${EXCLUDED[@]}"; do printf '%s"%s"' "$sep" "$name"; sep=", "; done
@@ -207,4 +298,4 @@ mv -- "$built/manifest.json" "$manifest"
 printf '\nclient pack: %s (%s)\n' "$archive" "$(du -h "$archive" | cut -f1)"
 printf 'manifest:    %s\n' "$manifest"
 printf 'files:       %s\n' "$versions"
-printf '\nplayers extract this over their Valheim install; see docs/wiki/pack.md for the checklist.\n'
+printf '\nThis is a complete client install. A player copies their Valheim folder, extracts this\narchive into the copy, and launches. See docs/wiki/pack.md.\n'
