@@ -1,6 +1,6 @@
 # Pack
 
-This page explains how the project selects, pins, stages and verifies the Pack: the mods and versions a player installs. It distinguishes a development candidate from the accepted combination frozen for a Run, and records why some mods are adopted, maintained as forks or excluded (`CONTEXT.md:21-24`, `CONTEXT.md:129-141`).
+This page explains how the project selects, pins, stages and verifies the Pack: the mods and versions a player installs. It distinguishes a development candidate from the accepted combination frozen for a Run, and records why some mods are adopted, maintained as forks or excluded (`CONTEXT.md:21-24`, `CONTEXT.md:112-128`).
 
 ## Decisions
 
