@@ -93,11 +93,12 @@ manifest="$OUT_ABS/lembitu-client-pack-$VERSION.manifest.json"
 versions="$OUT_ABS/lembitu-client-pack-$VERSION.versions.txt"
 
 mkdir -p "$OUT_ABS"
-# Build in a private tree, then publish. A half-staged pack that looks complete is exactly the
-# failure a player cannot diagnose. The staging log goes in the private tree too, so the directory
-# an operator hands to players holds exactly the three declared artifacts and nothing else.
+# Two private trees: `stage` is what goes INTO the archive, `built` is where the three published
+# artifacts are assembled. Keeping them apart is what stops a builder artifact from being zipped
+# into the pack it describes — the manifest is written to `built`, not into the tree being archived.
 stage="$(mktemp -d)"
-trap 'rm -rf -- "$stage"' EXIT
+built="$(mktemp -d)"
+trap 'rm -rf -- "$stage" "$built"' EXIT
 
 if ! "$STAGER" --dist "$stage" "${PINS_ARGS[@]}" > "$stage/stage.log" 2>&1; then
   # On failure the log is what the operator needs, so it is kept beside the (absent) pack rather
@@ -174,20 +175,34 @@ done < <("$STAGER" --list "${PINS_ARGS[@]}")
   done <<< "$pins_lines"
   printf '\n  }\n'
   printf '}\n'
-} > "$manifest"
+} > "$built/manifest.json"
 
 # Human-readable inventory: every file the player should end up with, with its hash. This is the
 # list the install checklist compares against. The staging ledger (`.staged-dirs`) is builder
 # bookkeeping, not pack content, and is left out of both this list and the archive.
 ( cd "$stage" && find . -type f ! -name '.staged-dirs' | LC_ALL=C sort | while IFS= read -r f; do
     printf '%s  %s\n' "$(sha256_of "$f")" "${f#./}"
-  done ) > "$versions"
+  done ) > "$built/versions.txt"
 
-# --- archive -----------------------------------------------------------------------------------
+# --- archive, then publish ---------------------------------------------------------------------
+#
+# Everything is built in the private tree and moved into place only once every artifact exists. The
+# three artifacts are one unit: a manifest without the zip it describes, or a zip without the
+# inventory a player checks it against, is a partial pack that looks complete — the failure this
+# builder exists to prevent. An earlier version wrote the manifest and inventory first and published
+# them even when the archive step failed.
 
-archive_tmp="$archive.part"
-( cd "$stage" && zip -qr "$archive_tmp" . -x './.staged-dirs' '.staged-dirs' ) || die "archiving failed"
+archive_tmp="$built/pack.zip"
+# Only the staged tree is archived. Everything the builder writes for the operator lives in
+# `built`, so no builder artifact can end up inside the pack.
+( cd "$stage" && zip -qr "$archive_tmp" . -x './.staged-dirs' '.staged-dirs' './stage.log' ) \
+  || die "archiving failed; nothing was published"
+
+[[ -s "$archive_tmp" ]] || die "the archive is empty; nothing was published"
+
 mv -- "$archive_tmp" "$archive"
+mv -- "$built/versions.txt" "$versions"
+mv -- "$built/manifest.json" "$manifest"
 
 printf '\nclient pack: %s (%s)\n' "$archive" "$(du -h "$archive" | cut -f1)"
 printf 'manifest:    %s\n' "$manifest"

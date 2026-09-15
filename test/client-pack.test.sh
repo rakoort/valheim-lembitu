@@ -156,6 +156,16 @@ else
   report fail "writes a per-file inventory with hashes and no builder bookkeeping"
 fi
 
+# The published directory holds exactly the three artifacts, and the archive holds none of them. A
+# pack that ships its own manifest inside itself is the mistake this asserts against.
+listing="$(unzip -Z1 "$OUT1/lembitu-client-pack-t.zip")"
+published="$(ls "$OUT1" | wc -l | tr -d ' ')"
+if [ "$published" -eq 3 ] && ! grep -qxE '\.?/(manifest\.json|versions\.txt|pack\.zip|stage\.log)' <<<"$listing"; then
+  report ok "publishes exactly three artifacts and puts no builder file inside the archive"
+else
+  report fail "publishes exactly three artifacts and puts no builder file inside the archive"
+fi
+
 # --- 4. a server-only plugin in the staged tree is refused -----------------------------------
 # The failure this test exists for. MaxPlayerCount is a fork, not an adopted pin, so simulating the
 # mistake means putting it in the pin table as a naive pack build would. The builder's absence
@@ -238,6 +248,22 @@ if [[ -x "$STAGER" ]]; then
   else
     report fail "--list prints the client pin list"
   fi
+fi
+
+# --- 8. a failure publishes nothing at all ----------------------------------------------------
+# The three artifacts are one unit. A manifest without the zip it describes, or a zip without the
+# inventory a player checks it against, is a partial pack that looks complete — and a release
+# operator who sees files in the output directory will attach them. Simulated by removing the
+# archiver from PATH, which is the failure that produced exactly this symptom.
+
+OUT8="$WORK/out8"
+if ! PATH="/usr/bin:/bin" "$BUILDER" --out "$OUT8" --version t --pins "$WORK/modstack.md" \
+       --cache "$CACHE" --lock "$LOCK" > "$WORK/out" 2>&1 \
+   && ! ls "$OUT8"/lembitu-client-pack-t.zip "$OUT8"/lembitu-client-pack-t.manifest.json \
+        "$OUT8"/lembitu-client-pack-t.versions.txt >/dev/null 2>&1; then
+  report ok "publishes no artifact at all when the build fails part-way"
+else
+  report fail "publishes no artifact at all when the build fails part-way"
 fi
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
