@@ -391,5 +391,55 @@ else
   report fail "a removal that fails inside the container keeps the ledger for retry"
 fi
 
+# --- 19. an installed manifest entry outside the target refuses the whole run -------------------
+#
+# dist/ must not sit beside the target here. A `../outside.txt` entry is resolved against both
+# $DIST_DIR and the target, so if dist were a sibling of the target then $DIST_DIR/../outside.txt
+# would be the very file under test and the pre-removal "still in dist/?" guard would skip the
+# entry before rm - the assertion would hold even with the check removed. Staging dist one level
+# deeper keeps it load-bearing: against the unvalidated installer this manifest deletes the file.
+
+rm -rf "$WORK/deep" "$WORK/bepinex"
+mkdir -p "$WORK/deep/dist/plugins" "$WORK/bepinex"
+write_file "$WORK/deep/dist/plugins/Good.dll" g
+"$INSTALLER" --dist "$WORK/deep/dist" "$WORK/bepinex" >"$WORK/out" 2>&1
+rm "$WORK/deep/dist/plugins/Good.dll"
+write_file "$WORK/deep/dist/plugins/Current.dll" c
+write_file "$WORK/outside.txt" precious        # outside the target; ../outside.txt reaches it
+printf 'plugins/Good.dll\n../outside.txt\n' > "$WORK/bepinex/.lembitu-installed"
+
+if ! "$INSTALLER" --dist "$WORK/deep/dist" "$WORK/bepinex" >"$WORK/out" 2>&1 \
+   && grep -q 'unsafe entry' "$WORK/out" \
+   && [[ "$(cat "$WORK/outside.txt")" == precious ]] \
+   && [[ -f "$WORK/bepinex/plugins/Good.dll" ]] \
+   && [[ ! -e "$WORK/bepinex/.lembitu-removed" ]]; then
+  report ok "a manifest entry outside the target refuses the run before any removal"
+else
+  report fail "a manifest entry outside the target refuses the run before any removal"
+fi
+rm -rf "$WORK/deep" "$WORK/outside.txt"
+
+# --- 20. a legacy manifest is validated before it is migrated and deleted ----------------------
+#
+# The plugins/-era manifest predates the path policy, so the migration is the one place the file is
+# rewritten from an untrusted source. Refusing after the rm -f would delete the only copy the
+# operator could correct and leave the run unrecoverable, so the check must run while the legacy
+# file is still on disk and must not install anything.
+
+rm -rf "$WORK/bepinex"
+mkdir -p "$WORK/dist/plugins" "$WORK/bepinex/plugins"
+write_file "$WORK/dist/plugins/Current.dll" c
+write_file "$WORK/bepinex/plugins/Old Mod.dll" o          # legal for the old script, not this one
+printf 'Old Mod.dll\n' > "$WORK/bepinex/plugins/.lembitu-installed"
+
+if ! run_install \
+   && grep -q 'unsafe entry in .*plugins/\.lembitu-installed' "$WORK/out" \
+   && [[ -f "$WORK/bepinex/plugins/.lembitu-installed" ]] \
+   && [[ ! -e "$WORK/bepinex/plugins/Current.dll" ]]; then
+  report ok "a legacy manifest that fails the policy is refused with its original left to correct"
+else
+  report fail "a legacy manifest that fails the policy is refused with its original left to correct"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
