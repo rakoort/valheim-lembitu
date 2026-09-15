@@ -21,7 +21,7 @@ These identities are dated test records, not a permanent selection or a claim ab
 | `lib/bepinex/` | BepInEx assemblies to compile against, plus the full pack in `lib/bepinex/pack/`. Not committed. |
 | `dist/` | Installer source, mirroring the target BepInEx directory: `plugins/` with our DLLs and staged mod trees, `patchers/`, `config/` seeds. Not committed. |
 | `config/enforced/` | The enforced server config, applied onto mod-generated configs. Committed. |
-| `scripts/` | Reference extraction, stack staging, plugin install, enforced config, test server, plus `lib/` helpers shared between them. |
+| `scripts/` | Reference extraction, stack staging, plugin install, enforced config, bundled-library screening, test server, plus `lib/` helpers shared between them. |
 | `test/` | Behaviour tests for the scripts; each `test/*.test.sh` runs standalone. |
 
 Game and BepInEx binaries are never committed. `scripts/extract-refs.sh` reproduces them.
