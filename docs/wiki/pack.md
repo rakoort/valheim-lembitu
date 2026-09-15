@@ -219,12 +219,11 @@ manages. Extract, set one launch parameter, press Play:
    merges with the game folder. In Steam: Valheim → Manage → Browse local files opens exactly that
    folder. The archive is shaped like the game folder, so extracting it one level too high or too
    low installs nothing.
-2. **Set the launch parameter** in Steam → Valheim → Properties → Launch Options:
-
-   | Platform | Launch options |
-   | --- | --- |
-   | Windows | leave empty — `winhttp.dll` beside the game binary loads the pack by itself |
-   | Linux | `<game>/start_game_bepinex.sh %command%`, written as `./start_game_bepinex.sh %command%` |
+2. **Set the launch parameter** in Steam → Valheim → Properties → Launch Options. On Windows leave
+   it empty: `winhttp.dll` beside the game binary loads the pack by itself. On Linux paste the
+   launcher's full path followed by the game command — `<game>/start_game_bepinex.sh %command%`,
+   with `<game>` replaced by the folder Browse local files opened. The short relative form, a
+   dot-slash before the script name, works too: the pack ships a shim for it, as described below.
 
 3. **Press Play.**
 
