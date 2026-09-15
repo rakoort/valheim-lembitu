@@ -212,25 +212,33 @@ The operator records the release URL in the Roster's usual gathering place; the 
 
 ### Install checklist for players
 
-1. Install Valheim from Steam and launch it once, so it creates its own settings and preferences.
-   Quit normally afterwards. A modded first launch before this step can fail on preferences the game
-   has not written yet (`docs/wiki/native-testing.md:13`).
-2. Copy your Valheim install to a second folder — this is the copy you will run. Steam updating the
-   original does not touch a copy.
-3. Download the client pack zip from the Run's release link and extract it **into that copied Valheim
-   folder**, so that the `BepInEx` directory inside the archive merges with the one in the game
-   folder. The archive's layout mirrors the game directory, so extracting it one level too high or
-   too low installs nothing.
-4. Launch the game from the copy, not through Steam's Play button. Steam's Play button launches the
-   original install and will apply its updates.
-5. In the server browser, search for **Lembitu** and join with the password from the Roster's
-   gathering place. The server is public, so it is listed rather than joined by address.
+The archive is a complete install overlay, so this is three steps:
+
+1. **Copy your Valheim game folder** somewhere else — for example `Valheim-lembitu` beside the
+   original. That copy is what you run; Steam keeps managing the original.
+2. **Extract the pack zip into that copy**, so the `BepInEx` directory inside the archive merges
+   with the game folder. The archive is shaped like the game folder, so extracting it one level too
+   high or too low installs nothing.
+3. **Launch the game from the copy.** On Windows the loader is injected by `winhttp.dll` sitting
+   beside the game binary, on macOS by the doorstop dylib, and on Linux you run the BepInEx start
+   script from that folder instead of the game binary directly.
+
+Pressing Play in Steam launches Steam's own copy, not yours, so it loads no mods. The shipped
+launcher does detect a Steam launch and re-exec itself, so pointing Steam's launch options at the
+copy also works — but running from the folder is the reliable path.
+
+**Check the extract before you launch**, because the failure mode is silent. Your copied folder must
+contain the BepInEx core directory with its preloader assembly, `winhttp.dll`, and the doorstop
+libraries directory. The mods must be under the BepInEx plugins directory, not in a `plugins` folder
+beside the game binary. That second layout is inert: the loader never looks there, the game starts
+vanilla, and the server refuses the connection without saying why.
+
+4. **Join** the server from the browser, or by address, with the password from the group chat.
 
 **On preventing a launch-time update.** There is no Steam setting that guarantees the game will not
 update; the beta-branch and update-scheduling options change when it happens, not whether. The
-method that works is the one above: play from a copy that Steam does not manage, and launch that
-copy directly. Record the copy's `valheim_Data/globalgamemanagers` build identity if you want to
-check it later.
+method that works is the copy above: Steam does not manage a folder you copied by hand. Record the
+copy's build identity if you want to check it later.
 
 ### Verifying a connected player
 
