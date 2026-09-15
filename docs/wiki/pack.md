@@ -224,7 +224,7 @@ manages. Extract, set one launch parameter, press Play:
    | Platform | Launch options |
    | --- | --- |
    | Windows | leave empty — `winhttp.dll` beside the game binary loads the pack by itself |
-   | Linux | `./start_game_bepinex.sh %command%` |
+   | Linux | `<game>/start_game_bepinex.sh %command%`, written as `./start_game_bepinex.sh %command%` |
 
 3. **Press Play.**
 
@@ -236,7 +236,7 @@ loader is a preloaded shared object, which means the launcher script has to be i
 pressing Play without the parameter starts a vanilla client that this server refuses at the
 handshake.
 
-**The pack makes that parameter work.** Steam resolves `./start_game_bepinex.sh` against
+**The pack makes that parameter work.** Steam resolves that relative launcher path against
 `valheim_Data`, not the game root — measured on astral-tricep, 2026-09-15, where Steam ran
 `<game>/valheim_Data/start_game_bepinex.sh`, a path no stock install contains, so Play opened a
 terminal on a missing file and the game never started. The archive therefore ships a shim at that
@@ -267,7 +267,7 @@ with `lembitu-client-pack-2026-09-15-v5`:
 - All 202 files in the pack's `.versions.txt` verified with `sha256sum -c` after extraction.
 - Launched by `steam -applaunch 892970` with the Linux launch option above, which is what pressing
   Play runs: `27 plugins to load`, `Chainloader startup complete`, no error or exception in
-  `BepInEx/LogOutput.log`, and Vulkan on an RX 7900 XTX at 3840x2160.
+  `<game>/BepInEx/LogOutput.log`, and Vulkan on an RX 7900 XTX at 3840x2160.
 - The client loaded exactly the server's plugin set minus MaxPlayerCount and `Lembitu.Harness`: the
   server reports `29 plugins to load` for the same pins.
 
