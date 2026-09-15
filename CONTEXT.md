@@ -15,8 +15,10 @@ extended while interest lasts.
 _Avoid_: season, wipe cycle, campaign
 
 **Roster**:
-The invited players, whitelisted on the server. Fifteen people against a player cap of twenty.
-_Avoid_: playerbase, community
+The invited players. Now an informal idea rather than an enforced one: the server is public and
+password-protected, so admission is whoever holds the password, not a list. A player cap of twenty
+bounds how many may be connected at once.
+_Avoid_: playerbase, community, whitelist
 
 **Pack**:
 The set of mods and versions a player installs. During development it is a candidate; after

@@ -1,10 +1,15 @@
 # Server operations
 
-This page records how to deploy the server's configuration and plugins, and separates those implemented tools from the recovery and launch requirements for the Run. The operating model is a private invited Roster using one accepted Pack for a three-month Run (`CONTEXT.md:3-23`).
+This page records how to deploy the server's configuration and plugins, and separates those implemented tools from the recovery and launch requirements for the Run. The operating model is a public, password-protected server running one accepted Pack for a three-month Run (`CONTEXT.md:3-23`).
 
 ## Decisions
 
-**The Run has a defined window, not continuous upgrades.** Announce its start and end; an extension is optional while interest lasts. The Roster is fifteen invited, whitelisted players, with a player cap of twenty so a full evening has room for everyone. These are operating requirements, not evidence that a live whitelist has been provisioned (`CONTEXT.md:12-23`; `docs/adr/0007-frozen-game-version-and-pinned-pack.md:38-54`). MaxPlayerCount is an implemented server-only fork with a default of twenty. Historical server evidence shows the admission and matchmaking literals rewritten and the Steam capacity call executed; it explicitly does not prove an eleventh simultaneous connection (`docs/modstack.md:36,269-303`).
+**The Run has a defined window, not continuous upgrades.** Announce its start and end; an extension
+is optional while interest lasts. The server is public and password-protected, with a player cap of
+twenty, and membership is whoever holds the password (`CONTEXT.md:12-23`; `docs/adr/0007-frozen-game-version-and-pinned-pack.md:38-54`).
+MaxPlayerCount is an implemented server-only fork with a default of twenty. Historical server evidence
+shows the admission and matchmaking literals rewritten and the Steam capacity call executed; it
+explicitly does not prove an eleventh simultaneous connection (`docs/modstack.md:36,269-303`).
 
 **Enforced configuration is the server's deliberate deviation from mod defaults.** It belongs in server-locked configuration, not a player's file. The committed overlay is `config/enforced/`; it is applied to the files the mods generate on first boot. This is distinct from the package-supplied configuration seeds deployed by the installer (`docs/modstack.md:18-20`; `docs/build.md:201-230`). The current overlay owns these choices:
 
@@ -33,34 +38,58 @@ capture, schedule, rotation, off-host copy and proven restore are in [Backups](#
 
 ## Launch provisioning — #19
 
+**Admission is by password alone; there is no whitelist.** The owner's decision on 2026-09-15 is a
+public, password-protected server: friends find it in the browser and join with the password. This
+departs from #19's "whitelisted to the invited roster" and from the Roster framing in ADR-0007, and
+it is recorded rather than quietly dropped.
+
+`permittedlist.txt` is deliberately **not** created. Valheim treats that file as a whitelist — adding
+anyone to it bans everyone else — so its absence is what keeps the server open to anyone holding the
+password. `SERVER_PUBLIC=true` publishes it to the server browser.
+
+The cost, stated plainly: **a password is not a person filter.** Anyone who sees the server can try
+the password, and this pack ships no moderation mod. There is no per-person admission control on
+this server, and adding one later means either the whitelist model above or a moderation mod that is
+not currently in the Pack. The password lives in `launch.secret.env` and is never committed.
+
 **The launch server is described by `config/launch/launch.env.example`, not by whatever the host
 happens to contain.** That file is the committed, non-secret container environment: identity, world
 rules, capacity, the freeze schedule and the backup posture. The secret file beside it —
 `launch.secret.env`, in the same directory, gitignored — holds only `SERVER_PASS`, and later the
 Discord webhook. `scripts/launch-server.sh env` prints the merged environment; `run` creates the
-data directories and starts the container from it.
+data directories and starts the container from it. Values the container needs, including the port,
+are read from that file rather than from the caller's shell.
 
-**The world rules are dedicated-server arguments, and two of them fail quietly.** There is no
-per-modifier environment variable in the container, so `SERVER_ARGS` carries the whole set:
-`-savedir /config/save -preset hard -modifier Portals hard`. Measured against Valheim 1.0.12 on
-2026-09-15, the game's own log lines are `Setting world modifier preset: hard` and
-`Setting world modifier: Portals->hard`.
+**Every world rule is an explicit `-modifier`; nothing is inferred from a preset.** The arg string is
+`-savedir /config/save` followed by five modifiers — `Combat hard`, `DeathPenalty default`,
+`Resources default`, `Raids default`, `Portals hard` — and it was verified against the game's own log
+on Valheim 1.0.12, which printed one `Setting world modifier: <Name>-><value>` line per rule and no
+parse error.
 
-- `-modifier DeathPenalty normal` is **rejected**: the game logs `Could not parse 'DeathPenalty'
-  with a value of 'normal' as a world modifier` and boots anyway. There is no `normal` value for
-  DeathPenalty, Resources or Raids — vanilla behaviour is what omitting the modifier gives you. A
-  typo here leaves the rule unset with no failure.
-- `-preset` overwrites every modifier set before it, so a modifier written above it is lost without
-  a log line. Order is load-bearing.
+Two failure modes are worth knowing, because both are silent:
 
-The four `-setkey` checkboxes are all absent deliberately, and `-setkey` only ever sets a key, so
-the absence is the choice.
+- A bad value leaves the rule **unset** rather than failing the boot. The game logs `Could not parse
+  '<Name>' with a value of '<value>' as a world modifier` and starts anyway. `default` is the token
+  that restores vanilla behaviour; there is **no** `normal` value. Measured rejections: `Combat
+  normal`, `Portals normal`, `DeathPenalty normal`, `Resources normal`, `Raids normal`.
+- `-preset` assigns the whole modifier set at once, so any rule a later `-modifier` does not restate
+  becomes whatever the preset chose. The launch config therefore avoids `-preset` entirely: stating
+  all five is both what #19 specifies and the only version verifiable from the log.
 
-**The freeze is two container settings.** `UPDATE_CRON` is pushed to 2100 because the container
-takes a cron expression and has no "never" keyword; `UPDATE_IF_IDLE=true` is a second guard.
-`RESTART_CRON` restarts on Sunday morning, between the Roster's evening sessions, with
-`RESTART_IF_IDLE=true` so a straggler is not dropped. The game version is frozen by *not updating*,
-which is the same mechanism ADR-0007 requires.
+The four `-setkey` checkboxes are all absent deliberately, and `-setkey` only ever sets a key, so the
+absence is the choice.
+
+**The update freeze is the container's empty-string disable, not a future date.** `valheim-bootstrap`
+writes a crontab line only when `UPDATE_CRON` is non-empty (`[ -n "$UPDATE_CRON" ]`), so an empty
+value means no line and no update SIGHUP. A date far in the future is **wrong**: the value is emitted
+verbatim into a busybox crontab line, and busybox cron takes exactly five fields, so a sixth token
+becomes the first word of the command. `RESTART_CRON` still restarts on Sunday morning with
+`RESTART_IF_IDLE=true`.
+
+**A container restart is not a guaranteed no-op.** Independently of any cron, the container's updater
+calls `update()` on its first loop iteration and re-syncs the installed game from its Steam download
+when the server is idle. The real freeze is the one ADR-0007 names: install the accepted versions
+once, by a controlled installation, and do not re-create the host from scratch mid-Run.
 
 ## Backups — #20
 
@@ -103,9 +132,21 @@ suite is `test/backup-world.test.sh` (15 checks, no network).
 
 **What a restore does not return.** Because characters are client-owned, restoring the world returns
 the world — not each player's character, level or keys. Steam Cloud or the player's own copy is what
-recovers those. Off-host copying is `--offhost user@host:/path` or a mounted path, and the choice of
-destination, schedule and retention belongs to the operator and is recorded in
-`config/launch/launch.env.example`.
+recovers those.
+
+**Not yet chosen, and therefore not yet met.** #20 also requires a schedule, a retention policy and
+an off-host copy, with "at least one copy leaves the host". What exists is the mechanism: `--keep`
+rotation (default 14) and `--offhost user@host:/path` or a mounted path. What does not exist is the
+decision — no cron entry, timer or unit is committed, no destination is named, and no off-host copy
+has been made. Those two criteria are **open**, not satisfied, and they are recorded here rather than
+implied by the script's existence.
+
+**What the restore proof does not cover: Clan membership.** The restore was verified by a byte
+comparison of the captured files and by a server loading the restored world (`ZNet.LoadWorld`, then
+`Opened Steam server`). No client connected and no Clan registry was observed, so #20's "verified to
+load with clans and characters intact" is half-met: characters are client-owned and out of scope by
+design, and Clan membership — which lives inside the world save — was not checked. That check belongs
+to the same two-client session as the rest of acceptance.
 
 ## Exclusions
 

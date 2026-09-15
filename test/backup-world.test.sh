@@ -20,7 +20,6 @@ report() {
   printf '%s: %s\n' "$([ "$1" = ok ] && echo pass || echo FAIL)" "$2"
   [ "$1" = ok ] && pass=$((pass + 1)) || fail=$((fail + 1))
 }
-assert_eq() { [ "$2" = "$3" ] || { printf '  want: %s\n  got:  %s\n' "$3" "$2" >&2; return 1; }; }
 
 # A world in the measured 1.0 shape: a directory with .fwl2/.db2/.chunks/.chunk and the .ok marker
 # the game writes last. `generation` lets a case move the world on to a new save.
@@ -277,6 +276,34 @@ if "$BACKUP" --savedir "$SNAP" --out "$WORK/backups8" --offhost "$OFF" > "$WORK/
   report ok "writes a second copy to --offhost and keeps the local archive"
 else
   report fail "writes a second copy to --offhost and keeps the local archive"
+fi
+
+# --- 16. rotation keeps the newest by time, not by world label --------------------------------
+# The archive name is `lembitu-<label>-<stamp>.tar.gz`, so sorting whole names compares labels first.
+# With two labels in one directory that would delete the newest alpha archive while keeping an older
+# zulu one. The newest two must survive regardless of what the labels sort like.
+
+ROT2="$WORK/rot2"; mkdir -p "$ROT2"
+# Fabricate the four archives directly: this case is about the rotation key, not about capturing.
+touch -t 202609010000 "$ROT2/lembitu-alpha-20260901T000000Z.tar.gz"
+touch -t 202609040000 "$ROT2/lembitu-zulu-20260904T000000Z.tar.gz"
+touch -t 202609020000 "$ROT2/lembitu-alpha-20260902T000000Z.tar.gz"
+touch -t 202609030000 "$ROT2/lembitu-zulu-20260903T000000Z.tar.gz"
+
+if "$BACKUP" --savedir "$SNAP" --out "$ROT2" --keep 3 > "$WORK/out" 2>&1; then
+  # Five archives exist once the run's own new one lands: the fabricated 0901, 0902, 0903, 0904 and
+  # today's. The newest three by stamp are today's, zulu-0904 and zulu-0903; both alphas must go.
+  # A label-first sort would instead have kept an alpha archive and deleted zulu-0904.
+  if [ -e "$ROT2/lembitu-zulu-20260904T000000Z.tar.gz" ] \
+     && [ -e "$ROT2/lembitu-zulu-20260903T000000Z.tar.gz" ] \
+     && [ ! -e "$ROT2/lembitu-alpha-20260902T000000Z.tar.gz" ] \
+     && [ ! -e "$ROT2/lembitu-alpha-20260901T000000Z.tar.gz" ]; then
+    report ok "rotation keeps the newest archives by timestamp across different world labels"
+  else
+    report fail "rotation keeps the newest archives by timestamp across different world labels"
+  fi
+else
+  report fail "rotation keeps the newest archives by timestamp across different world labels"
 fi
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

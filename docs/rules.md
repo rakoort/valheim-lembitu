@@ -29,14 +29,16 @@ same feeling by adding another multiplier or another authority.
 
 ## The group
 
-**Roster.** Fifteen invited players, whitelisted on the server, against a player cap of twenty so a
-full evening never refuses anyone (`CONTEXT.md:16-19`, ADR-0007). Admission is by `permittedlist.txt`,
-which is a whitelist: adding someone to it bans everyone else. It holds one platform identity per
-line in the `[Platform]_[User ID]` form the server log and the in-game F2 panel show
-(`docs/wiki/operations.md`; Valheim dedicated server manual).
+**Admission is by password alone.** The server is public and password-protected, so anyone who can
+see it and knows the password can join. There is no whitelist and no per-person admission control.
+A password is not a person filter: it cannot stop someone who has it from joining, and this pack
+ships no moderation mod. That is the accepted shape for a known friend group, and it is a deliberate
+change from the earlier invited-roster plan (`docs/wiki/operations.md`).
 
-**Register.** *Intended.* The cap and the whitelist mechanism are configured; a live whitelist for
-the Roster is provisioned by the operator, and #23 tracks that.
+**Cap twenty.** The MaxPlayerCount fork raises the server's admission limit and the capacity it
+advertises to Steam above Valheim's vanilla ten (ADR-0007). Twenty is a configured value and a
+rewritten literal; an eleventh simultaneous connection has **not** been admitted, and #9 records
+that gap rather than closing it.
 
 **Clan is the only membership authority.** A Clan is a named group with roles, private chat and its
 own friendly-fire rule. It is the *only* concept in the project that answers "is this player my
@@ -184,14 +186,14 @@ These are stated to players rather than discovered by them (#23).
 **Progression is client-owned and not tamper-resistant.** Character level, XP and personal keys live
 in the player's own character save file (EpicMMOSystem stores them in `Player.m_knownTexts`; World
 Advancement Progression stores keys in the character file). A determined player can edit their own
-file to grant themselves levels or keys. This is accepted deliberately: it is a private, invited
-Roster, and a player who edits their own character is a social problem rather than an engineering
+file to grant themselves levels or keys. This is accepted deliberately: it is a private friends'
+server, and a player who edits their own character is a social problem rather than an engineering
 one. No server-side character store will be built for this Run (ADR-0010).
 
 **A server-only backup cannot restore progression.** Because those stores are client-owned, the
-server's backup captures the world, the whitelist and the biome cache — not characters. Restoring
-the world onto a fresh install returns the *world*; each player's character is restored by Steam
-Cloud or by their own copy (`scripts/backup-world.sh`, `docs/wiki/operations.md`).
+server's backup captures the world, the admission lists and the biome cache — not characters.
+Restoring the world onto a fresh install returns the *world*; each player's character is restored by
+Steam Cloud or by their own copy (`scripts/backup-world.sh`, `docs/wiki/operations.md`).
 
 **Two gates refuse the same actions.** Character level and personal keys both hook crafting and
 equipping, so a player can satisfy one gate and be refused by the other. This is visible as a refusal

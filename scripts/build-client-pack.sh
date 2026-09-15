@@ -69,7 +69,7 @@ while [[ $# -gt 0 ]]; do
     --version) VERSION=${2:?}; shift 2 ;;
     --pins) PINS_ARGS+=(--pins "$2"); shift 2 ;;
     --cache) PINS_ARGS+=(--cache "$2"); shift 2 ;;
-    --lock) PINS_ARGS+=(--lock "$2"); shift 2 ;;
+    --lock) LOCK=${2:?}; PINS_ARGS+=(--lock "$2"); shift 2 ;;
     --list) LIST=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown argument: $1 (try --help)" ;;
@@ -94,13 +94,19 @@ versions="$OUT_ABS/lembitu-client-pack-$VERSION.versions.txt"
 
 mkdir -p "$OUT_ABS"
 # Build in a private tree, then publish. A half-staged pack that looks complete is exactly the
-# failure a player cannot diagnose.
+# failure a player cannot diagnose. The staging log goes in the private tree too, so the directory
+# an operator hands to players holds exactly the three declared artifacts and nothing else.
 stage="$(mktemp -d)"
 trap 'rm -rf -- "$stage"' EXIT
 
-"$STAGER" --dist "$stage" "${PINS_ARGS[@]}" > "$OUT_ABS/stage.log" 2>&1 \
-  || { cat "$OUT_ABS/stage.log" >&2; die "staging failed (see $OUT_ABS/stage.log)"; }
-tail -3 "$OUT_ABS/stage.log" >&2
+if ! "$STAGER" --dist "$stage" "${PINS_ARGS[@]}" > "$stage/stage.log" 2>&1; then
+  # On failure the log is what the operator needs, so it is kept beside the (absent) pack rather
+  # than only printed.
+  cp "$stage/stage.log" "$OUT_ABS/stage-failed.log" 2>/dev/null || true
+  cat "$stage/stage.log" >&2
+  die "staging failed (log kept at $OUT_ABS/stage-failed.log)"
+fi
+tail -3 "$stage/stage.log" >&2
 
 # --- assertions --------------------------------------------------------------------------------
 

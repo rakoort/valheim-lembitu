@@ -13,10 +13,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILDER="$REPO_ROOT/scripts/build-client-pack.sh"
 STAGER="$REPO_ROOT/scripts/stage-stack.sh"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "skip: client-pack tests need jq to read the manifest"
-  exit 0
-fi
+# No jq here on purpose: the dev shell does not provide it (scripts/stage-stack.sh says so, and
+# flake.nix does not list it), and docs/agents/check.conf runs every test/*.test.sh. A test that
+# skips itself when jq is missing would silently stop defending the excluded-plugin boundary under
+# the project's own check. The manifest is read with the same grep/sed idiom the scripts use.
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -25,6 +25,32 @@ pass=0 fail=0
 report() {
   printf '%s: %s\n' "$([ "$1" = ok ] && echo pass || echo FAIL)" "$2"
   [ "$1" = ok ] && pass=$((pass + 1)) || fail=$((fail + 1))
+}
+
+# A JSON value from the manifest, and a crude but real structural check: a JSON object's braces and
+# brackets must balance and it must not end a member with a comma. Trailing commas and doubled
+# commas are the specific malformation this builder has produced, so they are checked directly
+# rather than by pulling in a parser the dev shell does not have.
+json_value() {  # json_value <manifest> <key>
+  # A bracketed array value for the key, on its own line or inside one.
+  sed -n "s/.*\"$2\": *\(\[[^]]*\]\).*/\1/p" "$1" | head -1
+}
+
+json_looks_valid() {  # json_looks_valid <manifest>
+  local f=$1 text opens closes
+  text="$(tr -d '\n' < "$f")"
+  # A doubled or trailing comma is invalid JSON wherever it appears.
+  grep -qE ', *,|,[[:space:]]*[}\]]' <<<"$text" && return 1
+  # Braces and brackets must balance. `wc -c` pads its output, so compare numerically.
+  opens="$(tr -cd '{' < "$f" | wc -c)"; closes="$(tr -cd '}' < "$f" | wc -c)"
+  (( opens == closes )) || return 1
+  opens="$(tr -cd '[' < "$f" | wc -c)"; closes="$(tr -cd ']' < "$f" | wc -c)"
+  (( opens == closes )) || return 1
+  return 0
+}
+
+pin_count() {  # pin_count <manifest>; entries inside the "pins" object
+  sed -n '/"pins"/,/^  }/p' "$1" | grep -cE '^  "[^"]+@[^"]+": "[0-9a-f]{64}"'
 }
 
 # --- fixtures ----------------------------------------------------------------------------------
@@ -109,9 +135,9 @@ fi
 # --- 2. the manifest is valid JSON naming the exclusions and the pins -------------------------
 
 manifest="$OUT1/lembitu-client-pack-t.manifest.json"
-if jq -e . "$manifest" >/dev/null 2>&1; then
-  excluded="$(jq -r '.excluded_server_only | join(",")' "$manifest")"
-  pins="$(jq -r '.pins | length' "$manifest")"
+if json_looks_valid "$manifest"; then
+  excluded="$(json_value "$manifest" excluded_server_only)"
+  pins="$(pin_count "$manifest")"
   if [[ "$excluded" == *MaxPlayerCount* ]] && [ "$pins" -eq 2 ]; then
     report ok "manifest is valid JSON naming the server-only exclusions and the pin hashes"
   else

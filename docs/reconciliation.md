@@ -15,7 +15,24 @@ their dates and scope; nothing that failed became a success because the prose ch
 | Document | Claim | Shipped reality | Action |
 | --- | --- | --- | --- |
 | `README.md:15` | `scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx/plugins` | The installer refuses a `plugins/` target: `the target is the BepInEx directory itself, not its plugins subdirectory` (`scripts/install-plugins.sh:100-102`). Verified by running it. `docs/build.md:56` already had the correct `…/BepInEx`. | Corrected to `…/BepInEx`. |
-| `docs/wiki/operations.md:28` | "The backup requirement … is to capture the chunked world, Clan registry and character store together" as something still to be done | The character store is client-owned by decision (ADR-0010), so a server backup cannot capture it and should not claim to. The Clan registry is read from the world save by the mod, not a separate server file this project can enumerate. | Replaced by the implemented `#20` section, which states what is captured and what is deliberately not, with the measured restore result. |
+| `docs/wiki/operations.md` | The Roster is fifteen invited, whitelisted players; the backup requirement is to capture the chunked world, Clan registry and character store together | The owner replaced admission with a public, password-protected server, and the character store is client-owned by decision (ADR-0010), so a server backup cannot capture it. | Admission rewritten and recorded as ADR-0007's 2026-09-15 amendment; the backup section states what is captured and what deliberately is not. |
+| `config/launch/launch.env.example` | World rules came from `-preset hard` with three rules left implicit, and the freeze used `UPDATE_CRON=0 0 1 1 * 2100` | Both were wrong. `-preset` assigns the whole modifier set, so the three implicit rules took the preset's values, not vanilla. A six-field cron line is invalid: busybox cron takes five fields, so `2100` became the command word, and `valheim-bootstrap` gates the line on `[ -n "$UPDATE_CRON" ]`, making an empty value the container's real disable. | All five rules are now explicit `-modifier` arguments and were verified from the game's own parse lines; `UPDATE_CRON` is empty. |
+| `docs/wiki/building.md` | ValheimRAFT's stale `ServerSync.dll` reference is inert because nothing registers a synced config entry | Falsified on the client: a real session logged eight `MissingFieldException: Field not found: .ZRoutedRpc.Everybody` from `ConfigEntry<T>.<ctor>b__10_0` via `ConfigFile.OnSettingChanged`. BepInEx swallows them, so the session was unaffected and the server log showed none. | Corrected in place; severity left unmeasured and handed to #26. |
+
+## Claims corrected during code review
+
+The two-axis review of this change set (`/code-review`, both axes run as independent sub-agents)
+found defects that had already been committed. They are recorded here because they changed shipped
+behaviour and documentation, not just prose.
+
+| Finding | Reality | Action |
+| --- | --- | --- |
+| `test/client-pack.test.sh` gated itself on `jq` | `flake.nix` does not provide jq and `scripts/stage-stack.sh` documents its absence, so under `docs/agents/check.conf` all seven client-pack checks silently skipped. | jq dependency removed; the manifest is read with the scripts' own grep/sed idiom, and the validity check was verified to reject the doubled-comma and trailing-comma malformations it exists for. |
+| `scripts/backup-world.sh` captured derived directories as worlds | The game's `<World>_backup_*` snapshots and `restore-world.sh`'s `<World>.replaced-<stamp>` leftovers were captured as separate worlds, and a restore of every world would have put a stale snapshot back beside the live one. | Derived directories excluded, with two regression tests. |
+| Rotation sorted archives by whole filename | The name is `lembitu-<label>-<stamp>`, so labels were compared before timestamps and `--keep` could delete the newest archive of one world while keeping an older one of another. | Rotation now keys on the trailing timestamp; regression test added. |
+| `launch-server.sh` published ports from the caller's shell | The file the wiki calls authoritative set `SERVER_PORT`, but `do_run` expanded the shell's `SERVER_PORT`. | The port is read from the launch configuration, and the script gained the `usage()`/`--help` surface its siblings have. |
+| `scripts/build-client-pack.sh` wrote `stage.log` beside the published pack | The directory an operator hands to players gained builder bookkeeping, and on failure it survived the aborted run. | The log lives in the private staging tree; a failure copies it to `stage-failed.log` for diagnosis. |
+| Save-format knowledge duplicated across backup and restore | `world_dirs`, `generations`, the generation check and the admission-list triple were written twice, so the format contract could drift between the two scripts. | Extracted to `scripts/lib/save-format.sh`, following the existing `lib/ledger.sh` precedent. |
 
 ## Contradictions found and left open
 

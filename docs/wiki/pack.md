@@ -193,6 +193,23 @@ version, the exclusions, the required client-side packages and each pin's packag
 `.versions.txt` listing every staged file with its SHA-256. Version labels alone would not catch a
 re-published package under the same version number; the hashes would.
 
+### Distribution
+
+**The Pack is distributed as a GitHub release on this repository.** `scripts/build-client-pack.sh`
+writes `dist-client/lembitu-client-pack-<date>.zip`, and that zip is attached to a release, so
+players get a stable link and the exact bytes are pinned by the release. This is a choice, recorded
+here as #21 requires: the alternative — a Thunderstore mod-manager profile — is rejected because the
+Pack carries two things Thunderstore cannot express, namely the pinned set as a whole and the
+`config/` seeds that ship outside any single package's plugin directory.
+
+The release is cut by the operator, because publishing is an outward-facing action this repository's
+automation does not take on its own: run `scripts/build-client-pack.sh --version <label>`, then
+create a release with `gh release create` and attach the three artifacts it wrote — the `.zip`, the
+`.manifest.json` and the `.versions.txt`. Release tags follow `client-pack-<label>`.
+
+Players then download two files: the zip and, for the verification step below, the `.versions.txt`.
+The operator records the release URL in the Roster's usual gathering place; the URL is not secret.
+
 ### Install checklist for players
 
 1. Install Valheim from Steam and launch it once, so it creates its own settings and preferences.
@@ -200,12 +217,14 @@ re-published package under the same version number; the hashes would.
    has not written yet (`docs/wiki/native-testing.md:13`).
 2. Copy your Valheim install to a second folder — this is the copy you will run. Steam updating the
    original does not touch a copy.
-3. Download the client pack archive and extract it **into that copied Valheim folder**, so that the
-   `BepInEx` directory inside the archive merges with the one in the game folder. The archive's
-   layout mirrors the game directory, so extracting it one level too high or too low installs
-   nothing.
+3. Download the client pack zip from the Run's release link and extract it **into that copied Valheim
+   folder**, so that the `BepInEx` directory inside the archive merges with the one in the game
+   folder. The archive's layout mirrors the game directory, so extracting it one level too high or
+   too low installs nothing.
 4. Launch the game from the copy, not through Steam's Play button. Steam's Play button launches the
    original install and will apply its updates.
+5. In the server browser, search for **Lembitu** and join with the password from the Roster's
+   gathering place. The server is public, so it is listed rather than joined by address.
 
 **On preventing a launch-time update.** There is no Steam setting that guarantees the game will not
 update; the beta-branch and update-scheduling options change when it happens, not whether. The

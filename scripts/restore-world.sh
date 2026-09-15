@@ -24,6 +24,10 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/save-format.sh
+. "$REPO_ROOT/scripts/lib/save-format.sh"
+
 ARCHIVE=""
 SAVEDIR=""
 WORLD=""
@@ -70,10 +74,9 @@ tar xzf "$ARCHIVE" -C "$work" || die "could not extract $ARCHIVE"
 [[ -f "$work/MANIFEST.txt" ]] || note "warning: archive has no MANIFEST.txt"
 
 declare -a worlds=()
-for d in "$work/worlds_local"/*/; do
-  [[ -d "$d" ]] || continue
+while IFS= read -r d; do
   worlds+=("$(basename "$d")")
-done
+done < <(world_dirs "$work/worlds_local")
 (( ${#worlds[@]} )) || die "archive contains no world directories"
 
 if [[ -n "$WORLD" ]]; then
@@ -86,11 +89,8 @@ fi
 # A chunked world must carry its committed-generation markers, or the game will not load it. This is
 # the check a pre-1.0 flat-file backup fails.
 for w in "${worlds[@]}"; do
-  marker_found=false
-  for f in "$work/worlds_local/$w"/_main.*.ok; do
-    [[ -e "$f" ]] && marker_found=true
-  done
-  $marker_found || die "world '$w' has no _main.*.ok generation marker; the archive is not a usable 1.0 save"
+  has_generation "$work/worlds_local/$w" \
+    || die "world '$w' has no _main.*.ok generation marker; the archive is not a usable 1.0 save"
 done
 
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -134,7 +134,7 @@ done
 
 # The admission lists are restored only when the archive has them and the target is missing one, so
 # a restore never silently discards a roster change made after the backup was taken.
-for f in permittedlist.txt adminlist.txt bannedlist.txt; do
+for f in "${ADMISSION_FILES[@]}"; do
   if [[ -f "$work/$f" ]]; then
     if [[ -e "$SAVEDIR/$f" ]]; then
       note "kept existing $f (archive copy: $work/$f)"

@@ -52,3 +52,34 @@ either desyncs, crashes on missing prefabs, or silently loses the rules that mod
   MaxPlayerCount fork in #9 working — or on us patching the admission path ourselves.
 - The end of the run is the natural moment to re-pin everything, which makes an extension a
   deliberate re-verification rather than a drift.
+
+## Amendment — 2026-09-15: admission is a password, not a whitelist
+
+The decision above assumes an invited Roster of fifteen, whitelisted on the server, with a cap of
+twenty above it. The owner replaced that on 2026-09-15: the server is **public and
+password-protected**. Friends find it in the server browser and join with the password.
+
+What changes:
+
+- **`permittedlist.txt` is deliberately not created.** Valheim treats that file as a whitelist —
+  listing anyone in it bans everyone else — so its absence is what keeps the server open to anyone
+  who holds the password. There is no roster list, and no per-person admission control.
+- **The cap of twenty stays.** It is no longer sized against fifteen invited players; it is now the
+  bound on how many may be connected at once.
+- **The player cap's role changes meaning.** `MaxPlayerCount` still raises the admission literal
+  above vanilla's ten, and #9's unproven eleventh connection is unchanged.
+
+What the change costs, stated rather than discovered:
+
+- **A password is not a person filter.** Anyone who sees the server can attempt it, and this pack
+  ships no moderation mod. Admission cannot be restricted beyond the password, and undoing this
+  means restoring the whitelist model or adopting a moderation mod that is not currently in the
+  Pack.
+- **The "fifteen non-technical players" premise of #21 softens.** Distribution still has to work for
+  people who have never installed a mod, but the audience is no longer a fixed list this project can
+  enumerate and check off.
+- **#23's roster-onboarding criterion changes shape.** "Every player in the roster has installed the
+  pack and connected once" becomes an expectation about a group, not a checklist over a known set.
+
+The rest of ADR-0007 stands unchanged: the game and Pack are still frozen together after acceptance,
+recovery is still rollback from the proven backup, and the Run still has an announced end.

@@ -38,6 +38,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/save-format.sh
+. "$REPO_ROOT/scripts/lib/save-format.sh"
 
 SAVEDIR=""
 OUT=""
@@ -86,35 +88,8 @@ done
 WORLDS_DIR="$SAVEDIR/worlds_local"
 [[ -d "$WORLDS_DIR" ]] || die "no worlds_local in $SAVEDIR; is this the server's -savedir?"
 
-# World directories the game owns. The game also writes derived snapshots of a world beside it —
-# `<World>_backup_auto-<stamp>` automatically and `<World>_backup_<stamp>` for a manual copy — and
-# scripts/restore-world.sh moves a world aside as `<World>.replaced-<stamp>`. None of those is a
-# world a server loads by name: capturing them inflates the archive and, worse, a restore of "all
-# worlds" would put a stale snapshot back beside the live one.
-world_dirs() {
-  local d base
-  for d in "$WORLDS_DIR"/*/; do
-    [[ -d "$d" ]] || continue
-    base="$(basename "$d")"
-    case "$base" in
-      *_backup_auto-*|*_backup_*|*.replaced-*) continue ;;
-    esac
-    printf '%s\n' "$d"
-  done
-}
-
-# The committed-generation marker set for a world directory. Empty when the world has no chunked
-# save yet, which is a real state (a world created but never saved). Names are collected with a
-# glob rather than `find -printf`, which BSD find does not have.
-generations() {
-  local names=() f out=""
-  for f in "$1"/_main.*.ok; do
-    [[ -e "$f" ]] || continue
-    names+=("$(basename "$f")")
-  done
-  ((${#names[@]})) || { printf ''; return; }
-  printf '%s' "$(printf '%s\n' "${names[@]}" | sort | tr '\n' ' ')"
-}
+# world_dirs and generations come from scripts/lib/save-format.sh, which restore-world.sh uses too:
+# the two scripts must agree on exactly which directories are worlds.
 
 require_world() {
   local path="$WORLDS_DIR/$1"
@@ -142,7 +117,7 @@ capture() {
     done
     [[ -d "$SAVEDIR/cache" ]] && { cp -a "$SAVEDIR/cache" "$stage/cache" || rc=$?; }
     local f
-    for f in permittedlist.txt adminlist.txt bannedlist.txt; do
+    for f in "${ADMISSION_FILES[@]}"; do
       [[ -f "$SAVEDIR/$f" ]] && { cp -a "$SAVEDIR/$f" "$stage/$f" || rc=$?; }
     done
     after=""
@@ -160,7 +135,7 @@ worlds=()
 if [[ -n "$WORLD" ]]; then
   worlds=("$(require_world "$WORLD")")
 else
-  while IFS= read -r d; do worlds+=("$d"); done < <(world_dirs)
+  while IFS= read -r d; do worlds+=("$d"); done < <(world_dirs "$WORLDS_DIR")
   (( ${#worlds[@]} )) || die "no world directories in $WORLDS_DIR"
 fi
 
@@ -198,18 +173,23 @@ mv -- "$archive_tmp" "$archive"
 note "backup: $archive ($(du -h "$archive" | cut -f1))"
 
 if [[ "$KEEP" -gt 0 ]]; then
-  # Rotation is by archive name (a UTC timestamp), newest kept. Only archives this script names are
-  # considered, so an operator's manual copy is never deleted.
+  # Rotation is by the timestamp in the archive name, newest kept — not by the whole name, whose
+  # leading component is the world label. Sorting the full name would compare labels first and
+  # could delete the newest archive of one world while keeping an older one of another.
   archives=()
   for f in "$OUT"/lembitu-*.tar.gz; do
     [[ -e "$f" ]] || continue
-    archives+=("$(basename "$f")")
+    archives+=("$f")
   done
   if ((${#archives[@]} > KEEP)); then
-    mapfile -t old < <(printf '%s\n' "${archives[@]}" | sort -r | tail -n +"$((KEEP + 1))")
+    # `basename` after a sort keyed on the trailing stamp: the label may itself contain hyphens.
+    mapfile -t old < <(for f in "${archives[@]}"; do
+      base="$(basename "$f")"
+      printf '%s\t%s\n' "${base##*-}" "$f"
+    done | sort -r | tail -n +"$((KEEP + 1))" | cut -f2-)
     for f in "${old[@]}"; do
-      rm -f -- "$OUT/$f"
-      note "rotated out: $f"
+      rm -f -- "$f"
+      note "rotated out: $(basename "$f")"
     done
   fi
 fi

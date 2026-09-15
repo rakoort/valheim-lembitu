@@ -26,30 +26,47 @@ DATA_DIR="$DATA_ROOT/data"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
+usage() {
+  cat >&2 <<'EOF'
+usage: scripts/launch-server.sh env | run | world-rules
+
+  env          print the container environment, secret file merged in
+  run          create the data directories and start the container
+  world-rules  print the world-rule arguments alone
+
+Reads config/launch/launch.env.example (committed, non-secret) and, for the password,
+config/launch/launch.secret.env (gitignored). See docs/wiki/operations.md.
+EOF
+}
+
 [[ -f "$LAUNCH_ENV" ]] || die "no launch configuration at $LAUNCH_ENV"
 
-# Read `KEY=value` lines, ignoring comments and blanks. Values may contain spaces (SERVER_ARGS), so
-# the split is on the first `=` only.
+# Read `KEY=value` lines, ignoring comments and blanks. Values may contain spaces (SERVER_ARGS).
 read_env() {  # read_env <file>
   grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$1" 2>/dev/null || true
 }
 
+# One value out of the launch configuration. Anything a container variable must have - the port,
+# the user ids - is read from the file, never from the caller's shell, or the file stops being the
+# description of the server that docs/wiki/operations.md says it is.
+env_value() {  # env_value <key>
+  local line
+  line="$(read_env "$LAUNCH_ENV" | sed -n "s/^$1=//p" | head -1)"
+  [[ -n "$line" ]] || die "$1 is not set in $LAUNCH_ENV"
+  printf '%s\n' "$line"
+}
+
 load_env() {
-  local line key value
-  while IFS= read -r line; do
-    key=${line%%=*}
-    value=${line#*=}
-    printf '%s\n' "$key=$value"
-  done < <(read_env "$LAUNCH_ENV")
+  read_env "$LAUNCH_ENV"
   [[ -f "$SECRET_ENV" ]] && read_env "$SECRET_ENV"
+  return 0
 }
 
 world_rules() {
   # The world-rule arguments as the game's own parser expects them. SERVER_ARGS carries them
   # alongside -savedir; they are printed separately so the rule set can be reviewed on its own.
   local args
-  args="$(read_env "$LAUNCH_ENV" | sed -n 's/^SERVER_ARGS=//p')"
-  [[ -n "$args" ]] || die "SERVER_ARGS is empty in $LAUNCH_ENV"
+  args="$(env_value SERVER_ARGS)"
   printf '%s\n' "${args#-savedir /config/save }"
 }
 
@@ -62,11 +79,13 @@ do_run() {
   command -v docker >/dev/null 2>&1 || die "docker is not available"
   [[ -f "$SECRET_ENV" ]] || die "no $SECRET_ENV; copy the shape from the example and put SERVER_PASS in it"
 
+  local port; port="$(env_value SERVER_PORT)"
+  local puid; puid="$(env_value PUID)"
+  local pgid; pgid="$(env_value PGID)"
+
   mkdir -p "$CONFIG_DIR" "$DATA_DIR"
   # The container writes as PUID:PGID; the bind mounts must be writable by that user.
-  local puid pgid
-  puid="$(read_env "$LAUNCH_ENV" | sed -n 's/^PUID=//p')"
-  pgid="$(read_env "$LAUNCH_ENV" | sed -n 's/^PGID=//p')"
+  chown -R "$puid:$pgid" "$DATA_ROOT" 2>/dev/null || true
 
   local -a env_args=()
   local line
@@ -82,21 +101,22 @@ do_run() {
     --restart unless-stopped \
     -v "$CONFIG_DIR:/config" \
     -v "$DATA_DIR:/opt/valheim" \
-    -p "${SERVER_PORT:-2456}:2456/udp" \
-    -p "$(( ${SERVER_PORT:-2456} + 1 )):2457/udp" \
+    -p "$port:$port/udp" \
+    -p "$((port + 1)):$((port + 1))/udp" \
     "${env_args[@]}" \
     "$IMAGE" >/dev/null
 
-  printf 'started %s\n' "$CONTAINER_NAME"
+  printf 'started %s on UDP %s-%s\n' "$CONTAINER_NAME" "$port" "$((port + 1))"
   printf '  config: %s -> /config\n' "$CONFIG_DIR"
   printf '  data:   %s -> /opt/valheim\n' "$DATA_DIR"
   printf '  logs:   docker logs -f %s\n' "$CONTAINER_NAME"
-  printf 'next: deploy the pack with scripts/install-plugins.sh %s/config/bepinex\n' "$CONFIG_DIR"
+  printf 'next: deploy the pack with scripts/install-plugins.sh %s/bepinex\n' "$CONFIG_DIR"
 }
 
 case "${1:-}" in
   env) do_env ;;
   run) do_run ;;
   world-rules) world_rules ;;
-  *) die "usage: scripts/launch-server.sh env | run | world-rules" ;;
+  -h|--help) usage; exit 0 ;;
+  *) usage; exit 1 ;;
 esac
