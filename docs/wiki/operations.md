@@ -25,7 +25,87 @@ The installer records every deployed file in `.lembitu-installed` at that root. 
 
 **Launch and recovery remain acceptance requirements.** Freeze the game and Pack together only after the acceptance gate passes on the same candidate — one clean full-pack boot and one manual two-client session — with public releases checked again before the gate. Only then arrange controlled installations and disable automatic server updates. Everything planned for the Run ships at launch (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:24-40`). The launch world must already have verified Max Dungeon Rooms and ValheimRAFT installed; they remain installed for the Run, and the playtest world must use the same two (`docs/adr/0009-world-permanent-mods-land-before-world-creation.md`). World Advancement Progression is not world-permanent, but it clears the world's global keys on startup, so it too belongs in the Pack before the launch world is created.
 
-Recovery policy is rollback on the accepted versions, not an improvised mod upgrade. The backup requirement tracked as #20 is to capture the chunked world, Clan registry and character store together, with the world-permanent mods available on restore. These ADRs specify a required proven backup; they do not provide a completed backup schedule, restore procedure or restore-test result (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:39-40`; `docs/adr/0009-world-permanent-mods-land-before-world-creation.md:46-47`).
+Recovery policy is rollback on the accepted versions, not an improvised mod upgrade. What a backup
+can hold changed with ADR-0010: the character store — and therefore character level and personal
+keys — is client-owned, so a server archive must not be described as capturing it. The implemented
+capture, schedule, rotation, off-host copy and proven restore are in [Backups](#backups--20) below
+(`docs/adr/0007-frozen-game-version-and-pinned-pack.md:39-40`).
+
+## Launch provisioning — #19
+
+**The launch server is described by `config/launch/launch.env.example`, not by whatever the host
+happens to contain.** That file is the committed, non-secret container environment: identity, world
+rules, capacity, the freeze schedule and the backup posture. The secret file beside it —
+`launch.secret.env`, in the same directory, gitignored — holds only `SERVER_PASS`, and later the
+Discord webhook. `scripts/launch-server.sh env` prints the merged environment; `run` creates the
+data directories and starts the container from it.
+
+**The world rules are dedicated-server arguments, and two of them fail quietly.** There is no
+per-modifier environment variable in the container, so `SERVER_ARGS` carries the whole set:
+`-savedir /config/save -preset hard -modifier Portals hard`. Measured against Valheim 1.0.12 on
+2026-09-15, the game's own log lines are `Setting world modifier preset: hard` and
+`Setting world modifier: Portals->hard`.
+
+- `-modifier DeathPenalty normal` is **rejected**: the game logs `Could not parse 'DeathPenalty'
+  with a value of 'normal' as a world modifier` and boots anyway. There is no `normal` value for
+  DeathPenalty, Resources or Raids — vanilla behaviour is what omitting the modifier gives you. A
+  typo here leaves the rule unset with no failure.
+- `-preset` overwrites every modifier set before it, so a modifier written above it is lost without
+  a log line. Order is load-bearing.
+
+The four `-setkey` checkboxes are all absent deliberately, and `-setkey` only ever sets a key, so
+the absence is the choice.
+
+**The freeze is two container settings.** `UPDATE_CRON` is pushed to 2100 because the container
+takes a cron expression and has no "never" keyword; `UPDATE_IF_IDLE=true` is a second guard.
+`RESTART_CRON` restarts on Sunday morning, between the Roster's evening sessions, with
+`RESTART_IF_IDLE=true` so a straggler is not dropped. The game version is frozen by *not updating*,
+which is the same mechanism ADR-0007 requires.
+
+## Backups — #20
+
+**The container's own backup must stay off on this server, and that is a measured finding, not a
+preference.** It archives `/config/worlds_local`, while the server writes to `/config/save/worlds_local`
+because `SERVER_ARGS` sets `-savedir /config/save`. On the historical host it had produced
+twenty-three archives with two distinct checksums between them, every one of them a stale flat-file
+`AstralTest` world — a backup that looks like a backup and contains nothing the live server wrote.
+`config/launch/launch.env.example` therefore sets `BACKUPS=false`.
+
+**`scripts/backup-world.sh` is the backup.** It captures one consistent set of the stores the pack
+actually writes, and it refuses the failure above by construction:
+
+| Captured | Owner | Note |
+| --- | --- | --- |
+| `worlds_local/<World>/` | server | the 1.0 chunked form: `_main.<n>.fwl2`, `.db2`, `.chunks`, `.chunk`, `.ok` |
+| other `worlds_local/` directories | server | so a promoted playtest world is not lost |
+| `cache/` | server | biome data cache, regenerable but cheap |
+| `permittedlist.txt`, `adminlist.txt`, `bannedlist.txt` | server | admission |
+| **not** `characters/` | client | character level and personal keys live in the player's own file (ADR-0010) |
+| **not** BepInEx config | repo | deployed from `config/enforced/` and `dist/` |
+
+**Consistency is observed, not assumed.** The game writes `_main.<n>.ok` last and only then reaps
+generation `<n-1>`, so the script records the `.ok` marker set before and after the copy and retries
+if a save committed mid-read. A capture with no world files is deleted and the run fails, which is
+the guard against the container's stale-archive outcome. Rotation keeps the newest `--keep` archives
+and never removes a file it did not name.
+
+**A restore is a documented, reversible operation.** `scripts/restore-world.sh` extracts into an
+isolated save directory, refuses an archive with no committed-generation marker (so a pre-1.0
+flat-file backup cannot be restored into a server that will then refuse to load it), and moves an
+existing world aside to `<World>.replaced-<stamp>` rather than deleting it. `--dry-run` prints the
+plan and changes nothing.
+
+Measured on astral-tricep, 2026-09-15, on a disposable server: the capture of a real 1.0 world was
+byte-identical to the source after restore (`diff` of per-file MD5s, zero differences), and a server
+started against the restored directory logged `ZNet.LoadWorld: launch (launch), save number 1`
+followed by `Opened Steam server`, advancing the world to a new committed generation. The regression
+suite is `test/backup-world.test.sh` (15 checks, no network).
+
+**What a restore does not return.** Because characters are client-owned, restoring the world returns
+the world — not each player's character, level or keys. Steam Cloud or the player's own copy is what
+recovers those. Off-host copying is `--offhost user@host:/path` or a mounted path, and the choice of
+destination, schedule and retention belongs to the operator and is recorded in
+`config/launch/launch.env.example`.
 
 ## Exclusions
 

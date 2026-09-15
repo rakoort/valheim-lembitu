@@ -8,3 +8,7 @@ __pycache__/
 lib/valheim/
 lib/bepinex/
 lib/.cache/
+
+# Launch secrets: the server password and any webhook URL. The non-secret launch configuration
+# (config/launch/launch.env.example) is committed; this is the file that must never be.
+config/launch/launch.secret.env

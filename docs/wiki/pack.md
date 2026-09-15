@@ -161,3 +161,108 @@ and `DllNotFoundException: libParty.so` from PlayFab initialization. These are n
 classified as repaired or as managed-library conflicts. Steam listener readiness passed.
 This Ticket does not accept client graphics, crossplay, gear-gate behavior, vehicle gameplay,
 persistence or concurrent multiplayer; #4, #26 and the feature scenarios retain that scope.
+
+## Client Pack distribution — 2026-09-15 (#21)
+
+The client Pack is built from the same pin table as the server's, by
+`scripts/build-client-pack.sh`, and it is not the same tree. Two packages differ, and the
+difference is the whole reason the builder exists rather than `scripts/install-plugins.sh` being
+pointed at a zip.
+
+| Package | Server | Client | Why |
+| --- | --- | --- | --- |
+| `AzumattDev/MaxPlayerCount` | required | **excluded** | A fork, and every surface it patches runs on the host: the admission literal in `ZNet.RPC_PeerInfo`, the `SteamGameServer.SetMaxPlayerCount` prefix, and the two `ZPlayFabMatchmaking` sites. A client is told the server's capacity by the server (`src/forks/MaxPlayerCount/UPSTREAM.md`). |
+| `TOYNBEE/BoneMod` | optional | **required** | Cosmetic bone scaling, client-side. The server does not need it; a player does. |
+| `Lembitu.Harness` | never | never | Test infrastructure. Inert without `-lembitu-harness`, and it belongs to the disposable test client, not to players. |
+
+**Staging is delegated, assertions are not.** `scripts/build-client-pack.sh` calls
+`scripts/stage-stack.sh` for pin parsing, SHA-256 verification against `docs/modstack.lock.json`,
+declared-dependency closure and the package-layout normalisation, so the client pack cannot drift
+from the adopted table. It then asserts that no excluded plugin is anywhere in the staged tree, that
+every required client-side package is present, and that the tree holds package files at all. A pack
+that fails any of those is not published: the archive is written only after the assertions pass, so
+a partial pack cannot look complete. `test/client-pack.test.sh` exercises those boundaries with real
+zip fixtures and no network.
+
+**A rejected pin silently leaves a rule unset, so the builder refuses rather than warns.** The three
+assertions above are absences and presences in the tree, not checks on the pin table's prose.
+
+**The manifest is what an install is verified against.** The build emits three files beside the
+archive: the `.zip` a player extracts over their Valheim install, a `.manifest.json` naming the
+version, the exclusions, the required client-side packages and each pin's package hash, and a
+`.versions.txt` listing every staged file with its SHA-256. Version labels alone would not catch a
+re-published package under the same version number; the hashes would.
+
+### Install checklist for players
+
+1. Install Valheim from Steam and launch it once, so it creates its own settings and preferences.
+   Quit normally afterwards. A modded first launch before this step can fail on preferences the game
+   has not written yet (`docs/wiki/native-testing.md:13`).
+2. Copy your Valheim install to a second folder — this is the copy you will run. Steam updating the
+   original does not touch a copy.
+3. Download the client pack archive and extract it **into that copied Valheim folder**, so that the
+   `BepInEx` directory inside the archive merges with the one in the game folder. The archive's
+   layout mirrors the game directory, so extracting it one level too high or too low installs
+   nothing.
+4. Launch the game from the copy, not through Steam's Play button. Steam's Play button launches the
+   original install and will apply its updates.
+
+**On preventing a launch-time update.** There is no Steam setting that guarantees the game will not
+update; the beta-branch and update-scheduling options change when it happens, not whether. The
+method that works is the one above: play from a copy that Steam does not manage, and launch that
+copy directly. Record the copy's `valheim_Data/globalgamemanagers` build identity if you want to
+check it later.
+
+### Verifying a connected player
+
+A connected player is on the right versions when their `BepInEx/plugins` tree matches the pack's
+`.versions.txt`. Re-extracting the archive over the install restores any drift; there is no case
+where patching up a file is easier than re-extracting.
+
+What is **not** enforced automatically, and why the check above is needed:
+
+- **No package of ours synchronises config any more** (ADR-0002 superseded, ADR-0010). Parity is now
+  the adopted packages' own business, and they do not all behave the same way.
+- The BepInEx loader tolerates a version skew in a declared dependency, so a package whose pin moved
+  can still load. That is deliberate for EpicLoot's Jotunn declaration and DiscordConnector's
+  BepInEx declaration (`docs/modstack.md:188-190`), and it means the log is not proof of parity.
+- A missing package produces a feature that is absent rather than an error. BoneMod missing is a
+  player with normal bones, not a failed join.
+
+### Updating the Pack mid-Run
+
+There is no mid-Run Pack update by design (ADR-0007): the accepted combination is fixed, and a
+newer upstream release is declined unless it fixes something actually broken and passes acceptance
+again. If that happens, the procedure is: rebuild with `scripts/build-client-pack.sh --version
+<new>`, bump the version label, re-run `test/client-pack.test.sh`, deploy the server side with
+`scripts/install-plugins.sh` and `scripts/apply-enforced-config.sh`, then distribute the new archive
+and have every player re-extract. Record the accepted pins and hashes before the world is created,
+not after.
+
+### What was verified, and what was not
+
+Measured on astral-tricep, 2026-09-15, with a disposable server and a client copy whose `BepInEx`
+tree was emptied first:
+
+- The pack built from the real pin table stages all twenty-three packages with verified hashes.
+- Extracting it into a clean client produced a tree whose 176 files all matched the emitted
+  `.versions.txt` byte-for-byte, with no `MaxPlayerCount` or `Lembitu.Harness` entry present and
+  `BoneMod` present.
+- A client whose `BepInEx` tree is exactly that pack **connected and played**. The published pack
+  deliberately contains no harness, so the harness was added on top as test infrastructure, never as
+  pack content. The session reported `connection: Connected`, the character `packcheck` alive at 25
+  health with inventory, and 330 nearby entities in a restored world, and the server logged
+  `Server: New peer connected, sending global keys`.
+
+One finding from that session, and it is a correction rather than a pass: the client's BepInEx log
+carries eight `System.MissingFieldException: Field not found: .ZRoutedRpc.Everybody` raised from
+ValheimRAFT's bundled `ServerSync.dll` through BepInEx's config-change handler. BepInEx swallows
+them, the session is unaffected, and the matching server log and the ticket-66 server boot contain
+none — but `docs/wiki/building.md` previously argued from source that this reference was unreachable
+on both sides. It is reachable on the client. The effect on ValheimRAFT's own config synchronisation
+is unmeasured and belongs to #26.
+
+Still not established here: per-package mismatch and missing-package behaviour for every package
+rather than the packages' own declarations, a clean machine that is not this project's prepared test
+host, and the licensing review for redistributing upstream packages. Those remain #21's open
+criteria.
