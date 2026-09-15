@@ -243,5 +243,41 @@ else
   report fail "names the missing world when asked for one the archive does not hold"
 fi
 
+# --- 14. derived snapshots beside a world are not captured as worlds -------------------------
+# The game writes `<World>_backup_auto-<stamp>` and `<World>_backup_<stamp>` copies, and a restore
+# moves a world aside as `<World>.replaced-<stamp>`. Capturing those would inflate the archive and,
+# on a restore of every world, put a stale snapshot back beside the live one.
+
+SNAP="$WORK/snap"; make_world "$SNAP" Real 1
+mkdir -p "$SNAP/worlds_local/Real_backup_auto-20260101-000000"
+printf 'old\n' > "$SNAP/worlds_local/Real_backup_auto-20260101-000000/_main.0.fwl2"
+printf ''      > "$SNAP/worlds_local/Real_backup_auto-20260101-000000/_main.0.ok"
+mkdir -p "$SNAP/worlds_local/Real_backup_20260101-000000"
+printf 'old\n' > "$SNAP/worlds_local/Real_backup_20260101-000000/_main.0.fwl2"
+printf ''      > "$SNAP/worlds_local/Real_backup_20260101-000000/_main.0.ok"
+mkdir -p "$SNAP/worlds_local/Real.replaced-20260101T000000Z"
+printf 'old\n' > "$SNAP/worlds_local/Real.replaced-20260101T000000Z/_main.0.fwl2"
+printf ''      > "$SNAP/worlds_local/Real.replaced-20260101T000000Z/_main.0.ok"
+
+"$BACKUP" --savedir "$SNAP" --out "$WORK/backups7" > "$WORK/out" 2>&1
+snap_archive="$(ls -t "$WORK/backups7"/lembitu-*.tar.gz | head -1)"
+if tar tzf "$snap_archive" | grep -q 'worlds_local/Real/_main.1.fwl2' \
+   && ! tar tzf "$snap_archive" | grep -qE 'worlds_local/Real(_backup|\.replaced)'; then
+  report ok "captures the live world and skips derived snapshots beside it"
+else
+  report fail "captures the live world and skips derived snapshots beside it"
+fi
+
+# --- 15. an off-host copy leaves the host's own archive in place -----------------------------
+
+OFF="$WORK/offhost"; mkdir -p "$OFF"
+if "$BACKUP" --savedir "$SNAP" --out "$WORK/backups8" --offhost "$OFF" > "$WORK/out" 2>&1 \
+   && ls "$OFF"/lembitu-*.tar.gz >/dev/null 2>&1 \
+   && ls "$WORK/backups8"/lembitu-*.tar.gz >/dev/null 2>&1; then
+  report ok "writes a second copy to --offhost and keeps the local archive"
+else
+  report fail "writes a second copy to --offhost and keeps the local archive"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

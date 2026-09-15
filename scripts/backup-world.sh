@@ -86,14 +86,19 @@ done
 WORLDS_DIR="$SAVEDIR/worlds_local"
 [[ -d "$WORLDS_DIR" ]] || die "no worlds_local in $SAVEDIR; is this the server's -savedir?"
 
-# World directories the game owns. The game also writes `<World>_backup_auto-<stamp>` siblings;
-# those are its own generation snapshots and are skipped as separate worlds.
+# World directories the game owns. The game also writes derived snapshots of a world beside it —
+# `<World>_backup_auto-<stamp>` automatically and `<World>_backup_<stamp>` for a manual copy — and
+# scripts/restore-world.sh moves a world aside as `<World>.replaced-<stamp>`. None of those is a
+# world a server loads by name: capturing them inflates the archive and, worse, a restore of "all
+# worlds" would put a stale snapshot back beside the live one.
 world_dirs() {
   local d base
   for d in "$WORLDS_DIR"/*/; do
     [[ -d "$d" ]] || continue
     base="$(basename "$d")"
-    case "$base" in *_backup_auto-*) continue ;; esac
+    case "$base" in
+      *_backup_auto-*|*_backup_*|*.replaced-*) continue ;;
+    esac
     printf '%s\n' "$d"
   done
 }
