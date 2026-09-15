@@ -134,12 +134,30 @@ suite is `test/backup-world.test.sh` (15 checks, no network).
 the world — not each player's character, level or keys. Steam Cloud or the player's own copy is what
 recovers those.
 
-**Not yet chosen, and therefore not yet met.** #20 also requires a schedule, a retention policy and
-an off-host copy, with "at least one copy leaves the host". What exists is the mechanism: `--keep`
-rotation (default 14) and `--offhost user@host:/path` or a mounted path. What does not exist is the
-decision — no cron entry, timer or unit is committed, no destination is named, and no off-host copy
-has been made. Those two criteria are **open**, not satisfied, and they are recorded here rather than
-implied by the script's existence.
+**The schedule, the retention and the off-host copy are now chosen and installed.** The decision is
+committed as two systemd user units in `config/backup/`, which is what makes it reviewable in a diff
+rather than host lore: `lembitu-backup.timer` runs `OnCalendar=hourly` with a five-minute randomised
+delay and `Persistent=true`, and `lembitu-backup.service` calls `scripts/backup-world.sh` against the
+container's bind-mounted save directory with `--keep 48` and
+`--offhost astral-tricep:/home/ra/lembitu-backups`.
+
+Hourly, because the server autosaves every thirty minutes, so at most two autosaves are ever at
+risk. Forty-eight archives, because that is two days of play at roughly 11 MB an archive — trivial
+against the host's free space, and long enough that a corruption noticed the next evening is still
+recoverable. astral-tricep, because #20 requires that a copy leave the host and it is the project's
+second machine, already trusted for ssh and running continuously.
+
+The units are installed for the `ra` user on astral-bicep, which has `Linger=yes`, so the timer runs
+with no session logged in. The capture needs no cooperation from the container: it copies the live
+tree and compares the `.ok` marker set, so no restart, pause or `docker` call is involved, and it
+runs `Nice=10` with idle I/O scheduling to stay out of the server's way.
+
+Measured on astral-bicep, 2026-09-15, with players connected and the container untouched:
+`systemctl --user start lembitu-backup.service` finished `Result=success`, wrote an 11 MB archive
+holding world generation `_main.6` plus the three admission lists, and mirrored it to astral-tricep
+with an identical SHA-256 on both hosts (`1412b996…8e931`). Restoring that archive into a disposable
+directory reproduced all ten files of the live world with matching MD5s, and the restore moved
+nothing aside in the live save because it was never pointed at it.
 
 **What the restore proof does not cover: Clan membership.** The restore was verified by a byte
 comparison of the captured files and by a server loading the restored world (`ZNet.LoadWorld`, then

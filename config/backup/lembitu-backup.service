@@ -1,0 +1,18 @@
+[Unit]
+Description=Capture the Lembitu world save and mirror one copy off-host
+Documentation=https://github.com/rakoort/valheim-lembitu/blob/master/docs/wiki/operations.md
+# The capture is read-only with respect to the server: it copies the live save tree and compares
+# the .ok marker set before and after, so it never needs the container stopped or paused.
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+# %h is the invoking user's home, so the unit carries no hostname-specific absolute paths beyond
+# the layout scripts/launch-server.sh creates: the container's /config is bind-mounted from
+# ~/lembitu/config, which makes ~/lembitu/config/save the server's -savedir.
+ExecStart=%h/code/valheim-lembitu/scripts/backup-world.sh \
+  --savedir %h/lembitu/config/save \
+  --out %h/lembitu/backups \
+  --keep 48 \
+  --offhost astral-tricep:/home/ra/lembitu-backups

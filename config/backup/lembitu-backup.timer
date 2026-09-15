@@ -1,0 +1,15 @@
+[Unit]
+Description=Capture the Lembitu world save every hour
+
+[Timer]
+# Hourly. The server autosaves every thirty minutes, so an hourly capture loses at most two
+# autosaves, and forty-eight retained archives cover two days of play.
+OnCalendar=hourly
+# The game commits a save on its own schedule; a randomised start keeps the copy from landing on
+# the same second every hour. The script retries a torn read regardless.
+RandomizedDelaySec=5min
+# A host that was asleep or rebooted at the top of the hour still gets its capture.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
