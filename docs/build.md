@@ -6,9 +6,9 @@ During development, refresh both game installations and all mod candidates; extr
 and rebuild before testing. Exact versions and hashes record test inputs, not a freeze. Freeze only
 after full-pack and simultaneous two-client acceptance (ADR-0007).
 
-The September 12 public-game refresh identifies server 1.0.12 / network 40 and public client build
-25253764. Full-pack and two-client acceptance of this candidate are not established by the older
-1.0.7 evidence below. Groundwork 1.1.10 replaces the earlier 1.1.9 candidate; see `docs/modstack.md`.
+The September 13 public-game check confirmed server 1.0.12 / network 40 and client build
+25253764 remain current. The updated full pack passed two native gameplay repetitions; see
+[the acceptance record](#full-pack-native-acceptance--2026-09-13). Simultaneous two-client acceptance remains open.
 These identities are dated test records, not a permanent selection or a claim about future latest releases.
 
 ## Where things live
@@ -658,13 +658,16 @@ blocks the main thread long enough to lose the connection. Removing either packa
 interaction. Official 1.0.9 and its [upstream source](https://github.com/sighsorry1029/BossRules/blob/3d4e693751fa81171bf1ffea203294366387e790/AltarReferenceGenerator.cs)
 still contain this guard. The ordinary native join path does not perform an additional asset-preparation step.
 
-`src/plugins/Lembitu.BossRules/BossRulesPlugin.cs` adds one Harmony prefix requiring
+The temporary `Lembitu.BossRules` plugin added one Harmony prefix requiring
 `ZNet.instance != null && ZNet.instance.IsServer()` for this scan. The original ServerSync guard
-still runs on the host. This keeps reference discovery on native world authority rather than
-changing timeouts, skipping content, or changing altar/gameplay behavior. It preserves official
-BossRules binaries and avoids another source fork. BepInEx requires BossRules to load first; a
-missing target method fails explicitly. Retire this integration when an upstream correction
-passes the same full-pack join scenario.
+still ran on the host. This kept reference discovery on native world authority without
+changing timeouts, skipping content, or changing altar/gameplay behavior.
+
+**2026-09-13:** official BossRules 1.0.10 adds the identical native-authority predicate in
+[`e3d6d38`](https://github.com/sighsorry1029/BossRules/commit/e3d6d38563dcfd90353a568320f47f110d1253ca).
+The redundant local plugin was removed. Build into clean `dist/` so its old DLL cannot survive;
+the normal installer removes the previously managed DLL when installing the new pack.
+Container mirrors still require the existing `prune-mirror` procedure.
 
 The fresh-world proof kept all 28 adopted packages, maintained forks, FastAssetBundleLoader and
 SkadiNet defaults enabled. Client `ZNet Start` and the connected callback both logged at 22:08:08
@@ -688,3 +691,37 @@ The join probe is archived under `join-probes/diagnostic-source/`, outside the i
 Logs, configs, installed-file hashes, screenshots and summaries remain in the evidence directories.
 Private game copies were removed; the successful fresh world remains in that run’s `saved-world/`
 directory for another controlled comparison. The live server was not changed.
+
+### Full-pack native acceptance — 2026-09-13
+
+Client and server remain public **1.0.12 / network 40**, client build **25253764**. Fourteen adopted
+updates are recorded in `modstack.md`; official BossRules **1.0.10** replaces the local guard.
+The clean isolated build passed with 13 existing fork warnings and zero errors. Packaging, installer
+and config suites passed 35 checks; the native listener-readiness regression also passed.
+
+On astral-bicep, the exact tested source/build copy is
+`/home/ra/.cache/valheim-lembitu/update-20260913`; the existing working checkout was left untouched.
+
+```sh
+cd ~/.cache/valheim-lembitu/update-20260913
+export XDG_CONFIG_HOME="$HOME/.cache/valheim-lembitu/client-preferences"
+nix shell nixpkgs#python3 --command python3 scripts/test-native.py \
+  --mode full-pack --port 2486 --repeat 2
+```
+
+Exit **0** after two fresh-world repetitions. Each passed generated/enforced configuration,
+fixture permission refusal, wrong-password rejection, native quit without a local player, movement,
+PvP toggles, Skills UI and rejected actions, pickup, insufficient-resource refusal, crafting,
+equipment, observed club damage, natural death, respawn and movement afterward, then native quit.
+
+Evidence: `/home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/`.
+`summary.json` records `completed_runs: [true, true]`, `ok: true`, `full_pack_pass: true`.
+Both repetitions’ `skills.png` and `combat.png` were visually inspected: world, Skills panel,
+HUD and combat hit feedback render. The runner deliberately leaves `visual_review_required: true`;
+this paragraph records the separate visual review. IPC, logs, config and installed hashes remain.
+Disposable game copies and saves were removed by the runner; the live server was not changed.
+
+Residual FastAssetBundleLoader Linux `DriveInfo` exceptions remain in the successful gameplay log.
+This is full-pack coverage of the existing scenario, not exhaustive mod-feature acceptance or
+simultaneous two-client verification. Those limits still prevent a launch freeze.
+

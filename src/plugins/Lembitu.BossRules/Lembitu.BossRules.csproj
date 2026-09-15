@@ -1,9 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <PluginGuid>lembitu.bossrules</PluginGuid>
-    <Version>0.1.0</Version>
-    <Description>Restricts BossRules altar reference generation to the native world authority, preventing connecting clients from synchronously loading every location.</Description>
-  </PropertyGroup>
-
-</Project>

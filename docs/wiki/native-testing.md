@@ -50,11 +50,11 @@ Retain one comparison row per family, identifying the inspected scenario view, c
 
 ## Capture integrity instrument (#56)
 
-Use `scripts/retain-pair.js` for new paired-log captures; the old `.nt/evidence/retain-pair.js`
+Use `scripts/retain-pair.js` for new paired-log captures; the old [.nt/evidence/retain-pair.js](https://github.com/rakoort/valheim-lembitu/blob/2a91e6d7bb869ebf830b65ef2ed3ea996341de25/.nt/evidence/retain-pair.js)
 at #38 candidate `2a91e6d7bb869ebf830b65ef2ed3ea996341de25` is historical evidence, not the maintained tool.
 After the owned server exits, run `bun /absolute/repo/scripts/retain-pair.js SOURCE_SHA RUN_NAME`
 from its workspace. Supply the measured source commit and a new run name. Inputs retain the original layout:
-Unity log at `.nt/review-fix-raw/server-unity.log`, BepInEx log at `.nt/server/BepInEx/LogOutput.log`,
+Runtime inputs are [Unity .nt/review-fix-raw/server-unity.log and BepInEx .nt/server/BepInEx/LogOutput.log](../../scripts/retain-pair.js#L27-L30),
 and server binaries/config under `.nt/server/`. Bun is required.
 
 The instrument creates a new `.nt/evidence/` directory and refuses an existing one; it never rewrites
@@ -95,7 +95,7 @@ The temporary probe invoked the production `OnBeginDrag`, `OnDrag`, `OnEndDrag` 
 methods on the live panel components from Unity Update. Pointer coordinates came from the real
 client; assertions ran outside Unity. `final-saved.png` and `restarted-restored.png` were visually
 inspected: the attributes panel remained readable at its moved position and the navigation bar
-remained at its saved location behind it. `native-restore/events.jsonl` retains native quit/exit evidence.
+remained at its saved location behind it. [native-restore/events.jsonl](ssh://astral-tricep/home/ra/.cache/valheim-lembitu/ticket-62-20260914/native-restore/events.jsonl) retains native quit/exit evidence.
 
 Verification boundaries: injected X button drags did not move the panels. The held-button probe
 recorded a focused game, PointPanel raycast hits, `InputSystemUIInputModule`, and legacy
@@ -115,14 +115,14 @@ then calls `LocationDB.GetLocationConfig`. The native lookup returns null.
 
 A read-only native probe enumerated the three embedded location-prefab bundles.
 Their only StoneOutlook asset was
-`assets/warpprojects/more world locations/blackforest pack 2/containers/mwl_stoneoutlook1_loot_chest_wood1.prefab`.
+[assets/warpprojects/more world locations/blackforest pack 2/containers/mwl_stoneoutlook1_loot_chest_wood1.prefab](ssh://astral-tricep/home/ra/.cache/valheim-lembitu/ticket-32-20260914/diagnostic-LogOutput.log).
 The shipped soft-reference manifest has no StoneOutlook entry. The complete upstream
 tree at `5546c481847e3f169e5a22c12b402db8e20c5acf` has no path matching `outlook`;
 its location definitions also omit StoneOutlook. These checks do not establish that
 an older release could never supply the missing asset.
 
 Historical upstream `e643f76e93a898e343f167cfc50ab72ba46e2aec` retains
-`MWL_StoneOutlook1_Config` in `More World Locations_AIO/Src/Locations/LocationConfigs.cs`:
+`MWL_StoneOutlook1_Config` in the upstream file [More World Locations_AIO/Src/Locations/LocationConfigs.cs](https://github.com/rakoort/valheim-lembitu/issues/32):
 Black Forest, Coastal group, minimum distance 500, altitude -2 through 1,
 minimum similar-location distance 1024, and slope rotation enabled. That revision
 has no Outlook entry in `AssetPaths.cs` or `LocationsNEW.cs`. Commit

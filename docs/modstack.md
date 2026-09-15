@@ -90,7 +90,6 @@ plugins (ADR-0002).
 | Discord relay | Joins, deaths, boss kills and contract activity over a webhook | #17 |
 | Progression bridge | Answers EpicLoot's gating from personal keys; feeds character level into its rarity roll | #27 |
 | Lembitu.Hello | Build-skew and ServerSync smoke test | #1, #2 |
-| Lembitu.BossRules | Keeps BossRules altar reference scans on native world authority, preventing client join stalls with MWL | — |
 
 ## World-permanent mods
 
@@ -100,6 +99,45 @@ and never removed during the run (ADR-0009): **More World Locations AIO**, **Max
 
 EpicLoot, ProgressivePowers and the Enchantment-style data our own plugins write are one-way for a
 different reason: removing them destroys player gear or progress rather than corrupting the world.
+
+## Upstream update and acceptance — 2026-09-13
+
+All 33 tracked Thunderstore packages were checked. Fourteen adopted packages advanced;
+BepInEx, the three maintained plugin forks and planned ValheimRAFT had no newer releases.
+The three maintained plugin upstream heads and shared ServerSync source also remained unchanged.
+Custom fork behavior is retained; ValheimRAFT remains planned, not newly installed.
+
+| Package | Previous → current |
+| --- | --- |
+| MidnightMods/ProgressivePowers | 0.1.0 → 0.3.0 |
+| RandyKnapp/EpicLoot | 0.14.4 → 0.14.5 |
+| sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.4 → 1.2.6 |
+| sighsorry/BossRules | 1.0.9 → 1.0.10 |
+| sighsorry/Clan | 1.0.7 → 1.0.10 |
+| sighsorry/DataForge | 1.3.3 → 1.3.4 |
+| sighsorry/Groundwork | 1.1.10 → 1.1.11 |
+| sighsorry/InventorySlots | 1.4.10 → 1.4.15 |
+| sighsorry/PortalRules | 1.0.5 → 1.0.7 |
+| sighsorry/RepairRequiresMaterials | 1.0.4 → 1.0.6 |
+| sighsorry/STU_Ward | 1.3.12 → 1.3.15 |
+| sighsorry/SecondaryAttacks | 1.2.4 → 1.2.7 |
+| sighsorry/SkadiNet | 1.1.3 → 1.1.4 |
+| sighsorry/VeiledRecipes | 1.1.4 → 1.1.5 |
+
+The installed public client build **25253764**, Linux depot manifest **6181039652481492267**,
+was already current. Its disposable test copy was refreshed. Dedicated-server validation confirmed
+public depot manifest **9055200629726788899**; runtime is **1.0.12 / network 40**.
+All 28 packages staged with dependency closure, 14 new hashes and 14 verified existing hashes.
+
+BossRules 1.0.10 includes the native-authority fix, replacing the temporary local plugin.
+No enforced-config migration was required. Upstream defaults now include restock leave-one,
+equipment changes while running and automatic last-shield equipment; these were not overridden.
+
+The existing full-pack native runner passed **two fresh-world repetitions**, including rendered
+Skills UI, movement, crafting, combat, natural death/respawn, password rejection and native quit.
+Both Skills and combat screenshots were inspected. Evidence and repeat command are in
+[build.md](build.md#full-pack-native-acceptance--2026-09-13). This does not establish simultaneous
+two-client behavior or exhaustively verify every mod feature; the pack is not frozen.
 
 ## Upstream update check — 2026-09-12
 
@@ -127,7 +165,7 @@ Fast_AssetBundle_Loader remains 1.0.7; no newer package fixes the observed Linux
 ServerSync v1.20 says “Recompile for 1.0” but tags our existing source commit, so no source update
 is needed. Metadata came from Thunderstore package APIs; changes came from publisher changelogs.
 
-### Latest public candidate — 2026-09-12
+### Historical public candidate — 2026-09-12
 
 The initial check found Groundwork **1.1.10**; the other 27 adopted packages and maintained upstream
 fork heads remained current then. Connection diagnosis subsequently found BossRules **1.0.9**; it
@@ -138,10 +176,11 @@ The initial latest-game run failed config generation because the native profile 
 language. Completing native Settings setup resolved that failure without modifying upstream mods.
 Connection diagnosis then found premature server readiness and a BossRules authority race:
 connecting clients scanned every MWL location before ServerSync established remote authority.
-The runner now waits for the native Steam listener; `Lembitu.BossRules` gates only that reference
-scan on native world authority. Official mod binaries, gameplay rules and network timeouts remain unchanged.
+The runner was changed to wait for the native Steam listener; the temporary `Lembitu.BossRules`
+plugin gated that reference scan on native world authority. Official BossRules 1.0.10 now includes
+the same authority check, so the local plugin has been removed. Gameplay rules and network timeouts are unchanged.
 
-Full-pack native joining now passes in a fresh world with every mod enabled:
+Full-pack native joining passed in a fresh world with every mod enabled:
 `join-probes/20260912T190318Z-3d4e6d45/`. The player reached control-ready at 25/25 health, the
 server generated its altar reference, the client retained an empty reference template, and native
 quit completed. The screenshot was visually inspected. Full gameplay and simultaneous two-client

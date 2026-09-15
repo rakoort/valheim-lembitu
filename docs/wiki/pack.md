@@ -48,6 +48,13 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 
 ## Lessons
 
+The September 15 source cutover removes the local BossRules plugin and records the historical
+September 13 gameplay evidence. A clean rebuild completed with 12 warnings and zero errors;
+all thirty current package hashes verified. A disposable installation of the actual staged Pack
+removed the manifest-owned `Lembitu.BossRules.dll`, installed official `BossRules.dll` byte-identically,
+and preserved an unrelated file. This verifies normal package replacement, not corrupt-manifest
+safety (#28), a new native gameplay run, or Milestone acceptance.
+
 **Yesterday's compatibility survey is not a reason to own a fork forever.** Official releases arrived within hours of the original fork decisions. More recently, official BossRules 1.0.10 supplied the native-authority check that had required a temporary local plugin, allowing its removal. Re-check upstream before selecting a candidate and retire compatibility-only work when upstream meets the need (`docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md:9-40`, `docs/modstack.md:171-177`).
 
 **Successful staging proves bytes and declared closure, not gameplay.** Groundwork 1.1.9 passed staging but called a property getter absent from the old 1.0.7 game, which exposed a field instead. The project updated the game rather than treating that old mismatch as a current blocker. Likewise, the old ServerSync binary could load yet throw only on its first config broadcast after a game field became a constant. The verification gate therefore requires clean loading, config broadcast and a two-client session on the current game; a headless boot cannot clear client-only behavior (`docs/modstack.md:185-219`, `docs/modstack.md:285-303`, `docs/adr/0002-serversync-vendored-as-shared-source.md:9-14`).
@@ -94,7 +101,7 @@ and passed the existing `Lembitu.Hello` ServerSync broadcast probe.
   consuming plugins. No `MissingFieldException`, `FileLoadException`, `TypeLoadException`, or
   `Could not load file or assembly` occurred in the completed candidate BepInEx log.
 - ValheimRAFT and JsonDotNET ship different Newtonsoft.Json bytes. In this runtime neither
-  replaces the game's already-loaded `valheim_server_Data/Managed/Newtonsoft.Json.dll`,
+  replaces the game's already-loaded [valheim_server_Data/Managed/Newtonsoft.Json.dll](https://github.com/rakoort/valheim-lembitu/issues/64),
   assembly version **13.0.0.0**. The JsonDotNET detector reports that location, and the Mono
   trace shows ValheimVehicles resolving that same assembly. This proves observed startup
   coexistence, not that the pinned JsonDotNET payload became the active implementation.
