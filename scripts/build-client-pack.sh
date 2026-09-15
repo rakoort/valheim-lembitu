@@ -5,9 +5,10 @@
 #   scripts/build-client-pack.sh [--out <dir>] [--version <label>]
 #                               [--pins <file>] [--cache <dir>] [--lock <file>]
 #
-# The archive is a COMPLETE client install, shaped like the game's own folder. A player copies their
-# Valheim install, extracts this archive into that copy, and launches. Nothing else: no BepInEx
-# install step, no mod manager, no per-mod download.
+# The archive is a COMPLETE client install, shaped like the game's own folder. A player extracts it
+# into their Valheim game folder, sets one Steam launch parameter - empty on Windows, the BepInEx
+# launcher on Linux - and presses Play. Nothing else: no BepInEx install step, no mod manager, no
+# per-mod download.
 #
 # That means the archive carries three things, and all three are required:
 #
@@ -141,6 +142,57 @@ cp -a "$BEPINEX_PACK/winhttp.dll" "$stage/"
 cp -a "$BEPINEX_PACK/start_game_bepinex.sh" "$stage/"
 chmod +x "$stage/start_game_bepinex.sh"
 
+# Linux, Steam: pressing Play runs the game binary directly, so the launcher has to be in the
+# command. The project's launch option is `./start_game_bepinex.sh %command%`, and Steam resolves
+# that relative path against `valheim_Data`, not the game root. Measured on astral-tricep,
+# 2026-09-15: Steam ran `<game>/valheim_Data/start_game_bepinex.sh`, which no install contains, so
+# Play opened a terminal on a missing file and the game never started - a silent vanilla-or-nothing
+# failure a player cannot diagnose.
+#
+# Ship a shim at that path which hands off to the real launcher. `exec` replaces `$0`, so the
+# launcher still derives BASEDIR - and with it `BepInEx/`, `doorstop_libs/` and every plugin path -
+# from the game root. A symlink would not: BASEDIR comes from `$0` without resolving links, so each
+# derived path would point inside `valheim_Data`. The file is inert on Windows and macOS, where the
+# loader is injected by `winhttp.dll` and the doorstop dylib.
+mkdir -p "$stage/valheim_Data"
+cat > "$stage/valheim_Data/start_game_bepinex.sh" <<'SHIM'
+#!/bin/sh
+# Steam resolves the launch option "./start_game_bepinex.sh %command%" against valheim_Data.
+# Hand off to the real BepInEx launcher in the game root, keeping every argument Steam passed.
+exec "$(cd "$(dirname "$0")/.." && pwd)/start_game_bepinex.sh" "$@"
+SHIM
+chmod +x "$stage/valheim_Data/start_game_bepinex.sh"
+
+# Upstream's launcher works out the game's architecture by shelling out to `file(1)`. On a machine
+# without it - NixOS, and minimal images generally - the command fails, `file_out` is empty, and the
+# launcher aborts with "is not compiled for x86 or x64 (might be ARM?)" and a blank `Got:`. That is
+# a misleading error: the game binary is fine and only the probe is missing.
+#
+# Patch that one probe rather than replacing the launcher, so everything else upstream does - the
+# Steam re-exec handshake in particular - is preserved exactly. awk, because this is a single-line
+# substitution and the repo's scripts stay bash-only.
+launcher="$stage/start_game_bepinex.sh"
+grep -qF 'file -b "${executable_path}"' "$launcher" \
+  || die "the launcher no longer contains the \`file\` probe this build patches; upstream changed"
+awk '
+  /file -b "\$\{executable_path\}"/ {
+    print "if command -v file >/dev/null 2>&1; then"
+    print "    file_out=\"$(LD_PRELOAD=\"\" file -b \"${executable_path}\")\""
+    print "else"
+    print "    # No `file`: read the ELF header class byte directly (1 = 32-bit, 2 = 64-bit)."
+    print "    case \"$(od -An -tu1 -j4 -N1 \"${executable_path}\" 2>/dev/null | tr -d \" \\t\")\" in"
+    print "        2) file_out=\"ELF 64-bit\" ;;"
+    print "        1) file_out=\"ELF 32-bit\" ;;"
+    print "        *) file_out=\"\" ;;"
+    print "    esac"
+    print "fi"
+    next
+  }
+  { print }
+' "$launcher" > "$launcher.new"
+mv -- "$launcher.new" "$launcher"
+chmod +x "$stage/start_game_bepinex.sh"
+
 # The stager writes a `dist/`-shaped tree, which mirrors the *BepInEx directory*: `dist/plugins`,
 # `dist/patchers`, `dist/config`. That is what scripts/install-plugins.sh expects, and it is one
 # level too shallow for a game folder. Nesting them under BepInEx/ is what turns two layouts that
@@ -155,7 +207,10 @@ for tree in plugins patchers config; do
     # is the kind of change that only shows up as a broken install later.
     while IFS= read -r f; do
       [[ -e "$stage/BepInEx/$tree/$f" ]] && printf 'note: BepInEx/%s/%s overrides a loader file\n' "$tree" "$f" >&2
-    done < <(cd "$stage/$tree" && find . -type f -printf '%P\n')
+      # `find -printf` is GNU-only and this pack is built on macOS as well, where it fails and the
+      # loop reads nothing - so the collision would go unreported on exactly one of the two build
+      # hosts. Strip the `./` prefix here instead.
+    done < <(cd "$stage/$tree" && find . -type f | sed 's|^\./||')
     cp -a "$stage/$tree/." "$stage/BepInEx/$tree/"
     rm -rf "$stage/$tree"
   else
@@ -198,6 +253,7 @@ for required in \
   "BepInEx/core/0Harmony.dll" \
   "doorstop_config.ini" \
   "winhttp.dll" \
+  "valheim_Data/start_game_bepinex.sh" \
   "BepInEx/plugins/BoneMod"; do
   [[ -e "$stage/$required" ]] || die "client pack is missing $required; a player could not run it"
 done
@@ -269,9 +325,11 @@ done < <("$STAGER" --list "${PINS_ARGS[@]}")
 } > "$built/manifest.json"
 
 # Human-readable inventory: every file the player should end up with, with its hash. This is the
-# list the install checklist compares against. The staging ledger (`.staged-dirs`) is builder
-# bookkeeping, not pack content, and is left out of both this list and the archive.
-( cd "$stage" && find . -type f ! -name '.staged-dirs' | LC_ALL=C sort | while IFS= read -r f; do
+# list the install checklist compares against. The staging ledger (`.staged-dirs`) and the staging
+# log are builder bookkeeping, not pack content, and are left out of both this list and the
+# archive; the parity check after archiving is what keeps the two exclusion lists in step.
+( cd "$stage" && find . -type f ! -name '.staged-dirs' ! -name 'stage.log' | LC_ALL=C sort \
+  | while IFS= read -r f; do
     printf '%s  %s\n' "$(sha256_of "$f")" "${f#./}"
   done ) > "$built/versions.txt"
 
@@ -291,6 +349,17 @@ archive_tmp="$built/pack.zip"
 
 [[ -s "$archive_tmp" ]] || die "the archive is empty; nothing was published"
 
+# The inventory and the archive must name the same files. They come from two separate exclusion
+# lists, and when those drifted the published inventory listed a builder log no player could have:
+# `sha256sum -c` then reported a failure on a byte-correct install, the false alarm the inventory
+# exists to rule out. A hash is 64 characters plus two spaces, so the path starts at column 67.
+inv_paths="$(cut -c67- "$built/versions.txt" | LC_ALL=C sort)"
+zip_paths="$(unzip -Z1 "$archive_tmp" | grep -v '/$' | LC_ALL=C sort)"
+if [[ "$inv_paths" != "$zip_paths" ]]; then
+  diff <(printf '%s\n' "$inv_paths") <(printf '%s\n' "$zip_paths") >&2 || true
+  die "the inventory and the archive disagree; nothing was published"
+fi
+
 mv -- "$archive_tmp" "$archive"
 mv -- "$built/versions.txt" "$versions"
 mv -- "$built/manifest.json" "$manifest"
@@ -298,4 +367,4 @@ mv -- "$built/manifest.json" "$manifest"
 printf '\nclient pack: %s (%s)\n' "$archive" "$(du -h "$archive" | cut -f1)"
 printf 'manifest:    %s\n' "$manifest"
 printf 'files:       %s\n' "$versions"
-printf '\nThis is a complete client install. A player copies their Valheim folder, extracts this\narchive into the copy, and launches. See docs/wiki/pack.md.\n'
+printf '\nThis is a complete client install. A player extracts it into their Valheim game folder,\nsets the Steam launch parameter for their platform, and presses Play. See docs/wiki/pack.md.\n'

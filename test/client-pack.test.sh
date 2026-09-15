@@ -88,7 +88,11 @@ printf 'bepinex\n'   > "$BEPINEX_PACK/BepInEx/core/BepInEx.dll"
 printf 'harmony\n'   > "$BEPINEX_PACK/BepInEx/core/0Harmony.dll"
 printf 'doorstop\n'  > "$BEPINEX_PACK/doorstop_config.ini"
 printf 'winhttp\n'   > "$BEPINEX_PACK/winhttp.dll"
-printf 'sh\n'        > "$BEPINEX_PACK/start_game_bepinex.sh"
+# The launcher fixture carries the one upstream line the builder rewrites: its architecture probe.
+# A bare stub would make every build in this file die on the builder's precondition, which is
+# exercised on its own below.
+printf '%s\n' '#!/bin/sh' 'file_out="$(LD_PRELOAD="" file -b "${executable_path}")"' \
+  'exec "$executable_path" "$@"' > "$BEPINEX_PACK/start_game_bepinex.sh"
 printf 'so\n'        > "$BEPINEX_PACK/doorstop_libs/libdoorstop_x64.so"
 printf 'dylib\n'     > "$BEPINEX_PACK/doorstop_libs/libdoorstop_x64.dylib"
 mkdir -p "$BEPINEX_PACK/BepInEx/config"
@@ -210,6 +214,38 @@ else
   report fail "writes a per-file inventory with hashes and no builder bookkeeping"
 fi
 
+# The inventory is what a player runs `sha256sum -c` against, so it must name exactly the files the
+# archive installs. It listed the builder's staging log once, and a byte-correct install then
+# reported a failure - the false alarm the inventory exists to rule out.
+inv_paths="$(cut -c67- "$versions" | LC_ALL=C sort)"
+zip_paths="$(unzip -Z1 "$OUT1/lembitu-client-pack-t.zip" | grep -v '/$' | LC_ALL=C sort)"
+if [ "$inv_paths" = "$zip_paths" ]; then
+  report ok "the inventory names exactly the files the archive installs"
+else
+  report fail "the inventory names exactly the files the archive installs"
+fi
+
+# The Linux Steam path. Steam resolves the launch option `./start_game_bepinex.sh %command%`
+# against valheim_Data, so the shim shipped there must hand off to the root launcher with `$0`
+# pointing at the game root: the launcher derives BepInEx/, doorstop_libs/ and every plugin path
+# from it, and a handoff that kept valheim_Data would look for all of them one level too deep.
+# Checked against a stub root launcher that reports the base it computed and the arguments it got.
+game="$WORK/game"
+mkdir -p "$game"
+unzip -qo "$OUT1/lembitu-client-pack-t.zip" -d "$game"
+cat > "$game/start_game_bepinex.sh" <<'STUB'
+#!/bin/sh
+a="/$0"; a=${a%/*}; a=${a#/}; a=${a:-.}
+printf 'basedir=%s args=%s\n' "$(cd "$a" && pwd -P)" "$*"
+STUB
+chmod +x "$game/start_game_bepinex.sh" "$game/valheim_Data/start_game_bepinex.sh"
+handoff="$(cd / && "$game/valheim_Data/start_game_bepinex.sh" SteamLaunch -- valheim.x86_64)"
+if [ "$handoff" = "basedir=$(cd "$game" && pwd -P) args=SteamLaunch -- valheim.x86_64" ]; then
+  report ok "the Steam shim runs the root launcher with the game root as its base"
+else
+  report fail "the Steam shim runs the root launcher with the game root as its base (got: $handoff)"
+fi
+
 # The published directory holds exactly the three artifacts, and the archive holds none of them. A
 # pack that ships its own manifest inside itself is the mistake this asserts against.
 listing="$(unzip -Z1 "$OUT1/lembitu-client-pack-t.zip")"
@@ -280,6 +316,22 @@ if ! "$BUILDER" --out "$WORK/out5" --version t --pins "$WORK/modstack-noclient.m
 else
   report fail "refuses a pack that lost a required client-side package"
 fi
+
+# --- 5b. an upstream launcher without the arch probe is refused -------------------------------
+# The build rewrites one line of upstream's launcher: the `file(1)` probe that aborts on hosts
+# without that binary, NixOS among them. If a newer BepInEx pack changes that line, the rewrite
+# would silently do nothing and the pack would ship a launcher that cannot start the game on those
+# hosts. The builder must stop instead.
+
+printf '%s\n' '#!/bin/sh' 'arch=x64' > "$BEPINEX_PACK/start_game_bepinex.sh"
+if ! build "$WORK/out7b" && grep -q "no longer contains the .file. probe" "$WORK/out" \
+   && [ ! -e "$WORK/out7b/lembitu-client-pack-t.zip" ]; then
+  report ok "refuses an upstream launcher whose architecture probe it can no longer patch"
+else
+  report fail "refuses an upstream launcher whose architecture probe it can no longer patch"
+fi
+printf '%s\n' '#!/bin/sh' 'file_out="$(LD_PRELOAD="" file -b "${executable_path}")"' \
+  'exec "$executable_path" "$@"' > "$BEPINEX_PACK/start_game_bepinex.sh"
 
 # --- 6. a tampered package is refused by the stager's hash check ------------------------------
 

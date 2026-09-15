@@ -212,33 +212,72 @@ The operator records the release URL in the Roster's usual gathering place; the 
 
 ### Install checklist for players
 
-The archive is a complete install overlay, so this is three steps:
+The archive is a complete install overlay, and it installs into the Valheim folder Steam already
+manages. Extract, set one launch parameter, press Play:
 
-1. **Copy your Valheim game folder** somewhere else — for example `Valheim-lembitu` beside the
-   original. That copy is what you run; Steam keeps managing the original.
-2. **Extract the pack zip into that copy**, so the `BepInEx` directory inside the archive merges
-   with the game folder. The archive is shaped like the game folder, so extracting it one level too
-   high or too low installs nothing.
-3. **Launch the game from the copy.** On Windows the loader is injected by `winhttp.dll` sitting
-   beside the game binary, on macOS by the doorstop dylib, and on Linux you run the BepInEx start
-   script from that folder instead of the game binary directly.
+1. **Extract the pack zip into your Valheim game folder**, so the archive's `BepInEx` directory
+   merges with the game folder. In Steam: Valheim → Manage → Browse local files opens exactly that
+   folder. The archive is shaped like the game folder, so extracting it one level too high or too
+   low installs nothing.
+2. **Set the launch parameter** in Steam → Valheim → Properties → Launch Options:
 
-Pressing Play in Steam launches Steam's own copy, not yours, so it loads no mods. The shipped
-launcher does detect a Steam launch and re-exec itself, so pointing Steam's launch options at the
-copy also works — but running from the folder is the reliable path.
+   | Platform | Launch options |
+   | --- | --- |
+   | Windows | leave empty — `winhttp.dll` beside the game binary loads the pack by itself |
+   | Linux | `./start_game_bepinex.sh %command%` |
 
-**Check the extract before you launch**, because the failure mode is silent. Your copied folder must
-contain the BepInEx core directory with its preloader assembly, `winhttp.dll`, and the doorstop
-libraries directory. The mods must be under the BepInEx plugins directory, not in a `plugins` folder
-beside the game binary. That second layout is inert: the loader never looks there, the game starts
-vanilla, and the server refuses the connection without saying why.
+3. **Press Play.**
 
 4. **Join** the server from the browser, or by address, with the password from the group chat.
 
-**On preventing a launch-time update.** There is no Steam setting that guarantees the game will not
-update; the beta-branch and update-scheduling options change when it happens, not whether. The
-method that works is the copy above: Steam does not manage a folder you copied by hand. Record the
-copy's build identity if you want to check it later.
+**Why Linux needs the parameter and Windows does not.** On Windows the loader is injected by
+`winhttp.dll`, which the game itself loads from its own folder, so Play is enough. On Linux the
+loader is a preloaded shared object, which means the launcher script has to be in the command;
+pressing Play without the parameter starts a vanilla client that this server refuses at the
+handshake.
+
+**The pack makes that parameter work.** Steam resolves `./start_game_bepinex.sh` against
+`valheim_Data`, not the game root — measured on astral-tricep, 2026-09-15, where Steam ran
+`<game>/valheim_Data/start_game_bepinex.sh`, a path no stock install contains, so Play opened a
+terminal on a missing file and the game never started. The archive therefore ships a shim at that
+path which `exec`s the real launcher in the game root, keeping every argument Steam passed. `exec`
+replaces `$0`, so the launcher still derives `BepInEx/`, `doorstop_libs/` and every plugin path
+from the game folder; a symlink would not, because the launcher computes its base from `$0` without
+resolving links.
+
+**Check the extract before you launch**, because the failure mode is silent. The game folder must
+contain the BepInEx core directory with its preloader assembly, `winhttp.dll`, and the doorstop
+libraries directory. The mods must be under the BepInEx plugins directory, not in a `plugins`
+folder beside the game binary. That second layout is inert: the loader never looks there, the game
+starts vanilla, and the server refuses the connection without saying why.
+
+**On a Valheim update.** Installing into Steam's own folder is what makes Play enough, and the cost
+is that a game update can overwrite game files and leave the pack behind a
+version. There is no Steam setting that prevents an update; the beta-branch and update-scheduling
+options change when it happens, not whether. If the game updates, re-extract the pack. A player who
+would rather be immune copies the game folder instead and runs the copy, which Steam does not
+manage — at the price of launching from that folder by hand, since Play always runs Steam's copy.
+
+### Measured install — 2026-09-15
+
+On astral-tricep, into the Steam-managed folder
+`/games/SteamLibrary/steamapps/common/Valheim` over a freshly downloaded game (build 25253764),
+with `lembitu-client-pack-2026-09-15-v5`:
+
+- All 202 files in the pack's `.versions.txt` verified with `sha256sum -c` after extraction.
+- Launched by `steam -applaunch 892970` with the Linux launch option above, which is what pressing
+  Play runs: `27 plugins to load`, `Chainloader startup complete`, no error or exception in
+  `BepInEx/LogOutput.log`, and Vulkan on an RX 7900 XTX at 3840x2160.
+- The client loaded exactly the server's plugin set minus MaxPlayerCount and `Lembitu.Harness`: the
+  server reports `29 plugins to load` for the same pins.
+
+Two defects were found and fixed by this install, both of which had shipped in earlier archives:
+
+- The `.versions.txt` listed the builder's `stage.log`, which is not in the archive, so
+  `sha256sum -c` reported a failure on a byte-correct install. The builder now excludes it from the
+  inventory and refuses to publish when the inventory and archive disagree.
+- The truncated copy is worth naming too: a partially transferred zip verified as a file but
+  installed an incomplete tree. Check the archive's own SHA-256 before extracting.
 
 ### Verifying a connected player
 
