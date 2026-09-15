@@ -158,12 +158,21 @@ released on NuGet.
 
 A mod that bundles prebuilt libraries hides the ADR-0002 failure mode in each one: a member the
 game removed, or a field it turned into a `const`, fails when the code runs rather than when it
-builds. Before trusting such a DLL, compare what it reaches for against `lib/valheim/`. Its member
-references are readable with a decompiler:
+builds. Before trusting such a DLL, screen it against `lib/valheim/`:
 
 ```sh
-nix run nixpkgs#ilspycmd -- -r lib/valheim --ilcode <mod>.dll | grep 'ldsfld\|call'
-nix run nixpkgs#ilspycmd -- -r lib/valheim -t ZRoutedRpc lib/valheim/assembly_valheim.dll
+scripts/screen-bundled-libs.sh --dir dist/plugins/ValheimRAFT
+scripts/screen-bundled-libs.sh dist/plugins/SomeMod/SomeMod.dll
+```
+
+It lists every `ldsfld`/`ldsflda` into a game assembly, reports any whose target the game declares as
+a `const` — the member is inlined by the compiler and has no field storage — and names the method
+containing each one so reachability can be argued from source. Exit 1 means findings; exit 2 is a
+missing prerequisite and never a pass. Ad-hoc decompiling still has its place for other questions:
+
+```sh
+nix shell nixpkgs#ilspycmd -c ilspycmd -r lib/valheim --ilcode <mod>.dll | grep 'ldsfld\|call'
+nix shell nixpkgs#ilspycmd -c ilspycmd -r lib/valheim -t ZRoutedRpc lib/valheim/assembly_valheim.dll
 ```
 
 `ZRoutedRpc.Everybody` is the known one: a `const` on 1.0, so any assembly compiled when it was a
@@ -171,6 +180,16 @@ field carries an `ldsfld` to storage that no longer exists. That check is how th
 EpicMMOSystem fork learned its bundled PieceManager was as broken as its bundled ServerSync. The
 same screening applies to adopted packages: a mod that ships prebuilt libraries can pass staging and
 still throw the first time that code runs.
+
+**A finding is a reference, not a failure.** ValheimRAFT 4.3.2 bundles a `ServerSync.dll` whose
+`<AddConfigEntry>b__0`, `<AddCustomValue>b__1` and `sendZPackage` all read `ZRoutedRpc::Everybody`
+through the stale `ldsfld`. It is inert in this pack, and the reason is worth stating rather than
+assuming: `ValheimVehicles.dll` contains no `AddConfigEntry`, `AddLockingConfigEntry` or
+`AddCustomValue` call, and its generated config carries no `Synced with Server` marker. The three
+offending methods are the config-change callbacks and the send coroutine, and nothing registers a
+synced entry to reach them. The screen reports the reference; whether it can execute is the caller's
+question, answered from the package's own source. Re-run it after any ValheimRAFT update, because a
+future release that starts synchronising config would make the same reference live.
 
 ## Server-synced config
 
