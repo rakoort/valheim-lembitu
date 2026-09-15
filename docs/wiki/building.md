@@ -40,7 +40,7 @@ The current buildable projects under `src/` are:
 
 ## Retired: container refresh API migration (#61)
 
-The September 14 change lived in `src/forks/EpicMMOSystem/Libs/ItemManager/Item.cs`, which was
+The September 14 change lived in the EpicMMOSystem fork's item manager source, which was
 deleted on 2026-09-15 when the fork was retired in favour of upstream 1.9.67 (ADR-0010). Upstream
 owns that code now, and the ticket is closed.
 
