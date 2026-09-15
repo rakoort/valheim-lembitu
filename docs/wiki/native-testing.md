@@ -28,25 +28,26 @@ This page explains how the dedicated test server, headless client and native gam
 
 - **IPC files are not a process supervisor.** Use a fresh control directory per launch and one coordinator per directory. Retained `status.json` can describe a previous process. Atomic UUID requests are limited to 16 KiB; responses remain as evidence. A controller timeout does not cancel an already-published command: inspect that UUID's response before retrying. Native refusals must be asserted explicitly rather than counted as successful actions (`scripts/harness.py:94-142`; `docs/build.md:397-440`).
 
-## Transferred rendering comparison (#58)
+## Retired diagnostic scopes — 2026-09-15
 
-The per-family rendered-client log-level comparison is accepted for #38. The per-scenario rendered-view comparison belongs to #49 (combat/water) and #52 (generated content/world UI); no such view is claimed to have been produced or compared.
+Three sections that lived here are gone with the work they described (ADR-0010).
 
-Compare each scenario’s rendered views and corresponding client logs against all nine warning families in the [docs/build.md matrix at the reviewed #38 candidate](https://github.com/rakoort/valheim-lembitu/blob/2a91e6d7bb869ebf830b65ef2ed3ea996341de25/docs/build.md#L351-L361):
+The transferred rendering comparison (#58) existed to route nine client warning families through
+per-scenario views owned by the cancelled single-client scenario tickets. Those tickets are closed,
+and the families themselves are vanilla headless noise on this stack: the `Hidden/VideoDecode` and
+`Hidden/VideoComposite` material and pass errors, the failed intro cinematic, the HDR reflection
+warning, the shader and occlusion fallbacks. Only `AsyncResourceUpload failed` remains
+unexplained, and #59 owns it.
 
-1. HDR reflection texture unsupported.
-2. `Hidden/VideoDecode` missing, including the five decode passes: `YCbCr_To_RGB1`, `YCbCrA_To_RGBAFull`, `YCbCrA_To_RGBA`, `Flip_RGBA_To_RGBA`, `Flip_RGBASplit_To_RGBA`.
-3. `Hidden/VideoComposite` missing, including its `Default` pass, associated zero-pass errors and intro cinematic failure.
-4. `Hidden/Dof/DepthOfFieldHdr` unsupported and depth-of-field disabled.
-5. `Hidden/SunShaftsComposite` / `Hidden/SimpleClear` unsupported and sun-shafts disabled.
-6. AmplifyOcclusion CopyTexture unsupported / CacheAware optimization disabled.
-7. AmplifyOcclusion GBuffer normals unavailable / Camera source fallback.
-8. `AsyncResourceUpload failed` (asset/cause unestablished; #59 owns diagnosis or reclassification).
-9. IMGUI module stripped / `OnGUI` skipped.
+The EpicMMO panel-drag ownership record (#62) and the StoneOutlook restoration blocker (#32)
+described code and content that are no longer in the pack: the EpicMMOSystem fork is retired in
+favour of upstream 1.9.67, and More World Locations AIO is cut. Their retained evidence stays on
+astral-tricep under `/home/ra/.cache/valheim-lembitu/ticket-62-20260914/` and
+`ticket-32-20260914/` for anyone re-treading that ground.
 
-Consume the retained full-Pack evidence on astral-bicep at `/home/ra/.local/state/lembitu/native-tests/20260913T154603Z-full-pack-497266e6/`, both `run-1/` and `run-2/`. Compare `gameplay-unity.log` and `client-LogOutput.log` with paired `server-unity.log` and `config-server-unity.log`; the rendered-client comparison also covered `config-client-unity.log`, `no-fixtures-unity.log` and `wrong-password-unity.log`. These dated logs establish log-level separation, not either scenario’s rendered-view result or current Pack clearance.
-
-Retain one comparison row per family, identifying the inspected scenario view, corresponding log evidence and outcome. Mark unexercised or unavailable views explicitly unverified; missing artifacts or zero log matches do not prove visual correctness. Route real client rendering defects to #31. If AsyncResourceUpload appears in rendered-client logs, refer to #59 rather than carrying forward its bounded accepted-noise classification.
+One measurement from the StoneOutlook work is worth carrying: a location a mod registers can be
+missing from the mod's own definitions rather than from an operator setting, and a shipped
+soft-reference manifest is the place to check that before assuming a configuration mistake.
 
 ## Capture integrity instrument (#56)
 
@@ -65,95 +66,6 @@ equality and absence of reader framing. Failed integrity or lifecycle checks pro
 before a nonzero exit; input decoding or I/O failures may abort without a complete report.
 `test/retain-pair.test.sh` exercises successful retention, reader framing, real redaction line loss and
 refusal to overwrite an earlier bundle. These fixtures prove the instrument, not game rendering.
-
-## EpicMMO panel drag ownership (#62, 2026-09-14)
-
-The three controllers retain separate contracts, as permitted by #62. The per-controller rationale
-and live source callers are in [EpicMMOSystem's maintenance notes](../../src/forks/EpicMMOSystem/UPSTREAM.md#panel-drag-ownership-62).
-Only comments and documentation changed; no drag implementation, serialized type, setting or caller changed.
-
-Native evidence on astral-tricep is retained under
-`/home/ra/.cache/valheim-lembitu/ticket-62-20260914/`. The source base is
-`ca45304f1ce1ce2ea610842912ffdfc8c5f5104f`, with the three ownership comments applied before
-the measured build. `candidate-binary-identity.sha256` identifies the rebuilt EpicMMOSystem DLL
-and both deployed copies; the client copy matched with `cmp`. The real client/server ran
-Valheim l-1.0.12/network 40, with the isolated retained #61 Pack and a temporary diagnostic plugin.
-`installed-binaries.json` records deployed DLL hashes, including that diagnostic.
-
-`verify.py` produced 16 passing assertions in `verification.json`:
-
-- PointPanel moved from `(0, 0)` to `(-250, -30)`; NavigatePanel moved from `(0, 100)` to `(200, 300)`.
-  Settings remained unchanged during drag and matched the new positions at drag end.
-- Native screen clamping held NavigatePanel at the top/left and PointPanel at the bottom/right
-  of the 1600×900 surface, allowing floating-point rounding below 0.001 pixels.
-- Both panels restored nonzero settings after deliberate position perturbation. The default
-  restore skipped a zero setting; explicit restore applied zero. Saved positions were then restored.
-- After a normal client quit and fresh client launch, both panels reopened at their saved positions.
-  This checks client UI-config persistence, not character/world fixture reuse.
-
-The temporary probe invoked the production `OnBeginDrag`, `OnDrag`, `OnEndDrag` and `RestoreWindow`
-methods on the live panel components from Unity Update. Pointer coordinates came from the real
-client; assertions ran outside Unity. `final-saved.png` and `restarted-restored.png` were visually
-inspected: the attributes panel remained readable at its moved position and the navigation bar
-remained at its saved location behind it. [native-restore/events.jsonl](ssh://astral-tricep/home/ra/.cache/valheim-lembitu/ticket-62-20260914/native-restore/events.jsonl) retains native quit/exit evidence.
-
-Verification boundaries: injected X button drags did not move the panels. The held-button probe
-recorded a focused game, PointPanel raycast hits, `InputSystemUIInputModule`, and legacy
-`Input.GetMouseButton(0) == false`. Direct native callback proof does not attest physical mouse
-dispatch. Initial runs also exposed missing Python/display tooling and an unprotected character
-death; those attempts remain retained, not counted as successful drag evidence. The final probe
-enabled god mode solely to isolate UI verification from combat. No HUD-drag, FriendList,
-rendering-family, multiplayer or full-Pack acceptance is claimed. Diagnostic sources are retained
-in `diagnostic-instrumentation.tar.gz`; the deployed probe and loose diagnostic programs were removed.
-
-## StoneOutlook restoration blocker (#32, 2026-09-14)
-
-MWL 5.1.0 omits the location definition, not an operator setting.
-`Prefabs.AddContainerPrefab` derives `MWL_StoneOutlook1` from its loot chest prefab,
-then calls `LocationDB.GetLocationConfig`. The native lookup returns null.
-`LocationDefinitions.BlackForest` omits StoneOutlook, so the chest registration fails.
-
-A read-only native probe enumerated the three embedded location-prefab bundles.
-Their only StoneOutlook asset was
-[assets/warpprojects/more world locations/blackforest pack 2/containers/mwl_stoneoutlook1_loot_chest_wood1.prefab](ssh://astral-tricep/home/ra/.cache/valheim-lembitu/ticket-32-20260914/diagnostic-LogOutput.log).
-The shipped soft-reference manifest has no StoneOutlook entry. The complete upstream
-tree at `5546c481847e3f169e5a22c12b402db8e20c5acf` has no path matching `outlook`;
-its location definitions also omit StoneOutlook. These checks do not establish that
-an older release could never supply the missing asset.
-
-Historical upstream `e643f76e93a898e343f167cfc50ab72ba46e2aec` retains
-`MWL_StoneOutlook1_Config` in the upstream file [More World Locations_AIO/Src/Locations/LocationConfigs.cs](https://github.com/rakoort/valheim-lembitu/issues/32):
-Black Forest, Coastal group, minimum distance 500, altitude -2 through 1,
-minimum similar-location distance 1024, and slope rotation enabled. That revision
-has no Outlook entry in `AssetPaths.cs` or `LocationsNEW.cs`. Commit
-`9b4897fa15359477cbab2f804831bc6546c774b0` deleted those legacy files.
-Recovering the old config alone does not supply a registered, loadable location.
-
-Evidence lives on astral-tricep under
-`/home/ra/.cache/valheim-lembitu/ticket-32-20260914/`:
-`diagnostic-console.log`, `diagnostic-LogOutput.log`, `run-ticket32.py`,
-`Probe.cs`, `Probe.csproj`, and `diagnostic-saves/`. This is an isolated copy of
-the #64 diagnostic installation, with complete MWL content and public Valheim
-1.0.12/network 40. It retains earlier diagnostic plugins, including the local
-BossRules guard, and adds a read-only asset probe; it is not exact-HEAD Pack acceptance.
-The fresh world is `Ticket32Diagnostic`, ports 2506–2508. No client was launched.
-The server reached native Steam-listener readiness, then the owned process group
-was stopped. The diagnostic assertion failed: `StoneOutlook LocationConfig missing
-in native registration`.
-
-Examined SHA-256 identities:
-
-- MWL ZIP: `525c92b337b918782999d4fdec19688f144cf31981a81b0ca5ba3401da56a315`.
-- MWL DLL: `6e553376a8b0fa5774d395b79991fe49dd95a47266a37a862239389f426c5f84`.
-- Soft-reference manifest: `879003ecd4e9e4a71f752d0948c89bf576e6da57a822211d1d4a105e60cd151c`.
-
-The native probe build succeeded with zero warnings and errors.
-**#32 remains blocked, not implemented or accepted.** Restoration needs a recoverable
-location asset and registration, or a verified upstream correction. No content was
-removed, quantity override invented, or warning suppressed. No StoneOutlook placement,
-seed/coordinate pair, client visit or persistence is claimed. After restoration,
-run the exact-candidate server generation comparison required by #32; #52 owns the
-client visit and reload.
 
 ## EpicLoot Graphic dictionary warnings (#36, 2026-09-15)
 
@@ -209,9 +121,9 @@ and entries after either package changes instead of accepting a matching count.
 
 ## Lessons
 
-- **Separate accepted log evidence from scenario views.** Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38), the per-family rendered-client log-level separation is the accepted required comparison for #38. The per-scenario rendered-view comparison transfers to [#49](https://github.com/rakoort/valheim-lembitu/issues/49) and [#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance. No #49/#52 view is claimed to have been produced or compared.
+- **Separate accepted log evidence from rendered views.** The per-family rendered-client log-level separation was the accepted comparison for #38. The per-scenario rendered-view work it transferred to is cancelled with the scenario tickets (ADR-0010), and no such view was ever produced. A log-level separation is not a rendering result, then or now.
 
-- **Prove chainload from the log, then distinguish noise from failure.** Look for the BepInEx banner, plugin loading and its own runtime lines, plus chainloader completion. The recorded Hello probe additionally proves ServerSync RPC registration and a config broadcast without the pre-1.0 `MissingFieldException`; a banner alone does not show that behaviour. The server directory's own `LogOutput.log`, written under its BepInEx tree at runtime, retains the same output. The documented `libParty.so` exception and early `SteamNetworkingUtils004` warning also occur on vanilla dedicated servers; they are not mod-failure evidence. Conversely, `GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP ports in this setup (`docs/build.md:315-335`).
+- **Prove chainload from the log, then distinguish noise from failure.** Look for the BepInEx banner, plugin loading and its own runtime lines, plus chainloader completion. The retired Hello probe proved ServerSync RPC registration and a config broadcast without the pre-1.0 `MissingFieldException`; with no plugin of ours synchronising config, a clean chainload plus each mod's own runtime lines is what the log can now show, and a banner alone shows neither. The server directory's own `LogOutput.log`, written under its BepInEx tree at runtime, retains the same output. The documented `libParty.so` exception and early `SteamNetworkingUtils004` warning also occur on vanilla dedicated servers; they are not mod-failure evidence. Conversely, `GameServer.Init() failed` followed by `Steam is not initialized` indicates occupied UDP ports in this setup (`docs/build.md:315-335`).
 
 - **Find the display failure before blaming the game stack.** Without Weston's fake seat, Xwayland 24.1.12 aborted in `xwl_cursor_warped_to` when the pointer warped; Valheim's later Bumblelion stack was downstream of losing the display. A disposable-display probe reproduced the crash without Valheim, and adding only `--fake-seat` survived 20 consecutive pointer warps. Default Vulkan also stayed in `loading` with BepInEx disabled, whereas OpenGL reached the menu and native gameplay. This justified `-force-glcore`, not a claim that every bundled mod shader works. On NixOS, the launcher additionally uses `steam-run` when available because launching without its FHS libraries produced missing-libX11/video-device failures (`docs/build.md:339-353`; `scripts/test-client.sh:134-143`).
 
@@ -219,7 +131,7 @@ and entries after either package changes instead of accepting a matching count.
 
 - **Readiness and shutdown must follow native boundaries.** `Game server connected` is Steam registration, before world generation and listener opening. Wait for `Opened Steam server`; the real-child-process regression deliberately holds that second marker back to prove registration cannot release a waiting client. At the other end, a quit acknowledgement precedes Unity finishing saves and unmounting Steam storage. Killing the client immediately after acknowledgement left an already-open storage batch; the coordinator now waits for native process exit, including after failed startup (`scripts/test-native.py:127-140,338-356`; `test/test-native.test.sh:23-67`; `docs/build.md:527-533,611-617`).
 
-- **Separate connection symptoms by controlled comparisons.** After readiness was fixed, the full Pack still stalled during location loading and hit the normal RPC timeout. Removing only client FastAssetBundleLoader or disabling only the SkadiNet stutter guard did not solve it. Removing either MWL or BossRules isolated the interaction: BossRules' pre-sync ServerSync state let a connecting client perform an authority-only reference scan, synchronously loading location prefabs and blocking the main thread. A native server-authority guard corrected the boundary without extending timeouts or removing content. Official BossRules 1.0.10 supplied that predicate, so the temporary local plugin was removed. An initial assertion expecting no client reference file was also wrong: the valid client output is an empty template (`docs/build.md:609-661`).
+- **Separate connection symptoms by controlled comparisons.** After readiness was fixed, the full Pack still stalled during location loading and hit the normal RPC timeout. Removing only client FastAssetBundleLoader or disabling only the SkadiNet stutter guard did not solve it. Removing either the location pack or the boss-rules mod isolated the interaction: a pre-sync ServerSync state let a connecting client perform an authority-only reference scan, synchronously loading location prefabs and blocking the main thread. Both of those mods have since been cut (ADR-0010), which removes the interaction rather than explaining it away. The method is the lesson: a join stall is diagnosed by removing one mod at a time, not by raising timeouts.
 
 - **Serialize what the real client actually returns.** Unity's runtime `JsonUtility` omitted nested response state in the first real-client run. The protocol therefore uses Newtonsoft.Json rather than treating missing observations as successful gameplay. This is a runtime finding, not merely a serializer preference (`docs/build.md:379-384`; `src/plugins/Lembitu.Harness/HarnessControl.cs:86-89`).
 

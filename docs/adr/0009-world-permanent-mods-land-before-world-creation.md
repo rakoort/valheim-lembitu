@@ -46,3 +46,13 @@ corrupts the *world*.
 - Backups in #20 must capture the world in its 1.0 chunked form together with the clan registry and
   character store, because a restore into a server missing any of these three cannot load the save.
 - Anything else world-permanent is now a launch-window decision by definition, not a mid-run option.
+
+## Amendment — 2026-09-15
+
+More World Locations AIO is cut, so the world-permanent set is **Max Dungeon Rooms** and
+**ValheimRAFT**. Its asset-bundle deployment consequence goes with it: `scripts/install-plugins.sh`
+already deploys whole staged trees, and no remaining package ships a `Bundles/` tree of that size.
+
+World Advancement Progression is not world-permanent — its keys live in character saves — but it
+clears the world's global keys on startup, so it belongs in the pack before the launch world is
+created rather than after.

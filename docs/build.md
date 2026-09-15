@@ -83,8 +83,9 @@ me" before a plugin misbehaves at runtime.
 
 Valheim's version numbers are `const`, so the compiler **inlines** them. A plugin built against
 stale references keeps the old value forever — this is exactly how pre-1.0 ServerSync builds break
-on 1.0.7 (issue #2). `Lembitu.Hello` reports the skew: it logs the network version it was compiled
-against and errors if the running server reports a different one.
+on 1.0 (issue #2). Nothing reports that skew for us any more: the probe plugin that logged its
+compiled network version was retired with the rest of our plugins (ADR-0010), so re-extract and
+rebuild after a game update rather than expecting a runtime warning.
 
 ## Adding a plugin
 
@@ -125,7 +126,7 @@ else, add it to the plugin's own `.csproj`:
 `Reference`, not as a separate `<Publicize Include="…" />` item: the package declares empty default
 metadata for that item type, and its task then rejects the empty value.
 
-A port that reaches into most of the engine — `src/forks/EpicMMOSystem` references about fifty
+A port that reaches into most of the engine — the retired EpicMMOSystem fork referenced about fifty
 Unity modules upstream — takes everything `scripts/extract-refs.sh` extracted instead of a list
 that rots:
 
@@ -134,8 +135,7 @@ that rots:
            Exclude="$(ValheimRefDir)assembly_valheim.dll;…" />
 ```
 
-Exclude the assemblies `Directory.Build.props` and `ServerSync.props` already declare, or they are
-referenced twice. One module cannot be referenced at all: `UnityEngine.ImageConversionModule`
+Exclude the assemblies `Directory.Build.props` already declares, or they are referenced twice. One module cannot be referenced at all: `UnityEngine.ImageConversionModule`
 targets netstandard 2.1, which a net472 assembly cannot consume (CS1705).
 
 ## Depending on a library another mod ships
@@ -166,29 +166,24 @@ nix run nixpkgs#ilspycmd -- -r lib/valheim --ilcode <mod>.dll | grep 'ldsfld\|ca
 nix run nixpkgs#ilspycmd -- -r lib/valheim -t ZRoutedRpc lib/valheim/assembly_valheim.dll
 ```
 
-`ZRoutedRpc.Everybody` is the known one: a `const` on 1.0.7, so any assembly compiled when it was a
-field carries an `ldsfld` to storage that no longer exists. That check is how
-`src/forks/EpicMMOSystem` learned its bundled PieceManager was as broken as its bundled ServerSync,
-and why every library it needs is vendored as source and recompiled.
+`ZRoutedRpc.Everybody` is the known one: a `const` on 1.0, so any assembly compiled when it was a
+field carries an `ldsfld` to storage that no longer exists. That check is how the retired
+EpicMMOSystem fork learned its bundled PieceManager was as broken as its bundled ServerSync. The
+same screening applies to adopted packages: a mod that ships prebuilt libraries can pass staging and
+still throw the first time that code runs.
 
 ## Server-synced config
 
-A plugin whose settings must come from the server imports our ServerSync fork:
+Nothing we build needs it. The vendored ServerSync source is gone with its only two consumers, the
+EpicMMOSystem fork and the probe plugin (ADR-0002, ADR-0010), and the remaining fork enforces its
+player limit on the host's own admission path without a handshake.
 
-```xml
-<Import Project="$(RepoRoot)src/forks/ServerSync/ServerSync.props" />
-```
-
-That compiles `src/forks/ServerSync/ConfigSync.cs` into the plugin, along with the three extra
-references it needs. ServerSync is shared source rather than a shared DLL, and our copy names game
-members with `nameof`, so a game update that renames or removes one is a build error here rather
-than a silent failure on the server; ADR-0002 has the reasoning and
-`src/forks/ServerSync/UPSTREAM.md` the detail. `src/plugins/Lembitu.Hello/HelloPlugin.cs` is a
-worked example.
-
-Never bundle a mod's own copy of ServerSync when porting it — delete it and import ours. Every
-pre-1.0 build of it throws `MissingFieldException` on 1.0.7 the moment a mod broadcasts, and one
-vendored copy is one place to fix that.
+What survives is the hazard, and it now belongs to adopted packages rather than to us: every pre-1.0
+build of ServerSync throws `MissingFieldException` the moment a mod broadcasts, because
+`ZRoutedRpc.Everybody` became a `const`. Several pinned packages carry their own ILRepacked copy.
+If a plugin of ours ever needs server-enforced settings again, vendor the library as source and
+recompile it rather than shipping a prebuilt DLL, and name game members with `nameof` so a rename
+is a build error instead of a runtime one.
 
 ## Install loop
 
@@ -199,8 +194,8 @@ scripts/install-plugins.sh <bepinex-dir>      # sync into a server's BepInEx dir
 ```
 
 `dist/` mirrors the BepInEx directory it deploys into: `plugins/` holds our built DLLs and one
-self-contained tree per adopted mod, `patchers/` holds BepInEx patcher DLLs (Fast_AssetBundle_Loader
-ships as a patcher), and `config/` holds config files a package ships as seeds, such as Clan's
+self-contained tree per adopted mod, `patchers/` holds BepInEx patcher DLLs (no pinned package ships
+one today; Fast_AssetBundle_Loader did before it was cut), and `config/` holds config files a package ships as seeds, such as Clan's
 emblems. The installer deploys all three trees preserving relative paths, records every file it
 installed in `.lembitu-installed` at the BepInEx root, and on the next run deletes what it
 installed before but no longer finds in `dist/` — a stale DLL, or a whole stale tree, empty
@@ -237,8 +232,8 @@ scripts/apply-enforced-config.sh <bepinex-config-dir>
 
 A `.cfg` overlay holds only the entries we pin and merges them into the generated file by section
 and exact key, so a mod adding or renaming settings keeps working and a renamed key shows up as a
-duplicate instead of silently reverting. Data files with no merge semantics (BossRules' power
-table) replace wholesale. The run is idempotent; `test/apply-enforced-config.test.sh` pins the
+duplicate instead of silently reverting. Data files with no merge semantics — CreatureManager's
+override YAML, for instance — replace wholesale. The run is idempotent; `test/apply-enforced-config.test.sh` pins the
 merge down. Run it once after the first boot of a server, and again whenever the overlay or a pin
 changes.
 
@@ -325,22 +320,24 @@ the whole argument list, e.g. `scripts/test-server.sh run -world "My World" -por
 DepotDownloader is used instead of SteamCMD: anonymous login, no 32-bit dependencies, one
 self-contained binary pinned by hash.
 
-Chainload is proven by the BepInEx banner and the plugin's own lines in the server log. The last two
-are ServerSync: its RPC registered on `ZNet.Awake`, and a synced config value broadcast without the
-`MissingFieldException` a pre-1.0 build would throw. This September 9 log is historical 1.0.7 proof,
-not acceptance of the latest public game:
+Chainload is proven by the BepInEx banner, each mod's own loading and runtime lines, and the
+chainloader completion message. A pack with no plugin of ours emits no probe line, so read the
+mods' own output and the absence of `MissingFieldException` or `MissingMethodException`. This
+2026-09-15 reduced-pack boot is what a clean one looks like:
 
 ```
 [Message:   BepInEx] BepInEx 5.4.23.5 - valheim_server
-[Info   :   BepInEx] Loading [Lembitu.Hello 0.2.0]
-[Info   :Lembitu.Hello] Lembitu.Hello 0.2.0 loaded on l-1.0.7 (built against network version 39)
+[Info   :   BepInEx] Loading [WorldAdvancementProgression 1.0.0]
+[Info   :WorldAdvancementProgression] Adding Terminal Commands for key management.
+[Info   :   BepInEx] Loading [DiscordConnector 3.1.3]
+[Info   :DiscordConnector] Registered RPC: DiscordConnector_OnNewChatMessage
 [Message:   BepInEx] Chainloader startup complete
-09/09/2026 20:39:47: Valheim version: l-1.0.7 (network version 39)
-Registered 'lembitu.hello ConfigSync' RPC - waiting for incoming connections
-[Info   :Lembitu.Hello] ServerSync broadcast ok (probe = 1788975592)
+09/15/2026 15:17:47: Valheim version: l-1.0.12 (network version 40)
 ```
 
-`BepInEx/LogOutput.log` in the server directory keeps the same output.
+`BepInEx/LogOutput.log` in the server directory keeps the same output. That boot loaded
+twenty-nine plugins and reached the native Steam listener; it is a staging measurement, not
+acceptance.
 
 Vanilla noise to ignore: `DllNotFoundException: libParty.so` and
 `[S_API FAIL] Tried to access Steam interface SteamNetworkingUtils004 before SteamAPI_Init
@@ -349,12 +346,10 @@ succeeded` appear on an unmodded dedicated server too. `GameServer.Init() failed
 
 ## Headless test client
 
-Under [#38’s September 14 scope amendment](https://github.com/rakoort/valheim-lembitu/issues/38),
-the per-family rendered-client log-level separation is the accepted required comparison for #38.
-The per-scenario rendered-view comparison transfers to
-[#49](https://github.com/rakoort/valheim-lembitu/issues/49) and
-[#52](https://github.com/rakoort/valheim-lembitu/issues/52), not unfinished #38 acceptance.
-No #49/#52 view is claimed to have been produced or compared.
+The per-family rendered-client log-level separation recorded below was the accepted comparison for
+[#38](https://github.com/rakoort/valheim-lembitu/issues/38). The per-scenario rendered-view work it
+was transferred to is cancelled with the single-client scenario tickets (ADR-0010), and no such view
+was produced. Acceptance is now one clean full-pack boot plus one manual two-client session.
 
 `scripts/test-client.sh run` requires a logged-in Steam client, the latest stable/public game
 installation matching the test server, and a GPU-backed X display. Its Weston headless launcher

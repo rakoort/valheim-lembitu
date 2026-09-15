@@ -1,7 +1,7 @@
 # ADR-0002: ServerSync vendored once, as shared source
 
 Date: 2026-09-09
-Status: Accepted
+Status: Superseded 2026-09-15
 Issue: #2
 
 ## Context
@@ -58,3 +58,15 @@ that file, and to every fork we are about to port.
   (`ConfigSync.cs:1079-1092`) stays string-based for the same reason.
 - Forks that want ServerSync must not also bundle their own copy: the `<Import>` replaces whatever
   vendoring their upstream shipped with.
+
+## Superseded — 2026-09-15
+
+This decision had exactly two consumers: the EpicMMOSystem fork and `Lembitu.Hello`. Both are
+retired (ADR-0010), and nothing we still ship synchronises config from the server — the remaining
+fork, MaxPlayerCount, enforces its limit on the host's own admission path and needs no handshake.
+`src/forks/ServerSync/` goes with them.
+
+The technical finding behind this ADR stays true and still applies to any adopted package that
+bundles a prebuilt library: a pre-1.0 binary carrying an `ldsfld` to `ZRoutedRpc.Everybody`, now a
+`const`, throws at runtime rather than failing at build. Screening a bundled DLL against the game is
+described in `docs/build.md`.

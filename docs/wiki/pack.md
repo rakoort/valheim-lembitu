@@ -25,13 +25,13 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 
 **Retire what is unpinned.** `dist/.staged-dirs` records owned trees. Each restage wipes current package trees first, removing files absent from the new version, and removes recorded trees no longer present in the staging plan. Top-level plugin build outputs are left alone. The lock likewise loses retired pins; `dotnet clean` is not responsible for this lifecycle (`scripts/stage-stack.sh:23-26`, `scripts/stage-stack.sh:254-281`, `scripts/stage-stack.sh:293-296`, `docs/build.md:294-296`).
 
-**Adopt upstream unless maintaining source buys something necessary.** The original 1.0.7 compatibility rationale disappeared for Clan, STU_Ward, BossRules, PvPBiomeDominions and DetailedLevels when official builds arrived. Forks remain justified only by missing compatibility or explicit project behavior, not their history (`docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md:9-40`). The maintained and planned exceptions are:
+**Adopt upstream unless maintaining source buys something upstream cannot.** The original 1.0.7 compatibility rationale disappeared for Clan, STU_Ward, PvPBiomeDominions and DetailedLevels when official builds arrived, and on 2026-09-15 the same happened to the last content fork. Project-specific behaviour is no longer accepted as a reason to own source: configuration and enforced config reach it (`docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md`). What remains:
 
-- **EpicMMOSystem:** originally lacked a verified working 1.0.7 build; now incorporates upstream 1.9.66 but retains integration removals, vanilla-fermenter behavior and pruned creature XP tables (`docs/modstack.md:52-71`).
-- **ItemRequiresSkillLevel:** adopted at 1.4.7 after its current-game rebuild replaced bundled ServerSync; the compatibility-only fork is removed. The enforced YAML retains character-level equipment rules. Client behavior remains owned by #4.
-- **MaxPlayerCount:** upstream had no 1.0-era release and a stale build, while admission still used a ten-player literal. The maintained fork raises capacity to 20. It is server-only, not something players install in the Pack (`src/forks/MaxPlayerCount/UPSTREAM.md:15-32`, `docs/modstack.md:64-71`, `docs/modstack.md:300-303`).
-- **ValheimRAFT:** adopted at 4.3.2 for disposable-world verification, with the entire cannon prefab family disabled through server-synced config. World-permanent launch and client behavior acceptance remain owned by #26.
-- **ServerSync:** a shared-source library fork, not another mod to install. Each consuming plugin compiles its own copy from one maintained source rather than shipping a shared DLL (`docs/modstack.md:73-74`, `docs/adr/0002-serversync-vendored-as-shared-source.md:25-38`).
+- **MaxPlayerCount:** the only fork. Upstream's 1.2.5 release is binary-only — public source stops at 1.2.4 — and it declares an older BepInEx pack, while admission still uses a ten-player literal. Server-only, not something players install in the Pack (`src/forks/MaxPlayerCount/UPSTREAM.md:15-32`).
+- **WackyEpicMMOSystem:** adopted at 1.9.67. Upstream has a public repository and a current build, and the fork's remaining gains were config: XP tables are files in `BepInEx/config/EpicMMOSystem/`, and the vanilla-fermenter behaviour is a setting.
+- **WackyItemRequiresSkillLevel:** adopted at 1.4.7 after its current-game rebuild replaced bundled ServerSync. The enforced YAML retains character-level equipment rules.
+- **ValheimRAFT:** adopted at 4.3.2, with the entire cannon prefab family disabled through server-synced config. World-permanent launch and client acceptance remain owned by #26.
+- **World Advancement Progression and DiscordConnector:** adopted rather than written, replacing the personal-keys, progression-bridge and Discord-relay plugins that were planned (ADR-0010).
 
 ## Exclusions
 
@@ -40,11 +40,12 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 **The remaining cuts are deliberate, not missing installation work.** The recorded exclusion list gives these reasons (`docs/modstack.md:327-349`):
 
 - InventoryActions conflicts with the larger InventorySlots; SmoothServer duplicates SkadiNet's pacing role; WackysDatabase adds a fork where DataForge covers tuning; Valheim_PvP_Tweaks overlaps PvPBiomeDominions and has old pins; ProtectiveWards duplicates STU_Ward.
-- ServerManager's Discord/logging role belongs to the planned Discord relay. DiscordBot_AWL and DiscordTools require an external bot host rather than a webhook. Discord_Screenshots is client-only with nothing depending on it.
+- ServerManager's Discord/logging role belongs to the adopted DiscordConnector. DiscordBot_AWL, DiscordTools and RustyMods/DiscordBot require an external bot host or two-way chat rather than a webhook. Discord_Screenshots is client-only with nothing depending on it.
 - Warfare was untouched since March 2025. HexResourceTracker, GCValheimStats, Player_Activity and EilifPaths are client-only and unenforceable; EilifPaths also changes gameplay per player.
-- Marketplace_And_Server_NPCs_Revamped is deprecated and pre-1.0; it is a design reference for the Trade Post, not a shipping package.
+- Marketplace_And_Server_NPCs_Revamped is deprecated and pre-1.0; it is a design reference for the deferred Trade Post, not a shipping package.
+- The 2026-09-15 reduction cut ten further mods, each for a stated reason rather than a version problem: BossRules, ProgressivePowers, More World Locations AIO, Fast_AssetBundle_Loader, CaptainValheim, SecondaryAttacks, AdditiveDamageModifier, VeiledRecipes, RepairRequiresMaterials and Groundwork.
 
-**No planned mid-Run content injections or casual removals.** The accepted combination stays fixed; a mid-Run upstream replacement requires an actual breakage and renewed acceptance. More World Locations AIO, Max Dungeon Rooms and ValheimRAFT are world-permanent launch decisions, installed before launch-world creation and never removed during the Run. Retire-on-unpin is a staging mechanism, not evidence that a live save can survive removal (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:32-40`, `docs/adr/0009-world-permanent-mods-land-before-world-creation.md:9-30`).
+**No planned mid-Run content injections or casual removals.** The accepted combination stays fixed; a mid-Run upstream replacement requires an actual breakage and renewed acceptance. Max Dungeon Rooms and ValheimRAFT are the world-permanent launch decisions, installed before launch-world creation and never removed during the Run. World Advancement Progression is not world-permanent, but it clears the world's global keys on startup, so it belongs in the Pack before the launch world exists. Retire-on-unpin is a staging mechanism, not evidence that a live save can survive removal (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:32-40`, `docs/adr/0009-world-permanent-mods-land-before-world-creation.md`).
 
 ## Lessons
 
@@ -60,6 +61,28 @@ safety (#28), a new native gameplay run, or Milestone acceptance.
 **Successful staging proves bytes and declared closure, not gameplay.** Groundwork 1.1.9 passed staging but called a property getter absent from the old 1.0.7 game, which exposed a field instead. The project updated the game rather than treating that old mismatch as a current blocker. Likewise, the old ServerSync binary could load yet throw only on its first config broadcast after a game field became a constant. The verification gate therefore requires clean loading, config broadcast and a two-client session on the current game; a headless boot cannot clear client-only behavior (`docs/modstack.md:185-219`, `docs/modstack.md:285-303`, `docs/adr/0002-serversync-vendored-as-shared-source.md:9-14`).
 
 **Exercise package lifecycle failures, not just extraction.** The staging regression suite uses real zip fixtures in isolated, pre-seeded caches. It checks asset layouts and preserved build output, removal of stale version files and retired trees, unchanged locks on repeat staging, refusal of tampered bytes, rejection of missing or prefix-only dependency versions, and aborting unsupported package shapes before copying. These are the failure boundaries supporting the staging contract (`test/stage-stack.test.sh:8-10`, `test/stage-stack.test.sh:136-258`, `test/stage-stack.test.sh:260-325`).
+
+## Pack reduction — 2026-09-15 (ADR-0010)
+
+The Pack went from thirty packages to twenty-three, two of them new, and every planned plugin
+except the test harness was cancelled. The decision and its accepted losses are in ADR-0010; the
+resulting pin table is in [the mod stack](../modstack.md). At the time of writing this is the
+decision, not the repository state: the lock, enforced config and source deletions are one
+implementation task still to land.
+
+Measured once on a disposable copy on astral-tricep, with no client and no repository changes: all
+twenty-three packages staged with verified hashes and declared closure, the build produced only
+MaxPlayerCount and Lembitu.Harness with zero errors, and the server reached `Chainloader startup
+complete` and the native Steam listener with twenty-nine plugins and no `MissingFieldException` or
+`MissingMethodException`. The thirteen remaining errors are the documented headless noise. This is
+a staging and boot measurement, not acceptance: no gameplay, no client and no two-client session.
+
+Three findings from that boot change what the Pack has to carry. YamlDotNet keeps its place because
+its own detector plugin loads it even though no manifest declares it. EpicMMOSystem 1.9.67 writes
+no `Players.json`, so the stranger's XP-bonus file the retired fork emptied no longer needs an
+overlay. And three adopted packages declare older BepInEx pins — EpicLoot and DiscordConnector name
+5.4.2333, WackyEpicMMOSystem names 5.4.2202 — so the staging closure check needs those recorded as
+deliberate overrides before it will stage the Pack at all.
 
 
 ## Pack refresh verification — 2026-09-14 (#64)

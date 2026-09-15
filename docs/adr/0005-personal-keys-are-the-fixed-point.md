@@ -49,3 +49,22 @@ progress to everyone, which is precisely what #11 exists to prevent.
 - Any future mod that reads world keys is an adoption cost, not a drop-in. That test belongs in the
   verification gate.
 - Boss keys cannot be traded or gifted, so #16's Trade Post never carries progression — only goods.
+
+## Amendment — 2026-09-15
+
+The fixed point stands: progression is per character, and a rival clan gains nothing from your boss
+kill. The mechanism is no longer ours.
+
+- **Personal keys are World Advancement Progression 1.0.0**, configured with `UsePrivateKeys` and
+  `BlockAllGlobalKeys`. Keys live in the character save, raids are evaluated per player, and the key
+  is awarded to everyone within a hundred metres of the chunk host when the boss dies.
+- **The progression bridge is cancelled.** EpicLoot needs no adapter: its own `Item Drop Limits`
+  setting has a `PlayerMustKnowRecipe` mode that reads the requesting player, so gating follows the
+  character rather than the world.
+- **Contribution credit is cancelled.** Presence at the fight earns the key. A damage threshold
+  would have punished the cooperation between clans that the boss scaling is designed to force.
+- **Gear keeps two gates, deliberately.** Character level gates crafting, equipping and consuming
+  through WackyItemRequiresSkillLevel's curated rules; personal keys gate equipment and crafting
+  through World Advancement Progression's `LockEquipment` and `LockCrafting`. Nothing else is
+  key-locked: building, cooking, eating, repairs, portals and boats stay open.
+- **Character-save storage is accepted as authoritative**, with no tamper resistance (ADR-0010).

@@ -48,3 +48,15 @@ write.
 - `src/forks/` holds fewer, larger forks. The convention in `src/forks/README.md` still applies, but
   its examples had to change: Clan and BossRules are no longer ours.
 - Licence obligations shrink with the fork count. Only the four forks need published source.
+
+## Amendment — 2026-09-15
+
+The same reasoning now retires the last content fork. Upstream `WackyMole/WackyEpicMMOSystem` has a
+public repository and shipped 1.9.67 on 2026-09-13, so the premise that no maintained build existed
+is gone, and the fork's remaining gains — curated XP tables, the vanilla-fermenter setting — are
+reachable through the mod's own config files. `src/forks/EpicMMOSystem/` is deleted.
+
+This sharpens the rule rather than changing it: **project-specific behaviour is not a reason to
+fork.** A fork needs a reason upstream cannot supply. MaxPlayerCount is the only case left, because
+its 1.2.5 release is binary-only — the public source stops at 1.2.4 — and no adopted package raises
+the ten-player admission limit.

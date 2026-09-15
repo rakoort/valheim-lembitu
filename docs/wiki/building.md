@@ -19,58 +19,34 @@ The current buildable projects under `src/` are:
 
 | Project | Purpose and source |
 | --- | --- |
-| `src/plugins/Lembitu.Hello/` | Toolchain smoke plugin: startup logging, build/runtime version skew and a ServerSync broadcast (`src/plugins/Lembitu.Hello/Lembitu.Hello.csproj:3-9`). |
 | `src/plugins/Lembitu.Harness/` | Real-client test harness, inert without `-lembitu-harness` (`src/plugins/Lembitu.Harness/Lembitu.Harness.csproj:3-7`). |
-| `src/forks/EpicMMOSystem/` | Character level, attributes, XP and a level band limiting player-versus-player damage (`src/forks/EpicMMOSystem/EpicMMOSystem.csproj:3-21`). |
 | `src/forks/MaxPlayerCount/` | Configurable admission limit and advertised Steam/PlayFab capacities (`src/forks/MaxPlayerCount/MaxPlayerCount.csproj:3-14`). |
 
 ## Exclusions
 
 - **No checked-in extracted binaries or build products.** Game and BepInEx assemblies are local inputs reproduced by extraction, not repository contents. The ignore rules cover `lib/valheim/`, `lib/bepinex/`, `lib/.cache/`, `bin/`, `obj/` and `dist/`; the generated reference lock therefore lives with ignored local inputs, not as a committed dependency lock (`docs/build.md:20-27`; `.gitignore:1-10`; `scripts/extract-refs.sh:20-24`).
 - **No framework DLLs copied from Unity.** Extraction deliberately excludes `mscorlib`, `netstandard` and `System.*`: NuGet supplies the net472 framework references, and combining both sets produces duplicate-type errors. Game and loader references use `Private="false"`, keeping those assemblies out of plugin output because the server already supplies them (`scripts/extract-refs.sh:26-39`; `Directory.Build.props:27-56`).
-- **No standalone ServerSync plugin.** `src/forks/ServerSync/` is a source-library fork with no `.csproj` or separate DLL. Consumers import `ServerSync.props` to compile it into their own plugin (`src/forks/README.md:34-37`).
+- **No vendored ServerSync.** The shared-source library fork existed for the EpicMMOSystem fork and `Lembitu.Hello`; both are retired, and nothing we still build synchronises config from the server (ADR-0002, ADR-0010).
 - **No automatic build of adopted mods.** Root compilation discovers source projects; adopted packages are staged separately. Own plugins and forks remain separate so source ownership and licensing stay visible (`Valheim.Lembitu.proj:9-18`; `docs/build.md:54-55`; `src/forks/README.md:3-5`).
 
 ## Lessons
 
-- **Intact references can still be stale.** Valheim version constants are inlined into plugin DLLs; a game update does not change an already compiled value. The build guide records this failure in pre-1.0 ServerSync on 1.0.7 and identifies `Lembitu.Hello` as a skew diagnostic. Re-extract and rebuild after an update. If the source installation is absent, `--check` reports that local references are intact but game drift is unchecked; that is not proof of compatibility with another installation (`docs/build.md:80-87`; `scripts/extract-refs.sh:150-165`).
+- **Intact references can still be stale.** Valheim version constants are inlined into plugin DLLs; a game update does not change an already compiled value. The build guide records this failure in pre-1.0 ServerSync on 1.0.7. Re-extract and rebuild after an update. If the source installation is absent, `--check` reports that local references are intact but game drift is unchecked; that is not proof of compatibility with another installation (`docs/build.md:80-87`; `scripts/extract-refs.sh:150-165`).
 - **A missing-reference error is an extraction prerequisite, not a compiler fix.** Check the Managed-directory selection and run extraction; an invalid `VALHEIM_MANAGED` or no discovered installation produces an explicit error before copying (`Directory.Build.targets:3-8`; `scripts/extract-refs.sh:49-76`).
 - **Publicizer syntax matters.** Put `Publicize` metadata on the `Reference`; a separate `Publicize` item acquires empty default metadata that its task rejects (`docs/build.md:123-126`).
-- **Broad Unity references need exclusions.** EpicMMOSystem uses a wildcard rather than maintaining a large module list, but excludes shared references to avoid duplicates. `UnityEngine.ImageConversionModule` is also excluded: it targets netstandard 2.1 and causes CS1705 for net472 (`src/forks/EpicMMOSystem/EpicMMOSystem.csproj:49-59`; `docs/build.md:128-139`).
-- **Preserve upstream code rather than rewriting it to silence nullable warnings.** Forks use `Nullable=annotations`; disabling annotations instead reports imported ServerSync's `?` annotations as CS8632. Recorded successful builds still had 13 existing fork warnings, so historical success is not a claim of a warning-free build (`src/forks/README.md:20-27`; `docs/build.md:663-666`).
-- **Compile-time library resolution does not prove runtime binding.** Strong-named .NET Framework libraries bind by exact assembly version. The YamlDotNet Thunderstore package numbered 16.3.1 contains library 16.3.0; EpicMMOSystem therefore pins `[16.3.0]` and excludes runtime assets rather than floating to a newer incompatible library or shipping another copy (`src/forks/EpicMMOSystem/EpicMMOSystem.csproj:43-45; src/forks/EpicMMOSystem/UPSTREAM.md:67-69`; `docs/build.md:141-155`).
+- **Preserve upstream code rather than rewriting it to silence nullable warnings.** A fork sets `Nullable=annotations` rather than absorbing edits to quiet warnings (`src/forks/README.md`).
+- **Compile-time library resolution does not prove runtime binding.** Strong-named .NET Framework libraries bind by exact assembly version, and a Thunderstore package's number is not its assembly version: the YamlDotNet package numbered 16.3.1 contains library 16.3.0. A reference to a staged library therefore pins the exact assembly version and excludes runtime assets rather than floating to a newer one or shipping a second copy (`docs/build.md:141-155`).
+- **A retired fork's lessons outlive it.** The EpicMMOSystem fork, removed on 2026-09-15, is why broad Unity wildcards exclude `UnityEngine.ImageConversionModule` (netstandard 2.1 against net472 gives CS1705) and why a bundled prebuilt library is screened against the game before it is trusted (`docs/build.md:128-139`).
 
-## Container refresh API migration (#61)
+## Retired: container refresh API migration (#61)
 
-On September 14, 2026, `Item.ApplyToAllInstances` changed its container lookup to
-`FindObjectsByType<Container>(FindObjectsSortMode.InstanceID)` at
-`src/forks/EpicMMOSystem/Libs/ItemManager/Item.cs:1334`. Explicit sorting preserves the
-legacy refresh order. The overload still excludes inactive objects. No callback,
-player-inventory traversal, or other item traversal changed.
+The September 14 change lived in `src/forks/EpicMMOSystem/Libs/ItemManager/Item.cs`, which was
+deleted on 2026-09-15 when the fork was retired in favour of upstream 1.9.67 (ADR-0010). Upstream
+owns that code now, and the ticket is closed.
 
-Baseline `fdaf6a3aa2f0fe9bf6e398ef4362737bfa7e408b` and the changed source both built
-against freshly extracted public-game references on astral-tricep. Warnings fell
-from 13 to 12: the container lookup CS0618 disappeared without suppression.
-All 40 repository checks passed.
-
-Native evidence: `/home/ra/.cache/valheim-lembitu/ticket-61-20260914/` on astral-tricep.
-`baseline-build.log`, `candidate-build.log`, `identities.sha256`, `observations.txt`,
-`verification.json`, and `native-replay/` retain the build, input identities,
-measurements, IPC, logs, configuration, and visually inspected `callback.png`.
-The isolated tracked Pack included a diagnostic probe; unrelated working-tree
-changes were excluded. This is callback verification, not full-Pack acceptance.
-
-The probe changed the enabled `Mob Chunks.Weight` setting from 1 to 1.125 through
-`SettingChanged`, reaching the item-stat callback at `Item.cs:1201`. External
-assertions compared all six callback visits with the legacy traversal, including
-their order. Player inventory, a dropped item, and two active chests refreshed;
-the inactive chest remained unvisited at weight 1. The setting was restored.
-Native quit and owned-server shutdown completed.
-
-The first diagnostic selected an XP potion whose stat callbacks are disabled;
-its empty callback sequence correctly failed verification. The corrected probe
-selected an enabled stat setting. Replay used the empty configuration-generation
-world, not that failed probe’s mutated world. `attempt-1/` and `native/` retain the
-failed measurement; `replay-setup-failure/` records a separate fixture-discovery
-failure before launch. Current world saves use named directories with `.fwl2`
-checkpoints, not top-level `.fwl` files. Diagnostic code stays outside the repo.
+Two things it taught are worth keeping. A native probe that observes the wrong surface fails
+usefully: the first attempt selected an XP potion whose stat callbacks are disabled, and its empty
+callback sequence correctly failed verification rather than passing quietly. And current world
+saves use named directories with `.fwl2` checkpoints, not top-level `.fwl` files, which a fixture
+that guesses the older shape will miss. Diagnostic code stays outside the repository; its evidence
+lives on the host that produced it, under `/home/ra/.cache/valheim-lembitu/ticket-61-20260914/`.

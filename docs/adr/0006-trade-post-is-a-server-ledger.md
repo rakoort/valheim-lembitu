@@ -44,3 +44,19 @@ mailbox delivering to players at next login.
   custom items enter the stack (ADR-0004).
 - Contract expiry returns escrow automatically, since expiry is a record with a timestamp rather
   than a chest that must be found and emptied.
+
+## Deferred — 2026-09-15
+
+Not built for this run, and not in the pack. The design stands as written; only its scheduling
+changes (ADR-0010).
+
+Adding it mid-run is safe, and this decision is the reason why: contracts, escrow and balances are
+server records saved with the clan registry, so nothing about them enters the world save and no
+existing saved object has to be reinterpreted. The one exception is the buildable Trade Post itself.
+A new prefab can be added at any time, because nothing references it yet; from the day it ships it
+inherits ADR-0009's one-way property, since removing it would leave saved objects pointing at a
+prefab that no longer exists.
+
+Two constraints must therefore survive the deferral: DataForge stays restricted to tuning, so item
+identities remain stable enough for a ledger to describe goods, and any later pack bump that adds
+the piece has to reach every client on the same day.

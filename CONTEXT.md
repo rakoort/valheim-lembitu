@@ -43,23 +43,24 @@ A buildable claim that controls who may build, open and use things inside its ra
 against clan membership.
 _Avoid_: territory, claim, protection zone
 
-**Trade Post**:
+**Trade Post** (deferred, not built):
 A clan's single buildable trading interface. What players see; the contracts and balances behind it
-are server records, not chests.
+are server records, not chests. Deferred for this run and safe to add mid-run, because the records
+never enter the world save (ADR-0006).
 _Avoid_: market, shop, auction house
 
-**Contract**:
+**Contract** (deferred, not built):
 A standing offer posted at a Trade Post: goods wanted, price paid. Payment is held from the moment
 it is posted, and it can be filled by another clan while its author is offline.
 _Avoid_: order, listing, trade, offer
 
-**Escrow**:
+**Escrow** (deferred, not built):
 The payment a posted contract holds until it is filled, expires or is cancelled. A server-side
 balance, never coins in a container.
 
-**Mailbox**:
+**Mailbox** (deferred, not built):
 The per-player queue that delivers filled-contract goods and returned escrow at next login. How the
-project makes trade work between players who never share an evening.
+project would make trade work between players who never share an evening.
 _Avoid_: inbox, courier, delivery box
 
 ### Progression
@@ -77,34 +78,18 @@ _Avoid_: MMO level, rank, XP level
 A magic item's rarity and the effects rolled on it. The second power curve.
 _Avoid_: item power, loot tier
 
-**Contribution**:
-The share of a creature's fight a player earned, by damage dealt and, at a reduced rate, damage
-taken. The rule that decides who gets XP and keys from a kill.
-_Avoid_: participation, tagging, presence, credit
-
 **Personal key**:
 A boss or progression unlock stored per character, not in world state. Killing a boss advances the
-players who earned it and nobody else.
+players who were there for it and nobody else: the adopted World Advancement Progression mod awards
+the key to every player within a hundred metres of the chunk host when the boss dies. Presence, not
+measured damage, is what earns it — cooperation between clans is the point (ADR-0010).
 _Avoid_: global key, world key, boss flag
 
 **World key**:
-Valheim's own world-wide progression flag. The thing personal keys deliberately replace; several
-adopted mods still read it, which is why the progression bridge exists.
-
-**Progression bridge**:
-Our plugin that answers other mods' progression and creature-level questions from per-character
-state, so adopted mods see personal keys and character levels instead of world keys and raw stars.
-_Avoid_: compatibility shim, patch layer
-
-**Forsaken power mastery**:
-The permanent, level-by-level effects a player's attuned forsaken power grants, earned by boss
-kills.
-_Avoid_: power level, blessing
-
-**Banked XP**:
-The doubled-XP pool that accrues while a player is offline and drains as it is spent. The catch-up
-mechanism for people with a few hours a week.
-_Avoid_: rest XP, bonus pool
+Valheim's own world-wide progression flag. The thing personal keys deliberately replace, and this
+server writes none: global keys are blocked outright. Adopted mods that used to read them are
+configured to read the player instead, which is why EpicLoot gates loot on the requesting player's
+known recipes.
 
 ### The world
 
@@ -132,8 +117,10 @@ source.
 _Avoid_: dependency, third-party install
 
 **Fork**:
-Upstream source maintained by this project because the official mod lacks required game
-compatibility or project-specific behavior.
+Upstream source maintained by this project because no official build works on the game we run, or
+because upstream does not publish the source of the release we need. Wanting different behaviour is
+not a reason: configuration and enforced config reach that without owning someone else's code
+(ADR-0003). One fork remains, MaxPlayerCount.
 _Avoid_: patch, vendored mod, port
 
 **Pin**:

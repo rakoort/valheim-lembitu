@@ -48,3 +48,17 @@ community-supplied EpicLoot and Enchantment System configs before they can be en
   is world content and clan politics, not more multipliers.
 - Adding a third curve mid-run is possible but one-way: EpicLoot-style item data cannot be removed
   without destroying gear.
+
+## Amendment — 2026-09-15
+
+The two curves are unchanged: character level and gear. What changes is what sits beside them.
+
+- **Forsaken power mastery is dropped**, with ProgressivePowers. Powers revert to vanilla, gated per
+  character by personal keys. Mastery was never one of the two curves, and cutting it removes a
+  system whose kill tracking would have had to be re-measured once global keys stopped being written.
+- **AdditiveDamageModifier is cut**, together with CaptainValheim and SecondaryAttacks. The
+  stacked-damage consequence recorded above was a real open risk, and it is now closed by removal
+  rather than by tuning: character level attributes and EpicLoot effects are the only multipliers
+  left on that number.
+- **DataForge stays tuning-only**, for the reason given above — the deferred Trade Post ledger
+  (ADR-0006) needs stable item identity.
