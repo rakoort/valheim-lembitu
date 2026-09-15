@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Upstream's GUID and assembly name, both unchanged. The assembly name is load-bearing
+         beyond the usual reasons: ItemManager resolves asset bundles as
+         "<assembly name>.<folder>.<bundle>", ItemRequiresSkillLevel finds this mod by
+         Type.GetType("API.EMMOS_API, EpicMMOSystem"), and the config file is named after the
+         GUID. -->
+    <PluginGuid>WackyMole.EpicMMOSystem</PluginGuid>
+    <PluginDisplayName>EpicMMOSystem</PluginDisplayName>
+    <AssemblyName>EpicMMOSystem</AssemblyName>
+    <RootNamespace>EpicMMOSystem</RootNamespace>
+    <Version>1.9.62</Version>
+    <!-- Upstream is LangVersion 10 with partial annotations, and the ServerSync source compiled
+         in here is fully annotated: "annotations" accepts both and warns on neither. -->
+    <Nullable>annotations</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>Character level and attributes: XP from kills, attribute points, level display on nameplates, and a level band that limits player-versus-player damage.</Description>
+  </PropertyGroup>
+
+  <Import Project="$(RepoRoot)src/forks/ServerSync/ServerSync.props" />
+
+  <ItemGroup>
+    <!-- The mob-XP tables, the GUI and item bundles, and the localisation files are all read back
+         out of the assembly at runtime (Assembly.GetManifestResourceStream), so the logical names
+         matter: "EpicMMOSystem.asset.mmo_xp", "EpicMMOSystem.Data.Default.json". The SDK's default
+         naming produces exactly those from the paths below. -->
+    <EmbeddedResource Include="asset/epicasset" />
+    <EmbeddedResource Include="asset/epicmmoitems" />
+    <EmbeddedResource Include="asset/mmo_xp" />
+    <EmbeddedResource Include="Data/Default.json" />
+    <EmbeddedResource Include="Data/NonCombat.json" />
+    <EmbeddedResource Include="Data/Players.json" />
+    <EmbeddedResource Include="translations/*.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Upstream parsed the mob-XP tables with a bundled fastJSON. The stack already ships one
+         JSON library - ValheimModding/JsonDotNET 13.0.4, i.e. Newtonsoft.Json - which the server
+         loads from its plugins directory, so this fork uses that instead of adding a second.
+         Exact version, matching the pin; every 13.x carries assembly version 13.0.0.0. -->
+    <PackageReference Include="Newtonsoft.Json" Version="[13.0.4]" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- The managers under Libs/ and the XP-chart loader read YAML: the same YamlDotNet the
+         server loads from its plugins directory, pinned exactly (src/forks/ItemRequiresSkillLevel
+         records why the version is 16.3.0 and not 16.3.1). -->
+    <PackageReference Include="YamlDotNet" Version="[16.3.0]" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Upstream references most of the game's Unity modules. Referencing everything
+         scripts/extract-refs.sh extracted keeps that working without a list to maintain, and
+         Private=false means none of it is copied anywhere. The exclusions are the assemblies
+         Directory.Build.props and ServerSync.props already declare, plus assembly_postprocessing,
+         which is re-declared below because this fork needs its private members. -->
+    <Reference Include="$(ValheimRefDir)*.dll" Private="false" Exclude="$(ValheimRefDir)assembly_valheim.dll;$(ValheimRefDir)assembly_utils.dll;$(ValheimRefDir)assembly_guiutils.dll;$(ValheimRefDir)assembly_postprocessing.dll;$(ValheimRefDir)UnityEngine.dll;$(ValheimRefDir)UnityEngine.CoreModule.dll;$(ValheimRefDir)UnityEngine.UI.dll;$(ValheimRefDir)Unity.TextMeshPro.dll;$(ValheimRefDir)UnityEngine.ImageConversionModule.dll" />
+    <Reference Include="assembly_postprocessing" Private="false">
+      <HintPath>$(ValheimRefDir)assembly_postprocessing.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+  </ItemGroup>
+
+</Project>
