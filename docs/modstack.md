@@ -33,7 +33,7 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 | RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, enchanting, bounties | Gated Drop Mode `PlayerMustKnowRecipe`, so gating reads the player, not world keys |
 | WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | Upstream XP tables untouched |
 | WackyMole/WackyItemRequiresSkillLevel | 1.4.7 | Character-level gates on crafting, equipping and consuming | Curated rules in `WackyMole.ItemRequiresSkillLevel.yml` |
-| sighsorry/CreatureManager | 1.1.14 | Karma and Enforcer encounters; boss level and health scaling | Creature cloning and customisation off; boss health rises by biome tier through `Biome Level Preset` |
+| sighsorry/CreatureManager | 1.1.14 | Karma and Enforcer encounters; creature and boss difficulty tier, spawn level, health and damage scaling | Creature cloning and customisation off; `Biome Level Preset = Hard`, so biome tier sets spawn and boss level |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Server-synced `CannonPrefabs_Enabled = false` |
 | turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
@@ -157,10 +157,15 @@ Read off the generated files in that boot, so the enforced overlays name real ke
   mode reads `Player.m_localPlayer.IsRecipeKnown`, and EpicLoot gates everything when there is no
   local player, so it only works where loot is rolled on a client. The two-client session must show
   real magic drops rather than universal downgrades; if it does not, the fallback is `Unlimited`.
-- **Boss scaling** — `sighsorry.CreatureManager.cfg`, section `[2 - Levels]`
-  (`Biome Level Preset`, `Bosses Follow Biome Level Preset`), which raises boss level by biome tier
-  and therefore boss health through the `Boss` `healthPerLevel` default. Section
-  `[4 - Multiplayer Difficulty]` holds vanilla's per-player scaling. Tier scaling through the preset
+- **Difficulty tier** — `sighsorry.CreatureManager.cfg`, section `[2 - Levels]`
+  (`Biome Level Preset = Hard`, `Bosses Follow Biome Level Preset`). The preset is mostly about
+  ordinary creatures: it sets the level distribution for every natural spawn in a biome, and `Hard`
+  spawns roughly 40% stronger creatures than the `Easy` default. Bosses follow the same preset, so
+  boss level and therefore boss health — through the `Boss` `healthPerLevel` default — rises by
+  biome tier; expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader. `Hard` is not the
+  package default, so it is pinned deliberately (#13). Section
+  `[4 - Multiplayer Difficulty]` holds vanilla's per-player scaling and is left untouched, so extra
+  players help rather than inflating the boss in step with them. Tier scaling through the preset
   avoids committing a copy of `levels.yml`, which the overlay would have to replace wholesale and
   which grows fields with every release.
 
