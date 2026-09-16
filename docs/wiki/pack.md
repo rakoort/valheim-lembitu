@@ -198,9 +198,9 @@ pointed at a zip.
 | Package | Server | Client | Why |
 | --- | --- | --- | --- |
 | `AzumattDev/MaxPlayerCount` | required | **excluded** | A fork, and every surface it patches runs on the host: the admission literal in `ZNet.RPC_PeerInfo`, the `SteamGameServer.SetMaxPlayerCount` prefix, and the two `ZPlayFabMatchmaking` sites. A client is told the server's capacity by the server (`src/forks/MaxPlayerCount/UPSTREAM.md`). |
-| `TOYNBEE/BoneMod` | — | — | **Dropped 2026-09-16.** Cosmetic bone scaling, client-side, and unenforceable from the server, which is the category the review cut. Until #70 lands it is still the builder's only `REQUIRED` entry, and that assertion should be repointed at Jotunn rather than deleted. |
-| `sighsorry/AdminQoL` | — | — | **Dropped 2026-09-16.** None of its twenty-nine settings is server-synced, so its gameplay defaults — no durability loss, no equip delay, no roof requirement — were live for every player and unreachable from the server. |
-| `nwesterhausen/DiscordConnector`, `Digitalroot/Max_Dungeon_Rooms` | required | **excluded from v6** | Server-only. The relay has no client half, and dungeon room counts apply when the server generates the dungeon. Max Dungeon Rooms stays installed on the server, where ADR-0009 requires it for the life of the world. |
+| `TOYNBEE/BoneMod` | — | — | **Dropped 2026-09-16, done in v6.** Cosmetic bone scaling, client-side, and unenforceable from the server, which is the category the review cut. It was the builder's only `REQUIRED` entry; that assertion now names Jotunn, because a client without Jotunn is refused at the handshake outright. |
+| `sighsorry/AdminQoL` | — | — | **Dropped 2026-09-16, done in v6.** None of its twenty-nine settings is server-synced, so its gameplay defaults — no durability loss, no equip delay, no roof requirement — were live for every player and unreachable from the server. Vanilla shelter requirements and durability decay return with it. |
+| `nwesterhausen/DiscordConnector`, `Digitalroot/Max_Dungeon_Rooms` | required | **still shipped, wrongly** | Server-only: the relay has no client half, and dungeon room counts apply when the server generates the dungeon. v6 still carries both, because the builder excludes by name and neither was added to that list. Max Dungeon Rooms stays installed on the server, where ADR-0009 requires it for the life of the world; removing it from the Pack needs one check first, a client without it entering a crypt the server generated. |
 | `Lembitu.Harness` | never | never | Test infrastructure. Inert without `-lembitu-harness`, kept in the repository for future acceptance work, and asserted absent from a player's pack. |
 
 **Which side each mod belongs to is recorded once**, in `docs/modstack.md` under "Where each mod
@@ -208,8 +208,40 @@ runs", and derived from evidence rather than package descriptions: the server's 
 announcements at join name the fifteen mods it enforces on clients, and the rest are classified by
 where their behaviour actually executes. The three rows above are the only ones the builder acts
 on today. The 2026-09-16 review found the pack also ships `DiscordConnector` and
-`Max_Dungeon_Rooms`, both server-only, plus `AdminQoL`, which is being dropped — inert on a client
-but part of a 128 MB download every player extracts by hand. Trimming that list is #70's work.
+`Max_Dungeon_Rooms`, both server-only — inert on a client but part of a 128 MB download every
+player extracts by hand. Trimming those two is still open.
+
+### Pack v6 — 2026-09-16 (#70)
+
+Two client-only mods out, and the first repository-owned config seeds in.
+
+`lembitu-client-pack-2026-09-16-v6.zip` carries 22 plugin directories against v5's 24; the pin
+table and `docs/modstack.lock.json` are down from 23 pins to 21, and the staging tripwire that
+guards against a table losing rows unnoticed moved with them. Both dropped packages were pruned
+from the server tree as well, because a mod the Pack no longer carries but the server still loads
+is a version mismatch waiting at the next join.
+
+**Config seeds are new, and they exist for one reason: some decisions the server cannot hold.**
+`config/client/` mirrors `BepInEx/config` and is copied into the archive *after* the package
+trees, so a package's own shipped file cannot overwrite ours; the builder then asserts each seed
+landed, because a seed that quietly failed to copy is a decision that silently did not happen.
+Each file is partial — BepInEx reads what is there and writes every other registered entry at its
+default on first run — so seeding three keys does not freeze the other two hundred.
+
+Two seeds ship today, both of them keys marked "Not Synced with Server":
+
+- `randyknapp.mods.epicloot.cfg` — the muted rarity palette (weathered iron, bronze, moss, tanned
+  leather, ember, bruised slate, and a muted set-item colour in place of neon cyan) and
+  `Use Generated Magic Item Names = false`. Stock is six saturated hues that the first tester
+  called a bag of Skittles against Valheim's rustic look, plus an invented name on a level-1 kill.
+- `WackyMole.EpicMMOSystemUI.cfg` — `3.1StaminaColor`, `4.1HPColor` and `5.1EitrColor` set to
+  `none`, which those keys' own descriptions define as "make vanilla", so health, stamina and
+  eitr go back to the game's own bars. The exp fill colour is deliberately left set: `none` there
+  removes the XP bar rather than restoring anything, and the XP bar is the part worth keeping.
+
+A player edits these afterwards at will; they are display, not rules. What a seed cannot do is
+change anything the server decides, which is exactly why the palette is here and the drop rates
+are not.
 
 **Staging is delegated, assertions are not.** `scripts/build-client-pack.sh` calls
 `scripts/stage-stack.sh` for pin parsing, SHA-256 verification against `docs/modstack.lock.json`,

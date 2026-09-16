@@ -20,9 +20,10 @@ down are the runs that established the pack, not a prediction of it.
 
 ## Adopted upstream
 
-Every mod here is intended for the server *and* client pack at exactly this version (BoneMod is
-client-side). Candidate staging is not deployment or verification. "Enforced config" is a deliberate
-deviation from the defaults and belongs in server-locked config rather than a player's file.
+Every mod here is intended for the server *and* client pack at exactly this version, except the
+two the Pack withholds as server-only: DiscordConnector and Max Dungeon Rooms. Candidate staging
+is not deployment or verification. "Enforced config" is a deliberate deviation from the defaults
+and belongs in server-locked config rather than a player's file.
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
@@ -40,12 +41,10 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
 | sighsorry/InventorySlots | 1.4.17 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
 | turbero/DetailedLevels | 2.1.3 | Skill progress readout | — |
-| sighsorry/AdminQoL | 1.1.3 | Admin console GUI and item sets | **Dropped 2026-09-16** — client-decided, unenforceable (#70) |
 | sighsorry/DataForge | 1.3.4 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
 | sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
-| TOYNBEE/BoneMod | 1.0.2 | Cosmetic bone scaling (client-side) | **Dropped 2026-09-16** — client-only, unenforceable (#70) |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
 | ValheimModding/YamlDotNet | 16.3.1 | Library | Nothing declares it since the EpicMMOSystem fork was retired; the acceptance boot decides whether it stays |
@@ -108,11 +107,11 @@ them.
 | TOYNBEE/BoneMod | **Dropped.** Cosmetic bone scaling, client-side, pointless on the server, and unenforceable by the same argument (#70) |
 | Lembitu.Harness | **Kept in the repository, never in the Pack.** It is our test harness for future acceptance work, inert without `-lembitu-harness`, and the builder asserts it is absent from a player's pack |
 
-Dropping BoneMod needs one builder change, not just a pin removal: `scripts/build-client-pack.sh`
-asserts that a required client-side package is present, and BoneMod is currently the only entry in
-that list. The assertion exists to catch a pack that silently lost client content, so it should be
-repointed rather than deleted — Jotunn is the candidate, because a client without it is refused at
-the handshake outright. `test/client-pack.test.sh` covers that assertion and moves with it.
+Both drops are done. `scripts/build-client-pack.sh` asserts that a required client-side package is
+present, to catch a pack that silently lost content, and BoneMod was the only entry in that list;
+the assertion is repointed to Jotunn rather than deleted, because a client without Jotunn is
+refused at the handshake outright, so its absence is a hard failure rather than a missing feature.
+`test/client-pack.test.sh` covers that assertion and moved with it.
 
 **The pack also ships server-only mods.** The v5 archive contains `DiscordConnector` and
 `Max_Dungeon_Rooms`; both leave in v6. They are inert on a client but they inflate a 128 MB

@@ -66,7 +66,7 @@ cat > "$WORK/modstack.md" <<'MD'
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
-| acme/BoneMod | 1.0.2 | Cosmetic bone scaling (client-side) | — |
+| acme/Jotunn | 1.0.2 | Library the handshake requires | — |
 | acme/Clan | 1.0.10 | Clans | — |
 
 ## Forks
@@ -112,9 +112,9 @@ make_zip() {  # make_zip <zip> <entry:content>...
   rm -rf "$dir"
 }
 
-make_zip "$CACHE/acme-BoneMod-1.0.2.zip" \
-  'plugins/BoneMod.dll:BoneMod' \
-  'manifest.json:{"name":"BoneMod","version_number":"1.0.2","dependencies":[]}'
+make_zip "$CACHE/acme-Jotunn-1.0.2.zip" \
+  'plugins/Jotunn.dll:Jotunn' \
+  'manifest.json:{"name":"Jotunn","version_number":"1.0.2","dependencies":[]}'
 make_zip "$CACHE/acme-Clan-1.0.10.zip" \
   'plugins/Clan.dll:Clan' \
   'BepInEx/config/Clan/emblem.png:emblem' \
@@ -123,7 +123,7 @@ make_zip "$CACHE/acme-Clan-1.0.10.zip" \
 LOCK="$WORK/lock.json"
 {
   printf '{\n'
-  printf '  "acme/BoneMod@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-BoneMod-1.0.2.zip" | cut -d' ' -f1)"
+  printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
   printf '  "acme/Clan@1.0.10": "%s"\n'   "$(shasum -a 256 "$CACHE/acme-Clan-1.0.10.zip" | cut -d' ' -f1)"
   printf '}\n'
 } > "$LOCK"
@@ -141,7 +141,7 @@ OUT1="$WORK/out1"
 if build "$OUT1"; then
   archive="$OUT1/lembitu-client-pack-t.zip"
   listing="$(unzip -Z1 "$archive")"
-  if grep -qx 'BepInEx/plugins/BoneMod/BoneMod.dll' <<<"$listing" \
+  if grep -qx 'BepInEx/plugins/Jotunn/Jotunn.dll' <<<"$listing" \
      && grep -qx 'BepInEx/plugins/Clan/Clan.dll' <<<"$listing" \
      && grep -qx 'BepInEx/config/Clan/emblem.png' <<<"$listing"; then
     report ok "stages the client-side packages and their config seeds"
@@ -150,6 +150,43 @@ if build "$OUT1"; then
   fi
 else
   report fail "stages the client-side packages and their config seeds"
+fi
+
+# --- 1b. our own client seeds ship, and beat a package's copy ----------------------------------
+# The rarity palette and the HUD colours are "Not Synced with Server", so the Pack is the only
+# place they can be set. A seed that does not reach BepInEx/config, or that a package's own file
+# overwrites, is a decision that silently did not happen.
+
+SEEDS="$WORK/client-seeds"
+mkdir -p "$SEEDS/Clan"
+printf 'ours\n' > "$SEEDS/Clan/emblem.png"
+printf '[7 - Item Colors]\nMagic Rarity Color = #8a9ba8\n' > "$SEEDS/randyknapp.mods.epicloot.cfg"
+
+OUTS="$WORK/out-seeds"
+if CLIENT_SEEDS="$SEEDS" build "$OUTS"; then
+  seeded="$WORK/seeded"; rm -rf "$seeded"; mkdir -p "$seeded"
+  unzip -qo "$OUTS/lembitu-client-pack-t.zip" -d "$seeded"
+  if grep -q 'Magic Rarity Color = #8a9ba8' "$seeded/BepInEx/config/randyknapp.mods.epicloot.cfg" \
+     && [[ "$(cat "$seeded/BepInEx/config/Clan/emblem.png")" == "ours" ]]; then
+    report ok "a repository config seed ships and overrides the package's own copy"
+  else
+    report fail "a repository config seed ships and overrides the package's own copy"
+  fi
+else
+  report fail "a repository config seed ships and overrides the package's own copy"
+fi
+
+# A seed the build fails to place is a silent loss, so the builder asserts each one landed rather
+# than trusting the copy. Point it at a seed directory it cannot read to prove the assertion runs.
+if CLIENT_SEEDS="$WORK/no-such-seeds" build "$WORK/out-noseed"; then
+  listing="$(unzip -Z1 "$WORK/out-noseed/lembitu-client-pack-t.zip")"
+  if ! grep -q 'randyknapp' <<<"$listing"; then
+    report ok "an absent seed directory is not an error, and seeds nothing"
+  else
+    report fail "an absent seed directory is not an error, and seeds nothing"
+  fi
+else
+  report fail "an absent seed directory is not an error, and seeds nothing"
 fi
 
 # --- 1c. mods are nested under BepInEx, not at the game root ----------------------------------
@@ -208,7 +245,7 @@ fi
 # --- 3. the file inventory lists what a player installs, and nothing else --------------------
 
 versions="$OUT1/lembitu-client-pack-t.versions.txt"
-if grep -q 'BepInEx/plugins/BoneMod/BoneMod.dll' "$versions" && ! grep -q 'staged-dirs' "$versions"; then
+if grep -q 'BepInEx/plugins/Jotunn/Jotunn.dll' "$versions" && ! grep -q 'staged-dirs' "$versions"; then
   report ok "writes a per-file inventory with hashes and no builder bookkeeping"
 else
   report fail "writes a per-file inventory with hashes and no builder bookkeeping"
@@ -268,7 +305,7 @@ cat > "$WORK/modstack-serveronly.md" <<'MD'
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
-| acme/BoneMod | 1.0.2 | Cosmetic (client-side) | — |
+| acme/Jotunn | 1.0.2 | Library | — |
 | acme/MaxPlayerCount | 1.2.5 | Player cap (server-only) | — |
 MD
 
@@ -277,7 +314,7 @@ make_zip "$CACHE/acme-MaxPlayerCount-1.2.5.zip" \
   'manifest.json:{"name":"MaxPlayerCount","version_number":"1.2.5","dependencies":[]}'
 {
   printf '{\n'
-  printf '  "acme/BoneMod@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-BoneMod-1.0.2.zip" | cut -d' ' -f1)"
+  printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
   printf '  "acme/MaxPlayerCount@1.2.5": "%s"\n' "$(shasum -a 256 "$CACHE/acme-MaxPlayerCount-1.2.5.zip" | cut -d' ' -f1)"
   printf '}\n'
 } > "$WORK/lock-serveronly.json"
@@ -335,21 +372,21 @@ printf '%s\n' '#!/bin/sh' 'file_out="$(LD_PRELOAD="" file -b "${executable_path}
 
 # --- 6. a tampered package is refused by the stager's hash check ------------------------------
 
-printf 'tampered\n' > "$CACHE/acme-BoneMod-1.0.2.zip"
+printf 'tampered\n' > "$CACHE/acme-Jotunn-1.0.2.zip"
 if ! build "$WORK/out6" && grep -qi "hash mismatch" "$WORK/out"; then
   report ok "refuses a package whose bytes do not match the lock"
 else
   report fail "refuses a package whose bytes do not match the lock"
 fi
-make_zip "$CACHE/acme-BoneMod-1.0.2.zip" \
-  'BoneMod/BoneMod.dll:BoneMod' \
-  'BoneMod/manifest.json:{"name":"BoneMod","version_number":"1.0.2","dependencies":[]}'
+make_zip "$CACHE/acme-Jotunn-1.0.2.zip" \
+  'Jotunn/Jotunn.dll:Jotunn' \
+  'Jotunn/manifest.json:{"name":"Jotunn","version_number":"1.0.2","dependencies":[]}'
 
 # --- 7. --list prints the client pin list without downloading or writing ----------------------
 
 if [[ -x "$STAGER" ]]; then
   listed="$("$BUILDER" --list --pins "$WORK/modstack.md" 2>/dev/null)"
-  if grep -q 'BoneMod' <<<"$listed" && grep -q 'Clan' <<<"$listed"; then
+  if grep -q 'Jotunn' <<<"$listed" && grep -q 'Clan' <<<"$listed"; then
     report ok "--list prints the client pin list"
   else
     report fail "--list prints the client pin list"

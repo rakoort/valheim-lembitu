@@ -57,9 +57,16 @@ LIST=0
 # Plugins that must NOT reach a player. Matched as path components anywhere in the staged tree, so a
 # rename of the containing directory does not quietly reintroduce one.
 EXCLUDED=(MaxPlayerCount Lembitu.Harness)
-# Adopted packages a client needs. BoneMod is cosmetic and client-side; if it ever stops being
-# staged, the pack silently loses a feature rather than failing loudly.
-REQUIRED=(BoneMod)
+# Adopted packages a client needs. Jotunn, because a client without it is refused at the
+# handshake outright: its absence is a hard failure rather than a feature nobody notices. This
+# assertion used to name BoneMod, which the 2026-09-16 review dropped along with every other
+# client-only mod (#70).
+REQUIRED=(Jotunn)
+
+# Repository-owned client configuration seeds, copied over the package seeds after staging. These
+# are the settings the server cannot hold - every key in them is "Not Synced with Server" - so
+# they ship with the Pack or they do not happen at all.
+CLIENT_SEEDS="${CLIENT_SEEDS:-$REPO_ROOT/config/client}"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
@@ -221,6 +228,18 @@ for tree in plugins patchers config; do
   fi
 done
 
+# Our own client seeds land last, so they win over a package's shipped default rather than being
+# overwritten by it. Each is a partial file: BepInEx reads what is there and writes the remaining
+# registered entries at their defaults on first run, so seeding three keys does not freeze the
+# other two hundred (#70).
+if [[ -d "$CLIENT_SEEDS" ]]; then
+  mkdir -p "$stage/BepInEx/config"
+  while IFS= read -r seed; do
+    cp -a "$CLIENT_SEEDS/$seed" "$stage/BepInEx/config/$seed"
+    printf 'seeded BepInEx/config/%s\n' "$seed" >&2
+  done < <(cd "$CLIENT_SEEDS" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)
+fi
+
 # --- assertions --------------------------------------------------------------------------------
 
 # Absence: our server-only plugin and our test harness must not be in a player's pack. The search
@@ -257,9 +276,18 @@ for required in \
   "doorstop_config.ini" \
   "winhttp.dll" \
   "valheim_Data/start_game_bepinex.sh" \
-  "BepInEx/plugins/BoneMod"; do
+  "BepInEx/plugins/Jotunn"; do
   [[ -e "$stage/$required" ]] || die "client pack is missing $required; a player could not run it"
 done
+
+# The seeds are the only reason a player's rarity colours and HUD are what the run decided, and
+# nothing else in the archive would look wrong if they were missing. Assert each one landed.
+if [[ -d "$CLIENT_SEEDS" ]]; then
+  while IFS= read -r seed; do
+    [[ -e "$stage/BepInEx/config/$seed" ]] \
+      || die "client pack is missing the config seed BepInEx/config/$seed"
+  done < <(cd "$CLIENT_SEEDS" && find . -type f | sed 's|^\./||')
+fi
 # At least one doorstop library per supported platform: a Windows player needs the DLL, a Linux
 # player the .so, and a Mac player the .dylib - which only injects under Rosetta, since it is
 # x86_64 only. Shipping one platform's library silently breaks the others.
