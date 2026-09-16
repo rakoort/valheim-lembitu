@@ -62,6 +62,32 @@ safety (#28), a new native gameplay run, or Milestone acceptance.
 
 **Exercise package lifecycle failures, not just extraction.** The staging regression suite uses real zip fixtures in isolated, pre-seeded caches. It checks asset layouts and preserved build output, removal of stale version files and retired trees, unchanged locks on repeat staging, refusal of tampered bytes, rejection of missing or prefix-only dependency versions, and aborting unsupported package shapes before copying. These are the failure boundaries supporting the staging contract (`test/stage-stack.test.sh:8-10`, `test/stage-stack.test.sh:136-258`, `test/stage-stack.test.sh:260-325`).
 
+**A mod's own data file is changed with a patch, not a fork.** EpicLoot's `loottables.json` is a
+99 KB table the mod owns and regenerates, so committing an edited copy would go stale on the
+next release. The mod reads `BepInEx/config/EpicLoot/patches/*.json` recursively and applies them
+over its embedded default, which is the seam to use: `config/enforced/EpicLoot/patches/loottables.json`
+holds six `Overwrite` patches against `$.MagicEffectsCount.<Rarity>`, and the overlay applier
+copies it wholesale into exactly the directory `FilePatching.GetPatchesDirectoryPath` computes
+(#73; provenance in `docs/research.md`).
+
+Three properties of that mechanism are worth keeping in mind. `RequireAll: true` turns a path
+that matches nothing from a silent no-op into a logged error, which is the only reason a renamed
+key would ever be noticed. `ConfigVersionManager.RefreshUnmodifiedConfigs` short-circuits any
+domain that has patches, so neither a mod update nor a declined hash can invalidate one, and
+`WrittenHash` in `configstate.json` becomes a pure function of the embedded default plus the
+patch set — a reliable detector of whether the patch reached the server. And the copy the mod
+writes into its own baseconfig directory on the server is a *generated artifact* once a patch
+exists: it is never committed, and a hand edit there is overwritten on the next boot.
+
+The table is server-authoritative. `ELConfig` registers it for Jotunn initial synchronisation and
+`SynchronizationManager.SynchronizeInitialData` pushes it to every connecting peer, so it belongs
+on the server and never in the client Pack; a Pack seed would be overwritten at join.
+
+One caveat that makes a typo dangerous rather than loud: `LootRoller.GetEffectCountsPerRarity`
+falls back to its defaults only when a rarity's array is absent or empty. A non-empty array whose
+rows are all malformed yields zero effects with no fallback, so the generated file is read back
+after deployment rather than assumed.
+
 ## Pack reduction — 2026-09-15 (ADR-0010)
 
 The Pack went from thirty packages to twenty-three, two of them new, and every planned plugin
