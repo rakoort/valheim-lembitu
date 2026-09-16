@@ -66,6 +66,37 @@ drifted server accepting players. The backup unit runs it after each hourly capt
 between starts surfaces as a failed unit within the hour instead of next evening
 (`config/backup/lembitu-backup.service`).
 
+**Never apply the overlay to a running server — that is what undoes an apply.** Measured on
+2026-09-16 while applying this very review: the applier wrote 35 entries to the live tree with
+the container up, and within seconds EpicLoot logged
+`Config file ... randyknapp.mods.epicloot.cfg changed on disk, reloading it`. The ServerSync-locked
+mods answered a mid-session edit by writing their in-memory values back over the file. The next
+drift check found 16 of the 35 keys returned to package defaults, with nothing in any log calling
+it a failure. That is the silent revert of the original incident, reproduced on demand, and it
+means the mechanism was never a forgotten step: it was the order of operations.
+
+`scripts/launch-server.sh restart` is therefore the only supported way to change enforced
+configuration on a live server. It stops the container, applies while nothing holds the files,
+starts, waits for that boot's chainloader, and verifies. `docker restart` skips all of it.
+
+**A value the mod cannot parse reverts the key, loudly but harmlessly.** The same apply set
+`Gated Freebuild Mode = PlayerMustKnowRecipe`, which `local/decisions-2026-09-16.md` had asked
+for. That key's type is `GatedPieceTypeMode`, whose members are only `Unlimited`,
+`BossKillUnlocksCurrentBiomePieces` and `BossKillUnlocksNextBiomePieces`, so the server logged
+`Requested value 'PlayerMustKnowRecipe' was not found` and wrote the default back. Both boss-kill
+modes read world keys this server never sets, which would freeze the Freebuild effect at Meadows
+pieces for the run, so the overlay pins `Unlimited`. The general rule: the enum a key accepts is
+read off the generated file's own `Acceptable values` comment, never assumed from a sibling key
+that happens to share a vocabulary.
+
+**The image's updater can empty the plugin directory on a restart.** Also observed on that boot:
+`valheim-bootstrap` syncs `/config/bepinex/plugins/` into the runtime BepInEx tree, and then
+`valheim-updater` decided the server "was updated from Steam" and extracted BepInExPack over the
+same tree, leaving `BepInEx/plugins` empty and the boot reporting `0 plugins to load`. The source
+directory was untouched, so the following start restores it — but a server that boots with no
+plugins is a vanilla server on a modded world, which is worse than drift. Any restart is
+therefore checked for the plugin count, not only for the config.
+
 **A mod the server cannot enforce is not a mod this project keeps.** AdminQoL taught it: none of
 its twenty-nine settings is server-synced, so its defaults — no durability loss from damage or use,
 no equip delay, no crafting-station roof requirement — were live for everyone and unreachable from
