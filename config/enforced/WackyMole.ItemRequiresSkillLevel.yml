@@ -12,6 +12,12 @@
 # of each armour tier past bronze, which is where borrowed gear starts to matter. The playtest
 # (#18) is where the numbers get argued about. The server logs, per rule, whether the prefab exists
 # and whether the requirement can be met, so a typo here is visible in BepInEx/LogOutput.log.
+#
+# Crafting is left open and only equipping is refused (#68): a player may craft ahead of their
+# level and carry the armour until they grow into it, which keeps a crafting trip worth making.
+# The world-progression half of the gate still blocks the craft itself through World Advancement
+# Progression's `LockCrafting`, so "craft ahead" means ahead of character level, not ahead of
+# boss keys.
 RequirementGroups:
   - Prefabs:
       - ArmorIronChest
@@ -21,7 +27,7 @@ RequirementGroups:
       - Skill: Level
         Level: 20
         EpicMMO: true
-        BlockCraft: true
+        BlockCraft: false
         BlockEquip: true
         ExhibitionName: Character Level
   - Prefabs:
@@ -32,7 +38,7 @@ RequirementGroups:
       - Skill: Level
         Level: 35
         EpicMMO: true
-        BlockCraft: true
+        BlockCraft: false
         BlockEquip: true
         ExhibitionName: Character Level
   - Prefabs:
@@ -43,7 +49,7 @@ RequirementGroups:
       - Skill: Level
         Level: 50
         EpicMMO: true
-        BlockCraft: true
+        BlockCraft: false
         BlockEquip: true
         ExhibitionName: Character Level
   - Prefabs:
@@ -54,6 +60,6 @@ RequirementGroups:
       - Skill: Level
         Level: 65
         EpicMMO: true
-        BlockCraft: true
+        BlockCraft: false
         BlockEquip: true
         ExhibitionName: Character Level

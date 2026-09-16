@@ -13,12 +13,14 @@ explicitly does not prove an eleventh simultaneous connection (`docs/modstack.md
 
 **Enforced configuration is the server's deliberate deviation from mod defaults.** It belongs in server-locked configuration, not a player's file. The committed overlay is `config/enforced/`; it is applied to the files the mods generate on first boot. This is distinct from the package-supplied configuration seeds deployed by the installer (`docs/modstack.md:18-20`; `docs/build.md:201-230`). The current overlay owns these choices:
 
-- Clan configuration is locked and friendly fire is off. Clan is the only membership authority; guest connections must be resolved through Clan rather than by comparing primary membership IDs. Ward and other allied-player integrations must use that same answer (`config/enforced/sighsorry.Clan.cfg:1-7`; `docs/adr/0008-clan-is-the-only-membership-authority.md:12-38`).
-- PvP remains each player's flag: all nine biome rules are `PlayerChoose`, and Wards follow the biome rule. The server pins death retention and grave-looting rules: flagged players keep equipped and hotbar items and may loot another tombstone; unflagged players do not receive those permissions or retention. No-item-loss remains off in both cases (`config/enforced/Turbero.PvPBiomeDominions.cfg:16-56`). InventorySlots' independent keep-on-death system is disabled so it cannot compete with that authority (`config/enforced/sighsorry.InventorySlots.cfg:1-6`).
-- Personal keys are enforced in `config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`: private keys on, the world's global key list blocked, and private raids on. It also names what progression gates, which is more than gear: `LockEquipment` and `LockCrafting` (ADR-0005), `LockCooking` and `LockEating` (added by the 2026-09-16 review, amending ADR-0005), plus `LockGuardianPower` and `LockBossSummons`, so forsaken powers and boss altars follow each character's own keys. Equipment repair, building, building repair and taming are pinned *off* against a package default that turns them on. Every one of these locks is material-scoped, so a keyless character still cooks and eats Meadows food and builds in wood. The skill manager is now *on*, with the gain ceiling pinned at the vanilla 100 and the drain floor left to `UseBossKeysForSkillLevel`, so a death costs a veteran less than a newcomer; the floor and ceiling are decided independently in the mod's own `SkillsManager.UpdateCache` (ADR-0005, ADR-0010).
+- Clan configuration is locked, friendly fire is off and clan positions are shared. Clan is the only membership authority; guest connections must be resolved through Clan rather than by comparing primary membership IDs. Ward and other allied-player integrations must use that same answer. Position sharing is now a clan privilege rather than a map feature, because the map hides everyone else (`config/enforced/sighsorry.Clan.cfg`; `docs/adr/0008-clan-is-the-only-membership-authority.md:12-38`).
+- PvP remains each player's flag: all nine biome rules are `PlayerChoose`, and Wards follow the biome rule. The server pins death retention and grave-looting rules: flagged players keep equipped and hotbar items and may loot another tombstone; unflagged players do not receive those permissions or retention. No-item-loss remains off in both cases. The separate `[3 - Map Position]` block, which reuses the same nine key names, is now pinned too: every biome is `HidePlayer`, so no player's position appears on another's map and the ward override defers to the biome rules (`config/enforced/Turbero.PvPBiomeDominions.cfg`). InventorySlots' independent keep-on-death system is disabled so it cannot compete with that authority (`config/enforced/sighsorry.InventorySlots.cfg:1-6`).
+- Personal keys are enforced in `config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`: private keys on, the world's global key list blocked, and private raids on. It also names what progression gates, which is more than gear: `LockEquipment` and `LockCrafting` (ADR-0005), `LockCooking` and `LockEating` (added by the 2026-09-16 review, amending ADR-0005), plus `LockGuardianPower` and `LockBossSummons`, so forsaken powers and boss altars follow each character's own keys. Equipment repair, building and building repair are pinned *off* against a package default that turns them on; taming is pinned off at its own default, and `AdminBypass` off so an admin plays the same run as everyone else. Every one of these locks is material-scoped, so a keyless character still cooks and eats Meadows food and builds in wood. The boat, portal and nine `[PortalUnlocking]` key names are pinned empty, which is vanilla: no key opens ore hauling, which is the `Portals hard` launch rule said a second time. The skill manager is now *on*, with the ceiling pinned at the vanilla 100 and the floor following `UseBossKeysForSkillLevel` at 10 per private key, so a character who was present for five boss kills starts a fresh skill at 50; the floor and ceiling are decided independently in the mod's own `SkillsManager.UpdateCache` (ADR-0005, ADR-0010).
 - PortalRules configuration is locked and the portal map is disabled. DataForge and CreatureManager are locked, with their committed data files pinning an empty override state rather than silently accepting future package examples. CreatureManager additionally carries the difficulty tier: `Biome Level Preset = Hard` plus `Bosses Follow Biome Level Preset` in its `[2 - Levels]` section. The preset is primarily about ordinary creatures — it sets the level distribution for every natural spawn in a biome, and `Hard` gives roughly 40% stronger spawns than the `Easy` default (expected level 1.10 in Meadows rising to 3.22 in Ashlands) — while the earliest biomes still spawn at level 1 most of the time (90% in Meadows, 68% in Black Forest), so a new character is not softlocked. Bosses follow the same preset, so boss level and therefore boss health through `Boss.healthPerLevel` rises by biome tier: expected health ×1.05 for Eikthyr to ×2.11 for Fader, a 2.01× gradient. `Hard` is not the package default, which is why it is pinned: an upstream flip or a fresh install must not silently rebalance the run. Observed boss health and any further retune belong to #13 and #10's two-client session (`config/enforced/sighsorry.PortalRules.cfg:1-9`; `config/enforced/sighsorry.DataForge.cfg:1-7`; `config/enforced/sighsorry.CreatureManager.cfg:1-40`).
-- ItemRequiresSkillLevel's enforced rules gate crafting and equipping on character level rather than world progression. Their armour-tier thresholds are a starting point for playtest tuning, not settled balance. They sit beside the key gate, so a player can satisfy one and be refused by the other (`config/enforced/WackyMole.ItemRequiresSkillLevel.yml:1-14`).
+- CreatureManager also fixes difficulty against headcount. Vanilla scales every creature by the number of players standing nearby — 30% effective health and 4% damage each, capped at five — so the same boss was a different fight depending on who logged in, and a sixth player made it easier. Both percentages are pinned to zero and the count cap to one, and the difficulty is set in the level table instead: `Global.health = 4` and `Boss.health = 8`, so ordinary creatures and Enforcers carry four times vanilla health and regular bosses eight. Damage is untouched at 1, so a fight is longer rather than deadlier per hit, and per-level growth still compounds on top — a level-3 Ashlands creature is 12× and a level-2 boss 12×. Pinning `levels.yml` wholesale, as the other CreatureManager data files already are, also freezes the modifier tables it carries at exactly what the package shipped: every `Global` modifier at a 5% chance, every `Boss` one at 10%, and `blamer` off for bosses. That was stock and stays stock, but it is now a committed number rather than a default, so a package update that retunes it is a review. This is the owner's 2026-09-16 decision applied by #68; it has not yet been measured in a real boss fight (`config/enforced/sighsorry.CreatureManager.cfg:65-79`; `config/enforced/CreatureManager/levels.yml`).
+- ItemRequiresSkillLevel's enforced rules gate equipping on character level rather than world progression; crafting is deliberately left open, so a player may craft armour ahead of their level and carry it until they grow into it. Their armour-tier thresholds are a starting point for playtest tuning, not settled balance. They sit beside the key gate, so a player can satisfy one and be refused by the other — and World Advancement Progression's `LockCrafting` still blocks the craft itself on boss keys (`config/enforced/WackyMole.ItemRequiresSkillLevel.yml`).
 - EpicLoot gates magic drops on the requesting player's known recipes rather than on world keys, since this server writes none: `config/enforced/randyknapp.mods.epicloot.cfg` sets `[2 - Balance] Item Drop Limits = PlayerMustKnowRecipe`, and `Gated Freebuild Mode` follows it so building pieces obey the same rule. Every other gating mode in that setting reads world progression, so on this server they would all leave the roster at Meadows tier. The same overlay carries the 2026-09-16 curve reduction — drops at 0.6 of stock, shardstones from 0.2 to 0.05 — and turns Adventure Mode off, removing bounties, treasure maps, gambling and the secret stash. Effect counts per rarity are not overlay keys at all: they live in the mod's own loot tables and change through an EpicLoot patch file placed under the overlay's EpicLoot patches directory, which #73 specifies and has not yet added.
+- The 2026-09-16 review pinned six surfaces nobody had ever enforced, plus two loader-level ones. EpicMMOSystem carries `Force Server Config` and the whole XP economy frozen at what the first evening ran, with death costing between 5% and 15% of the level and the group and kill ranges widened to 100 metres; its competing creature-level system is off, because CreatureManager owns creature levels. DiveIn's swimming block, SkadiNet's measured network profile and DynamicLocations' two spawn-point keys are pinned as they ran. Max Dungeon Rooms is 20–40 with its three per-dungeon overrides disabled, world-permanent under ADR-0009. MaxPlayerCount is 20, which is where the Roster's capacity is actually implemented. BepInEx itself gets `AppendLog = true`, so a restart stops destroying the log of the boot before it. DiscordConnector sends no positions and refuses `@here`/`@everyone`, with the eight lifecycle, join, leave, death and shout toggles pinned on; the webhook URL is a secret and stays in `config/launch/launch.secret.env`.
 
 **Apply overlays after generation, not instead of generation.** Run `scripts/apply-enforced-config.sh <bepinex-config-dir>` after the server's first boot and whenever an overlay or pin changes. For `.cfg` files, the script matches the section and exact key, preserving unrelated entries and generated comments. A missing key is appended under a re-declared section; a missing target file aborts, because creating an unused filename would look like successful enforcement. Non-`.cfg` files replace their targets wholesale. A second unchanged application reports nothing to do (`docs/build.md:215-230`; `scripts/apply-enforced-config.sh:6-24,36-65,103-132`). The shell tests cover section isolation, unchanged reapplication, missing-key append, missing-target failure, data replacement and an entry outside any section. They test file transformation, not a real client's receipt of synced rules (`test/apply-enforced-config.test.sh:27-121`; `docs/modstack.md:165-183`).
 
@@ -33,11 +35,77 @@ every container start and verified by a drift-check command that exits non-zero 
 drift and is wired into the launch path and the backup timer's service (#68 applies the review, #69
 builds the verification).
 
+**Applied state, 2026-09-16.** The review is live. `scripts/launch-server.sh restart` stopped the
+container, applied 35 changed entries with nothing holding the files, started it, and the boot
+that followed reported `29 plugins to load` — the same count as before — and
+`Chainloader startup complete` with zero exceptions and zero unparseable config values.
+`scripts/verify-enforced-config.sh ~/lembitu/config/bepinex` then answered
+`enforced config verified: 163 entries match`, and a second apply reported nothing to do.
+`Biome Level Preset = Hard` was read back off the running server's own file. The backup taken
+before the apply is `lembitu-all-worlds-20260916T103020Z.tar.gz`, with its off-host copy on
+astral-tricep.
+
 **The overlay's scope grew with that review.** It covered nine files and forty-six keys; it now
-covers roughly sixteen files, adding EpicMMOSystem, DiveIn, SkadiNet, MaxDungeonRooms,
-MaxPlayerCount, DynamicLocations, BepInEx's log appending, and DiscordConnector. The rule that
-drove the expansion: an upstream default is not a decision, so a setting the project cares about is
-pinned even when the default already matches.
+covers twenty-seven files — eighteen `.cfg` and nine data files, 163 checked entries — adding
+EpicMMOSystem, DiveIn, SkadiNet,
+MaxDungeonRooms, MaxPlayerCount, DynamicLocations, BepInEx's log appending, DiscordConnector's
+main settings and its notification toggles, and CreatureManager's level table. The rule that
+drove the expansion: an upstream default is not a decision, so a setting the project cares about
+is pinned even when the default already matches.
+
+**A key belongs to a section, not to a name.** CreatureManager's three modifier switches read
+like they live in `[5 - Modifiers]`, and `local/decisions-2026-09-16.md` records them there, but
+the mod generates them in `[2 - Levels]` — `local/live-config-sections.txt` has the read-off
+proof, at lines 66, 72 and 78, between the `[2 - Levels]` header at 36 and `[3 - Karma]` at 80.
+The overlay pins the section the mod writes. Naming the wrong one is not an error anybody sees:
+the applier appends the key under a re-declared section, the mod reads its own copy, and the
+drift check then passes forever. That evidence file is why it is captured before every overlay
+change: the generated file is the authority on where a key lives, never the decision note.
+
+**Drift is asserted, not assumed.** `scripts/verify-enforced-config.sh <bepinex-config-dir>`
+compares every overlay entry against the live tree and exits non-zero on any difference, printing
+`file :: section :: key` with expected and live values. `.cfg` overlays are compared key by key
+inside their own section; anything else is a data file compared byte for byte; a target file the
+overlay names and no mod generated is a failure, never a pass. It shares one parser with the
+applier (`scripts/lib/enforced-config.sh`), so the two cannot disagree about what is enforced.
+
+It runs in two places. `scripts/launch-server.sh run` applies the overlay, starts the container,
+waits for `Chainloader startup complete` — the boot is when mods rewrite their own files, so
+checking earlier races the rewrite — and then verifies, failing loudly rather than leaving a
+drifted server accepting players. The backup unit runs it after each hourly capture, so a revert
+between starts surfaces as a failed unit within the hour instead of next evening
+(`config/backup/lembitu-backup.service`).
+
+**Never apply the overlay to a running server — that is what undoes an apply.** Measured on
+2026-09-16 while applying this very review: the applier wrote 35 entries to the live tree with
+the container up, and within seconds EpicLoot logged
+`Config file ... randyknapp.mods.epicloot.cfg changed on disk, reloading it`. The ServerSync-locked
+mods answered a mid-session edit by writing their in-memory values back over the file. The next
+drift check found 16 of the 35 keys returned to package defaults, with nothing in any log calling
+it a failure. That is the silent revert of the original incident, reproduced on demand, and it
+means the mechanism was never a forgotten step: it was the order of operations.
+
+`scripts/launch-server.sh restart` is therefore the only supported way to change enforced
+configuration on a live server. It stops the container, applies while nothing holds the files,
+starts, waits for that boot's chainloader, and verifies. `docker restart` skips all of it.
+
+**A value the mod cannot parse reverts the key, loudly but harmlessly.** The same apply set
+`Gated Freebuild Mode = PlayerMustKnowRecipe`, which `local/decisions-2026-09-16.md` had asked
+for. That key's type is `GatedPieceTypeMode`, whose members are only `Unlimited`,
+`BossKillUnlocksCurrentBiomePieces` and `BossKillUnlocksNextBiomePieces`, so the server logged
+`Requested value 'PlayerMustKnowRecipe' was not found` and wrote the default back. Both boss-kill
+modes read world keys this server never sets, which would freeze the Freebuild effect at Meadows
+pieces for the run, so the overlay pins `Unlimited`. The general rule: the enum a key accepts is
+read off the generated file's own `Acceptable values` comment, never assumed from a sibling key
+that happens to share a vocabulary.
+
+**The image's updater can empty the plugin directory on a restart.** Also observed on that boot:
+`valheim-bootstrap` syncs `/config/bepinex/plugins/` into the runtime BepInEx tree, and then
+`valheim-updater` decided the server "was updated from Steam" and extracted BepInExPack over the
+same tree, leaving `BepInEx/plugins` empty and the boot reporting `0 plugins to load`. The source
+directory was untouched, so the following start restores it — but a server that boots with no
+plugins is a vanilla server on a modded world, which is worse than drift. Any restart is
+therefore checked for the plugin count, not only for the config.
 
 **A mod the server cannot enforce is not a mod this project keeps.** AdminQoL taught it: none of
 its twenty-nine settings is server-synced, so its defaults — no durability loss from damage or use,

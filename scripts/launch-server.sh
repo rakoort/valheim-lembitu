@@ -8,9 +8,10 @@
 # The launch configuration lives in config/launch/launch.env.example (committed, non-secret) and
 # config/launch/launch.secret.env (gitignored: SERVER_PASS, and later the Discord webhook).
 #
-# This script owns the *container invocation*, not the server's contents. The Pack is deployed from
-# this repository with scripts/install-plugins.sh, and the enforced overlay with
-# scripts/apply-enforced-config.sh; neither happens here. See docs/wiki/operations.md.
+# This script owns the *container invocation* and the enforced overlay around it: the overlay is
+# applied before the container starts and verified once the chainloader reports it is done, so a
+# drifted server is never left running (ADR-0011, #69). The Pack itself is deployed separately,
+# with scripts/install-plugins.sh. See docs/wiki/operations.md.
 
 set -euo pipefail
 
@@ -28,10 +29,11 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() {
   cat >&2 <<'EOF'
-usage: scripts/launch-server.sh env | run | world-rules
+usage: scripts/launch-server.sh env | run | restart | world-rules
 
   env          print the container environment, secret file merged in
   run          create the data directories and start the container
+  restart      stop the container, re-apply the enforced overlay, start it and verify
   world-rules  print the world-rule arguments alone
 
 Reads config/launch/launch.env.example (committed, non-secret) and, for the password,
@@ -97,6 +99,8 @@ do_run() {
     exit 1
   fi
 
+  enforce_config "$CONFIG_DIR/bepinex"
+
   docker run -d --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -v "$CONFIG_DIR:/config" \
@@ -110,12 +114,100 @@ do_run() {
   printf '  config: %s -> /config\n' "$CONFIG_DIR"
   printf '  data:   %s -> /opt/valheim\n' "$DATA_DIR"
   printf '  logs:   docker logs -f %s\n' "$CONTAINER_NAME"
+
+  # A drifted server that is up and accepting players is the failure this refuses to leave
+  # behind, so the exit status carries it even though the container is already running.
+  if compgen -G "$CONFIG_DIR/bepinex/*.cfg" > /dev/null; then
+    wait_for_chainloader "${CHAINLOADER_TIMEOUT:-300}" \
+      || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
+    "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
+      || die "the server booted with a drifted config; the keys above are not in effect"
+  fi
+
   printf 'next: deploy the pack with scripts/install-plugins.sh %s/bepinex\n' "$CONFIG_DIR"
+}
+
+# Stop, apply, start, verify — in that order, because the order is the whole point.
+#
+# Applying the overlay to a *running* server is what produced the 2026-09-16 revert. The mods
+# watch their own files: EpicLoot logged `Config file ... changed on disk, reloading it` the
+# moment the applier touched it, and the ServerSync-locked mods answered a mid-session edit by
+# writing their in-memory values back over it. The disk then held the mod's defaults and the
+# operator's apply had been undone within seconds, silently. A stopped container has nothing
+# holding those files, so the values the applier writes are the values the mods read at boot.
+do_restart() {
+  command -v docker >/dev/null 2>&1 || die "docker is not available"
+  docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 \
+    || die "no container named $CONTAINER_NAME; create it with: scripts/launch-server.sh run"
+
+  printf 'stopping %s\n' "$CONTAINER_NAME"
+  docker stop "$CONTAINER_NAME" >/dev/null
+
+  enforce_config "$CONFIG_DIR/bepinex"
+
+  # Everything after this second is this boot. The log carries every previous boot, and with
+  # `AppendLog = true` so does the file, so an unscoped search would match a banner from last week.
+  # The stamp spells its zone out: `docker logs --since` reads one without a zone as local time,
+  # so a bare UTC stamp on a UTC+3 host looks three hours old and matches an earlier boot.
+  local since; since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  docker start "$CONTAINER_NAME" >/dev/null
+  printf 'started %s; waiting for the chainloader\n' "$CONTAINER_NAME"
+
+  wait_for_chainloader "${CHAINLOADER_TIMEOUT:-300}" "$since" \
+    || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
+  "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
+    || die "the server booted with a drifted config; the keys above are not in effect"
+}
+
+# The enforced overlay is re-applied on every start and proved afterwards (ADR-0011, #69).
+#
+# Both halves have to be here rather than in the operator's hands, because the thing that went
+# wrong on 2026-09-16 was a human step that happened once: the overlay was applied at deploy
+# time, ten keys were back at mod defaults by the next evening, and nothing had ever compared the
+# two. Applying without verifying would repeat exactly that.
+#
+# The verify waits for the chainloader, because the boot is when the mods rewrite their own
+# configuration files. Checking before that races the very rewrite the check exists to catch.
+enforce_config() {  # enforce_config <bepinex-config-dir>
+  local bepinex=$1
+
+  # A world that has never booted has no generated configuration to merge into, and the applier
+  # rightly refuses to write files no mod reads. That is a first boot, not a drifted server.
+  if ! compgen -G "$bepinex/*.cfg" > /dev/null; then
+    printf 'no generated config in %s yet; this is a first boot\n' "$bepinex"
+    printf '  after it settles: scripts/apply-enforced-config.sh %s\n' "$bepinex"
+    return 0
+  fi
+
+  "$REPO_ROOT/scripts/apply-enforced-config.sh" "$bepinex"
+}
+
+# Block until the chainloader reports it has finished, so the mods have written whatever they were
+# going to write. A boot that never gets there is its own failure and is named as one.
+#
+# `grep -q` stops reading at the first match, which sends SIGPIPE to `docker logs`; under
+# `pipefail` that exit status 141 would make a *successful* match read as a failure, and a real
+# boot writes far more than a pipe buffer after the banner. The subshell turns pipefail off for
+# this one pipeline so the match is what decides.
+wait_for_chainloader() {  # wait_for_chainloader <seconds> [since]
+  local deadline=$(( SECONDS + $1 ))
+  # `scope` stays empty for a freshly created container, whose log holds one boot anyway. The
+  # guarded expansion is for bash 3.2, where `set -u` rejects an empty array under `"${a[@]}"`.
+  local -a scope=()
+  if [[ $# -ge 2 && -n "${2:-}" ]]; then scope=(--since "$2"); fi
+  while (( SECONDS < deadline )); do
+    if ( set +o pipefail; docker logs ${scope[@]+"${scope[@]}"} "$CONTAINER_NAME" 2>&1 | grep -qa 'Chainloader startup complete' ); then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
 }
 
 case "${1:-}" in
   env) do_env ;;
   run) do_run ;;
+  restart) do_restart ;;
   world-rules) world_rules ;;
   -h|--help) usage; exit 0 ;;
   *) usage; exit 1 ;;

@@ -26,36 +26,25 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/enforced-config.sh
+. "$REPO_ROOT/scripts/lib/enforced-config.sh"
 OVERLAY_DIR="$REPO_ROOT/config/enforced"
 
-die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 
 changed=0
 
 # merge_cfg <overlay-file> <target-file> — one merged copy per overlay entry, then appends.
+# Appends are collected rather than written as they are found, because writing to the target while
+# reading its entries would let one appended section swallow the next lookup. The pending arrays
+# are the one piece of state the callback cannot take as an argument, since it accumulates across
+# entries.
 merge_cfg() {
   local overlay=$1 target=$2
-  [[ -f "$target" ]] || die "overlay targets $target, which the mods never generated - name drift?"
+  [[ -f "$target" ]] || enforced_die "overlay targets $target, which the mods never generated - name drift?"
 
-  local section="" key value line lhs
-  local -a pend_sec=() pend_key=() pend_val=()
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    case "$line" in
-      '#'*|'') continue ;;
-      \[*\]) section="${line%\]}"; section="${section#\[}" ;;
-      *=*)
-        key="${line%%=*}"; value="${line#*=}"
-        key="${key#"${key%%[![:space:]]*}"}"; key="${key%"${key##*[![:space:]]}"}"
-        value="${value#"${value%%[![:space:]]*}"}"; value="${value%"${value##*[![:space:]]}"}"
-        [[ -n "$section" && -n "$key" ]] || die "entry outside a section in $overlay: $line"
-        if ! apply_entry "$target" "$section" "$key" "$value"; then
-          pend_sec+=("$section"); pend_key+=("$key"); pend_val+=("$value")
-        fi
-        ;;
-      *) die "not a section, comment or entry in $overlay: $line" ;;
-    esac
-  done < "$overlay"
+  pend_sec=(); pend_key=(); pend_val=()
+  enforced_cfg_each "$overlay" merge_entry "$target"
 
   local i
   for i in "${!pend_key[@]}"; do
@@ -63,6 +52,14 @@ merge_cfg() {
     echo "appended ${target##*/} [${pend_sec[$i]}] ${pend_key[$i]} = ${pend_val[$i]}"
     changed=1
   done
+}
+
+# The callback enforced_cfg_each hands every overlay entry to, followed by the target the walk
+# forwards.
+merge_entry() {  # merge_entry <section> <key> <value> <target-file>
+  if ! apply_entry "$4" "$1" "$2" "$3"; then
+    pend_sec+=("$1"); pend_key+=("$2"); pend_val+=("$3")
+  fi
 }
 # apply_entry <file> <section> <key> <value> — replace the entry in place; rc 1 when absent.
 # Key text is compared exactly (no pattern), so keys with spaces, parens and dashes are just
@@ -86,7 +83,7 @@ apply_entry() {
     { print }
     END { exit done ? 0 : 3 }
   ' "$file" > "$tmp" || rc=$?
-  [[ $rc == 0 || $rc == 3 ]] || { rm -f "$tmp"; die "awk failed ($rc) rewriting $file"; }
+  [[ $rc == 0 || $rc == 3 ]] || { rm -f "$tmp"; enforced_die "awk failed ($rc) rewriting $file"; }
   if [[ $rc == 3 ]]; then rm -f "$tmp"; return 1; fi
   if cmp -s "$file" "$tmp"; then
     rm -f "$tmp"
@@ -101,14 +98,14 @@ apply_entry() {
 # --- walk the overlay -------------------------------------------------------------------------
 
 if [[ "${1:-}" == "--overlay" ]]; then
-  [[ $# -ge 3 ]] || die "--overlay needs a directory and a target"
+  [[ $# -ge 3 ]] || enforced_die "--overlay needs a directory and a target"
   OVERLAY_DIR="$2"
   shift 2
 fi
-[[ $# -eq 1 ]] || die "usage: scripts/apply-enforced-config.sh [--overlay <dir>] <bepinex-config-dir>"
+[[ $# -eq 1 ]] || enforced_die "usage: scripts/apply-enforced-config.sh [--overlay <dir>] <bepinex-config-dir>"
 CONFIG_DIR=$1
-[[ -d "$CONFIG_DIR" ]] || die "no such directory: $CONFIG_DIR"
-[[ -d "$OVERLAY_DIR" ]] || die "no overlay at $OVERLAY_DIR"
+[[ -d "$CONFIG_DIR" ]] || enforced_die "no such directory: $CONFIG_DIR"
+[[ -d "$OVERLAY_DIR" ]] || enforced_die "no overlay at $OVERLAY_DIR"
 found=0
 while IFS= read -r rel; do
   found=1
@@ -124,8 +121,8 @@ while IFS= read -r rel; do
       fi
       ;;
   esac
-done < <(cd "$OVERLAY_DIR" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)
-[[ $found == 1 ]] || die "overlay at $OVERLAY_DIR is empty"
+done < <(enforced_overlay_files "$OVERLAY_DIR")
+[[ $found == 1 ]] || enforced_die "overlay at $OVERLAY_DIR is empty"
 
 if [[ $changed -eq 0 ]]; then
   echo "enforced config already in effect: nothing to do"

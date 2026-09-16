@@ -212,3 +212,71 @@ handshake, so its absence is a hard failure rather than a missing feature.
 
 The authoritative classification lives in `docs/modstack.md` under "Where each mod runs", derived
 from the server's own version announcements at join rather than from package descriptions.
+
+## Inventory: InventorySlots out, AzuExtendedPlayerInventory in (#74)
+
+`sighsorry/InventorySlots` 1.4.17 is replaced by `Azumatt/AzuExtendedPlayerInventory` 2.4.14, which
+declares only the pack's own BepInEx loader pin. Target configuration:
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Extra inventory rows | `0` | Carrying capacity stays vanilla plus whatever Haldor sells, which the mod adds independently. With no rows there is nothing to gate, which is why AzuEPI having no progression system costs nothing |
+| Quick slots | `3` | Matches the three-wide quick row players already have; a small, readable gain over vanilla |
+| Equipment slots | on | The reason for the mod: armour out of the backpack |
+| Wishbone and Demister special slots | on | Both stop eating inventory space |
+| Loadout button, player stats panel | on | Kept deliberately |
+| Vanity surface | off | Unwanted. Whether the system itself can be disabled, or only its button, is unresolved and must be established from the generated config or the assembly |
+
+The `Minimal` preset must not be used: it disables loadouts and stats along with vanity.
+
+Accepted losses, with no AzuEPI counterpart: multicraft, favourites, the crafting grid with search
+and sort, and scrollable tooltips. InventorySlots' progression-gated rows and slots go too; they
+were never an enforced decision and unlocked on item discovery, not on boss keys.
+
+InventorySlots is one of the fifteen mods the server version-checks at join, so removing it changes
+the announced set and a client on the old Pack is refused rather than silently mismatched.
+
+## EpicMMO HUD: XP bar yes, vanilla health and stamina
+
+`WackyMole.EpicMMOSystemUI.cfg` replaces the HUD with a grouped XP/HP/stamina/eitr bar. Keep the XP
+bar; return the rest to vanilla by setting `HP color`, `Stamina color` and `Eitr color` to `none`,
+which the keys' own descriptions define as "make vanilla". Leave the exp fill colour set, since
+`none` there removes the XP bar.
+
+Every key in that file is `[Not Synced with Server]`, so it ships as a client Pack seed (#70), not
+as enforced config. Unverified: whether `none` restores the vanilla bars or merely draws the mod's
+bars transparently over a hidden vanilla HUD. One client launch settles it.
+
+## Amendment, decided while #68 was being applied: difficulty is fixed, not scaled by headcount
+
+Vanilla scales every creature by the number of players standing nearby — 30% effective health and
+4% damage each, capped at five — so the same boss was a different fight depending on who logged
+in, and a sixth player made it easier. The owner's decision removes headcount from the question
+entirely and sets the difficulty outright.
+
+| Key | Value |
+| --- | --- |
+| `sighsorry.CreatureManager.cfg` `[4 - Multiplayer Difficulty] HP Increase Per Player In Multiplayer (%)` | `0` |
+| `sighsorry.CreatureManager.cfg` `[4 - Multiplayer Difficulty] DMG Increase Per Player In Multiplayer (%)` | `0` |
+| `sighsorry.CreatureManager.cfg` `[4 - Multiplayer Difficulty] Maximum Player Count For Multiplayer Scaling` | `1` |
+| `CreatureManager/levels.yml` `Global.health` | `4` |
+| `CreatureManager/levels.yml` `Boss.health` | `8` |
+
+Ordinary creatures and Enforcers carry four times vanilla health, regular bosses eight. Damage is
+untouched at 1, because health lengthens a fight while damage only moves deaths earlier. Per-level
+growth compounds on top of both, so these are floors: a level-3 Ashlands creature is 12× and a
+level-2 boss 12×, and `Biome Level Preset = Hard` decides how often a high level is rolled.
+
+There is only one cap key and it governs bosses and ordinary creatures alike, so "bosses at eight
+players, monsters at four" was not expressible; fixing both outright is what the owner chose
+instead. Pinning `levels.yml` wholesale also freezes its modifier tables at package values — 5%
+per `Global` modifier, 10% per `Boss` one — which the review had left at stock. They stay stock;
+they are now a committed number, so a package retune becomes a review.
+
+## Correction to this file: CreatureManager's modifier switches
+
+The CreatureManager table above places `Global Modifiers`, `Boss Modifiers` and
+`Enforcer Modifiers` in `[5 - Modifiers]`. The mod generates them in `[2 - Levels]`, which
+`local/live-config-sections.txt` records at lines 66, 72 and 78. The overlay pins the section the
+mod writes. The wrong section is not a visible error: the applier appends the key under a
+re-declared section, the mod keeps reading its own copy, and the drift check passes forever.
