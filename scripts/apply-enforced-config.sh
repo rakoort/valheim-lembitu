@@ -26,43 +26,39 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/enforced-config.sh
+. "$REPO_ROOT/scripts/lib/enforced-config.sh"
 OVERLAY_DIR="$REPO_ROOT/config/enforced"
 
-die() { printf 'error: %s\n' "$*" >&2; exit 1; }
-
+die() { enforced_die "$@"; }
 
 changed=0
 
 # merge_cfg <overlay-file> <target-file> — one merged copy per overlay entry, then appends.
+# Appends are collected rather than written as they are found, because writing to the target while
+# reading its entries would let one appended section swallow the next lookup.
 merge_cfg() {
-  local overlay=$1 target=$2
-  [[ -f "$target" ]] || die "overlay targets $target, which the mods never generated - name drift?"
+  local overlay=$1
+  merge_target=$2
+  [[ -f "$merge_target" ]] || die "overlay targets $merge_target, which the mods never generated - name drift?"
 
-  local section="" key value line lhs
-  local -a pend_sec=() pend_key=() pend_val=()
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    case "$line" in
-      '#'*|'') continue ;;
-      \[*\]) section="${line%\]}"; section="${section#\[}" ;;
-      *=*)
-        key="${line%%=*}"; value="${line#*=}"
-        key="${key#"${key%%[![:space:]]*}"}"; key="${key%"${key##*[![:space:]]}"}"
-        value="${value#"${value%%[![:space:]]*}"}"; value="${value%"${value##*[![:space:]]}"}"
-        [[ -n "$section" && -n "$key" ]] || die "entry outside a section in $overlay: $line"
-        if ! apply_entry "$target" "$section" "$key" "$value"; then
-          pend_sec+=("$section"); pend_key+=("$key"); pend_val+=("$value")
-        fi
-        ;;
-      *) die "not a section, comment or entry in $overlay: $line" ;;
-    esac
-  done < "$overlay"
+  pend_sec=(); pend_key=(); pend_val=()
+  enforced_cfg_each "$overlay" merge_entry
 
   local i
   for i in "${!pend_key[@]}"; do
-    printf '[%s]\n%s = %s\n' "${pend_sec[$i]}" "${pend_key[$i]}" "${pend_val[$i]}" >> "$target"
-    echo "appended ${target##*/} [${pend_sec[$i]}] ${pend_key[$i]} = ${pend_val[$i]}"
+    printf '[%s]\n%s = %s\n' "${pend_sec[$i]}" "${pend_key[$i]}" "${pend_val[$i]}" >> "$merge_target"
+    echo "appended ${merge_target##*/} [${pend_sec[$i]}] ${pend_key[$i]} = ${pend_val[$i]}"
     changed=1
   done
+}
+
+# The callback enforced_cfg_each hands every overlay entry to. It carries no target argument, so
+# the file being merged travels in merge_target.
+merge_entry() {  # merge_entry <section> <key> <value>
+  if ! apply_entry "$merge_target" "$1" "$2" "$3"; then
+    pend_sec+=("$1"); pend_key+=("$2"); pend_val+=("$3")
+  fi
 }
 # apply_entry <file> <section> <key> <value> — replace the entry in place; rc 1 when absent.
 # Key text is compared exactly (no pattern), so keys with spaces, parens and dashes are just
@@ -124,7 +120,7 @@ while IFS= read -r rel; do
       fi
       ;;
   esac
-done < <(cd "$OVERLAY_DIR" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)
+done < <(enforced_overlay_files "$OVERLAY_DIR")
 [[ $found == 1 ]] || die "overlay at $OVERLAY_DIR is empty"
 
 if [[ $changed -eq 0 ]]; then

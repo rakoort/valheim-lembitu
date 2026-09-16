@@ -16,3 +16,10 @@ ExecStart=%h/code/valheim-lembitu/scripts/backup-world.sh \
   --out %h/lembitu/backups \
   --keep 48 \
   --offhost astral-tricep:/home/ra/lembitu-backups
+
+# The hourly drift check rides along here rather than carrying its own timer: the overlay is
+# re-applied on every container start, and this is what notices a revert that happened between
+# starts - within the hour rather than next evening (ADR-0011, #69). A drifted server is a
+# failed unit, which is what `systemctl --user status` and the timer's own logs surface. It runs
+# after the capture so a failure here never costs a backup.
+ExecStart=%h/code/valheim-lembitu/scripts/verify-enforced-config.sh %h/lembitu/config/bepinex

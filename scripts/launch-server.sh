@@ -8,9 +8,10 @@
 # The launch configuration lives in config/launch/launch.env.example (committed, non-secret) and
 # config/launch/launch.secret.env (gitignored: SERVER_PASS, and later the Discord webhook).
 #
-# This script owns the *container invocation*, not the server's contents. The Pack is deployed from
-# this repository with scripts/install-plugins.sh, and the enforced overlay with
-# scripts/apply-enforced-config.sh; neither happens here. See docs/wiki/operations.md.
+# This script owns the *container invocation* and the enforced overlay around it: the overlay is
+# applied before the container starts and verified once the chainloader reports it is done, so a
+# drifted server is never left running (ADR-0011, #69). The Pack itself is deployed separately,
+# with scripts/install-plugins.sh. See docs/wiki/operations.md.
 
 set -euo pipefail
 
@@ -97,6 +98,8 @@ do_run() {
     exit 1
   fi
 
+  enforce_config "$CONFIG_DIR/bepinex"
+
   docker run -d --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -v "$CONFIG_DIR:/config" \
@@ -110,7 +113,53 @@ do_run() {
   printf '  config: %s -> /config\n' "$CONFIG_DIR"
   printf '  data:   %s -> /opt/valheim\n' "$DATA_DIR"
   printf '  logs:   docker logs -f %s\n' "$CONTAINER_NAME"
+
+  # A drifted server that is up and accepting players is the failure this refuses to leave
+  # behind, so the exit status carries it even though the container is already running.
+  if compgen -G "$CONFIG_DIR/bepinex/*.cfg" > /dev/null; then
+    wait_for_chainloader "${CHAINLOADER_TIMEOUT:-300}" \
+      || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
+    "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
+      || die "the server booted with a drifted config; the keys above are not in effect"
+  fi
+
   printf 'next: deploy the pack with scripts/install-plugins.sh %s/bepinex\n' "$CONFIG_DIR"
+}
+
+# The enforced overlay is re-applied on every start and proved afterwards (ADR-0011, #69).
+#
+# Both halves have to be here rather than in the operator's hands, because the thing that went
+# wrong on 2026-09-16 was a human step that happened once: the overlay was applied at deploy
+# time, ten keys were back at mod defaults by the next evening, and nothing had ever compared the
+# two. Applying without verifying would repeat exactly that.
+#
+# The verify waits for the chainloader, because the boot is when the mods rewrite their own
+# configuration files. Checking before that races the very rewrite the check exists to catch.
+enforce_config() {  # enforce_config <bepinex-config-dir>
+  local bepinex=$1
+
+  # A world that has never booted has no generated configuration to merge into, and the applier
+  # rightly refuses to write files no mod reads. That is a first boot, not a drifted server.
+  if ! compgen -G "$bepinex/*.cfg" > /dev/null; then
+    printf 'no generated config in %s yet; this is a first boot\n' "$bepinex"
+    printf '  after it settles: scripts/apply-enforced-config.sh %s\n' "$bepinex"
+    return 0
+  fi
+
+  "$REPO_ROOT/scripts/apply-enforced-config.sh" "$bepinex"
+}
+
+# Block until the chainloader reports it has finished, so the mods have written whatever they were
+# going to write. A boot that never gets there is its own failure and is named as one.
+wait_for_chainloader() {  # wait_for_chainloader <seconds>
+  local deadline=$(( SECONDS + $1 ))
+  while (( SECONDS < deadline )); do
+    if docker logs "$CONTAINER_NAME" 2>&1 | grep -qa 'Chainloader startup complete'; then
+      return 0
+    fi
+    sleep 5
+  done
+  return 1
 }
 
 case "${1:-}" in

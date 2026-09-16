@@ -156,6 +156,24 @@ so a new character is not softlocked. Expected boss health runs ×1.05 for Eikth
 - Register: *Intended*. The preset is committed and loads; observed boss and creature behaviour in
   play belongs to #13 and #10. #26 owns ValheimRAFT's vehicles.
 
+**A fight is the same fight whoever turns up.** Vanilla makes every creature tougher for each
+player standing nearby — 30% effective health and 4% damage each, capped at five — so a boss was a
+different fight depending on who logged in, and inviting a sixth player made it easier. That
+scaling is off entirely (`config/enforced/sighsorry.CreatureManager.cfg`,
+[4 - Multiplayer Difficulty], both percentages at zero and the count cap at one). Difficulty is
+fixed in the level table instead: ordinary creatures and Enforcers carry four times vanilla
+health, regular bosses eight (`config/enforced/CreatureManager/levels.yml`). Damage is untouched,
+so fights are longer rather than deadlier per hit. Bringing more people is then a choice about how
+fast a boss falls, never a penalty, and a duo and a full group face the same wall.
+
+Per-level growth compounds on top of those floors, so the biome preset still decides how much
+harder a late biome is: an Ashlands creature at level 3 carries 4 × (1 + 2 × 1) = 12 times vanilla
+health, and a level-2 boss 8 × 1.5 = 12 times.
+
+- Register: *Intended*. The multipliers are the owner's 2026-09-16 decision, applied by #68 and
+  never yet measured in a real boss fight. Whether eight times is the right wall is a question for
+  the first kill after it goes live.
+
 ## PvP and death
 
 **PvP is each player's own flag, and today it is a button.** Every biome rule is `PlayerChoose`, so
