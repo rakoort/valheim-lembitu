@@ -236,9 +236,12 @@ flagged and once not, turns it into a measurement; #67 carries that.
 AzuEPI's extra rows are a flat 0 to 5 for everyone, with no way to unlock them as a character
 advances. Rather than hand every new character several extra rows from the first minute, the run
 pins extra rows at zero, so carrying capacity is vanilla plus whatever Haldor sells and the mod's
-equipment and quick slots. Multicraft, favourites, a crafting grid with search and sort, and
-scrollable tooltips have no counterpart in AzuEPI and the Pack no longer offers them; they were
-conveniences, not rules.
+equipment and quick slots. Multicraft, the crafting grid with search and sort, and scrollable
+tooltips have no counterpart in AzuEPI and the Pack no longer offers them; they were conveniences,
+not rules. **Favourites do survive the swap**, which an earlier version of this page denied:
+AzuEPI 2.4.14 ships a `[10 - Favoriting]` section whose `Favoriting Modifier Key` — Left Shift by
+default — marks an item or a slot so storage mods leave it alone. It is a client key, so each
+player owns their own binding (read from `AzuExtendedPlayerInventory.dll` 2.4.14, #78).
 
 **Two things to know that the configuration does not say:**
 
@@ -252,6 +255,28 @@ conveniences, not rules.
 
 - Register: *Intended*. Flag behaviour, retention and grave access have not been observed on this
   pack; #8's policy question is settled by the overlay above, but the behaviour is not measured.
+
+## Crafting, building and comforts
+
+**Materials come from containers near the station.** A workbench, forge, stonecutter or the
+building hammer pulls from every container within **20 m**, so a chest beside the bench feeds it
+and a storage hut across the base does not. Nothing is excluded: everything in range is pullable
+(AzuCraftyBoxes, `config/enforced/Azumatt.AzuCraftyBoxes.cfg`). The mod is part of the server's
+join-time version check, so it is not optional — a client without it is refused at join, the same
+way the slot mod already behaves.
+
+**Voice carries as far as your voice would.** Players within 4 m are heard at full volume and
+fade out to nothing by 45 m, and the server holds those distances for everyone
+(ProximityVoiceChat, `config/enforced/Azumatt.ProximityVoiceChat.cfg`). Your microphone, your
+volume, your mute and your keybinds are yours: the server pins none of them. A player who removes
+the mod simply has no voice and plays normally, so voice is a convenience rather than a rule.
+
+**Three comforts are yours to keep or remove.** Hover readouts on creatures, pieces, chests and
+crafting stations (AzuHoverStats), an on-screen clock with the weather forecast (AzuClock), and
+mouse-and-modifier stack moving, splitting and dropping (MouseTweaks). None of them changes a
+rule, none is enforced, and a player who deletes them sees vanilla. Hovering a chest inside
+another clan's ward shows nothing, because the readout asks the same access check the ward
+answers.
 
 ## What is not here
 

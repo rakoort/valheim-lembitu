@@ -31,9 +31,11 @@
 #   Lembitu.Harness  our test harness. Inert without -lembitu-harness, and it belongs to the
 #                    disposable test client, not to players.
 #
-# Client-only mods were dropped by the 2026-09-16 review: a mod the server cannot enforce behaves
-# differently for every player. AdminQoL proved it, and BoneMod fell to the same argument. #70
-# removes both and repoints the REQUIRED assertion below, which BoneMod currently satisfies alone.
+# Client-only mods were cut by the 2026-09-16 review, because a mod the server cannot enforce
+# behaves differently for every player: AdminQoL proved it and BoneMod fell to the same argument
+# (#70). #78 narrowed that to gameplay-bearing mods, so the Pack carries three presentation-only
+# client mods again - AzuHoverStats, AzuClock and MouseTweaks. They enforce nothing, and a player
+# who removes them sees vanilla.
 #
 # Staging is delegated to scripts/stage-stack.sh, which owns pin parsing, hash verification,
 # dependency closure and the package-layout normalisation. This script adds what is specific to a
@@ -57,11 +59,13 @@ LIST=0
 # Plugins that must NOT reach a player. Matched as path components anywhere in the staged tree, so a
 # rename of the containing directory does not quietly reintroduce one.
 EXCLUDED=(MaxPlayerCount Lembitu.Harness)
-# Adopted packages a client needs. Jotunn, because a client without it is refused at the
-# handshake outright: its absence is a hard failure rather than a feature nobody notices. This
-# assertion used to name BoneMod, which the 2026-09-16 review dropped along with every other
-# client-only mod (#70).
-REQUIRED=(Jotunn)
+# Adopted packages a client needs, each because its absence is a hard failure rather than a
+# feature nobody notices. Jotunn, because a client without it is refused at the handshake
+# outright. AzuCraftyBoxes, because from v8 the server runs it and its hand-rolled
+# `AzuCraftyBoxes_VersionCheck` disconnects any peer that never answers, so a Pack that lost it
+# would refuse every player who installed that Pack (#78). This assertion used to name BoneMod,
+# which the 2026-09-16 review dropped along with every other client-only mod (#70).
+REQUIRED=(Jotunn AzuCraftyBoxes)
 
 # Repository-owned client configuration seeds, copied over the package seeds after staging. These
 # are the settings the server cannot hold - every key in them is "Not Synced with Server" - so

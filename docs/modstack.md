@@ -13,17 +13,21 @@ The stack was reduced from thirty packages to twenty-three on **2026-09-15**, an
 plugin of ours except the test harness was cancelled, because upstream mods now cover the
 load-bearing behaviour (ADR-0010). What was removed and why is in [Considered and cut](#considered-and-cut).
 
-**This table is now the repository state** (#66). `modstack.lock.json` carries exactly these
-twenty-three pins, the retired fork and plugins are deleted from `src/`, `config/enforced/` holds
-the overlays below, and `src/forks/` contains only MaxPlayerCount. The dated measurements further
-down are the runs that established the pack, not a prediction of it.
+**This table is now the repository state** (#66, #70, #78). `modstack.lock.json` carries exactly
+these twenty-six pins — twenty-three after the 2026-09-15 reduction, twenty-one once #70 dropped
+AdminQoL and BoneMod, and twenty-six once #78 adopted five quality-of-life mods. The retired fork
+and plugins are deleted from `src/`, `config/enforced/` holds the overlays below, and `src/forks/`
+contains only MaxPlayerCount. The dated measurements further down are the runs that established
+the pack, not a prediction of it.
 
 ## Adopted upstream
 
-Every mod here is intended for the server *and* client pack at exactly this version, except the
-two the Pack withholds as server-only: DiscordConnector and Max Dungeon Rooms. Candidate staging
-is not deployment or verification. "Enforced config" is a deliberate deviation from the defaults
-and belongs in server-locked config rather than a player's file.
+Every mod here is pinned at exactly this version; the side it runs on is in
+[Where each mod runs](#where-each-mod-runs). Most are installed on the server *and* the client
+pack, two are withheld from the Pack as server-only — DiscordConnector and Max Dungeon Rooms —
+and three ride in the Pack alone: AzuHoverStats, AzuClock and MouseTweaks. Candidate staging is
+not deployment or verification. "Enforced config" is a deliberate deviation from the defaults and
+belongs in server-locked config rather than a player's file.
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
@@ -40,6 +44,11 @@ and belongs in server-locked config rather than a player's file.
 | turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
 | Azumatt/AzuExtendedPlayerInventory | 2.4.14 | Equipment slots, quick slots, Wishbone and Demister slots | Extra rows 0, three quick slots, equipment and special slots on; the vanity button off, which is the only switch the mod has for it |
+| Azumatt/AzuCraftyBoxes | 1.8.19 | Crafting and building pull materials from containers near the station | `Container Range` 20 m; `Leave One Item` off; config locked; `Azumatt.AzuCraftyBoxes.yml` committed empty, so everything in range is pullable |
+| Azumatt/AzuHoverStats | 1.1.10 | Hover readouts for creatures, pieces, items, chests and crafting timers | — Nothing in it is server-synced, so the server can pin nothing; client-only |
+| Azumatt/AzuClock | 1.1.0 | On-screen clock and weather forecast | — Client-only |
+| Azumatt/MouseTweaks | 1.0.4 | Inventory moving, stack splitting and quick-dropping with mouse and modifier | — Client-only |
+| Azumatt/ProximityVoiceChat | 1.0.2 | Positional voice chat, quieter with distance, no external program | Voice ranges and the Opus codec pinned; microphone, playback, indicators and keybinds stay the player's |
 | turbero/DetailedLevels | 2.1.3 | Skill progress readout | — |
 | sighsorry/DataForge | 1.3.4 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
 | sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
@@ -51,13 +60,22 @@ and belongs in server-locked config rather than a player's file.
 
 ## Where each mod runs
 
-Three groups, decided by evidence rather than by the package descriptions. The first group is
+Four groups, decided by evidence rather than by the package descriptions. The first group is
 observable: at every join the server announces a version for each mod that participates in the
 config/version handshake, and refuses a client that answers with the wrong version or none. The
-list below is the server's own announcement, read from the live log on 2026-09-16. Every row,
-AzuExtendedPlayerInventory included, has now been read from a join: the 14:48 UTC+2 join of a v7
-client logged `Sending AzuExtendedPlayerInventory version 2.4.14 and minimum version 2.4.14 to the
-client`, then `Version check, local: 2.4.14, remote: 2.4.14` and `Adding peer to validated list`.
+list below is the server's own announcement, read from the live log on 2026-09-16, except the one
+row marked as read from the assembly instead. Every other row, AzuExtendedPlayerInventory
+included, has been read from a join: the 14:48 UTC+2 join of a v7 client logged `Sending
+AzuExtendedPlayerInventory version 2.4.14 and minimum version 2.4.14 to the client`, then
+`Version check, local: 2.4.14, remote: 2.4.14` and `Adding peer to validated list`.
+
+Enforcement comes in two shapes, and the difference decides whether installing a mod on the
+server refuses the players who lack it. ServerSync's own `VersionCheck` only refuses a silent peer
+when its `ConfigSync.ModRequired` is true, and every Azumatt mod in this pack leaves that false.
+What makes those mods mandatory is a *hand-rolled* check they each carry: a `ZNet.OnNewConnection`
+prefix registers and invokes `<Mod>_VersionCheck`, and a `ZNet.RPC_PeerInfo` prefix disconnects
+any peer the server has not recorded in `ValidatedPeers`. A client without the mod never answers,
+so it is refused. A mod with neither mechanism refuses nobody.
 
 **Both sides, and the server enforces it.** A client missing any of these is refused at the
 handshake with `doesn't have the correct <mod> version`. Jotunn is enforced separately and first:
@@ -80,16 +98,19 @@ cancelling connection`.
 | WackyMole/WackyEpicMMOSystem | `EpicMMOSystem`, plus its `ItemManager` and `PieceManager` |
 | WackyMole/WackyItemRequiresSkillLevel | `ItemRequiresSkillLevel` |
 | team0/ValheimRAFT | `ValheimRAFT` |
+| Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, not yet from a join:** ServerSync announces the version because the announcement runs whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. Observed at the v8 join (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
 
 **Both sides, but not enforced.** These need the client to work fully and will not refuse a join
-without it, so a client that skips them looks connected and behaves wrongly.
+without it, so a client that skips them looks connected and behaves wrongly — except
+ProximityVoiceChat, where the failure is benign and deliberate.
 
 | Mod | Why the client needs it |
 | --- | --- |
 | RandyKnapp/EpicLoot | Drops are rolled where the player is, and `PlayerMustKnowRecipe` reads `Player.m_localPlayer`. The server pushes `loottables.json` to every client at join, so the tables are the server's, but the rolling and the UI are the client's |
 | VentureValheim/World_Advancement_Progression | Server-side alone it only blocks the world's global key list. Private keys, every lock, and the skill floor are client features (upstream README, "Server-Side Only?") |
 | ValheimModding/JsonDotNET, ValheimModding/YamlDotNet | Libraries the above load on whichever side they run |
+| Azumatt/ProximityVoiceChat | Voice is captured, encoded and played on the client; the server holds the ranges and the codec through `ConfigSync("Azumatt.ProximityVoiceChat")`. `ModRequired` is false and there is no hand-rolled check, so a friend without the mod joins and plays with no voice rather than being refused (read from `ProximityVoiceChat.dll` 1.0.2) |
 
 **Server-only.** Installing these on a client changes nothing a player can see.
 
@@ -99,13 +120,18 @@ without it, so a client that skips them looks connected and behaves wrongly.
 | nwesterhausen/DiscordConnector | Reads server events and posts a webhook; there is no client half |
 | Digitalroot/Max_Dungeon_Rooms | **Server-side only, decided 2026-09-16.** Room counts are applied when the server generates a dungeon, and the result is world data, so a client needs nothing. It leaves the client Pack with DiscordConnector (#70). The generation argument is sound but untested on a client, so #70 proves it by entering a large crypt with a client that does not have the mod |
 
-**Client-only — all dropped, 2026-09-16.** The review cut this whole category. A mod the server
-cannot enforce is a mod whose behaviour varies per player, which is the AdminQoL lesson: its
-gameplay defaults disabled durability loss for a full evening and no server setting could reach
-them.
+**Client-only — presentation only, reopened 2026-09-16 (#78).** The 2026-09-16 review had cut this
+whole category, on the AdminQoL lesson: a mod the server cannot enforce is a mod whose behaviour
+varies per player, and AdminQoL's gameplay defaults disabled durability loss for a full evening
+with no server setting able to reach them. #78 narrows that rather than reversing it. A
+presentation-only mod may ride in the Pack, because a player who removes it sees vanilla and no
+rule changes. A gameplay-bearing mod the server cannot reach still does not ship.
 
 | Mod | Decision |
 | --- | --- |
+| Azumatt/AzuHoverStats | **Adopted client-only.** Hover readouts for creatures, pieces, items and chests. Nothing in it is server-synced — every entry is a plain `Config.Bind` and there is no `ConfigSync` in the assembly — so the server could pin nothing even if it ran the mod, while installing it server-side *would* refuse every client that lacks it through its hand-rolled `AzuHoverStats_VersionCheck`. Its chest readout is not an information bypass: the `Container.GetHoverText` postfix bails on `m_checkGuardStone && !PrivateArea.CheckAccess(...)`, and STU_Ward prefixes exactly that method with clan-resolved trust, so another clan's warded chest shows nothing (#78) |
+| Azumatt/AzuClock | **Adopted client-only.** Clock and weather forecast on screen. It bundles ServerSync but is not installed on the server, so nothing of it is synchronised; a player who removes it loses a readout |
+| Azumatt/MouseTweaks | **Adopted client-only.** Mouse and modifier handling for moving, splitting and dropping stacks. Plain `Config.Bind` throughout, keybinds and thresholds only |
 | sighsorry/AdminQoL | **Dropped.** All 29 settings are client-decided: none is marked `[Synced with Server]` and it takes no part in the handshake (#70) |
 | TOYNBEE/BoneMod | **Dropped.** Cosmetic bone scaling, client-side, pointless on the server, and unenforceable by the same argument (#70) |
 | Lembitu.Harness | **Kept in the repository, never in the Pack.** It is our test harness for future acceptance work, inert without `-lembitu-harness`, and the builder asserts it is absent from a player's pack |
@@ -114,7 +140,9 @@ Both drops are done. `scripts/build-client-pack.sh` asserts that a required clie
 present, to catch a pack that silently lost content, and BoneMod was the only entry in that list;
 the assertion is repointed to Jotunn rather than deleted, because a client without Jotunn is
 refused at the handshake outright, so its absence is a hard failure rather than a missing feature.
-`test/client-pack.test.sh` covers that assertion and moved with it.
+AzuCraftyBoxes joins it for the same reason from v8 on: once the server runs it, a Pack that lost
+it would refuse every player who installed that Pack. `test/client-pack.test.sh` covers the
+assertion.
 
 **The pack also ships server-only mods.** The v5 archive contains `DiscordConnector` and
 `Max_Dungeon_Rooms`; both leave in v6. They are inert on a client but they inflate a 128 MB
@@ -279,6 +307,22 @@ Recorded so they are not rediscovered:
 - **EpicLoot declares an older Jotunn.** 0.14.5 declares 2.29.2 and runs against our 2.30.0 pin;
   DiscordConnector likewise declares an older BepInEx pack. Both are accepted skews, proven by the
   acceptance boot rather than by their manifests.
+- **AzuCraftyBoxes' restriction file is committed empty, and one API can rewrite it.** Read from
+  `AzuCraftyBoxes.dll` 1.8.19, sha256 `5a191f9c…3084d`. `YamlUtils.ReadYaml` turns a blank file
+  into an empty dictionary, and `CanItemBePulled` returns true for any container the dictionary
+  does not name, so an empty `Azumatt.AzuCraftyBoxes.yml` means everything in range is pullable.
+  The file must exist, because the plugin writes its bundled `Example.yml` when the path is
+  missing. Two facts to keep: `Containers.AddContainerIfNotExists` is a public API that appends a
+  container and rewrites the file, and `YamlUtils.WriteYaml` serialises the data twice into the
+  same file, so anything that calls it leaves a doubled document. Nothing in this pack calls it,
+  and the overlay is compared byte for byte on every restart, so a rewrite shows up as drift
+  rather than as silence (#78).
+- **Two Azumatt mods refuse a client on a per-mod RPC, not through ServerSync.** AzuCraftyBoxes
+  and AzuHoverStats each patch `ZNet.OnNewConnection` to invoke `<Mod>_VersionCheck` and
+  `ZNet.RPC_PeerInfo` to disconnect a peer that never answered. That is what makes a server-side
+  install mandatory for players, independently of `ConfigSync.ModRequired`, which both leave
+  false. It is also why AzuHoverStats is client-only: the mod would refuse clients while
+  synchronising nothing (#78).
 
 ## Considered and cut
 
@@ -312,6 +356,9 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | ZenDragon/ZenBossStone | Per-player boss trophies, but pulls a second mod library into the closure |
 | Hex_Viking/HexResourceTracker, GChallenge/GCValheimStats, Tristan/Player_Activity, Eilif/EilifPaths | Client-only and unenforceable; EilifPaths also changes gameplay per player |
 | KGvalheim/Marketplace_And_Server_NPCs_Revamped | Deprecated on Thunderstore and pre-1.0. Design reference for the deferred Trade Post only |
+| MSchmoecker/MultiUserChest | The only candidate that changes networked item movement, which is where duplication and item loss live. The vanilla "someone is in the chest" wait is an annoyance, not a problem. A risk judgement, not a conflict: its own incompatibility list — QuickStore, QuickStack, SimpleSort — touches nothing in this pack (#78) |
+| Crystal/BetterChat | Clan owns the chat window: it patches `Chat.Awake`, `InputText`, `HasFocus`, `Update`, `RPC_ChatMessage` and `SendPing`, and BetterChat rewrites the same input handling and visibility, risking the clan channel's prefixes. It would also add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own settings enforceable (#78) |
+| RustyMods/Seasonality | It sets the world global keys `season_winter`, `season_summer`, `season_spring` and `season_fall`, and this server blocks every global key (ADR-0005, ADR-0010). It also ships seasonal modifiers and weather control, so it is not the visual-only mod it appears to be, and it would reopen a difficulty the run fixed for its whole length (#78) |
 
 ## Re-pinning
 

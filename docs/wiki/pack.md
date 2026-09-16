@@ -270,8 +270,10 @@ turns the vanity button back on locally.
 
 **What the swap costs, recorded rather than discovered later.** The previous slot mod gated extra
 rows on item discovery; AzuEPI has no progression system, so rows are pinned at zero and there is
-nothing to gate (`docs/rules.md`). Multicraft, favourites, the crafting grid with search and sort,
-and scrollable tooltips have no counterpart and go.
+nothing to gate (`docs/rules.md`). Multicraft, the crafting grid with search and sort, and
+scrollable tooltips have no counterpart and go. Favourites were listed here as lost too, and that
+was wrong: AzuEPI 2.4.14 ships `[10 - Favoriting]` with a `Favoriting Modifier Key`, client-owned
+like the rest of its UI keys. Corrected by #78.
 
 **Staging is delegated, assertions are not.** `scripts/build-client-pack.sh` calls
 `scripts/stage-stack.sh` for pin parsing, SHA-256 verification against `docs/modstack.lock.json`,
@@ -290,6 +292,69 @@ archive: the `.zip` a player extracts over their Valheim install, a `.manifest.j
 version, the exclusions, the required client-side packages and each pin's package hash, and a
 `.versions.txt` listing every staged file with its SHA-256. Version labels alone would not catch a
 re-published package under the same version number; the hashes would.
+
+### Pack v8 — five quality-of-life mods (#78)
+
+Five pins in, three candidates rejected, and one ordering trap worth naming. The archive is not
+published by this Ticket: v8 carries #67's PvP plugin as well, and the group re-extracts once
+rather than twice, so the build and the announcement belong to that Ticket's window.
+
+| Mod | Pin | Where it runs | What the server holds |
+| --- | --- | --- | --- |
+| `Azumatt/AzuCraftyBoxes` | 1.8.19 | Server and Pack, **mandatory for a client** | `Container Range` 20 m, `Leave One Item` off, `Lock Configuration` on, and an empty `Azumatt.AzuCraftyBoxes.yml` |
+| `Azumatt/ProximityVoiceChat` | 1.0.2 | Server and Pack, optional for a client | Voice ranges and the Opus codec; nothing personal |
+| `Azumatt/AzuHoverStats` | 1.1.10 | Pack only | Nothing — it has no synchronised setting at all |
+| `Azumatt/AzuClock` | 1.1.0 | Pack only | Nothing |
+| `Azumatt/MouseTweaks` | 1.0.4 | Pack only | Nothing |
+
+None of them grows the dependency closure: four declare nothing and ProximityVoiceChat declares
+only the pack's own BepInEx loader pin. Staging recorded five new hashes and verified the existing
+twenty-one, with declared closure satisfied and no new override.
+
+**The trap: AzuCraftyBoxes must not reach the live server before the Pack is published.** It
+carries a hand-rolled version check — a `ZNet.OnNewConnection` prefix invoking
+`AzuCraftyBoxes_VersionCheck`, and a `ZNet.RPC_PeerInfo` prefix that disconnects any peer the
+server never recorded in `ValidatedPeers` — so the moment it loads server-side it refuses every
+client on v7. The server side and the Pack therefore deploy in one window. The four remaining mods
+could have shipped earlier without refusing anyone; one re-extract is worth more than early
+delivery.
+
+**Two facts in #78's plan were wrong, and the assemblies say so.** Recorded because both changed
+what shipped:
+
+- **AzuCraftyBoxes is mandatory, but not for the stated reason.** Its
+  `ConfigSync("Azumatt.AzuCraftyBoxes")` leaves `ModRequired` false, so ServerSync would refuse
+  nobody. The hand-rolled check above is what makes it mandatory. Same conclusion, different
+  mechanism — and the mechanism is what tells you which of Azumatt's mods are safe to install
+  server-side.
+- **AzuHoverStats cannot be enforced at all, so it ships client-only.** Every entry in it is a
+  plain `Config.Bind`; the assembly contains no `ConfigSync`, so no key of it is
+  `[Synced with Server]` and the server could pin nothing — while installing it server-side *would*
+  refuse every client lacking it, through the same hand-rolled check. The pin that motivated the
+  server-side install, `Show Chest Contents` off, is also unnecessary: the `Container.GetHoverText`
+  postfix already bails on `m_checkGuardStone && !PrivateArea.CheckAccess(...)`, and STU_Ward
+  prefixes exactly that method with clan-resolved trust. Another clan's warded chest shows no
+  contents; an unwarded chest shows them to anyone, who could equally have opened it.
+
+**Rejected, with the reason kept.** `MSchmoecker/MultiUserChest` 0.6.2 is the one candidate that
+changes networked item movement, where duplication and item loss live, and the vanilla
+"someone is in the chest" wait is an annoyance rather than a problem. `Crystal/BetterChat` 1.6.4
+rewrites the chat input and visibility that Clan already patches, risking the clan channel's
+prefixes, and would add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own
+settings enforceable. `RustyMods/Seasonality` 3.8.3 sets world global keys, which this server
+blocks outright (ADR-0005, ADR-0010), and ships seasonal modifiers and weather control besides, so
+it is not the visual-only mod it appears to be.
+
+**The builder now requires two client-side packages, not one.** `REQUIRED` names Jotunn and
+AzuCraftyBoxes: from v8 on, a Pack that silently lost the container mod would be refused by the
+server for every player who installed it, which is exactly the class of failure that assertion
+exists to catch.
+
+**What this Ticket did not do.** No archive was built, the server was not touched, and none of the
+play-time behaviour — pull range at 20 m against 30 m, hover inside another clan's ward, voice
+attenuation between two players, a v7 client's refusal — has been observed. Those belong to the v8
+window in #67, along with the boot log that shows the two server-side mods loaded and the drift
+check clean.
 
 ### Distribution
 

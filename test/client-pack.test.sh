@@ -54,10 +54,12 @@ pin_count() {  # pin_count <manifest>; entries inside the "pins" object
 }
 
 # --- fixtures ----------------------------------------------------------------------------------
-# A pin table with the two packages the asymmetry turns on: one client-side adopted package and one
-# server-only plugin that is NOT in the adopted table (MaxPlayerCount is a fork, so it is staged by
-# the build rather than by the pin list). The test injects the server-only plugin into the staged
-# tree the way a mistaken pack would, and checks the builder refuses it.
+# A pin table with the packages the asymmetry turns on: two client-side adopted packages the
+# builder asserts are present - the handshake library and the container mod the server refuses a
+# client for lacking - one further client-side package, and one server-only plugin that is NOT in
+# the adopted table (MaxPlayerCount is a fork, so it is staged by the build rather than by the pin
+# list). The test injects the server-only plugin into the staged tree the way a mistaken pack
+# would, and checks the builder refuses it.
 
 cat > "$WORK/modstack.md" <<'MD'
 # The mod stack
@@ -68,6 +70,7 @@ cat > "$WORK/modstack.md" <<'MD'
 | --- | --- | --- | --- |
 | acme/Jotunn | 1.0.2 | Library the handshake requires | — |
 | acme/Clan | 1.0.10 | Clans | — |
+| acme/AzuCraftyBoxes | 1.8.19 | Container pulls; the server refuses a client without it | — |
 
 ## Forks
 
@@ -119,12 +122,16 @@ make_zip "$CACHE/acme-Clan-1.0.10.zip" \
   'plugins/Clan.dll:Clan' \
   'BepInEx/config/Clan/emblem.png:emblem' \
   'manifest.json:{"name":"Clan","version_number":"1.0.10","dependencies":[]}'
+make_zip "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" \
+  'plugins/AzuCraftyBoxes.dll:AzuCraftyBoxes' \
+  'manifest.json:{"name":"AzuCraftyBoxes","version_number":"1.8.19","dependencies":[]}'
 
 LOCK="$WORK/lock.json"
 {
   printf '{\n'
   printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
-  printf '  "acme/Clan@1.0.10": "%s"\n'   "$(shasum -a 256 "$CACHE/acme-Clan-1.0.10.zip" | cut -d' ' -f1)"
+  printf '  "acme/Clan@1.0.10": "%s",\n'   "$(shasum -a 256 "$CACHE/acme-Clan-1.0.10.zip" | cut -d' ' -f1)"
+  printf '  "acme/AzuCraftyBoxes@1.8.19": "%s"\n' "$(shasum -a 256 "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" | cut -d' ' -f1)"
   printf '}\n'
 } > "$LOCK"
 
@@ -233,7 +240,7 @@ manifest="$OUT1/lembitu-client-pack-t.manifest.json"
 if json_looks_valid "$manifest"; then
   excluded="$(json_value "$manifest" excluded_server_only)"
   pins="$(pin_count "$manifest")"
-  if [[ "$excluded" == *MaxPlayerCount* ]] && [ "$pins" -eq 2 ]; then
+  if [[ "$excluded" == *MaxPlayerCount* ]] && [ "$pins" -eq 3 ]; then
     report ok "manifest is valid JSON naming the server-only exclusions and the pin hashes"
   else
     report fail "manifest is valid JSON naming the server-only exclusions and the pin hashes"
