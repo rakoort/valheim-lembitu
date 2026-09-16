@@ -325,6 +325,29 @@ options change when it happens, not whether. If the game updates, re-extract the
 would rather be immune copies the game folder instead and runs the copy, which Steam does not
 manage — at the price of launching from that folder by hand, since Play always runs Steam's copy.
 
+### Measured install — 2026-09-16 (v6)
+
+Same host and same Steam-managed folder, with `lembitu-client-pack-2026-09-16-v6`. The previous
+pack was moved aside rather than extracted over, because v5's dropped plugin directories would
+otherwise have survived the upgrade and made the test meaningless.
+
+- All 201 files in the pack's `.versions.txt` verified with `sha256sum -c` after extraction; 202
+  in v5, and the count moves with the contents rather than being a target.
+- `25 plugins to load` and `Chainloader startup complete`, against v5's 27: AdminQoL and BoneMod
+  are gone, and no line in the client log mentions either.
+- Both config seeds are present in the extracted tree and carry their decided values —
+  `Magic Rarity Color = #8a9ba8` and `4.1HPColor = none`.
+- The server reports `27 plugins to load` for the same pins, down from 29; the two dropped
+  packages were pruned from its tree and mirrored into the container in the same change.
+- Played on the live server by the owner: durability decays again, stations need a roof, the
+  rarity colours are muted, item names are vanilla, health and stamina are the game's own bars
+  with the XP bar kept, and a Magic drop lists exactly one effect (#73).
+
+Published as
+[client-pack-2026-09-16-v6](https://github.com/rakoort/valheim-lembitu/releases/tag/client-pack-2026-09-16-v6).
+This is the Pack the run uses; v5 is refused at the handshake only once #74 lands, so ask players
+to re-extract now rather than when it breaks.
+
 ### Measured install — 2026-09-15
 
 On astral-tricep, into the Steam-managed folder
