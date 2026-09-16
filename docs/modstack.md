@@ -54,10 +54,10 @@ and belongs in server-locked config rather than a player's file.
 Three groups, decided by evidence rather than by the package descriptions. The first group is
 observable: at every join the server announces a version for each mod that participates in the
 config/version handshake, and refuses a client that answers with the wrong version or none. The
-list below is the server's own announcement, read from the live log on 2026-09-16 — with one
-exception, marked in the table: AzuExtendedPlayerInventory has not booted on this server yet, so
-its row is the name the assembly registers (`ConfigSync("Azumatt.AzuExtendedPlayerInventory")`),
-not something anybody has read from a log. It becomes observed when #74 deploys.
+list below is the server's own announcement, read from the live log on 2026-09-16. Every row,
+AzuExtendedPlayerInventory included, has now been read from a join: the 14:48 UTC+2 join of a v7
+client logged `Sending AzuExtendedPlayerInventory version 2.4.14 and minimum version 2.4.14 to the
+client`, then `Version check, local: 2.4.14, remote: 2.4.14` and `Adding peer to validated list`.
 
 **Both sides, and the server enforces it.** A client missing any of these is refused at the
 handshake with `doesn't have the correct <mod> version`. Jotunn is enforced separately and first:
@@ -72,7 +72,7 @@ cancelling connection`.
 | sighsorry/CreatureManager | `CreatureManager` |
 | sighsorry/DataForge | `DataForge` |
 | sighsorry/Dive_In | `DiveIn` |
-| Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` — **expected, not yet observed** (#74) |
+| Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` |
 | sighsorry/SkadiNet | `SkadiNet` |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
 | turbero/PvPBiomeDominions | `PvP Biome Dominions` |
@@ -260,10 +260,10 @@ Recorded so they are not rediscovered:
   synchronised, so the server holds it for everyone
   (`config/enforced/Azumatt.AzuExtendedPlayerInventory.cfg`). The `Minimal` preset is not used:
   it would take loadouts and the stats panel with it, and both are kept deliberately (#74).
-- **Swapping the inventory mod changes the announced set, and that is the safe failure.**
-  InventorySlots was one of the mods the server version-checks at join. Replacing it with
-  AzuExtendedPlayerInventory means a client on an older Pack is refused outright rather than
-  silently mismatched, so every player needs the new Pack before they can connect (#74).
+- **The Pack's inventory mod is part of the announced set, and that is the safe failure.**
+  AzuExtendedPlayerInventory participates in the join-time version handshake, so any change to
+  which slot mod the server runs refuses an older Pack outright rather than mismatching silently.
+  Every player needs the current Pack before they can connect (#74).
 - **Retention is death-cause blind.** PvPBiomeDominions patches `Player.CreateTombStone`, which
   takes no killer, so a flagged player who drowns keeps their gear too. #8's premise — dying to a
   player costing less than dying to a troll — is only half achievable with this mod.

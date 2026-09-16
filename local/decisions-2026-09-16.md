@@ -118,10 +118,6 @@ stays `FollowBiomeRule`. Clan positions remain on in `sighsorry.Clan.cfg`.
 
 `Clan Friendly Fire = Off`, `Share Clan Positions = On`, `Lock Configuration = On`.
 
-## sighsorry.InventorySlots.cfg
-
-`Enable Death Keep Rules = Off`, `Lock Configuration = On`.
-
 ## WackyMole.ItemRequiresSkillLevel.yml
 
 Keep the four armour tiers and their levels (20, 35, 50, 65). Set `BlockCraft: false` and keep
@@ -213,9 +209,9 @@ handshake, so its absence is a hard failure rather than a missing feature.
 The authoritative classification lives in `docs/modstack.md` under "Where each mod runs", derived
 from the server's own version announcements at join rather than from package descriptions.
 
-## Inventory: InventorySlots out, AzuExtendedPlayerInventory in (#74)
+## Inventory: AzuExtendedPlayerInventory is the slot mod (#74)
 
-`sighsorry/InventorySlots` 1.4.17 is replaced by `Azumatt/AzuExtendedPlayerInventory` 2.4.14, which
+The previous slot mod is replaced by `Azumatt/AzuExtendedPlayerInventory` 2.4.14, which
 declares only the pack's own BepInEx loader pin. Target configuration:
 
 | Setting | Value | Why |
@@ -230,10 +226,10 @@ declares only the pack's own BepInEx loader pin. Target configuration:
 The `Minimal` preset must not be used: it disables loadouts and stats along with vanity.
 
 Accepted losses, with no AzuEPI counterpart: multicraft, favourites, the crafting grid with search
-and sort, and scrollable tooltips. InventorySlots' progression-gated rows and slots go too; they
-were never an enforced decision and unlocked on item discovery, not on boss keys.
+and sort, and scrollable tooltips. The progression-gated rows and slots of the previous mod go
+too; they were never an enforced decision and unlocked on item discovery, not on boss keys.
 
-InventorySlots is one of the fifteen mods the server version-checks at join, so removing it changes
+The slot mod is one of the fifteen mods the server version-checks at join, so replacing it changes
 the announced set and a client on the old Pack is refused rather than silently mismatched.
 
 ## EpicMMO HUD: XP bar yes, vanilla health and stamina

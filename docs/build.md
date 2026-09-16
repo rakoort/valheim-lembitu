@@ -571,8 +571,8 @@ covers the no-local-player boundary deterministically.
 
 The final **full-pack** invocation used `--mode full-pack --port 2486 --repeat 2
 --startup-timeout 360`. Session `native-tests/20260912T161105Z-full-pack-03bc47f8/` exited 1
-at configuration generation: the client never created `sighsorry.Clan.cfg` or
-`sighsorry.InventorySlots.cfg`. STU_Ward logged a Steamworks-before-initialization startup
+at configuration generation: the client never created `sighsorry.Clan.cfg` or the config of the
+slot mod then in the pack, since replaced (#74). STU_Ward logged a Steamworks-before-initialization startup
 exception. No measured full-pack gameplay ran. Cleanup sent native quit, observed client exit 0,
 stopped its server with exit 0, and removed the disposable game/world copies. Evidence remains.
 
@@ -596,7 +596,7 @@ The staging/installer/configuration suites passed all 35 checks.
 The full-pack command used `--mode full-pack --port 2486 --repeat 2 --startup-timeout 360`.
 Evidence: `/home/ra/.local/state/lembitu/native-tests/20260912T165242Z-full-pack-b6193d36/`.
 Client logs confirm runtime 1.0.12 and compiled network version 40. The run exited 1 during
-configuration generation: Clan and InventorySlots still failed before creating their configs;
+configuration generation: Clan and the slot mod then in the pack still failed before creating their configs;
 their stacks and STU_Ward report Steamworks access before initialization. Steam initialized
 later in the same client log. Updating the game did not resolve these startup failures.
 

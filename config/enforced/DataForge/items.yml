@@ -58,7 +58,7 @@
 #     backstabBonus: 1                     # backstab damage multiplier.
 #     attackForce: 0                       # knockback force.
 #   primaryAttack:
-#     # shown in reference/full scaffold only for InventorySlots-style sword/axe/club/knife/spear/polearm/fists/shield/pickaxe/tool/bow/crossbow/elemental magic/blood magic items.
+#     # shown in reference/full scaffold only for sword/axe/club/knife/spear/polearm/fists/shield/pickaxe/tool/bow/crossbow/elemental magic/blood magic items.
 #     cost: 0, 0, 0, 0                     # stamina, eitr, flat health, health percent costs; 40 means 40%.
 #     missingHealth: 0, 0, 0               # damage multiplier per missing HP, damage multiplier by total missing health percent, stamina returned per missing HP.
 #     spawnOnHit: None, 0                  # prefab spawned on hit, chance from 0 to 1; ChainLightning, 0.2 => 20% chance.
