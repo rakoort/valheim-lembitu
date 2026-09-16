@@ -210,7 +210,7 @@ rather than assumed to have carried over (#74).
 **Carrying capacity no longer grows with progression, and that is a deliberate loss.**
 InventorySlots unlocked extra inventory rows and quick-slot rows as a character discovered
 HardAntler, then CryptKey, then Wishbone, so capacity tracked progress. AzuEPI has no equivalent:
-its rows are a flat 0 to 6 for everyone. Rather than hand every new character several extra rows
+its rows are a flat 0 to 5 for everyone. Rather than hand every new character several extra rows
 from the first minute, the run pins extra rows at zero, so carrying capacity is vanilla plus
 whatever Haldor sells and the mod's equipment and quick slots. Nothing gates them because there
 is nothing to gate. Multicraft, favourites, the crafting grid with search and sort, and

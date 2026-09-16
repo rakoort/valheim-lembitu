@@ -54,7 +54,10 @@ and belongs in server-locked config rather than a player's file.
 Three groups, decided by evidence rather than by the package descriptions. The first group is
 observable: at every join the server announces a version for each mod that participates in the
 config/version handshake, and refuses a client that answers with the wrong version or none. The
-list below is the server's own announcement, read from the live log on 2026-09-16.
+list below is the server's own announcement, read from the live log on 2026-09-16 — with one
+exception, marked in the table: AzuExtendedPlayerInventory has not booted on this server yet, so
+its row is the name the assembly registers (`ConfigSync("Azumatt.AzuExtendedPlayerInventory")`),
+not something anybody has read from a log. It becomes observed when #74 deploys.
 
 **Both sides, and the server enforces it.** A client missing any of these is refused at the
 handshake with `doesn't have the correct <mod> version`. Jotunn is enforced separately and first:
@@ -69,7 +72,7 @@ cancelling connection`.
 | sighsorry/CreatureManager | `CreatureManager` |
 | sighsorry/DataForge | `DataForge` |
 | sighsorry/Dive_In | `DiveIn` |
-| Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` |
+| Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` — **expected, not yet observed** (#74) |
 | sighsorry/SkadiNet | `SkadiNet` |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
 | turbero/PvPBiomeDominions | `PvP Biome Dominions` |
@@ -246,9 +249,11 @@ Recorded so they are not rediscovered:
 
 - **AzuEPI's vanity system has no off switch, and hiding its button is enough.** Established from
   `AzuExtendedPlayerInventory.dll` 2.4.14, sha256 `852dcde0…6840b6`, decompiled with ilspycmd 11,
-  because the readme only claims the `Minimal` preset "turns off the vanity button". There is
-  exactly one vanity config key — `[5 - UI Features] Show Vanity Button` — and its whole effect
-  is `VanityButtonGo.SetActive(...)`. Nothing gates the vanity system itself. It is sufficient
+  because the readme only claims the `Minimal` preset "turns off the vanity button". One key
+  controls the surface — `[5 - UI Features] Show Vanity Button` — and its whole effect is
+  `VanityButtonGo.SetActive(...)`. A second vanity key exists, `Hide Unknown Vanity Items`, but
+  it only decides whether the panel lists undiscovered armour, so it changes nothing once the
+  panel cannot be opened. Nothing gates the vanity system itself. It is sufficient
   anyway: that same GameObject carries the gamepad binding built from
   `Vanity Panel Toggle Key`, so an inactive button leaves no button, no gamepad route and no way
   to author a vanity set. Present and unreachable, which is what the run wants. The key is
@@ -294,7 +299,7 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | MidnightMods/ValheimArmory | New base weapons need community EpicLoot patches to be enchantable (ADR-0004) |
 | MidnightMods/StarLevelSystem | Character level owns creature levels (ADR-0005) |
 | Smoothbrain/Groups | Second membership authority (ADR-0008) |
-| sighsorry/InventoryActions | Mutually exclusive with InventorySlots, and smaller |
+| sighsorry/InventoryActions | Mutually exclusive with AzuExtendedPlayerInventory, which holds the slots for this run, and smaller |
 | Nosferatu/SmoothServer | One pacing layer only; SkadiNet chosen |
 | WackyMole/WackysDatabase | DataForge covers tuning |
 | Tristan/Valheim_PvP_Tweaks | Overlaps PvPBiomeDominions; oldest pins on the list |

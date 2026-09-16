@@ -39,7 +39,7 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 
 **The remaining cuts are deliberate, not missing installation work.** The recorded exclusion list gives these reasons (`docs/modstack.md:185-216`):
 
-- InventoryActions conflicts with the larger InventorySlots; SmoothServer duplicates SkadiNet's pacing role; WackysDatabase adds a fork where DataForge covers tuning; Valheim_PvP_Tweaks overlaps PvPBiomeDominions and has old pins; ProtectiveWards duplicates STU_Ward.
+- InventoryActions conflicts with AzuExtendedPlayerInventory, which owns the slots; SmoothServer duplicates SkadiNet's pacing role; WackysDatabase adds a fork where DataForge covers tuning; Valheim_PvP_Tweaks overlaps PvPBiomeDominions and has old pins; ProtectiveWards duplicates STU_Ward.
 - ServerManager's Discord/logging role belongs to the adopted DiscordConnector. DiscordBot_AWL, DiscordTools and RustyMods/DiscordBot require an external bot host or two-way chat rather than a webhook. Discord_Screenshots is client-only with nothing depending on it.
 - Warfare was untouched since March 2025. HexResourceTracker, GCValheimStats, Player_Activity and EilifPaths are client-only and unenforceable; EilifPaths also changes gameplay per player.
 - Marketplace_And_Server_NPCs_Revamped is deprecated and pre-1.0; it is a design reference for the deferred Trade Post, not a shipping package.
@@ -242,6 +242,33 @@ Two seeds ship today, both of them keys marked "Not Synced with Server":
 A player edits these afterwards at will; they are display, not rules. What a seed cannot do is
 change anything the server decides, which is exactly why the palette is here and the drop rates
 are not.
+
+### Pack v7 — 2026-09-16 (#74)
+
+One package swapped: `sighsorry/InventorySlots` 1.4.17 out, `Azumatt/AzuExtendedPlayerInventory`
+2.4.14 in. AzuEPI declares only the pack's own BepInEx loader pin, so the dependency closure does
+not grow, and it is the base other slot mods extend through an API if the Pack ever does.
+
+**This is the first Pack that refuses the previous one.** InventorySlots is one of the mods the
+server version-checks at join, so removing it changes the announced set: a client still on v6 is
+refused outright rather than silently mismatched. That is the desired failure, but it means every
+player must re-extract before they can connect, and the server and the Pack must move together.
+
+**Slots only, and the vanity question is settled.** Extra rows stay at zero, three quick slots,
+the equipment row in its own panel, Wishbone and Demister slots on, loadouts and the stats panel
+kept, and the vanity button off. There is no switch for the vanity *system* — `Show Vanity
+Button` is the only key that touches the surface, and its whole effect is
+`VanityButtonGo.SetActive(...)` — but hiding the button removes the gamepad route too, because
+the binding lives on that same GameObject. Present and unreachable. The evidence is in
+`docs/modstack.md` under Known interactions; the keys are in
+`config/enforced/Azumatt.AzuExtendedPlayerInventory.cfg`, including `Lock Configuration`, which
+matters more than usual here: the `Apply Preset` key is *not* synchronised and its `Full` branch
+turns the vanity button back on locally.
+
+**What the swap costs, recorded rather than discovered later.** InventorySlots gated extra rows
+on discovering HardAntler, then CryptKey, then Wishbone; AzuEPI has no progression system, so
+rows are pinned at zero and there is nothing to gate (`docs/rules.md`). Multicraft, favourites,
+the crafting grid with search and sort, and scrollable tooltips have no counterpart and go.
 
 **Staging is delegated, assertions are not.** `scripts/build-client-pack.sh` calls
 `scripts/stage-stack.sh` for pin parsing, SHA-256 verification against `docs/modstack.lock.json`,
