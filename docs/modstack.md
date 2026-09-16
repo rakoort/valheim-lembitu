@@ -39,7 +39,7 @@ and belongs in server-locked config rather than a player's file.
 | team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Server-synced `CannonPrefabs_Enabled = false` |
 | turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
-| sighsorry/InventorySlots | 1.4.17 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
+| Azumatt/AzuExtendedPlayerInventory | 2.4.14 | Equipment slots, quick slots, Wishbone and Demister slots | Extra rows 0, three quick slots, equipment and special slots on; the vanity button off, which is the only switch the mod has for it |
 | turbero/DetailedLevels | 2.1.3 | Skill progress readout | — |
 | sighsorry/DataForge | 1.3.4 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
 | sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
@@ -69,7 +69,7 @@ cancelling connection`.
 | sighsorry/CreatureManager | `CreatureManager` |
 | sighsorry/DataForge | `DataForge` |
 | sighsorry/Dive_In | `DiveIn` |
-| sighsorry/InventorySlots | `InventorySlots` |
+| Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` |
 | sighsorry/SkadiNet | `SkadiNet` |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
 | turbero/PvPBiomeDominions | `PvP Biome Dominions` |
@@ -244,6 +244,21 @@ Read off the generated files in that boot, so the enforced overlays name real ke
 
 Recorded so they are not rediscovered:
 
+- **AzuEPI's vanity system has no off switch, and hiding its button is enough.** Established from
+  `AzuExtendedPlayerInventory.dll` 2.4.14, sha256 `852dcde0…6840b6`, decompiled with ilspycmd 11,
+  because the readme only claims the `Minimal` preset "turns off the vanity button". There is
+  exactly one vanity config key — `[5 - UI Features] Show Vanity Button` — and its whole effect
+  is `VanityButtonGo.SetActive(...)`. Nothing gates the vanity system itself. It is sufficient
+  anyway: that same GameObject carries the gamepad binding built from
+  `Vanity Panel Toggle Key`, so an inactive button leaves no button, no gamepad route and no way
+  to author a vanity set. Present and unreachable, which is what the run wants. The key is
+  synchronised, so the server holds it for everyone
+  (`config/enforced/Azumatt.AzuExtendedPlayerInventory.cfg`). The `Minimal` preset is not used:
+  it would take loadouts and the stats panel with it, and both are kept deliberately (#74).
+- **Swapping the inventory mod changes the announced set, and that is the safe failure.**
+  InventorySlots was one of the mods the server version-checks at join. Replacing it with
+  AzuExtendedPlayerInventory means a client on an older Pack is refused outright rather than
+  silently mismatched, so every player needs the new Pack before they can connect (#74).
 - **Retention is death-cause blind.** PvPBiomeDominions patches `Player.CreateTombStone`, which
   takes no killer, so a flagged player who drowns keeps their gear too. #8's premise — dying to a
   player costing less than dying to a troll — is only half achievable with this mod.

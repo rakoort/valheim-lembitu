@@ -200,8 +200,21 @@ player's grave, which is the opposite of what the Run wants. Observed by the own
 records the intended rule: an unflagged death is private, a flagged death is lootable.
 
 The tombstone still has to exist for any of it to matter, so no-item-loss stays off in both columns.
-InventorySlots has an independent keep-on-death system and it is disabled, so it cannot compete with
-that authority (`config/enforced/sighsorry.InventorySlots.cfg`).
+PvPBiomeDominions is the only authority on what a death takes. InventorySlots used to carry a
+competing keep-on-death system, which is why the overlay disabled it; its replacement,
+AzuExtendedPlayerInventory, has no death rules of its own, so there is nothing left to disable.
+What happens to items sitting in the extra equipment and quick slots on death is decided by
+whichever mod owns those slots, and that has changed hands — it is re-observed with two clients
+rather than assumed to have carried over (#74).
+
+**Carrying capacity no longer grows with progression, and that is a deliberate loss.**
+InventorySlots unlocked extra inventory rows and quick-slot rows as a character discovered
+HardAntler, then CryptKey, then Wishbone, so capacity tracked progress. AzuEPI has no equivalent:
+its rows are a flat 0 to 6 for everyone. Rather than hand every new character several extra rows
+from the first minute, the run pins extra rows at zero, so carrying capacity is vanilla plus
+whatever Haldor sells and the mod's equipment and quick slots. Nothing gates them because there
+is nothing to gate. Multicraft, favourites, the crafting grid with search and sort, and
+scrollable tooltips go with the swap too; they were conveniences, not rules.
 
 **Two things to know that the configuration does not say:**
 
