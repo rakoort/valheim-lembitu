@@ -29,10 +29,11 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() {
   cat >&2 <<'EOF'
-usage: scripts/launch-server.sh env | run | world-rules
+usage: scripts/launch-server.sh env | run | restart | world-rules
 
   env          print the container environment, secret file merged in
   run          create the data directories and start the container
+  restart      stop the container, re-apply the enforced overlay, start it and verify
   world-rules  print the world-rule arguments alone
 
 Reads config/launch/launch.env.example (committed, non-secret) and, for the password,
@@ -126,6 +127,36 @@ do_run() {
   printf 'next: deploy the pack with scripts/install-plugins.sh %s/bepinex\n' "$CONFIG_DIR"
 }
 
+# Stop, apply, start, verify — in that order, because the order is the whole point.
+#
+# Applying the overlay to a *running* server is what produced the 2026-09-16 revert. The mods
+# watch their own files: EpicLoot logged `Config file ... changed on disk, reloading it` the
+# moment the applier touched it, and the ServerSync-locked mods answered a mid-session edit by
+# writing their in-memory values back over it. The disk then held the mod's defaults and the
+# operator's apply had been undone within seconds, silently. A stopped container has nothing
+# holding those files, so the values the applier writes are the values the mods read at boot.
+do_restart() {
+  command -v docker >/dev/null 2>&1 || die "docker is not available"
+  docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 \
+    || die "no container named $CONTAINER_NAME; create it with: scripts/launch-server.sh run"
+
+  printf 'stopping %s\n' "$CONTAINER_NAME"
+  docker stop "$CONTAINER_NAME" >/dev/null
+
+  enforce_config "$CONFIG_DIR/bepinex"
+
+  # Everything after this second is this boot. The log carries every previous boot too, and with
+  # `AppendLog = true` so does the file, so an unscoped search would match a banner from last week.
+  local since; since="$(date -u +%Y-%m-%dT%H:%M:%S)"
+  docker start "$CONTAINER_NAME" >/dev/null
+  printf 'started %s; waiting for the chainloader\n' "$CONTAINER_NAME"
+
+  wait_for_chainloader "${CHAINLOADER_TIMEOUT:-300}" "$since" \
+    || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
+  "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
+    || die "the server booted with a drifted config; the keys above are not in effect"
+}
+
 # The enforced overlay is re-applied on every start and proved afterwards (ADR-0011, #69).
 #
 # Both halves have to be here rather than in the operator's hands, because the thing that went
@@ -156,10 +187,14 @@ enforce_config() {  # enforce_config <bepinex-config-dir>
 # `pipefail` that exit status 141 would make a *successful* match read as a failure, and a real
 # boot writes far more than a pipe buffer after the banner. The subshell turns pipefail off for
 # this one pipeline so the match is what decides.
-wait_for_chainloader() {  # wait_for_chainloader <seconds>
+wait_for_chainloader() {  # wait_for_chainloader <seconds> [since]
   local deadline=$(( SECONDS + $1 ))
+  # `scope` stays empty for a freshly created container, whose log holds one boot anyway. The
+  # guarded expansion is for bash 3.2, where `set -u` rejects an empty array under `"${a[@]}"`.
+  local -a scope=()
+  if [[ $# -ge 2 && -n "${2:-}" ]]; then scope=(--since "$2"); fi
   while (( SECONDS < deadline )); do
-    if ( set +o pipefail; docker logs "$CONTAINER_NAME" 2>&1 | grep -qa 'Chainloader startup complete' ); then
+    if ( set +o pipefail; docker logs ${scope[@]+"${scope[@]}"} "$CONTAINER_NAME" 2>&1 | grep -qa 'Chainloader startup complete' ); then
       return 0
     fi
     sleep 5
@@ -170,6 +205,7 @@ wait_for_chainloader() {  # wait_for_chainloader <seconds>
 case "${1:-}" in
   env) do_env ;;
   run) do_run ;;
+  restart) do_restart ;;
   world-rules) world_rules ;;
   -h|--help) usage; exit 0 ;;
   *) usage; exit 1 ;;
