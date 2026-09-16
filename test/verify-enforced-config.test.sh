@@ -150,6 +150,24 @@ else
   report fail "a missing target file fails with a message naming the file"
 fi
 
+# --- 8b. a target that cannot be read is an error, not drift -----------------------------------
+# A file the command cannot open holds an unknown value, not a wrong one. Reporting it as drift
+# sends the operator to correct a key in a file nobody could read; the run must stop instead.
+# Skipped as root, where mode 000 is not a barrier.
+
+if [[ "$(id -u)" != 0 ]]; then
+  reset_tree
+  chmod 000 "$CFG/mod.cfg"
+  if ! run_verify \
+     && grep -q 'cannot read mod.cfg' "$WORK/out" \
+     && ! grep -q '^drift:' "$WORK/out"; then
+    report ok "an unreadable target aborts instead of being reported as drift"
+  else
+    report fail "an unreadable target aborts instead of being reported as drift"
+  fi
+  chmod 644 "$CFG/mod.cfg"
+fi
+
 # --- 9. every difference is reported, not only the first ----------------------------------------
 # An operator reading a failed restart wants the list. Stopping at the first difference turns one
 # restart into as many restarts as there are drifted keys.

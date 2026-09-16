@@ -219,8 +219,9 @@ Read off the generated files in that boot, so the enforced overlays name real ke
 
 - **Personal keys** — `com.orianaventure.mod.WorldAdvancementProgression.cfg`, section `[Keys]`
   (`BlockAllGlobalKeys`, `UsePrivateKeys`), `[Locking]` (`LockEquipment`, `LockCrafting`, and the
-  locks we leave off), `[Raids]` (`UsePrivateRaids`), `[Skills]` (`EnableSkillManager`, left off
-  because character level owns progression here).
+  locks we leave off), `[Raids]` (`UsePrivateRaids`), `[Skills]` (`EnableSkillManager`, now *on*
+  as a floor that follows private boss keys, with the ceiling left at vanilla; the 2026-09-16
+  review reversed the earlier decision to leave it off).
 - **Loot gating** — `randyknapp.mods.epicloot.cfg`, section `[2 - Balance]`, key
   `Item Drop Limits`, set to `PlayerMustKnowRecipe`. Caveat worth knowing before the session: the
   mode reads `Player.m_localPlayer.IsRecipeKnown`, and EpicLoot gates everything when there is no
@@ -233,10 +234,12 @@ Read off the generated files in that boot, so the enforced overlays name real ke
   boss level and therefore boss health — through the `Boss` `healthPerLevel` default — rises by
   biome tier; expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader. `Hard` is not the
   package default, so it is pinned deliberately (#13). Section
-  `[4 - Multiplayer Difficulty]` holds vanilla's per-player scaling and is left untouched, so extra
-  players help rather than inflating the boss in step with them. Tier scaling through the preset
-  avoids committing a copy of `levels.yml`, which the overlay would have to replace wholesale and
-  which grows fields with every release.
+  `[4 - Multiplayer Difficulty]` used to be left untouched, on the reasoning that extra players
+  should help rather than inflate the boss. The 2026-09-16 review took the opposite decision and
+  removed headcount from the question entirely: both percentages are zero and the cap is one, and
+  difficulty is set in `levels.yml` instead, at `Global.health = 4` and `Boss.health = 8`. That
+  file is therefore committed and replaced wholesale, with the cost the earlier note named — it
+  grows fields with every release, so a package update is a review of this file (#68).
 
 ## Known interactions
 

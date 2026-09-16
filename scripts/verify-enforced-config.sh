@@ -27,63 +27,68 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "$REPO_ROOT/scripts/lib/enforced-config.sh"
 OVERLAY_DIR="$REPO_ROOT/config/enforced"
 
-die() { enforced_die "$@"; }
+
 
 drift=0
 checked=0
-verify_target=""
-verify_rel=""
 
-# The callback enforced_cfg_each hands every overlay entry to; the file under test travels in
-# verify_target, and verify_rel is what an operator sees, so the message names the overlay path
-# rather than a temporary absolute one.
-verify_entry() {  # verify_entry <section> <key> <value>
-  local section=$1 key=$2 want=$3 got rc=0
+# The callback enforced_cfg_each hands every overlay entry to, followed by the two arguments the
+# walk forwards: the file under test, and the overlay-relative name an operator should see rather
+# than an absolute path.
+verify_entry() {  # verify_entry <section> <key> <value> <target-file> <rel>
+  local section=$1 key=$2 want=$3 target=$4 rel=$5 got rc=0
   checked=$((checked + 1))
-  got="$(enforced_cfg_value "$verify_target" "$section" "$key")" || rc=$?
-  if [[ $rc == 3 ]]; then
-    printf 'absent: %s :: [%s] :: %s - expected "%s", the mod generated no such key\n' \
-      "$verify_rel" "$section" "$key" "$want"
-    drift=$((drift + 1))
-  elif [[ "$got" != "$want" ]]; then
-    printf 'drift:  %s :: [%s] :: %s - expected "%s", live "%s"\n' \
-      "$verify_rel" "$section" "$key" "$want" "$got"
-    drift=$((drift + 1))
-  fi
+  got="$(enforced_cfg_value "$target" "$section" "$key")" || rc=$?
+  case $rc in
+    # An unreadable target is not drift and not an absent key. Reporting it as either would send
+    # an operator to change a value in a file the command could not open.
+    2) enforced_die "cannot read $rel while checking [$section] $key" ;;
+    3)
+      printf 'absent: %s :: [%s] :: %s - expected "%s", the mod generated no such key\n' \
+        "$rel" "$section" "$key" "$want"
+      drift=$((drift + 1))
+      ;;
+    *)
+      if [[ "$got" != "$want" ]]; then
+        printf 'drift:  %s :: [%s] :: %s - expected "%s", live "%s"\n' \
+          "$rel" "$section" "$key" "$want" "$got"
+        drift=$((drift + 1))
+      fi
+      ;;
+  esac
 }
 
 if [[ "${1:-}" == "--overlay" ]]; then
-  [[ $# -ge 3 ]] || die "--overlay needs a directory and a target"
+  [[ $# -ge 3 ]] || enforced_die "--overlay needs a directory and a target"
   OVERLAY_DIR="$2"
   shift 2
 fi
-[[ $# -eq 1 ]] || die "usage: scripts/verify-enforced-config.sh [--overlay <dir>] <bepinex-config-dir>"
+[[ $# -eq 1 ]] || enforced_die "usage: scripts/verify-enforced-config.sh [--overlay <dir>] <bepinex-config-dir>"
 CONFIG_DIR=$1
-[[ -d "$CONFIG_DIR" ]] || die "no such directory: $CONFIG_DIR"
-[[ -d "$OVERLAY_DIR" ]] || die "no overlay at $OVERLAY_DIR"
+[[ -d "$CONFIG_DIR" ]] || enforced_die "no such directory: $CONFIG_DIR"
+[[ -d "$OVERLAY_DIR" ]] || enforced_die "no overlay at $OVERLAY_DIR"
 
 found=0
 while IFS= read -r rel; do
   found=1
-  verify_rel="$rel"
-  verify_target="$CONFIG_DIR/$rel"
-  if [[ ! -f "$verify_target" ]]; then
+  target="$CONFIG_DIR/$rel"
+  if [[ ! -f "$target" ]]; then
     printf 'missing: %s - the overlay names it, the mods never generated it\n' "$rel"
     drift=$((drift + 1))
     continue
   fi
   case "$rel" in
-    *.cfg) enforced_cfg_each "$OVERLAY_DIR/$rel" verify_entry ;;
+    *.cfg) enforced_cfg_each "$OVERLAY_DIR/$rel" verify_entry "$target" "$rel" ;;
     *)
       checked=$((checked + 1))
-      if ! cmp -s "$OVERLAY_DIR/$rel" "$verify_target"; then
+      if ! cmp -s "$OVERLAY_DIR/$rel" "$target"; then
         printf 'drift:  %s - live file content differs from the overlay\n' "$rel"
         drift=$((drift + 1))
       fi
       ;;
   esac
 done < <(enforced_overlay_files "$OVERLAY_DIR")
-[[ $found == 1 ]] || die "overlay at $OVERLAY_DIR is empty"
+[[ $found == 1 ]] || enforced_die "overlay at $OVERLAY_DIR is empty"
 
 if [[ $drift -eq 0 ]]; then
   printf 'enforced config verified: %d entries match\n' "$checked"

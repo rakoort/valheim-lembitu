@@ -151,10 +151,15 @@ enforce_config() {  # enforce_config <bepinex-config-dir>
 
 # Block until the chainloader reports it has finished, so the mods have written whatever they were
 # going to write. A boot that never gets there is its own failure and is named as one.
+#
+# `grep -q` stops reading at the first match, which sends SIGPIPE to `docker logs`; under
+# `pipefail` that exit status 141 would make a *successful* match read as a failure, and a real
+# boot writes far more than a pipe buffer after the banner. The subshell turns pipefail off for
+# this one pipeline so the match is what decides.
 wait_for_chainloader() {  # wait_for_chainloader <seconds>
   local deadline=$(( SECONDS + $1 ))
   while (( SECONDS < deadline )); do
-    if docker logs "$CONTAINER_NAME" 2>&1 | grep -qa 'Chainloader startup complete'; then
+    if ( set +o pipefail; docker logs "$CONTAINER_NAME" 2>&1 | grep -qa 'Chainloader startup complete' ); then
       return 0
     fi
     sleep 5

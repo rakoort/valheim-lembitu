@@ -24,8 +24,11 @@ enforced_overlay_files() {  # enforced_overlay_files <overlay-dir>
 # whatever spacing reads best and still matches a target the mod wrote differently. Anything that
 # is not a comment, a blank line, a section header or an entry is a malformed overlay and aborts:
 # silently skipping a line here would silently stop enforcing it.
-enforced_cfg_each() {  # enforced_cfg_each <overlay-file> <callback>
+# Trailing arguments are forwarded to the callback after the entry, so a caller can hand it the
+# file being worked on rather than reaching for a global.
+enforced_cfg_each() {  # enforced_cfg_each <overlay-file> <callback> [callback-arg...]
   local overlay=$1 callback=$2
+  shift 2
   local section="" key value line
   while IFS= read -r line || [[ -n "$line" ]]; do
     case "$line" in
@@ -36,7 +39,7 @@ enforced_cfg_each() {  # enforced_cfg_each <overlay-file> <callback>
         key="${key#"${key%%[![:space:]]*}"}"; key="${key%"${key##*[![:space:]]}"}"
         value="${value#"${value%%[![:space:]]*}"}"; value="${value%"${value##*[![:space:]]}"}"
         [[ -n "$section" && -n "$key" ]] || enforced_die "entry outside a section in $overlay: $line"
-        "$callback" "$section" "$key" "$value"
+        "$callback" "$section" "$key" "$value" "$@"
         ;;
       *) enforced_die "not a section, comment or entry in $overlay: $line" ;;
     esac
@@ -44,9 +47,14 @@ enforced_cfg_each() {  # enforced_cfg_each <overlay-file> <callback>
 }
 
 # The value a generated target holds for one section+key, stripped of surrounding whitespace.
-# Return code 3 is the "key absent" sentinel, distinct from any read failure, because the two mean
-# opposite things: absent is a key the mod has not generated, which the applier appends and the
-# verifier reports, while a failure to read must never be mistaken for either.
+#
+# Three outcomes, and they must stay three. 0 is a value. 3 is "the mod generated no such key",
+# which the applier answers by appending and the verifier by reporting drift. 2 is a failure to
+# read the file at all, which is neither: a caller that folded it into 3 would append a duplicate
+# key to a file it could not read, and one that folded it into 0 would report an unreadable
+# target as an ordinary empty value. Dying here would not do, because every caller reads this
+# function through a command substitution, where an exit kills only the subshell and the caller
+# carries on with an empty string.
 enforced_cfg_value() {  # enforced_cfg_value <target-file> <section> <key>
   local file=$1 section=$2 key=$3 rc=0
   awk -v sec="[$section]" -v key="$key" '
@@ -64,6 +72,6 @@ enforced_cfg_value() {  # enforced_cfg_value <target-file> <section> <key>
     }
     END { exit found ? 0 : 3 }
   ' "$file" || rc=$?
-  [[ $rc == 0 || $rc == 3 ]] || enforced_die "awk failed ($rc) reading $file"
+  [[ $rc == 0 || $rc == 3 ]] || return 2
   return $rc
 }
