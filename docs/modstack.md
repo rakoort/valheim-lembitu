@@ -44,7 +44,7 @@ belongs in server-locked config rather than a player's file.
 | turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
 | Azumatt/AzuExtendedPlayerInventory | 2.4.14 | Equipment slots, quick slots, Wishbone and Demister slots | Extra rows 0, three quick slots, equipment and special slots on; the vanity button off, which is the only switch the mod has for it |
-| Azumatt/AzuCraftyBoxes | 1.8.19 | Crafting and building pull materials from containers near the station | `Container Range` 20 m; `Leave One Item` off; config locked; `Azumatt.AzuCraftyBoxes.yml` committed empty, so everything in range is pullable |
+| Azumatt/AzuCraftyBoxes | 1.8.19 | Crafting and building pull materials from containers near the station | `Container Range` 20 m; `Leave One Item` off; `Mod Enabled` on; config locked; `Azumatt.AzuCraftyBoxes.yml` committed empty, so everything in range is pullable |
 | Azumatt/AzuHoverStats | 1.1.10 | Hover readouts for creatures, pieces, items, chests and crafting timers | — Nothing in it is server-synced, so the server can pin nothing; client-only |
 | Azumatt/AzuClock | 1.1.0 | On-screen clock and weather forecast | — Client-only |
 | Azumatt/MouseTweaks | 1.0.4 | Inventory moving, stack splitting and quick-dropping with mouse and modifier | — Client-only |
@@ -98,7 +98,7 @@ cancelling connection`.
 | WackyMole/WackyEpicMMOSystem | `EpicMMOSystem`, plus its `ItemManager` and `PieceManager` |
 | WackyMole/WackyItemRequiresSkillLevel | `ItemRequiresSkillLevel` |
 | team0/ValheimRAFT | `ValheimRAFT` |
-| Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, not yet from a join:** ServerSync announces the version because the announcement runs whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. Observed at the v8 join (#78) |
+| Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, not from a join:** ServerSync announces the version because the announcement runs whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. To be observed at the v8 join (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
 
 **Both sides, but not enforced.** These need the client to work fully and will not refuse a join
@@ -135,6 +135,15 @@ rule changes. A gameplay-bearing mod the server cannot reach still does not ship
 | sighsorry/AdminQoL | **Dropped.** All 29 settings are client-decided: none is marked `[Synced with Server]` and it takes no part in the handshake (#70) |
 | TOYNBEE/BoneMod | **Dropped.** Cosmetic bone scaling, client-side, pointless on the server, and unenforceable by the same argument (#70) |
 | Lembitu.Harness | **Kept in the repository, never in the Pack.** It is our test harness for future acceptance work, inert without `-lembitu-harness`, and the builder asserts it is absent from a player's pack |
+
+**Client-only is a deployment rule, and it is enforced by the installer.** `scripts/stage-stack.sh`
+stages every adopted pin into `dist/`, because the client Pack is built from the same table, so
+`dist/` alone does not distinguish the sides. `scripts/install-plugins.sh` carries the server's
+half — a `CLIENT_ONLY` list naming AzuHoverStats, AzuClock and MouseTweaks — and it withholds them
+from a server install and prunes them from a server that already has one. That is not tidiness:
+AzuHoverStats disconnects a peer that does not answer its version check, so deploying it would
+refuse exactly the players the Pack shipped it for. The mirror-image list, for the server-only
+packages a player's Pack must not carry, lives in `scripts/build-client-pack.sh` (#78).
 
 Both drops are done. `scripts/build-client-pack.sh` asserts that a required client-side package is
 present, to catch a pack that silently lost content, and BoneMod was the only entry in that list;

@@ -336,29 +336,43 @@ else
 fi
 
 # --- 5. a missing client-side package is refused, not silently dropped -----------------------
+# Once per name in REQUIRED, because the builder dies on the first one missing: a table that pins
+# the others still has to be refused for the one it dropped. Naming the package in the assertion is
+# what makes each entry defended rather than carried along by another entry's failure.
 
-cat > "$WORK/modstack-noclient.md" <<'MD'
-# The mod stack
+required_case() {  # required_case <name> <pinned-row>...
+  local want=$1; shift
+  local md="$WORK/modstack-no-$want.md" lock="$WORK/lock-no-$want.json" row team mod version
+  {
+    printf '# The mod stack\n\n## Adopted upstream\n\n'
+    printf '| Mod | Pin | Role | Enforced config |\n| --- | --- | --- | --- |\n'
+    printf '%s\n' "$@"
+  } > "$md"
+  {
+    printf '{\n'
+    local sep=""
+    for row in "$@"; do
+      IFS='/@' read -r team mod version <<<"$(awk -F'|' '{gsub(/ /,"",$2); gsub(/ /,"",$3); print $2 "@" $3}' <<<"$row")"
+      printf '%s  "%s/%s@%s": "%s"' "$sep" "$team" "$mod" "$version" \
+        "$(shasum -a 256 "$CACHE/$team-$mod-$version.zip" | cut -d' ' -f1)"
+      sep=",\n"
+    done
+    printf '\n}\n'
+  } > "$lock"
+  ! "$BUILDER" --out "$WORK/out5-$want" --version t --pins "$md" \
+       --cache "$CACHE" --lock "$lock" > "$WORK/out" 2>&1 \
+    && grep -q "missing required client-side package '$want'" "$WORK/out"
+}
 
-## Adopted upstream
-
-| Mod | Pin | Role | Enforced config |
-| --- | --- | --- | --- |
-| acme/Clan | 1.0.10 | Clans | — |
-MD
-
-{
-  printf '{\n'
-  printf '  "acme/Clan@1.0.10": "%s"\n' "$(shasum -a 256 "$CACHE/acme-Clan-1.0.10.zip" | cut -d' ' -f1)"
-  printf '}\n'
-} > "$WORK/lock-noclient.json"
-
-if ! "$BUILDER" --out "$WORK/out5" --version t --pins "$WORK/modstack-noclient.md" \
-       --cache "$CACHE" --lock "$WORK/lock-noclient.json" > "$WORK/out" 2>&1 \
-   && grep -q "missing required client-side package" "$WORK/out"; then
-  report ok "refuses a pack that lost a required client-side package"
+if required_case Jotunn \
+     '| acme/Clan | 1.0.10 | Clans | — |' \
+     '| acme/AzuCraftyBoxes | 1.8.19 | Container pulls | — |' \
+   && required_case AzuCraftyBoxes \
+     '| acme/Jotunn | 1.0.2 | Library | — |' \
+     '| acme/Clan | 1.0.10 | Clans | — |'; then
+  report ok "refuses a pack that lost a required client-side package, naming that package"
 else
-  report fail "refuses a pack that lost a required client-side package"
+  report fail "refuses a pack that lost a required client-side package, naming that package"
 fi
 
 # --- 5b. an upstream launcher without the arch probe is refused -------------------------------

@@ -308,8 +308,11 @@ rather than twice, so the build and the announcement belong to that Ticket's win
 | `Azumatt/MouseTweaks` | 1.0.4 | Pack only | Nothing |
 
 None of them grows the dependency closure: four declare nothing and ProximityVoiceChat declares
-only the pack's own BepInEx loader pin. Staging recorded five new hashes and verified the existing
-twenty-one, with declared closure satisfied and no new override.
+only the pack's own BepInEx loader pin. `scripts/stage-stack.sh` on 2026-09-16 recorded five new
+hashes into `docs/modstack.lock.json`, verified the existing twenty-one, and satisfied the declared
+closure with no new override; the committed lock diff is the artifact, and re-running the stager
+reproduces it byte for byte. `scripts/screen-bundled-libs.sh` reports all five clean against the
+extracted 1.0.12 references (ADR-0002), which is a static screen and not a boot.
 
 **The trap: AzuCraftyBoxes must not reach the live server before the Pack is published.** It
 carries a hand-rolled version check — a `ZNet.OnNewConnection` prefix invoking
@@ -330,11 +333,15 @@ what shipped:
 - **AzuHoverStats cannot be enforced at all, so it ships client-only.** Every entry in it is a
   plain `Config.Bind`; the assembly contains no `ConfigSync`, so no key of it is
   `[Synced with Server]` and the server could pin nothing — while installing it server-side *would*
-  refuse every client lacking it, through the same hand-rolled check. The pin that motivated the
-  server-side install, `Show Chest Contents` off, is also unnecessary: the `Container.GetHoverText`
-  postfix already bails on `m_checkGuardStone && !PrivateArea.CheckAccess(...)`, and STU_Ward
-  prefixes exactly that method with clan-resolved trust. Another clan's warded chest shows no
-  contents; an unwarded chest shows them to anyone, who could equally have opened it.
+  refuse every client lacking it, through the same hand-rolled check. The criterion's *purpose* is
+  met a different way rather than dropped. `Show Chest Contents` was to be pinned off because
+  hover-reading another clan's warded chest would bypass Ward as information; it does not, because
+  the `Container.GetHoverText` postfix already bails on
+  `m_checkGuardStone && !PrivateArea.CheckAccess(...)` and STU_Ward prefixes exactly that method
+  with clan-resolved trust. Another clan's warded chest shows no contents; an unwarded chest shows
+  them to anyone who could equally have opened it. A `config/client/` seed turning the readout off
+  anyway was considered and rejected: the leak was the only reason to want it off, and the readout
+  is half of why the mod was adopted.
 
 **Rejected, with the reason kept.** `MSchmoecker/MultiUserChest` 0.6.2 is the one candidate that
 changes networked item movement, where duplication and item loss live, and the vanilla
@@ -349,6 +356,13 @@ it is not the visual-only mod it appears to be.
 AzuCraftyBoxes: from v8 on, a Pack that silently lost the container mod would be refused by the
 server for every player who installed it, which is exactly the class of failure that assertion
 exists to catch.
+
+**And the installer now withholds the three Pack-only mods.** `dist/` holds every adopted pin,
+because the Pack is staged from the same table, so `scripts/install-plugins.sh` carries a
+`CLIENT_ONLY` list — AzuHoverStats, AzuClock, MouseTweaks — and both withholds them from a server
+install and prunes them from a server that already has one. Without it, a routine stage-and-install
+would put AzuHoverStats on the server and refuse every player who took `docs/rules.md` at its word
+and deleted it. `test/install-plugins.test.sh` covers both halves.
 
 **What this Ticket did not do.** No archive was built, the server was not touched, and none of the
 play-time behaviour — pull range at 20 m against 30 m, hover inside another clan's ward, voice

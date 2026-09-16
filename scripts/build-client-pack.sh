@@ -61,10 +61,10 @@ LIST=0
 EXCLUDED=(MaxPlayerCount Lembitu.Harness)
 # Adopted packages a client needs, each because its absence is a hard failure rather than a
 # feature nobody notices. Jotunn, because a client without it is refused at the handshake
-# outright. AzuCraftyBoxes, because from v8 the server runs it and its hand-rolled
-# `AzuCraftyBoxes_VersionCheck` disconnects any peer that never answers, so a Pack that lost it
-# would refuse every player who installed that Pack (#78). This assertion used to name BoneMod,
-# which the 2026-09-16 review dropped along with every other client-only mod (#70).
+# outright. AzuCraftyBoxes, because from v8 the server runs it and it version-checks every peer,
+# so a Pack that lost it would refuse every player who installed that Pack (docs/modstack.md,
+# "Where each mod runs"; #78). This assertion used to name BoneMod, which the 2026-09-16 review
+# dropped along with every other client-only mod (#70).
 REQUIRED=(Jotunn AzuCraftyBoxes)
 
 # Repository-owned client configuration seeds, copied over the package seeds after staging. These

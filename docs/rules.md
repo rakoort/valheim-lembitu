@@ -278,6 +278,11 @@ rule, none is enforced, and a player who deletes them sees vanilla. Hovering a c
 another clan's ward shows nothing, because the readout asks the same access check the ward
 answers.
 
+- Register: *Intended*. None of this is live yet: the five mods are pinned and their overlays
+  committed, but the Pack that carries them and the server side of the container mod deploy
+  together in #67's v8 window. Nothing here — the 20 m pull, the voice distances, the hover
+  behaviour inside a ward — has been observed in play.
+
 ## What is not here
 
 **The Trade Post is not built.** A clan trading interface with contracts, escrow and mailbox
