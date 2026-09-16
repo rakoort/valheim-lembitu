@@ -69,11 +69,11 @@ because the alternatives are what a future reader will wonder about.
 - **No cooldown, no delayed activation, no broadcast.** Place is the only friction, and a stance
   change is told to its owner alone, as vanilla does. The map already hides other players, so a
   flagged stranger is meant to be a surprise.
-- **Two-player proof is blocked on a licence, not on effort.** Both test hosts share one Steam
-  account (`ap3l5in`), and Valheim cannot run one account in two places at once. Every criterion in
-  `issue://67` needing two simultaneous players — tombstone access, and the slot-retention checks
-  inherited from #74 — waits on a second licence. `docs/build.md` records the same constraint
-  against the outstanding simultaneous two-client acceptance.
+- **A scripted two-client harness session is not required.** The run has players, so tombstone
+  access is observed in ordinary play on the live server. Everything else — the place gate, both
+  directions, persistence, the mismatch correction and retention — is provable by one character.
+  Recorded because the earlier plan called for a simultaneous two-client native session, which both
+  test hosts sharing one Steam account made a licence problem rather than a test.
 
 ## Lessons
 

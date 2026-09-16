@@ -229,8 +229,8 @@ PvPBiomeDominions keeps an item only when it is `m_equipped`, or when `m_gridPos
 the vanilla hotbar row alone. Armour worn in an equipment slot is equipped, so a flagged player
 keeps it; a quick slot sits on a row below the backpack, so its contents drop even though the HUD
 shows them beside the hotbar. Read from `PvPBiomeDominions.dll` 1.7.8 and
-`AzuExtendedPlayerInventory.dll` 2.4.14, decompiled 2026-09-16; #74 holds the two-client
-observation that would make it a measurement.
+`AzuExtendedPlayerInventory.dll` 2.4.14, decompiled 2026-09-16. One character dying twice, once
+flagged and once not, turns it into a measurement; #67 carries that.
 
 **Carrying capacity does not grow with progression, and that is a deliberate choice.**
 AzuEPI's extra rows are a flat 0 to 5 for everyone, with no way to unlock them as a character
