@@ -68,3 +68,25 @@ kill. The mechanism is no longer ours.
   through World Advancement Progression's `LockEquipment` and `LockCrafting`. Nothing else is
   key-locked: building, cooking, eating, repairs, portals and boats stay open.
 - **Character-save storage is accepted as authoritative**, with no tamper resistance (ADR-0010).
+
+## Amendment — 2026-09-16
+
+The 2026-09-16 configuration review went through every lock the mod offers and changed the scope
+the 2026-09-15 amendment set above. The list of key-locked actions is now: equipment, crafting,
+**cooking**, **eating**, guardian powers and boss summons. Building, building repair, equipment
+repair, taming, boats and portals stay open.
+
+Cooking and eating were added for the reason equipment was locked in the first place. Without them
+a veteran feeds a keyless player endgame food, which is the same handout in a different slot. The
+decision rests on a fact the earlier amendment did not record: every one of these locks is
+**material-scoped**, not blanket. The mod gates an action by the biome of the materials involved,
+so a character with no keys still cooks and eats Meadows food and builds in wood. Locking food
+does not stop a newcomer feeding themselves.
+
+One asymmetry is accepted knowingly: equipment is locked while equipment repair is open, so a
+keyless player may repair above-tier gear they cannot wear.
+
+The gear gates in `config/enforced/WackyMole.ItemRequiresSkillLevel.yml` also changed shape in the
+same review: `BlockCraft` is now false and `BlockEquip` true, so character level gates wearing
+rather than making. Crafting is still gated by material through `LockCrafting`, so the two gates
+remain distinct rather than redundant.

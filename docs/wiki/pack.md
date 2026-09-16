@@ -172,8 +172,18 @@ pointed at a zip.
 | Package | Server | Client | Why |
 | --- | --- | --- | --- |
 | `AzumattDev/MaxPlayerCount` | required | **excluded** | A fork, and every surface it patches runs on the host: the admission literal in `ZNet.RPC_PeerInfo`, the `SteamGameServer.SetMaxPlayerCount` prefix, and the two `ZPlayFabMatchmaking` sites. A client is told the server's capacity by the server (`src/forks/MaxPlayerCount/UPSTREAM.md`). |
-| `TOYNBEE/BoneMod` | optional | **required** | Cosmetic bone scaling, client-side. The server does not need it; a player does. |
-| `Lembitu.Harness` | never | never | Test infrastructure. Inert without `-lembitu-harness`, and it belongs to the disposable test client, not to players. |
+| `TOYNBEE/BoneMod` | — | — | **Dropped 2026-09-16.** Cosmetic bone scaling, client-side, and unenforceable from the server, which is the category the review cut. Until #70 lands it is still the builder's only `REQUIRED` entry, and that assertion should be repointed at Jotunn rather than deleted. |
+| `sighsorry/AdminQoL` | — | — | **Dropped 2026-09-16.** None of its twenty-nine settings is server-synced, so its gameplay defaults — no durability loss, no equip delay, no roof requirement — were live for every player and unreachable from the server. |
+| `nwesterhausen/DiscordConnector`, `Digitalroot/Max_Dungeon_Rooms` | required | **excluded from v6** | Server-only. The relay has no client half, and dungeon room counts apply when the server generates the dungeon. Max Dungeon Rooms stays installed on the server, where ADR-0009 requires it for the life of the world. |
+| `Lembitu.Harness` | never | never | Test infrastructure. Inert without `-lembitu-harness`, kept in the repository for future acceptance work, and asserted absent from a player's pack. |
+
+**Which side each mod belongs to is recorded once**, in `docs/modstack.md` under "Where each mod
+runs", and derived from evidence rather than package descriptions: the server's own version
+announcements at join name the fifteen mods it enforces on clients, and the rest are classified by
+where their behaviour actually executes. The three rows above are the only ones the builder acts
+on today. The 2026-09-16 review found the pack also ships `DiscordConnector` and
+`Max_Dungeon_Rooms`, both server-only, plus `AdminQoL`, which is being dropped — inert on a client
+but part of a 128 MB download every player extracts by hand. Trimming that list is #70's work.
 
 **Staging is delegated, assertions are not.** `scripts/build-client-pack.sh` calls
 `scripts/stage-stack.sh` for pin parsing, SHA-256 verification against `docs/modstack.lock.json`,
@@ -291,8 +301,10 @@ What is **not** enforced automatically, and why the check above is needed:
 - The BepInEx loader tolerates a version skew in a declared dependency, so a package whose pin moved
   can still load. That is deliberate for EpicLoot's Jotunn declaration and DiscordConnector's
   BepInEx declaration (`docs/modstack.md:188-190`), and it means the log is not proof of parity.
-- A missing package produces a feature that is absent rather than an error. BoneMod missing is a
-  player with normal bones, not a failed join.
+- A missing package produces a feature that is absent rather than an error, for anything the server
+  does not version-check. Fifteen mods *are* checked and refuse the join outright
+  (`docs/modstack.md`, "Where each mod runs"); the unchecked ones — EpicLoot and World Advancement
+  Progression — are the dangerous case, because a client without them joins and behaves wrongly.
 
 ### Updating the Pack mid-Run
 
@@ -311,8 +323,9 @@ tree was emptied first:
 
 - The pack built from the real pin table stages all twenty-three packages with verified hashes.
 - Extracting it into a clean client produced a tree whose 176 files all matched the emitted
-  `.versions.txt` byte-for-byte, with no `MaxPlayerCount` or `Lembitu.Harness` entry present and
-  `BoneMod` present.
+  `.versions.txt` byte-for-byte, with no `MaxPlayerCount` or `Lembitu.Harness` entry present. That
+  measurement predates the 2026-09-16 review: v5 still carried `BoneMod`, `AdminQoL`,
+  `DiscordConnector` and `Max_Dungeon_Rooms`, all four of which leave in v6 (#70).
 - A client whose `BepInEx` tree is exactly that pack **connected and played**. The published pack
   deliberately contains no harness, so the harness was added on top as test infrastructure, never as
   pack content. The session reported `connection: Connected`, the character `packcheck` alive at 25

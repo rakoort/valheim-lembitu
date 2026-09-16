@@ -19,6 +19,29 @@ their dates and scope; nothing that failed became a success because the prose ch
 | `config/launch/launch.env.example` | World rules came from `-preset hard` with three rules left implicit, and the freeze used `UPDATE_CRON=0 0 1 1 * 2100` | Both were wrong. `-preset` assigns the whole modifier set, so the three implicit rules took the preset's values, not vanilla. A six-field cron line is invalid: busybox cron takes five fields, so `2100` became the command word, and `valheim-bootstrap` gates the line on `[ -n "$UPDATE_CRON" ]`, making an empty value the container's real disable. | All five rules are now explicit `-modifier` arguments and were verified from the game's own parse lines; `UPDATE_CRON` is empty. |
 | `docs/wiki/building.md` | ValheimRAFT's stale `ServerSync.dll` reference is inert because nothing registers a synced config entry | Falsified on the client: a real session logged eight `MissingFieldException: Field not found: .ZRoutedRpc.Everybody` from `ConfigEntry<T>.<ctor>b__10_0` via `ConfigFile.OnSettingChanged`. BepInEx swallows them, so the session was unaffected and the server log showed none. | Corrected in place; severity left unmeasured and handed to #26. |
 
+## Second reconciliation — 2026-09-16
+
+Scope: the whole enforced-configuration surface, read key-by-key against the running server, plus
+the mod assemblies where a claim depended on behaviour rather than on a config file. This round
+found more falsified claims than the first, because the first compared documents to documents and
+this one compared documents to a live server.
+
+| Document | Claim | Reality | Action |
+| --- | --- | --- | --- |
+| `docs/wiki/operations.md`, `docs/rules.md` | The enforced overlay's values are the server's behaviour | Ten of forty-six pinned keys were at mod defaults on the live server, including the difficulty tier. The overlay had been applied once by hand and nothing ever compared the result | Drift recorded as a dated measurement; ADR-0011 decides assert-on-boot plus verification; #68 applies, #69 builds the check |
+| `docs/adr/0005`, `docs/wiki/operations.md` | "Nothing else is key-locked: building, cooking, eating, repairs, portals and boats stay open" | Still true of the mod's capability, no longer true of the decision: cooking and eating are now key-locked. The earlier text also omitted that every lock is material-scoped, which is what makes locking food acceptable | ADR-0005 carries a dated 2026-09-16 amendment; the wiki and rules pages updated |
+| `docs/wiki/operations.md` | "the mod's own skill manager off because character level owns progression" | The skill manager is not a power curve: it governs vanilla skill drain and caps. It is now on, with the ceiling pinned at 100 and the floor driven by boss keys | Corrected in place; the mechanism is recorded in `docs/research.md` from `SkillsManager.UpdateCache` |
+| `docs/rules.md:150` (pre-edit) | The tombstone-looting row was presented as a property of the dead player | PvPBiomeDominions' rules are area-scoped, and with every biome on `PlayerChoose` the effective area is the *acting* player's flag, so a flagged player may loot an unflagged grave. Observed by the owner | Corrected, and the intended rule moved to #67, which needs a plugin |
+| `docs/build.md:41`, `scripts/build-client-pack.sh` comments | The client pack's doorstop dylib loads the pack for a Mac player | True only under Rosetta. The shipped dylib is x86_64 only and Valheim 1.0's macOS client is arm64, so native injection fails; the community route is forcing the x86_64 slice | Corrected; both Mac players are playing through that route |
+| `docs/modstack.md` | The pin table described the stack, with no statement of which side each mod runs on | Fifteen mods are enforced on clients by the server's own version exchange, three more are needed client-side without being enforced, three are server-only and three client-only. Nothing recorded it, and the client Pack shipped four packages a client cannot use | New "Where each mod runs" section, derived from the live version announcements; client-only mods dropped; #70 trims the Pack |
+| `docs/wiki/pack.md` | Effect thinning and the rarity palette are both client-side concerns | Half right. The palette is client-side, but `loottables.json` is pushed to every client at join, so the effect patch must be server-side | Corrected; #73 carries the verified patch format and placement |
+| `docs/modstack.md`, `docs/adr/0004` | Gear tier includes bounties | Adventure Mode is off as of 2026-09-16, removing bounties, treasure maps, gambling and the secret stash | Recorded in `docs/rules.md` and the EpicLoot overlay comment; the ADR keeps its original text as history |
+
+One claim was strengthened rather than corrected: personal keys were previously *Intended*, and the
+first boss kill left the live world with no global keys while a client's character file held its
+own, so blocking and per-character storage are now observed. The award radius and the locks
+themselves remain unobserved.
+
 ## Claims corrected during code review
 
 The two-axis review of this change set (`/code-review`, both axes run as independent sub-agents)

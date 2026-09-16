@@ -14,6 +14,12 @@ The three-month period the server is open, with an announced start and end date,
 extended while interest lasts.
 _Avoid_: season, wipe cycle, campaign
 
+**Shakedown**:
+The period before the Run, played by real players on a world that will be discarded. Characters,
+progress and the world carry no promise of survival, which is what makes it the right place to
+settle rules and to change a decision that the Run would freeze.
+_Avoid_: beta, test run, pre-season, soft launch
+
 **Roster**:
 The invited players. Now an informal idea rather than an enforced one: the server is public and
 password-protected, so admission is whoever holds the password, not a list. A player cap of twenty
@@ -110,6 +116,19 @@ The regional pressure that rises as players kill creatures in an area, strengthe
 **Enforcer**:
 A high-level, modifier-carrying creature that Karma summons, in dungeons or the open world. The
 project's stand-in for a scheduled event, since there is no game master.
+
+**Enforced config**:
+The deliberate deviations this project pins in a mod's generated configuration, and nothing else: a
+file there holds only the entries the Run chose, not a copy of what the mod wrote. An upstream
+default is not a decision, so a setting the project cares about belongs here even when the default
+already matches.
+_Avoid_: server settings, config overrides, the overlay
+
+**Difficulty tier**:
+The biome level preset that decides what level a creature spawns at, and through it how much health
+a boss has. It is one setting for the whole run, not a per-creature value, and it is not a power
+curve: players do not advance through tiers.
+_Avoid_: level preset, difficulty, boss scaling
 
 ### Mods
 

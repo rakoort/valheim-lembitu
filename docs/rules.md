@@ -61,26 +61,43 @@ There are exactly two ways a character gets stronger: **character level** and **
 (ADR-0004). Everything that offered a third was cut, because four multipliers land on one damage
 number and each was tuned by a different author against vanilla.
 
-**Character level** is an XP ladder with attribute points (WackyEpicMMOSystem). Experience comes from
-kills and activities, and levels are spent on attributes.
+**Character level** is an XP ladder with attribute points (WackyEpicMMOSystem): five points a level,
+a cap of 100, and XP from kills. The curve and the attribute economy are pinned at the mod's own
+values on purpose — the 2026-09-16 review chose to measure real levelling speed before tuning them.
+Dying costs between 5% and 15% of progress toward the current level. What else awards XP is not yet
+decided: chopping trees, mining, gathering, building and even killing players all award it today,
+which #72 settles.
 
-**Gear** is magic items, rarities, effects and enchanting (EpicLoot), plus bounties.
+**Gear** is magic items, rarities, effects and enchanting (EpicLoot). Bounties, treasure maps,
+gambling and the secret stash are **off**: Adventure Mode was disabled on 2026-09-16 because named
+elites with health multipliers and a trader casino read as a different game.
+
+**Vanilla skills are not a third curve.** They run 0 to 100 as in vanilla and drain by a percentage
+on death. The one deviation: the drain floor rises by 10 for each boss key a character holds, so a
+veteran loses less to a death than a newcomer, while the gain ceiling stays at 100.
 
 **Gear is gated by character level, not by world progress.** `WackyItemRequiresSkillLevel` refuses to
-craft or equip the chest, legs and helm of each armour tier past bronze until the character reaches a
-level: iron at 20, wolf at 35, padded at 50, carapace at 65
-(`config/enforced/WackyMole.ItemRequiresSkillLevel.yml`). The intent is that a clan cannot hand a
-newcomer endgame equipment (ADR-0005). Those thresholds are a starting point for playtest tuning,
-not a settled balance decision.
+equip the chest, legs and helm of each armour tier past bronze until the character reaches a level:
+iron at 20, wolf at 35, padded at 50, carapace at 65
+(`config/enforced/WackyMole.ItemRequiresSkillLevel.yml`). Crafting is allowed ahead of the level;
+wearing is not. The intent is that a clan cannot hand a newcomer endgame equipment (ADR-0005). Those
+thresholds are a starting point for playtest tuning, not a settled balance decision.
 
 **Loot gating reads the player, not the world.** EpicLoot's drop limit is set to
 `PlayerMustKnowRecipe`, so magic drops are gated on what the *requesting player* knows rather than on
-world progression (`config/enforced/randyknapp.mods.epicloot.cfg`). Every other gating mode in that
-setting reads world keys, which this server never writes — see "Personal keys" below.
+world progression (`config/enforced/randyknapp.mods.epicloot.cfg`). Building pieces follow the same
+rule. Every other gating mode in that setting reads world keys, which this server never writes — see
+"Personal keys" below.
 
-- Register: *Intended*. Character level, attributes and both gates are configured and their
-  mechanisms are known from the mods' own source; no client has been observed earning a level,
-  being refused a recipe, or receiving a gated drop on this pack.
+**Magic loot is deliberately quieter than the mod ships it.** The first tester read three shardstones
+from chopping trees and a Legendary shardstone from Eikthyr as a genre change. Three things answer
+that. Drops are cut to 0.6 of stock and shardstones from 0.2 to 0.05. Every rarity rolls one fewer
+effect, with the extra-effect roll thinned as well, so an item usually shows exactly its tier's
+count — one for Magic, five for Ancient (#73). And the rarity palette is muted with generated item
+names off, shipped in the client Pack because those keys cannot be enforced from the server.
+
+- Register: *Intended*. Every value above is decided and none is measured in play. #68 applies them,
+  #72 owns the XP question, #73 the effect thinning.
 
 ## Personal keys, and what earns one
 
@@ -98,12 +115,16 @@ clan can therefore carry another to a boss kill, and that is the intended cooper
   hand the first clan's boss kill to the whole roster.
 - Raids are evaluated **per player**, so a player who has not killed a boss is not raided by that
   boss's events.
-- Progression gates more than gear. Key-locked: equipment, crafting, guardian powers (forsaken
-  powers), and boss summons. Deliberately not key-locked: equipment repair, building, building
-  repair, cooking and eating — the overlay pins those *off* against a mod default that turns them on,
-  because ADR-0005 says a character's progression must not start refusing them.
-- Register: *Intended*. The gates are enforced configuration; a boss kill awarding a key to a
-  present player has not been observed on this pack, and #13/#10 own that observation.
+- Progression gates more than gear. Key-locked: equipment, crafting, **cooking**, **eating**,
+  guardian powers (forsaken powers), and boss summons. Deliberately not key-locked: equipment
+  repair, building, building repair, taming, boats and portals. Every lock is material-scoped, so a
+  keyless character still cooks and eats Meadows food and builds in wood (ADR-0005 amendment,
+  2026-09-16).
+- Register: *Partly observed*, 2026-09-16. After the run's first boss kill the live world's newest
+  committed save held no global keys at all, and a character file on a client held its `defeated_*`
+  keys, so blocking and per-character storage both work. What is still unobserved: whether the
+  player who made the kill received the key, and whether a bystander beyond a hundred metres
+  correctly did not. The locks themselves have not been seen refusing anything.
 
 ## The world
 
@@ -137,8 +158,12 @@ so a new character is not softlocked. Expected boss health runs ×1.05 for Eikth
 
 ## PvP and death
 
-**PvP is each player's own flag.** Every biome rule is `PlayerChoose`, so the server never forces PvP
-on anyone and Wards follow the biome rule (`config/enforced/Turbero.PvPBiomeDominions.cfg:16-32`).
+**PvP is each player's own flag, and today it is a button.** Every biome rule is `PlayerChoose`, so
+the server never forces PvP on anyone and Wards follow the biome rule
+(`config/enforced/Turbero.PvPBiomeDominions.cfg:16-32`). Nothing restricts where or how often a
+player flips the flag, and only a five-minute post-death grace slows them. #67 decides that a stance
+may be changed only at a boss runestone or inside your own Clan's Ward, which no pinned mod can
+express.
 
 **Death rules differ by whether you opted in.** The server pins both sides, because the PvE side is
 the rule for everyone who has not opted in and an upstream default flip must not change it silently:
@@ -149,6 +174,12 @@ the rule for everyone who has not opted in and an upstream default flip must not
 | Keep hotbar items on death | no | **yes** |
 | Loot another player's tombstone | no | **yes** |
 | No items lost on death | off | off |
+
+**That last-but-one row is about the looter, not the victim.** The upstream rules are area-scoped —
+"in PvE areas all tombstones can be looted" — and with every biome on `PlayerChoose` the effective
+area is whichever flag the *acting* player carries. So a flagged player may loot an unflagged
+player's grave, which is the opposite of what the Run wants. Observed by the owner, 2026-09-16. #67
+records the intended rule: an unflagged death is private, a flagged death is lootable.
 
 The tombstone still has to exist for any of it to matter, so no-item-loss stays off in both columns.
 InventorySlots has an independent keep-on-death system and it is disabled, so it cannot compete with

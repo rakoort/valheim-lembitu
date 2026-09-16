@@ -28,10 +28,10 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 | --- | --- | --- | --- |
 | sighsorry/Clan | 1.0.10 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
 | sighsorry/STU_Ward | 1.3.15 | Wards resolved against clan membership | — |
-| sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset |
-| VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated equipment and crafting | Private keys on, all global keys blocked, gear and crafting locked, nothing else locked |
-| RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, enchanting, bounties | Gated Drop Mode `PlayerMustKnowRecipe`, so gating reads the player, not world keys |
-| WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | Upstream XP tables untouched |
+| sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset; access-mode limits pinned at upstream values |
+| VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated actions, vanilla skill caps | Private keys on, all global keys blocked; equipment, crafting, cooking, eating, guardian powers and boss summons locked; repairs, building, taming, boats and portals open; skill floor from boss keys with the ceiling at 100 |
+| RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, rarities, enchanting and socketed shardstones | `Item Drop Limits` and `Gated Freebuild Mode` both `PlayerMustKnowRecipe`, so gating reads the player, not world keys; Adventure Mode off; drop rate 0.6, shardstones 0.05; effect counts thinned by patch (#73) |
+| WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | XP curve and attributes pinned at upstream values to be measured first; XP loss band 0.05-0.15; its own creature-level control off, so CreatureManager owns levels; non-combat and PvP XP undecided (#72) |
 | WackyMole/WackyItemRequiresSkillLevel | 1.4.7 | Character-level gates on crafting, equipping and consuming | Curated rules in `WackyMole.ItemRequiresSkillLevel.yml` |
 | sighsorry/CreatureManager | 1.1.14 | Karma and Enforcer encounters; creature and boss difficulty tier, spawn level, health and damage scaling | Creature cloning and customisation off; `Biome Level Preset = Hard`, so biome tier sets spawn and boss level |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
@@ -40,15 +40,84 @@ deviation from the defaults and belongs in server-locked config rather than a pl
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
 | sighsorry/InventorySlots | 1.4.17 | Equipment and quick slots, comparison, multicraft | Keep-on-death off |
 | turbero/DetailedLevels | 2.1.3 | Skill progress readout | — |
-| sighsorry/AdminQoL | 1.1.3 | Admin console GUI and item sets | — |
+| sighsorry/AdminQoL | 1.1.3 | Admin console GUI and item sets | **Dropped 2026-09-16** — client-decided, unenforceable (#70) |
 | sighsorry/DataForge | 1.3.4 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
 | sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
-| TOYNBEE/BoneMod | 1.0.2 | Cosmetic bone scaling (client-side) | — |
+| TOYNBEE/BoneMod | 1.0.2 | Cosmetic bone scaling (client-side) | **Dropped 2026-09-16** — client-only, unenforceable (#70) |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
 | ValheimModding/YamlDotNet | 16.3.1 | Library | Nothing declares it since the EpicMMOSystem fork was retired; the acceptance boot decides whether it stays |
+
+## Where each mod runs
+
+Three groups, decided by evidence rather than by the package descriptions. The first group is
+observable: at every join the server announces a version for each mod that participates in the
+config/version handshake, and refuses a client that answers with the wrong version or none. The
+list below is the server's own announcement, read from the live log on 2026-09-16.
+
+**Both sides, and the server enforces it.** A client missing any of these is refused at the
+handshake with `doesn't have the correct <mod> version`. Jotunn is enforced separately and first:
+without it the server logs `Jötunn is not installed on the client. Server has mandatory mods,
+cancelling connection`.
+
+| Mod | Announced as |
+| --- | --- |
+| sighsorry/Clan | `Clan`, and `Clan Media` as a second channel |
+| sighsorry/STU_Ward | `STUWard` |
+| sighsorry/PortalRules | `PortalRules` |
+| sighsorry/CreatureManager | `CreatureManager` |
+| sighsorry/DataForge | `DataForge` |
+| sighsorry/Dive_In | `DiveIn` |
+| sighsorry/InventorySlots | `InventorySlots` |
+| sighsorry/SkadiNet | `SkadiNet` |
+| sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
+| turbero/PvPBiomeDominions | `PvP Biome Dominions` |
+| turbero/DetailedLevels | `Detailed Levels` |
+| WackyMole/WackyEpicMMOSystem | `EpicMMOSystem`, plus its `ItemManager` and `PieceManager` |
+| WackyMole/WackyItemRequiresSkillLevel | `ItemRequiresSkillLevel` |
+| team0/ValheimRAFT | `ValheimRAFT` |
+| ValheimModding/Jotunn | mandatory-mod check, not a version line |
+
+**Both sides, but not enforced.** These need the client to work fully and will not refuse a join
+without it, so a client that skips them looks connected and behaves wrongly.
+
+| Mod | Why the client needs it |
+| --- | --- |
+| RandyKnapp/EpicLoot | Drops are rolled where the player is, and `PlayerMustKnowRecipe` reads `Player.m_localPlayer`. The server pushes `loottables.json` to every client at join, so the tables are the server's, but the rolling and the UI are the client's |
+| VentureValheim/World_Advancement_Progression | Server-side alone it only blocks the world's global key list. Private keys, every lock, and the skill floor are client features (upstream README, "Server-Side Only?") |
+| ValheimModding/JsonDotNET, ValheimModding/YamlDotNet | Libraries the above load on whichever side they run |
+
+**Server-only.** Installing these on a client changes nothing a player can see.
+
+| Mod | Why |
+| --- | --- |
+| MaxPlayerCount (fork) | Every patched surface runs on the host; a client is told the capacity by the server. Already excluded from the client pack by an assertion in the builder |
+| nwesterhausen/DiscordConnector | Reads server events and posts a webhook; there is no client half |
+| Digitalroot/Max_Dungeon_Rooms | **Server-side only, decided 2026-09-16.** Room counts are applied when the server generates a dungeon, and the result is world data, so a client needs nothing. It leaves the client Pack with DiscordConnector (#70). The generation argument is sound but untested on a client, so #70 proves it by entering a large crypt with a client that does not have the mod |
+
+**Client-only — all dropped, 2026-09-16.** The review cut this whole category. A mod the server
+cannot enforce is a mod whose behaviour varies per player, which is the AdminQoL lesson: its
+gameplay defaults disabled durability loss for a full evening and no server setting could reach
+them.
+
+| Mod | Decision |
+| --- | --- |
+| sighsorry/AdminQoL | **Dropped.** All 29 settings are client-decided: none is marked `[Synced with Server]` and it takes no part in the handshake (#70) |
+| TOYNBEE/BoneMod | **Dropped.** Cosmetic bone scaling, client-side, pointless on the server, and unenforceable by the same argument (#70) |
+| Lembitu.Harness | **Kept in the repository, never in the Pack.** It is our test harness for future acceptance work, inert without `-lembitu-harness`, and the builder asserts it is absent from a player's pack |
+
+Dropping BoneMod needs one builder change, not just a pin removal: `scripts/build-client-pack.sh`
+asserts that a required client-side package is present, and BoneMod is currently the only entry in
+that list. The assertion exists to catch a pack that silently lost client content, so it should be
+repointed rather than deleted — Jotunn is the candidate, because a client without it is refused at
+the handshake outright. `test/client-pack.test.sh` covers that assertion and moves with it.
+
+**The pack also ships server-only mods.** The v5 archive contains `DiscordConnector` and
+`Max_Dungeon_Rooms`; both leave in v6. They are inert on a client but they inflate a 128 MB
+download that players extract by hand. Trimming is #70's work, and the dungeon mod's removal
+carries the one check worth doing: a client without it must still load a generated crypt correctly.
 
 ## Forks
 

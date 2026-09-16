@@ -1,0 +1,495 @@
+########## WackyMole.EpicMMOSystem.cfg
+4:[0.General---------------]
+9:Force Server Config =
+14:EnableExtraDebug =
+16:[1.LevelSystem-----------]
+21:MaxLevel =
+26:PriceResetPoints =
+31:FreePointForLevel =
+36:StartFreePoint =
+41:LevelExperience =
+46:Add LevelExperience on each level =
+51:MultiplyNextLevelExperience =
+56:ExpForLvlMonster =
+61:RateExp =
+66:GroupExp =
+71:MinLossExp =
+76:MaxLossExp =
+81:LossExp =
+86:BonusLevelPoints =
+91:Group EXP Range =
+96:Player EXP Range =
+101:Tames give XP on Mob kill =
+106:Display XP Received on Left =
+111:XP death Color =
+116:XP String =
+121:maxValueStrength =
+126:maxValueDexterity =
+131:maxValueIntelligence =
+136:maxValueEndurance =
+141:maxValueVigour =
+146:maxValueSpecializing =
+151:Taming XP Multiplier =
+156:altLevelUpSound =
+158:[1.LevelSystem Dexterity---]
+163:AttackSpeed =
+168:StaminaAttack =
+173:StaminaReduction =
+175:[1.LevelSystem Endurance------]
+180:AddStamina =
+185:StaminaReg =
+190:PhysicArmor =
+192:[1.LevelSystem Intellect-----]
+197:MagicAttack =
+202:MagicEitrReg =
+207:AddEitr =
+212:AllowEitrWithoutFood =
+214:[1.LevelSystem Specializing------]
+219:Critical Start Chance =
+224:Critical Chance =
+229:MiningSpeed =
+234:PieceHealth =
+239:TreeCuttingSpeed =
+241:[1.LevelSystem Strength-----]
+246:PhysicDamage =
+251:AddWeight =
+256:StaminaBlock =
+261:CriticalDmg =
+263:[1.LevelSystem Vigour------]
+268:AddHp =
+273:RegenHp =
+278:MagicArmor =
+280:[2.Creature level control]
+285:Mentor =
+290:Enabled_creature_level =
+295:Remove_creature_drop_max =
+300:Remove_creature_drop_min =
+305:Remove_boss_drop_max =
+310:Remove_boss_drop_min =
+315:Curve_creature_exp =
+320:Curve_Boss_exp =
+325:Low_damage_level =
+330:Low_damage_config =
+335:MinLevelRange =
+340:MaxLevelRange =
+345:LevelBar Position =
+350:Boss LevelBar Position =
+355:Mob Level UI String =
+360:RemoveAllDrops From NonPlayer Kills =
+365:U Jerk, NoExpOn Red/Blue =
+370:Mob Lvl increase per star =
+375:Popup Message For noExpPastLVL =
+377:[3.Reset attributes items]
+382:prefabName =
+387:viewText =
+389:[5.Optional perk---------]
+394:AddDefaultHealth =
+399:AddDefaultWeight =
+404:CriticalStartChance =
+409:DefaultCriticalDamage =
+414:addDefaultEitr =
+416:[6.Orbs and Potions-------]
+421:XP for Orb 1 =
+426:XP for Orb 2 =
+431:XP for Orb 3 =
+436:XP for Orb 4 =
+441:XP for Orb 5 =
+446:XP for Orb 6 =
+451:XP for Orb 7 =
+456:XP for Orb 8 =
+461:Minor Potion =
+466:Medium Potion =
+471:Greater Potion =
+476:Orb SE time =
+481:Potion SE time =
+486:Orb Drop Chance =
+491:Ord Drop Boss =
+496:Orb Boss Max Amount =
+501:Use Regular Fermentor =
+506:MMO Fermentor Can Ferment all Meads =
+508:[7.Non Combat XP------]
+518:Disable Piece XP =
+523:Disable Tame XP =
+528:Disable Fish Pickup XP =
+533:Disable Mining XP =
+538:Disable Pickup XP =
+543:Disable Tree XP =
+548:Disable Destructables XP =
+555:[8.PVP Combat XP------]
+560:Display Player Info =
+565:Display Player Info Y-Axis =
+570:Display Player Level =
+575:Display Players XP Worth =
+580:Display Days Alive =
+585:Enable PVP XP =
+590:XP Per Level =
+595:XP Per Day Alive =
+600:Player PVP Range =
+602:[Magic Fermentor]
+608:Build Table Category =
+612:Custom Build Category =
+619:Build Menu Tags =
+624:Tools =
+630:Crafting Station =
+634:Custom Crafting Station =
+639:Crafting Costs =
+641:[Magic Orb Lvl 1]
+646:Drops from =
+651:Weight =
+656:Trader Value =
+663:Trader Selling =
+668:Trader Price =
+673:Trader Stack =
+678:Trader Required Global Key =
+680:[Magic Orb Lvl 2]
+685:Drops from =
+690:Weight =
+695:Trader Value =
+702:Trader Selling =
+707:Trader Price =
+712:Trader Stack =
+717:Trader Required Global Key =
+719:[Magic Orb Lvl 3]
+724:Drops from =
+729:Weight =
+734:Trader Value =
+741:Trader Selling =
+746:Trader Price =
+751:Trader Stack =
+756:Trader Required Global Key =
+758:[Magic Orb Lvl 4]
+763:Drops from =
+768:Weight =
+773:Trader Value =
+780:Trader Selling =
+785:Trader Price =
+790:Trader Stack =
+795:Trader Required Global Key =
+797:[Magic Orb Lvl 5]
+802:Drops from =
+807:Weight =
+812:Trader Value =
+819:Trader Selling =
+824:Trader Price =
+829:Trader Stack =
+834:Trader Required Global Key =
+836:[Magic Orb Lvl 6]
+841:Drops from =
+846:Weight =
+851:Trader Value =
+858:Trader Selling =
+863:Trader Price =
+868:Trader Stack =
+873:Trader Required Global Key =
+875:[Magic Orb Lvl 7]
+880:Drops from =
+885:Weight =
+890:Trader Value =
+897:Trader Selling =
+902:Trader Price =
+907:Trader Stack =
+912:Trader Required Global Key =
+914:[Magic Orb Lvl 8]
+919:Drops from =
+924:Weight =
+929:Trader Value =
+936:Trader Selling =
+941:Trader Price =
+946:Trader Stack =
+951:Trader Required Global Key =
+953:[Mob Chunks]
+959:Crafting Station =
+963:Custom Crafting Station =
+968:Crafting Station Level =
+974:Require only one resource =
+979:Quality Multiplier =
+984:Crafting Costs =
+989:Drops from =
+994:Weight =
+999:Trader Value =
+1006:Trader Selling =
+1011:Trader Price =
+1016:Trader Stack =
+1021:Trader Required Global Key =
+1023:[Reset Trophy]
+1028:Drops from =
+1033:Weight =
+1038:Trader Value =
+1045:Trader Selling =
+1050:Trader Price =
+1055:Trader Stack =
+1060:Trader Required Global Key =
+1062:[XP Mead Greater]
+1068:Crafting Station =
+1072:Custom Crafting Station =
+1077:Crafting Station Level =
+1083:Require only one resource =
+1088:Quality Multiplier =
+1093:Crafting Costs =
+1098:Drops from =
+1103:Weight =
+1108:Trader Value =
+1115:Trader Selling =
+1120:Trader Price =
+1125:Trader Stack =
+1130:Trader Required Global Key =
+1132:[XP Mead Medium]
+1138:Crafting Station =
+1142:Custom Crafting Station =
+1147:Crafting Station Level =
+1153:Require only one resource =
+1158:Quality Multiplier =
+1163:Crafting Costs =
+1168:Drops from =
+1173:Weight =
+1178:Trader Value =
+1185:Trader Selling =
+1190:Trader Price =
+1195:Trader Stack =
+1200:Trader Required Global Key =
+1202:[XP Mead Minor]
+1208:Crafting Station =
+1212:Custom Crafting Station =
+1217:Crafting Station Level =
+1223:Require only one resource =
+1228:Quality Multiplier =
+1233:Crafting Costs =
+1238:Drops from =
+1243:Weight =
+1248:Trader Value =
+1255:Trader Selling =
+1260:Trader Price =
+1265:Trader Stack =
+1270:Trader Required Global Key =
+1272:[XP Potion Greater]
+1277:Drops from =
+1282:Weight =
+1287:Trader Value =
+1294:Trader Selling =
+1299:Trader Price =
+1304:Trader Stack =
+1309:Trader Required Global Key =
+1311:[XP Potion Medium]
+1316:Drops from =
+1321:Weight =
+1326:Trader Value =
+1333:Trader Selling =
+1338:Trader Price =
+1343:Trader Stack =
+1348:Trader Required Global Key =
+1350:[XP Potion Minor]
+1355:Drops from =
+1360:Weight =
+1365:Trader Value =
+1372:Trader Selling =
+1377:Trader Price =
+1382:Trader Stack =
+1387:Trader Required Global Key =
+########## sighsorry.DiveIn.cfg
+4:[1 - General]
+10:Lock Configuration =
+12:[2 - Player Diving]
+17:Water Equipment Blacklist =
+23:Dive Ascend Key =
+29:Dive Descend Key =
+35:Fast Swim Input Mode =
+41:Darkness Factor =
+47:Murkiness Factor =
+49:[3 - Regen Rate]
+55:Surface Stamina Regen Rate =
+61:Midwater Stamina Regen Rate =
+67:Surface Eitr Regen Rate =
+73:Midwater Eitr Regen Rate =
+75:[4 - Stamina Drain]
+81:Midwater Idle Stamina Drain Per Depth =
+87:Swim Stamina Drain Multiplier Per Depth =
+93:Multiplicative Swim Stamina Modifiers =
+99:Swim Stamina Drain Base Multiplier =
+101:[5 - Swim Speed]
+107:Fast Swim Speed Multiplier =
+113:Fast Swim Stamina Drain Multiplier =
+119:Swim Skill Speed Multiplier =
+125:Encumbered Swim Speed Multiplier =
+127:[6 - Underwater Projectiles]
+133:Player Projectile Underwater TTL Multiplier =
+139:Player Projectile Underwater Speed Multiplier =
+145:Player Projectile Underwater Damage Multiplier =
+########## sighsorry.SkadiNet.cfg
+4:[General]
+9:Enabled =
+14:DungeonLayerFiltering =
+19:DungeonLayerAlwaysSendPrefabs =
+25:SchedulerThroughput =
+31:PayloadReducerStrength =
+37:CompressionAggression =
+43:OwnershipIntensity =
+49:ClientStutterGuardStrength =
+########## digitalroot.mods.maxdungeonrooms.cfg
+4:[1. General]
+9:NexusID =
+15:Min Rooms =
+21:Max Rooms =
+23:[2. Forest Crypt Overrides]
+28:Enable Forest Crypt Override =
+34:Forest Crypt Min Rooms =
+40:Forest Crypt Max Rooms =
+42:[3. Sunken Crypt Overrides]
+47:Enable Sunken Crypt Override =
+53:Sunken Crypt Min Rooms =
+59:Sunken Crypt Max Rooms =
+61:[4. Cave Overrides]
+66:Enable Cave Override =
+72:Cave Min Rooms =
+78:Cave Max Rooms =
+########## Azumatt.MaxPlayerCount.cfg
+4:[1 - General]
+9:MaxPlayerCount =
+########## zolantris.DynamicLocations.cfg
+4:[Debug]
+9:DEBUG_DisableFreezePlayerMechanics =
+14:DebugDistancePortal =
+20:DebugForceUpdatePositionDelay =
+25:DebugForceUpdatePositionAfterTeleport =
+27:[Main]
+32:DEBUG_ShouldNotRemoveTargetKey =
+38:LocationControls Timeout In Ms =
+43:HasCustomSpawnDelay =
+49:CustomSpawnDelay =
+54:DisabledLoginApiIntegrations =
+59:enableDynamicSpawnPoints =
+64:enableDynamicLogoutPoints =
+70:respawnHeightOffset =
+75:debug =
+########## BepInEx.cfg
+1:[Caching]
+7:EnableAssemblyCache =
+9:[Chainloader]
+17:HideManagerGameObject =
+19:[Harmony.Logger]
+27:LogChannels =
+29:[Logging]
+34:UnityLogListening =
+41:LogConsoleToUnityLog =
+43:[Logging.Console]
+48:Enabled =
+53:PreventClose =
+58:ShiftJisEncoding =
+68:StandardOutType =
+73:ForceBepInExTTYDriver =
+80:LogLevels =
+82:[Logging.Disk]
+87:WriteUnityLog =
+92:AppendLog =
+97:Enabled =
+104:LogLevels =
+106:[Preloader]
+112:ApplyRuntimePatches =
+119:HarmonyBackend =
+125:DumpAssemblies =
+132:LoadDumpedAssemblies =
+138:BreakBeforeLoadAssemblies =
+140:[Preloader.Entrypoint]
+145:Assembly =
+150:ForceEntryType =
+155:Type =
+160:Method =
+########## games.nwest.valheim.discordconnector/discordconnector.cfg
+1:[Main Settings]
+7:Default Webhook Username Override =
+13:Webhook URL =
+20:Webhook Events =
+25:Webhook Username Override =
+31:Webhook Avatar Override =
+37:Secondary Webhook URL =
+44:Secondary Webhook Events =
+50:Secondary Webhook Username Override =
+56:Secondary Webhook Avatar Override =
+61:Log Debug Messages =
+66:Use fancier discord messages =
+72:Ignored Players =
+78:Ignored Players (Regex) =
+83:Send Positions with Messages =
+88:Collect Player Stats =
+93:Announce Player Firsts =
+102:How to discern players in Record Retrieval =
+108:Send Non-Player Shouts to Discord =
+114:Allow @here and @everyone mentions =
+120:Allow @role mentions =
+126:Allow @user mentions =
+132:Allowed Role Mentions =
+138:Allowed User Mentions =
+140:[Settings - Embed Configuration]
+145:Show Embed Title =
+150:Show Embed Description =
+155:Show Embed Author =
+160:Show Embed Thumbnail =
+165:Show Embed Footer =
+170:Show Embed Timestamp =
+175:Author Icon URL =
+180:Thumbnail URL =
+185:Footer Text =
+190:Field Display Order =
+195:Embed URL Template =
+200:Show Player IDs in Messages =
+202:[Settings - Embed Styling]
+207:Default Embed Color =
+212:Server Start Color =
+217:Server Stop Color =
+222:Player Join Color =
+227:Player Leave Color =
+232:Death Event Color =
+237:Shout Message Color =
+242:Other Event Color =
+247:World Event Color =
+252:New Day Color =
+257:Server Save Color =
+262:Position Message Color =
+267:Active Players Color =
+272:Leaderboard Embed Color =
+########## discordconnector-toggles.cfg
+1:[Toggles.DebugMessages]
+6:Debug Message for Every Event Check =
+11:Debug Message for Every Event Player Location Check =
+16:Debug Message for Every Event Change =
+22:Debug Message for HTTP Request Responses =
+27:Debug Message for Database Methods =
+32:Debug Leaderboard Operations =
+34:[Toggles.Messages]
+39:Server Launch Notifications =
+44:Server Loaded Notifications =
+49:Server Stopping Notifications =
+54:Server Shutdown Notifications =
+59:Server World Save Notifications =
+64:Chat Shout Messages Notifications =
+69:Ping Notifications =
+74:Player Join Notifications =
+79:Player Death Notifications =
+84:Player Leave Notifications =
+89:Event Start Notifications =
+94:Event Stop Notifications =
+99:Event Paused Notifications =
+104:Event Resumed Notifications =
+109:Send All Caps Shout Messages =
+114:Send Message For New Day Number =
+116:[Toggles.PlayerFirsts]
+121:Send a Message for the First Death of a Player =
+126:Send a Message for the First Join of a Player =
+131:Send a Message for the First Leave of a Player =
+136:Send a Message for the First Ping of a Player =
+141:Send a Message for the First Shout of a Player =
+143:[Toggles.Position]
+148:Include POS With Player Join =
+153:Include POS With Player Leave =
+158:Include POS With Player Death =
+163:Ping Notifications Include Position =
+168:Chat Shout Messages Position Notifications =
+173:Event Start Messages Position Notifications =
+178:Event Stop Messages Position Notifications =
+183:Event Paused Messages Position Notifications =
+188:Event Resumed Messages Position Notifications =
+190:[Toggles.Stats]
+195:Collect and Send Player Death Stats =
+200:Collect and Send Player Join Stats =
+205:Collect and Send Player Leave Stats =
+210:Collect and Send Player Ping Stats =
+215:Collect and Send Player Shout Stats =

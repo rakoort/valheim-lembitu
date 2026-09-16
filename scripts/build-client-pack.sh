@@ -31,7 +31,9 @@
 #   Lembitu.Harness  our test harness. Inert without -lembitu-harness, and it belongs to the
 #                    disposable test client, not to players.
 #
-# BoneMod is adopted and client-side: players need it and the server does not.
+# Client-only mods were dropped by the 2026-09-16 review: a mod the server cannot enforce behaves
+# differently for every player. AdminQoL proved it, and BoneMod fell to the same argument. #70
+# removes both and repoints the REQUIRED assertion below, which BoneMod currently satisfies alone.
 #
 # Staging is delegated to scripts/stage-stack.sh, which owns pin parsing, hash verification,
 # dependency closure and the package-layout normalisation. This script adds what is specific to a
@@ -152,8 +154,9 @@ chmod +x "$stage/start_game_bepinex.sh"
 # Ship a shim at that path which hands off to the real launcher. `exec` replaces `$0`, so the
 # launcher still derives BASEDIR - and with it `BepInEx/`, `doorstop_libs/` and every plugin path -
 # from the game root. A symlink would not: BASEDIR comes from `$0` without resolving links, so each
-# derived path would point inside `valheim_Data`. The file is inert on Windows and macOS, where the
-# loader is injected by `winhttp.dll` and the doorstop dylib.
+# derived path would point inside `valheim_Data`. The file is inert on Windows, where `winhttp.dll`
+# injects the loader, and on macOS, where injection needs the game's x86_64 slice under Rosetta:
+# the shipped `libdoorstop_x64.dylib` cannot load into Valheim 1.0's native arm64 client.
 mkdir -p "$stage/valheim_Data"
 cat > "$stage/valheim_Data/start_game_bepinex.sh" <<'SHIM'
 #!/bin/sh
@@ -258,7 +261,8 @@ for required in \
   [[ -e "$stage/$required" ]] || die "client pack is missing $required; a player could not run it"
 done
 # At least one doorstop library per supported platform: a Windows player needs the DLL, a Linux
-# player the .so, and a Mac player the .dylib. Shipping only one silently breaks the others.
+# player the .so, and a Mac player the .dylib - which only injects under Rosetta, since it is
+# x86_64 only. Shipping one platform's library silently breaks the others.
 for lib in libdoorstop_x64.so libdoorstop_x64.dylib; do
   [[ -e "$stage/doorstop_libs/$lib" ]] \
     || die "client pack is missing doorstop_libs/$lib; that platform could not load any plugin"

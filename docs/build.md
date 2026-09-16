@@ -39,7 +39,10 @@ runtime cannot be emulated on Apple Silicon:
   and segfaults.
 
 The macOS client is no help either: Valheim 1.0 ships it as a native arm64 app, and BepInEx's
-`libdoorstop_x64.dylib` is x86_64 only, so `dyld` refuses to inject.
+`libdoorstop_x64.dylib` is x86_64 only, so `dyld` refuses to inject natively. Mac players can still
+play the Pack by forcing the game's x86_64 slice under Rosetta, which is how both of this project's
+Mac players run it; native arm64 BepInEx 5 remains unavailable upstream, blocked inside MonoMod and
+HarmonyX rather than in doorstop.
 
 **astral-tricep** (x86_64 Linux) is the second host, for the two-client network tests in the
 playtest tickets.
