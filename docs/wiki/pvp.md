@@ -53,48 +53,55 @@ because the alternatives are what a future reader will wonder about.
   turns the rule into a courtesy; and constants in the plugin, where retuning a radius costs a
   rebuild, a Pack reissue and a client re-extract.
 
-## Facts
+## Exclusions
+
+- **Boss summoning altars and `Vegvisir` runestones are not permitted places.** The altar was the
+  first proposal and the owner replaced it with the spawn stones; Vegvisir number in the hundreds,
+  so a gate at one is not a gate. Another clan's ward is excluded too, even for a Guest who may
+  build there.
+- **Killer-only tombstone access is not a choice.** PvPBiomeDominions patches
+  `Player.CreateTombStone`, which takes no killer, so the tombstone cannot learn who caused the
+  death. Nothing on this stack can express "only your killer may loot you".
+- **No admin bypass, and no per-account stance.** The rule holds for the owner, and a second
+  character starts unflagged, which is an accepted scouting loophole rather than an oversight.
+- **The stance is not stored in the character file.** Characters are client-owned (ADR-0010), so a
+  player could edit their own stance and the place gate would bind only the honest.
+- **No cooldown, no delayed activation, no broadcast.** Place is the only friction, and a stance
+  change is told to its owner alone, as vanilla does. The map already hides other players, so a
+  flagged stranger is meant to be a surprise.
+- **Two-player proof is blocked on a licence, not on effort.** Both test hosts share one Steam
+  account (`ap3l5in`), and Valheim cannot run one account in two places at once. Every criterion in
+  `issue://67` needing two simultaneous players — tombstone access, and the slot-retention checks
+  inherited from #74 — waits on a second licence. `docs/build.md` records the same constraint
+  against the outstanding simultaneous two-client acceptance.
+
+## Lessons
 
 These are read from binaries and a catalogue, not decided. Full attribution in
 [Research provenance](../research.md).
 
-**Nothing published does this.** The Thunderstore Valheim index, 11,269 packages fetched 2026-09-16,
-contains no mod that restricts where or how often a stance changes, and none that scopes corpse
-access to the dead player's flag. That is what makes ADR-0012's exception to ADR-0003 and ADR-0010
-an addition rather than a reimplementation.
-
-**Vanilla keeps the flag nowhere durable.** `Player.SetPVP` writes `ZDOVars.s_pvp` on the player's
-own ZDO; `PlayerProfile` stores nothing. So the flag is already off at every login, and the
-persistence in ADR-0013 closes a hole rather than adding a restriction.
-
-**Vanilla already gates the toggle, and greys it.** `Player.CanSwitchPVP()` returns
-`m_lastCombatTimer > 10f`, and `InventoryGui` sets `m_pvp.interactable` from it every frame. That is
-the seam for a place predicate — with a server-side guard beside it, because the UI check runs on the
-client.
-
-**"Boss runestone" is three different objects.** `OfferingBowl` is the summoning altar and carries
-`m_bossPrefab`; `Vegvisir` is the stone that reveals a boss location on the map; `BossStone` is the
-power stone at the sacrificial stones. Detect the permitted place by component, never by a
-prefab-name list, which is also what survives a game update.
-
-**Only the killer is unimplementable.** PvPBiomeDominions patches `Player.CreateTombStone`, which
-takes no killer, so the tombstone cannot learn who caused the death. The same patch is why retention
-is death-cause blind: a flagged player who drowns keeps their gear.
-
-**Retention already reads the victim; only access reads the looter.** The `CreateTombStone` prefix
-keeps an item when `m_equipped` with keep-equipped on, or when `m_gridPos.y == 0` — the vanilla
-hotbar row and nothing else — with keep-hotbar on. The looting restriction lives in a
-`Container.Interact` prefix instead, judged per acting player, which is the bug this work fixes.
-
-**Membership and the claim have real APIs.** `ClanApi.ResolveMemberships` and
-`ClanApi.ResolveWardAuthorization` answer primary and Guest membership from a platform id and a
-character player id; `WardAccessApi.IsManagedWard` and `TryCheckContainerAccess` answer the ward
-claim. ADR-0008 stays intact: nothing compares identifiers.
-
-## Known constraint on proving it
-
-Both test hosts share one Steam account (`ap3l5in`), and Valheim cannot run the same account in two
-places at once. Every criterion in `issue://67` that needs two players at the same time — tombstone
-access, and the inherited slot-retention checks from #74 — is blocked on a second licence. This is
-the same constraint `docs/build.md` records against the outstanding simultaneous two-client
-acceptance; it is a prerequisite, not a scheduling problem.
+- **Nothing published does this.** The Thunderstore Valheim index, 11,269 packages fetched
+  2026-09-16, contains no mod that restricts where or how often a stance changes, and none that
+  scopes corpse access to the dead player's flag. That is what makes ADR-0012's exception to
+  ADR-0003 and ADR-0010 an addition rather than a reimplementation.
+- **Vanilla keeps the flag nowhere durable.** `Player.SetPVP` writes `ZDOVars.s_pvp` on the player's
+  own ZDO; `PlayerProfile` stores nothing. The flag is already off at every login, so the
+  persistence in ADR-0013 closes a hole rather than adding a restriction.
+- **Vanilla already gates the toggle, and greys it.** `Player.CanSwitchPVP()` returns
+  `m_lastCombatTimer > 10f`, and `InventoryGui` sets `m_pvp.interactable` from it every frame. That
+  is the seam for a place predicate, with a server-side guard beside it because the UI check runs on
+  the client.
+- **"Boss runestone" is three different objects.** `OfferingBowl` is the summoning altar and carries
+  `m_bossPrefab`; `Vegvisir` reveals a boss location on the map; `BossStone` is the power stone at
+  the sacrificial stones. Detect a permitted place by component, never by a prefab-name list, which
+  is also what survives a game update.
+- **Retention already reads the victim; only access reads the looter.** The `CreateTombStone` prefix
+  keeps an item when `m_equipped` with keep-equipped on, or when `m_gridPos.y == 0` — the vanilla
+  hotbar row and nothing else — with keep-hotbar on. The looting restriction lives in a
+  `Container.Interact` prefix judged per acting player, which is the bug this work fixes. The same
+  killer-less patch is why retention is death-cause blind: a flagged player who drowns keeps their
+  gear.
+- **Membership and the claim have real APIs.** `ClanApi.ResolveMemberships` and
+  `ClanApi.ResolveWardAuthorization` answer primary and Guest membership from a platform id and a
+  character player id; `WardAccessApi.IsManagedWard` and `TryCheckContainerAccess` answer the ward
+  claim. ADR-0008 stays intact: nothing compares identifiers.
