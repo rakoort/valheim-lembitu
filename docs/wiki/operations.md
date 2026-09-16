@@ -35,6 +35,16 @@ every container start and verified by a drift-check command that exits non-zero 
 drift and is wired into the launch path and the backup timer's service (#68 applies the review, #69
 builds the verification).
 
+**Applied state, 2026-09-16.** The review is live. `scripts/launch-server.sh restart` stopped the
+container, applied 35 changed entries with nothing holding the files, started it, and the boot
+that followed reported `29 plugins to load` — the same count as before — and
+`Chainloader startup complete` with zero exceptions and zero unparseable config values.
+`scripts/verify-enforced-config.sh ~/lembitu/config/bepinex` then answered
+`enforced config verified: 163 entries match`, and a second apply reported nothing to do.
+`Biome Level Preset = Hard` was read back off the running server's own file. The backup taken
+before the apply is `lembitu-all-worlds-20260916T103020Z.tar.gz`, with its off-host copy on
+astral-tricep.
+
 **The overlay's scope grew with that review.** It covered nine files and forty-six keys; it now
 covers twenty-seven files — eighteen `.cfg` and nine data files, 163 checked entries — adding
 EpicMMOSystem, DiveIn, SkadiNet,

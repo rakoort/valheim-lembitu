@@ -145,9 +145,11 @@ do_restart() {
 
   enforce_config "$CONFIG_DIR/bepinex"
 
-  # Everything after this second is this boot. The log carries every previous boot too, and with
+  # Everything after this second is this boot. The log carries every previous boot, and with
   # `AppendLog = true` so does the file, so an unscoped search would match a banner from last week.
-  local since; since="$(date -u +%Y-%m-%dT%H:%M:%S)"
+  # The stamp spells its zone out: `docker logs --since` reads one without a zone as local time,
+  # so a bare UTC stamp on a UTC+3 host looks three hours old and matches an earlier boot.
+  local since; since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   docker start "$CONTAINER_NAME" >/dev/null
   printf 'started %s; waiting for the chainloader\n' "$CONTAINER_NAME"
 
