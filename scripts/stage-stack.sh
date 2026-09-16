@@ -187,11 +187,12 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not a lock on growth: the pack is 21 pins today, and a smaller count means the table
+  # A tripwire, not a lock on growth: the pack is 26 pins today, and a smaller count means the table
   # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
   # purpose means editing this number in the same commit — which the 2026-09-16 review did, taking
-  # it from 23 by dropping AdminQoL and BoneMod (#70).
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 21 ]] \
+  # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), and #78 did again in the other
+  # direction, adding five Azumatt quality-of-life mods.
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 26 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then

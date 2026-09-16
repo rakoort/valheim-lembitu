@@ -446,5 +446,47 @@ else
   report fail "a legacy manifest that fails the policy is refused with its original left to correct"
 fi
 
+# --- 21. a Pack-only package is withheld from the server, and pruned if it ever landed ---------
+#
+# The failure this exists for is silent and expensive: AzuHoverStats disconnects any peer that does
+# not answer its version check, so installing a Pack-only mod on the server refuses exactly the
+# players it was shipped for (#78). dist/ holds every adopted pin because the client Pack is built
+# from the same table, so withholding is the installer's job - and a server that already has one
+# must lose it rather than keep loading it.
+
+fresh_dist
+write_file "$WORK/dist/plugins/Clan.dll" clan
+mkdir -p "$WORK/dist/plugins/AzuHoverStats" "$WORK/dist/plugins/AzuClock"
+write_file "$WORK/dist/plugins/AzuHoverStats/AzuHoverStats.dll" hover
+write_file "$WORK/dist/plugins/AzuClock/AzuClock.dll" clock
+write_file "$WORK/dist/plugins/MouseTweaks.dll" mouse
+
+if run_install \
+   && expect_tree "$WORK/bepinex" .lembitu-installed plugins plugins/Clan.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Clan.dll \
+   && grep -q '^withheld Pack-only plugins/AzuHoverStats/ (1 files)$' "$WORK/out" \
+   && grep -q '^withheld Pack-only plugins/MouseTweaks.dll$' "$WORK/out"; then
+  report ok "a Pack-only package is never installed on the server"
+else
+  report fail "a Pack-only package is never installed on the server"
+fi
+
+# The same dist, but the server already carries the mod under our manifest: the next run must take
+# it away. Pruning is driven by the manifest, and its predicate used to be "still in dist", which
+# would have kept this file loaded forever.
+mkdir -p "$WORK/bepinex/plugins/AzuHoverStats"
+write_file "$WORK/bepinex/plugins/AzuHoverStats/AzuHoverStats.dll" hover
+printf 'plugins/Clan.dll\nplugins/AzuHoverStats/AzuHoverStats.dll\n' > "$WORK/bepinex/.lembitu-installed"
+
+if run_install \
+   && expect_tree "$WORK/bepinex" \
+      .lembitu-installed .lembitu-removed plugins plugins/Clan.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Clan.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-removed" plugins/AzuHoverStats/AzuHoverStats.dll; then
+  report ok "a Pack-only package already on the server is pruned, directory and all"
+else
+  report fail "a Pack-only package already on the server is pruned, directory and all"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install everything in dist/ into a BepInEx directory.
+# Install dist/ into a BepInEx directory, minus the packages the client Pack owns alone (see
+# CLIENT_ONLY below).
 #
 #   scripts/install-plugins.sh [--dist <dir>] <bepinex-dir>
 #   scripts/install-plugins.sh prune-mirror <bepinex-dir> <docker-container>
@@ -41,6 +42,17 @@ TREES=(plugins patchers config)
 # Where lloesche/valheim-server copies /config/bepinex/plugins into the game directory.
 CONTAINER_PLUGINS_DIR="/opt/valheim/bepinex/BepInEx/plugins"
 
+# Packages the Pack ships and the server must not load. The stager stages every adopted pin into
+# dist/, because the client Pack is built from that same table (scripts/stage-stack.sh), so this is
+# where the server's half of the split recorded in docs/modstack.md under "Where each mod runs"
+# lives - the mirror of the EXCLUDED list in scripts/build-client-pack.sh.
+#
+# Deploying one of these is not a harmless no-op. AzuHoverStats version-checks every peer from a
+# ZNet.OnNewConnection prefix and disconnects a client that never answers, so installing it
+# server-side would refuse exactly the players it was shipped to please, while synchronising
+# nothing (#78).
+CLIENT_ONLY=(AzuHoverStats AzuClock MouseTweaks)
+
 # shellcheck source=lib/ledger.sh
 . "$REPO_ROOT/scripts/lib/ledger.sh"
 
@@ -58,6 +70,17 @@ dist_files() {
     [[ -z "$unexpected" ]] || die "unexpected entry in dist/$tree/: $(printf '%s' "$unexpected" | head -n 1)"
     (cd "$DIST_DIR/$tree" && find . -type f | sed "s|^\\./|$tree/|")
   done | LC_ALL=C sort
+}
+
+# Whether a dist-relative path belongs to a Pack-only package. Matched on the staged package
+# directory and on a bare DLL of the same name, so a package that ships a single file rather than a
+# tree is caught too.
+path_is_client_only() {  # path_is_client_only <dist-relative-path>
+  local path=$1 name
+  for name in "${CLIENT_ONLY[@]}"; do
+    [[ "$path" == "plugins/$name/"* || "$path" == "plugins/$name.dll" ]] && return 0
+  done
+  return 1
 }
 
 # One line per staged tree, so a 230-file bundle tree is summarized instead of scrolled:
@@ -128,13 +151,18 @@ do_install() {
     echo "migrated the installer manifest from plugins/ to the BepInEx root"
   fi
 
-  local files=() name dir
+  local files=() withheld=() name dir
   while IFS= read -r name; do
     # Same policy the ledger enforces: paths prune-mirror would refuse never get installed, so a
     # dotfile or traversal-shaped name in dist/ fails here instead of breaking cleanup later.
     safe_ledger_entry "$name" || die "refusing to deploy from dist/: $name"
+    if path_is_client_only "$name"; then
+      withheld+=("$name")
+      continue
+    fi
     files+=("$name")
   done < <(dist_files)
+  [[ ${#withheld[@]} -eq 0 ]] || report "withheld Pack-only" "${withheld[@]}"
   [[ ${#files[@]} -gt 0 ]] || die "dist/plugins/ is empty; run 'dotnet build' or stage a mod tree (docs/build.md)"
 
   # Remove what we installed last time and no longer build. A failure part-way cannot disown files:
@@ -159,7 +187,10 @@ do_install() {
   local removed=()
   if [[ ${#owned[@]} -gt 0 ]]; then
     for name in "${owned[@]}"; do
-      [[ -f "$DIST_DIR/$name" ]] && continue
+      # Still staged *and* still ours to install. A package that became Pack-only is pruned here
+      # rather than left loaded, which is the only way the withholding above reaches a server that
+      # already had it.
+      if [[ -f "$DIST_DIR/$name" ]] && ! path_is_client_only "$name"; then continue; fi
       if [[ -f "$target/$name" ]]; then
         rm -- "$target/$name"
         removed+=("$name")
