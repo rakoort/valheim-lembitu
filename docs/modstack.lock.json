@@ -1,4 +1,5 @@
 {
+  "Azumatt/AzuExtendedPlayerInventory@2.4.14": "852dcde0767a42b57d7705e01d2c0798ad96941eb6207a4d2e797ffff06840b6",
   "Digitalroot/Max_Dungeon_Rooms@2.0.39": "ffcb6194e91f48082bfa67f373bc46d63449fcce377e923021695bfd7b4e8dea",
   "RandyKnapp/EpicLoot@0.14.5": "902ac92b375e74277cc6483b75d6cd439a8cabd136c0ee66206a98d60c59bbb8",
   "ValheimModding/Jotunn@2.30.0": "f7f218ac3f97b27a7e65d62b5ebe7c29b93129bf3e56cf41b6870bef1ef161fd",
@@ -13,7 +14,6 @@
   "sighsorry/CreatureManager@1.1.14": "07480f4ac70ac6a6b0dd5ba0ba6a44905cbac2deb0aed0a3ce999c1a0897339f",
   "sighsorry/DataForge@1.3.4": "58b42e2a3d6cf552efb94e15b8a7994c3ce690dfb0fe4b6a0a9e10705c8ed799",
   "sighsorry/Dive_In@1.2.3": "10bc6455a6d5c6fd83f78e25a54aeb4c16efa348fcf4ee7902533ae926481d1f",
-  "sighsorry/InventorySlots@1.4.17": "6d5eaf0ad211fa3b30d095f60e472a07fff712ef14f79324fe6ed2a304ae86c1",
   "sighsorry/PortalRules@1.0.7": "30a411029af5e0ca85e9074894e425514e402c160a4ecabb75dfb7e8977a2cd9",
   "sighsorry/STU_Ward@1.3.15": "444d090227dc61e9f290afe32270542a2103d3e050fa80cbdffffb9e828caf4e",
   "sighsorry/SkadiNet@1.1.5": "fcd6af495273764210880fdac855e486c6139b20e57da94e4d1ed80ec28a8bf7",
