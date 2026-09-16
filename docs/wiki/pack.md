@@ -245,14 +245,17 @@ are not.
 
 ### Pack v7 — 2026-09-16 (#74)
 
-One package swapped: `sighsorry/InventorySlots` 1.4.17 out, `Azumatt/AzuExtendedPlayerInventory`
-2.4.14 in. AzuEPI declares only the pack's own BepInEx loader pin, so the dependency closure does
-not grow, and it is the base other slot mods extend through an API if the Pack ever does.
+One package swapped: the previous slot mod out, `Azumatt/AzuExtendedPlayerInventory` 2.4.14 in.
+AzuEPI declares only the pack's own BepInEx loader pin, so the dependency closure does not grow,
+and it is the base other slot mods extend through an API if the Pack ever does.
 
-**This is the first Pack that refuses the previous one.** InventorySlots is one of the mods the
-server version-checks at join, so removing it changes the announced set: a client still on v6 is
-refused outright rather than silently mismatched. That is the desired failure, but it means every
-player must re-extract before they can connect, and the server and the Pack must move together.
+**This is the first Pack that refuses the previous one, and that refusal is observed.** The slot
+mod is one of the mods the server version-checks at join, so replacing it changes the announced
+set. Measured 2026-09-16 on astral-tricep against the live server: a v7 client joined and played,
+while a v6 client was refused with `ErrorVersion` before reaching the world, the server logging
+`Peer never sent version or couldn't due to previous disconnect` for AzuEPI. That is the desired
+failure, but it means every player must re-extract before they can connect, and the server and
+the Pack must move together.
 
 **Slots only, and the vanity question is settled.** Extra rows stay at zero, three quick slots,
 the equipment row in its own panel, Wishbone and Demister slots on, loadouts and the stats panel
@@ -265,10 +268,10 @@ the binding lives on that same GameObject. Present and unreachable. The evidence
 matters more than usual here: the `Apply Preset` key is *not* synchronised and its `Full` branch
 turns the vanity button back on locally.
 
-**What the swap costs, recorded rather than discovered later.** InventorySlots gated extra rows
-on discovering HardAntler, then CryptKey, then Wishbone; AzuEPI has no progression system, so
-rows are pinned at zero and there is nothing to gate (`docs/rules.md`). Multicraft, favourites,
-the crafting grid with search and sort, and scrollable tooltips have no counterpart and go.
+**What the swap costs, recorded rather than discovered later.** The previous slot mod gated extra
+rows on item discovery; AzuEPI has no progression system, so rows are pinned at zero and there is
+nothing to gate (`docs/rules.md`). Multicraft, favourites, the crafting grid with search and sort,
+and scrollable tooltips have no counterpart and go.
 
 **Staging is delegated, assertions are not.** `scripts/build-client-pack.sh` calls
 `scripts/stage-stack.sh` for pin parsing, SHA-256 verification against `docs/modstack.lock.json`,

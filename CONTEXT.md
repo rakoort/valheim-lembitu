@@ -99,6 +99,19 @@ server writes none: global keys are blocked outright. Adopted mods that used to 
 configured to read the player instead, which is why EpicLoot gates loot on the requesting player's
 known recipes.
 
+### PvP
+
+**Stance**:
+A character's standing choice to be open to player-versus-player combat, changed only at a permitted
+place and held until changed there again. Not a per-fight state and not a shield: it survives
+logout and death, and dropping it costs the same journey as taking it up.
+_Avoid_: PvP flag, PvP toggle, PvP mode
+
+**Tombstone**:
+The container a character's death leaves behind, holding whatever the death took. Who may open one
+follows the dead character's stance, not the opener's.
+_Avoid_: grave, corpse, gravestone, headstone
+
 ### The world
 
 **Launch world**:

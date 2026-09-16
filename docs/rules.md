@@ -176,12 +176,25 @@ health, and a level-2 boss 8 × 1.5 = 12 times.
 
 ## PvP and death
 
-**PvP is each player's own flag, and today it is a button.** Every biome rule is `PlayerChoose`, so
-the server never forces PvP on anyone and Wards follow the biome rule
+**PvP is each character's own stance, and today it is still a button.** Every biome rule is
+`PlayerChoose`, so the server never forces PvP on anyone and Wards follow the biome rule
 (`config/enforced/Turbero.PvPBiomeDominions.cfg:16-32`). Nothing restricts where or how often a
-player flips the flag, and only a five-minute post-death grace slows them. #67 decides that a stance
-may be changed only at a boss runestone or inside your own Clan's Ward, which no pinned mod can
-express.
+player flips it, and only a five-minute post-death grace slows them.
+
+**What the stance becomes, decided 2026-09-16 and not yet built (#67).** A stance may be changed
+only within 20 m of the sacrificial stones — the circle of boss power stones at the spawn point —
+or inside a Ward that is enabled and claimed by the character's own clan, primary or Guest as
+`ClanApi` resolves it. Both directions cost that journey: dropping a stance is no freer than taking
+one up, which is what makes it a stance rather than a shield. It survives logout and death, because
+the server keeps it per character rather than on the player's ZDO (ADR-0013), and the server
+re-asserts its record and logs the attempt when a client's flag disagrees. There is no admin
+bypass. Refusal is visible: the toggle still takes the click and a centre message names where the
+stance can be changed. Vanilla's ten-second post-combat gate and the five-minute post-death grace
+both stay as they are.
+
+- Register: *Decided, not built*. The behaviour exists in no published mod — a survey of all 11,269
+  Thunderstore Valheim packages on 2026-09-16 found neither the place gate nor victim-scoped
+  tombstone access — so the run writes it (ADR-0012).
 
 **Death rules differ by whether you opted in.** The server pins both sides, because the PvE side is
 the rule for everyone who has not opted in and an upstream default flip must not change it silently:
@@ -196,25 +209,36 @@ the rule for everyone who has not opted in and an upstream default flip must not
 **That last-but-one row is about the looter, not the victim.** The upstream rules are area-scoped —
 "in PvE areas all tombstones can be looted" — and with every biome on `PlayerChoose` the effective
 area is whichever flag the *acting* player carries. So a flagged player may loot an unflagged
-player's grave, which is the opposite of what the Run wants. Observed by the owner, 2026-09-16. #67
-records the intended rule: an unflagged death is private, a flagged death is lootable.
+player's tombstone, which is the opposite of what the run wants. Observed by the owner, 2026-09-16.
+
+**What tombstone access becomes, decided 2026-09-16 and not yet built (#67).** Access follows the
+dead character, not the opener. An unflagged character's tombstone may be opened by that character
+and by the clan that `ClanApi` says was active at the moment of death, recorded on the tombstone
+when it is created so later roster changes cannot grant or remove access. A flagged character's
+tombstone may be opened by any flagged player, so spoils require standing in the same danger and a
+permanently unflagged player cannot farm graves from safety. Only the killer is not expressible:
+PvPBiomeDominions patches `Player.CreateTombStone`, which takes no killer.
 
 The tombstone still has to exist for any of it to matter, so no-item-loss stays off in both columns.
-PvPBiomeDominions is the only authority on what a death takes. InventorySlots used to carry a
-competing keep-on-death system, which is why the overlay disabled it; its replacement,
-AzuExtendedPlayerInventory, has no death rules of its own, so there is nothing left to disable.
-What happens to items sitting in the extra equipment and quick slots on death is decided by
-whichever mod owns those slots, and that has changed hands — it is re-observed with two clients
-rather than assumed to have carried over (#74).
+PvPBiomeDominions is the only authority on what a death takes: AzuExtendedPlayerInventory, which
+owns the extra slots, has no death rules of its own, so nothing competes with it.
+What happens to items in the extra equipment and quick slots on death follows from two assemblies
+and is not yet confirmed in play. AzuEPI raises the grave's height in its
+`Inventory.MoveInventoryToGrave` prefix, so extra-row items do reach the tombstone;
+PvPBiomeDominions keeps an item only when it is `m_equipped`, or when `m_gridPos.y == 0`, which is
+the vanilla hotbar row alone. Armour worn in an equipment slot is equipped, so a flagged player
+keeps it; a quick slot sits on a row below the backpack, so its contents drop even though the HUD
+shows them beside the hotbar. Read from `PvPBiomeDominions.dll` 1.7.8 and
+`AzuExtendedPlayerInventory.dll` 2.4.14, decompiled 2026-09-16; #74 holds the two-client
+observation that would make it a measurement.
 
-**Carrying capacity no longer grows with progression, and that is a deliberate loss.**
-InventorySlots unlocked extra inventory rows and quick-slot rows as a character discovered
-HardAntler, then CryptKey, then Wishbone, so capacity tracked progress. AzuEPI has no equivalent:
-its rows are a flat 0 to 5 for everyone. Rather than hand every new character several extra rows
-from the first minute, the run pins extra rows at zero, so carrying capacity is vanilla plus
-whatever Haldor sells and the mod's equipment and quick slots. Nothing gates them because there
-is nothing to gate. Multicraft, favourites, the crafting grid with search and sort, and
-scrollable tooltips go with the swap too; they were conveniences, not rules.
+**Carrying capacity does not grow with progression, and that is a deliberate choice.**
+AzuEPI's extra rows are a flat 0 to 5 for everyone, with no way to unlock them as a character
+advances. Rather than hand every new character several extra rows from the first minute, the run
+pins extra rows at zero, so carrying capacity is vanilla plus whatever Haldor sells and the mod's
+equipment and quick slots. Multicraft, favourites, a crafting grid with search and sort, and
+scrollable tooltips have no counterpart in AzuEPI and the Pack no longer offers them; they were
+conveniences, not rules.
 
 **Two things to know that the configuration does not say:**
 
