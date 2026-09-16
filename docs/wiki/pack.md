@@ -364,11 +364,38 @@ install and prunes them from a server that already has one. Without it, a routin
 would put AzuHoverStats on the server and refuse every player who took `docs/rules.md` at its word
 and deleted it. `test/install-plugins.test.sh` covers both halves.
 
-**What this Ticket did not do.** No archive was built, the server was not touched, and none of the
-play-time behaviour — pull range at 20 m against 30 m, hover inside another clan's ward, voice
-attenuation between two players, a v7 client's refusal — has been observed. Those belong to the v8
-window in #67, along with the boot log that shows the two server-side mods loaded and the drift
-check clean.
+**Deployed, and the world was wiped with it — 2026-09-16, owner's decision.** v8 did not wait for
+#67 after all: the owner chose to deploy now and start the Run's world fresh rather than hold the
+container mod back. What happened, on astral-bicep:
+
+- The live world was captured by `scripts/backup-world.sh` (11 MB, `lembitu-all-worlds-20260916T135726Z.tar.gz`)
+  and that archive was copied to `~/lembitu/keep/` so the hourly rotation cannot reap it. The whole
+  old save tree — `worlds_local/` and the biome `cache/` — was moved to `~/lembitu/keep/old-save-20260916T135824Z/`
+  rather than deleted. The Clan registry, the admin list and the ban list were kept.
+- Staging verified all twenty-six package hashes against the committed lock on the host.
+  `scripts/install-plugins.sh` deployed twenty-three adopted packages plus the fork and the
+  harness, and **withheld AzuHoverStats, AzuClock and MouseTweaks** — the mechanism working on a
+  real server, not just in tests.
+- The empty `worlds_local/` made the next boot create a new world, so the world-permanent mods were
+  installed before world creation as ADR-0009 requires. The server reported `29 plugins to load`
+  and `Chainloader startup complete`, loaded `AzuCraftyBoxes 1.8.19` and `ProximityVoiceChat 1.0.2`,
+  registered both `ConfigSync` RPCs, generated `worlds_local/Lembitu/_main.0.fwl2` and opened the
+  Steam listener. Twenty-nine is the same count as the pre-v8 boots because AdminQoL and BoneMod
+  left in v6: two out, two in.
+- `scripts/launch-server.sh restart` then applied the overlay to the freshly generated files and
+  verified it: **191 entries match**, zero drift.
+- The archive was published as the `client-pack-2026-09-16-v8` release, with its manifest and
+  per-file hashes attached.
+
+**Still not observed, and now only players can observe it.** The 20 m pull against a chest at 30 m,
+the hover inside another clan's ward, voice attenuation between two players, and a v7 client being
+refused by name in the server log. Every player must install v8 before they can connect at all, so
+the refusal is the first thing the group will meet.
+
+**A fresh world is not a fresh character.** Character level, XP and personal keys live in the
+player's own character file (ADR-0010), and so does whatever they were carrying. Players return to
+the new world with their levels, keys and inventories; only the world, its buildings and its wards
+are gone. Wiping that half is not something the server can do.
 
 ### Distribution
 

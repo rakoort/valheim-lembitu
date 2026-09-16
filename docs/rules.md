@@ -278,10 +278,10 @@ rule, none is enforced, and a player who deletes them sees vanilla. Hovering a c
 another clan's ward shows nothing, because the readout asks the same access check the ward
 answers.
 
-- Register: *Intended*. None of this is live yet: the five mods are pinned and their overlays
-  committed, but the Pack that carries them and the server side of the container mod deploy
-  together in #67's v8 window. Nothing here — the 20 m pull, the voice distances, the hover
-  behaviour inside a ward — has been observed in play.
+- Register: *Intended*. Live since 2026-09-16: both server-side mods are deployed, the overlay
+  verifies drift-free, and Pack v8 carries the client halves. Nothing here has been watched in
+  play yet — the 20 m pull against a chest at 30 m, the voice distances, the hover inside another
+  clan's ward. The group's first session is the measurement.
 
 ## What is not here
 

@@ -98,7 +98,7 @@ cancelling connection`.
 | WackyMole/WackyEpicMMOSystem | `EpicMMOSystem`, plus its `ItemManager` and `PieceManager` |
 | WackyMole/WackyItemRequiresSkillLevel | `ItemRequiresSkillLevel` |
 | team0/ValheimRAFT | `ValheimRAFT` |
-| Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, not from a join:** ServerSync announces the version because the announcement runs whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. To be observed at the v8 join (#78) |
+| Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, and loaded on the live server 2026-09-16** (`Loading [AzuCraftyBoxes 1.8.19]`, then `Registered 'Azumatt.AzuCraftyBoxes ConfigSync' RPC`), but not yet read from a join: ServerSync announces the version whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. The refusal itself is what the group's first v8 session confirms (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
 
 **Both sides, but not enforced.** These need the client to work fully and will not refuse a join
