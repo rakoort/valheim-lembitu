@@ -51,13 +51,11 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 
 # Dependencies satisfied by something other than an exact pin:
 #   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs and what
-#     scripts/extract-refs.sh compiles against; three adopted packages name an older pack
-#     (EpicLoot, DiscordConnector and ServersideQoL at 5.4.2333, CreatureLevelAndLootControl at
-#     5.4.2202). The 5.4.2202 line left with WackyEpicMMOSystem in #80 and came back with CLLC in
-#     #84, which is the shape of an accepted skew rather than a mistake,
+#     scripts/extract-refs.sh compiles against; two adopted packages name an older pack
+#     (EpicLoot and DiscordConnector, both 5.4.2333). A third, WackyEpicMMOSystem, named 5.4.2202
+#     and left the pack with character level (#80), so that line goes with it,
 #   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot declares (docs/modstack.md).
-KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
-denikson-BepInExPack_Valheim-5.4.2333
+KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2333
 denikson-BepInExPack_Valheim-5.4.2350
 ValheimModding-Jotunn-2.29.2"
 

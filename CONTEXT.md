@@ -120,16 +120,12 @@ A mod whose content is written into the world save — locations, dungeon rooms,
 be installed before the launch world is created and can never be removed during the run.
 _Avoid_: world-gen mod, sticky mod
 
-**Creature affix**:
-An extra trait a creature can spawn with — armoured, enraged, an elemental infusion — that makes
-one creature a harder fight than another of its kind. Rare on purpose: four ordinary creatures in
-a hundred carry one. Bosses have their own affix table.
-_Avoid_: modifier, buff, elite
+**Karma**:
+The regional pressure that rises as players kill creatures in an area, strengthening later spawns.
 
-**Karma** and **Enforcer** were this project's words until 2026-09-17, for regional pressure that
-rose as players killed in an area and for the named creature it eventually summoned. Both left with
-the mod that provided them (ADR-0015). The run has no scheduled-event substitute now, which is a
-known gap rather than a replaced feature.
+**Enforcer**:
+A high-level, modifier-carrying creature that Karma summons, in dungeons or the open world. The
+project's stand-in for a scheduled event, since there is no game master.
 
 **Enforced config**:
 The deliberate deviations this project pins in a mod's generated configuration, and nothing else: a
@@ -139,10 +135,10 @@ already matches.
 _Avoid_: server settings, config overrides, the overlay
 
 **Difficulty tier**:
-The fixed multipliers that decide how much health and damage a creature has, held for the whole run
-and independent of how many players stand nearby. It is not a power curve: players do not advance
-through tiers, and the number does not move when the group grows.
-_Avoid_: level preset, difficulty, boss scaling, player scaling
+The biome level preset that decides what level a creature spawns at, and through it how much health
+a boss has. It is one setting for the whole run, not a per-creature value, and it is not a power
+curve: players do not advance through tiers.
+_Avoid_: level preset, difficulty, boss scaling
 
 ### Mods
 

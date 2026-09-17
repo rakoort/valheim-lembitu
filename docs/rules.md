@@ -157,35 +157,47 @@ belongs in the pack before the launch world is created, not after (ADR-0009 amen
 them. This is the vanilla Hard portal setting and the one world rule the launch argument set states
 explicitly (`config/launch/launch.env.example`).
 
-**Difficulty is a fixed number, not a headcount.** Vanilla makes every creature tougher for each
-player standing nearby — 40% effective health and 4% damage each — so a boss was a different fight
-depending on who logged in, and inviting a sixth player made it easier. That is off, and pinned off
-three ways: both percentages at zero, and the nearby-player count clamped to one
-(`config/enforced/org.bepinex.plugins.creaturelevelcontrol.cfg`). A duo and a full group face the
-same wall, so bringing people decides how fast a boss falls rather than how hard it hits.
+**Karma and Enforcers.** Karma is regional pressure that rises as players kill creatures in an area,
+strengthening later spawns. An **Enforcer** is a high-level, modifier-carrying creature that Karma
+summons, in dungeons or the open world. It is the project's stand-in for a scheduled event, since
+there is no game master (`CONTEXT.md:105-115`).
 
-Instead, ordinary creatures carry twice vanilla health, and a star adds to that. Damage is close to
-vanilla, growing 25% per star, so fights are longer rather than deadlier per hit. Boss health is
-carried by the stars a boss spawns with, pinned rather than rolled.
+**Difficulty.** The creature difficulty tier is `Hard` through CreatureManager's biome level preset:
+it sets the level distribution for every natural spawn in a biome, and bosses follow the same preset
+(`config/enforced/sighsorry.CreatureManager.cfg`). `Hard` spawns roughly 40% stronger ordinary
+creatures than the `Easy` default, and the earliest biomes still spawn at level 1 most of the time,
+so a new character is not softlocked. Expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader.
 
-Those numbers have moved twice, and the reasons are worth keeping. Ordinary creatures were at four
-times vanilla health until 2026-09-17, when character level left the Pack and took every
-character's attribute points with it (#80); halving the multiplier is what keeps the fight where it
-was. And twelve players had found ordinary creatures unkillable the evening before, which was mostly
-an affix problem, fixed separately.
+- Register: *Intended*. The preset is committed and loads; observed boss and creature behaviour in
+  play belongs to #13 and #10. #26 owns ValheimRAFT's vehicles.
 
-**Affixes are rare, and meant to be a moment.** A creature can spawn with an extra trait — armoured,
-enraged, an elemental infusion. Four ordinary creatures in a hundred carry one, and almost none
-carries two. Bosses have their own table.
+**A fight is the same fight whoever turns up.** Vanilla makes every creature tougher for each
+player standing nearby — 30% effective health and 4% damage each, capped at five — so a boss was a
+different fight depending on who logged in, and inviting a sixth player made it easier. That
+scaling is off entirely (`config/enforced/sighsorry.CreatureManager.cfg`,
+[4 - Multiplayer Difficulty], both percentages at zero and the count cap at one). Difficulty is
+fixed in the level table instead: ordinary creatures and Enforcers carry twice vanilla health,
+regular bosses eight (`config/enforced/CreatureManager/levels.yml`). Damage is untouched, so
+fights are longer rather than deadlier per hit. Bringing more people is then a choice about how
+fast a boss falls, never a penalty, and a duo and a full group face the same wall.
 
-**There is no regional pressure any more, and no scheduled event.** Until 2026-09-17 the run had
-Karma, which rose as players killed in an area, and the Enforcer it eventually summoned — a named,
-affix-carrying creature that stood in for an event, since there is no game master. Both left with
-the mod that provided them (ADR-0015). Nothing replaces them yet.
+Ordinary creatures carried four times vanilla health until 2026-09-17. Two things moved that
+number. Twelve players found ordinary mobs unkillable, which was mostly a modifier problem and is
+fixed separately, and character level then left the Pack, taking every character's attribute
+points with it (#80). Halving the multiplier is what keeps the fight where it was.
 
-- Register: *Intended*. The multipliers are the owner's decision and none of it is measured in
-  play. The check that matters is one fight fought with two players and again with eight, showing
-  the same creature health both times (#84).
+Per-level growth compounds on top of those floors, so the biome preset still decides how much
+harder a late biome is: an Ashlands creature at level 3 carries 2 × (1 + 2 × 1) = 6 times vanilla
+health, and a level-2 boss 8 × 1.5 = 12 times.
+
+**Modifiers are rare, and meant to be a moment.** A creature can carry an extra trait — armoured,
+enraged, regenerating and twenty-nine others. About four ordinary creatures in a hundred have one, and
+almost never two. An Enforcer is the exception and usually wears three: that is what makes it read
+as an event rather than a big creature.
+
+- Register: *Intended*. The multipliers are the owner's decision, applied by #68 and retuned on
+  2026-09-17, and never yet measured in a real boss fight. Whether eight times is the right wall
+  for a boss is a question for the first kill after it goes live.
 
 ## PvP and death
 
@@ -303,9 +315,7 @@ delivery was designed (ADR-0006) and deferred. It is deliberately safe to add mi
 records never enter the world save, so only its buildable piece is one-way. Nothing of it exists
 today, and nothing in the current UI reads it.
 
-**There is no game master and no scheduled events.** Karma and its Enforcers were the substitute
-until 2026-09-17 and left with the mod that provided them (ADR-0015). Nothing stands in for an event
-today.
+**There is no game master and no scheduled events.** Enforcers and Karma are the substitute.
 
 **There are no planned mid-Run content injections.** The accepted pack stays fixed; a mid-Run
 upstream replacement requires something actually breaking and passing acceptance again (ADR-0007).

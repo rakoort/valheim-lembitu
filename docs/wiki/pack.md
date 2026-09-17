@@ -456,40 +456,6 @@ there is no XP.
 missing level bar, and what the group will discover is whether the material-biome gate alone paces
 the run.
 
-### Pack v10 — the creature authority changes hands (#84)
-
-`sighsorry/CreatureManager` 1.1.14 out, `Smoothbrain/CreatureLevelAndLootControl` 4.6.4 in, on
-2026-09-17. Twenty-six pins either way. The decision and its accepted losses are ADR-0015; this is
-what the Pack and the server do about it.
-
-**The requirement the swap protects.** A creature is the same creature whether two players or
-twelve stand near it. CreatureManager held that by writing vanilla's own
-`m_healthScalePerPlayer`, `m_damageScalePerPlayer` and `m_difficultyScaleMaxPlayers`. CLLC never
-touches those fields; it postfixes the three functions that read them, so the overlay pins both
-percentages to zero *and* clamps the minimum and maximum nearby-player count to one *and* zeroes
-the additional-player key. Four keys for one rule, because any one of them left at stock is a lever
-that silently restores scaling.
-
-**Two things change shape rather than carrying across.** Boss health was `Boss.health: 8` in a YAML
-table; CLLC has no boss base-health key, so boss health is expressed through boss star chances plus
-`Health gained per star for bosses (percentage)`. And creature modifiers become CLLC's affixes and
-infusions, which keep their own per-effect chances — the four-in-a-hundred figure has to be
-re-expressed there rather than inherited.
-
-**The handshake loosens for the first time.** CreatureManager was client-mandatory through a
-hand-rolled version check. CLLC leaves `ModRequired` false and carries no such check, so a client
-without it joins and loses only the star, infusion and affix indicators. That means the server side
-can move before the archive does, which is the opposite of the v8 trap.
-
-**Five files retire with the old mod:** its `.cfg` and the four data files under
-`config/enforced/CreatureManager/`, including the `levels.yml` this repository had committed
-wholesale and retuned twice in two days.
-
-**Not written yet, deliberately.** The new overlay waits for the boot that generates
-`org.bepinex.plugins.creaturelevelcontrol.cfg`. The star-chance keys take comma-separated strings
-whose format is not guessable, and the repository's own rule is that the generated file decides
-where a key lives and what shape its value has.
-
 ### Distribution
 
 **The Pack is distributed as a GitHub release on this repository.** `scripts/build-client-pack.sh`
