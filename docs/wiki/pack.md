@@ -541,6 +541,11 @@ does that at any radius.
 against 1.0.14. That is the practice #84 paid for: CreatureLevelAndLootControl staged, hash-verified
 and passed closure while being dead on arrival.
 
+**Published and deployed 2026-09-17.** `client-pack-2026-09-17-v12.zip`, 192 MB, thirty-two pins,
+166 files under `BepInEx/plugins/`. The builder's assertions held: `MaxPlayerCount` and
+`Lembitu.Harness` excluded, `Jotunn` and `AzuCraftyBoxes` present. The server generated the scaled
+world in the same window, with the size overlay verified at 193 entries beforehand.
+
 **Two adoptions carry warnings rather than settings.** AdventureBackpacks registers real items, so
 removing it later deletes every pack and its contents — the same shape as the losses earlier that
 day. And SeparateSpawns is version 0.1.0 with one release, stores its layout per world UID, and
