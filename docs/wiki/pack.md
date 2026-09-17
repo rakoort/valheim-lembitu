@@ -456,6 +456,38 @@ there is no XP.
 missing level bar, and what the group will discover is whether the material-biome gate alone paces
 the run.
 
+### Karma and modifiers off, and a replacement that could not run (#84)
+
+2026-09-17. The owner asked for CreatureManager to go and for `Smoothbrain/CreatureLevelAndLootControl`
+4.6.4 instead. The swap was made, deployed, and reverted within the hour, and the run ended where it
+should have started: **CreatureManager stays installed, with Karma and all three modifier switches
+off.**
+
+**Why CLLC cannot be used.** Its newest build is from May 2025, and its bundled ServerSync reads
+`ZRoutedRpc.Everybody` — a field Valheim 1.0 turned into a const. On the live server its type
+initializer threw `TypeInitializationException` at boot, so the mod loaded and did nothing.
+`scripts/screen-bundled-libs.sh` reports five stale references in that assembly. **The script was
+not run before the swap**, which is precisely the failure it exists to prevent (ADR-0002): a package
+that stages, hash-verifies and passes dependency closure can still be dead on arrival. Screen every
+adoption, before the pin lands rather than after the deploy.
+
+**What the revert left behind, and why it was urgent.** For about twenty minutes the live server had
+no creature authority at all: CreatureManager removed, CLLC broken. Vanilla's per-player scaling was
+therefore live — the one behaviour the owner had twice insisted stay off. Nothing else in the pack
+can hold those three vanilla fields at zero, which is the real reason CreatureManager is still here.
+
+**Two accidents in the same window, both worth recording.** The restart that deployed the swap also
+triggered the container's own updater: it re-synced the game from Steam, moving it from 1.0.12 to
+**1.0.14**, then re-extracted BepInEx *after* the bootstrap had copied plugins in, so that boot ran
+with `0 plugins to load`. A second restart restored the tree. The network version stayed at 40, so
+no client was affected, but `UPDATE_CRON` being empty does not stop the updater's startup pass on an
+idle server — the launch configuration says so in a comment nobody had needed until now.
+
+**What the run keeps.** Fixed multipliers — ordinary creatures at twice vanilla health, bosses at
+eight — and headcount scaling pinned at zero. What it loses is Karma, the Enforcer and every
+modifier, all by switch rather than by removal, so any of them is one config line away from coming
+back.
+
 ### Distribution
 
 **The Pack is distributed as a GitHub release on this repository.** `scripts/build-client-pack.sh`

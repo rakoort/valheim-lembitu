@@ -120,12 +120,18 @@ A mod whose content is written into the world save — locations, dungeon rooms,
 be installed before the launch world is created and can never be removed during the run.
 _Avoid_: world-gen mod, sticky mod
 
-**Karma**:
-The regional pressure that rises as players kill creatures in an area, strengthening later spawns.
+**Karma** (switched off, 2026-09-17):
+The regional pressure that rose as players killed creatures in an area, strengthening later spawns.
+Off since #84, with the mod that provides it still installed, so the word describes a switch rather
+than a mechanic in play.
 
-**Enforcer**:
-A high-level, modifier-carrying creature that Karma summons, in dungeons or the open world. The
-project's stand-in for a scheduled event, since there is no game master.
+**Enforcer** (switched off with Karma):
+A high-level, modifier-carrying creature Karma summoned, in dungeons or the open world. It was the
+project's stand-in for a scheduled event, since there is no game master. Nothing replaces it.
+
+**Creature modifier** (switched off, 2026-09-17):
+An extra trait a creature could spawn with — armoured, enraged, an elemental infusion. Off at the
+master switch. The word survives because the retired chance tables still name them.
 
 **Enforced config**:
 The deliberate deviations this project pins in a mod's generated configuration, and nothing else: a

@@ -5,8 +5,13 @@ This file records exact versions for reproducible tests, not a prelaunch freeze.
 in [adr/](adr/) and the vocabulary in [../CONTEXT.md](../CONTEXT.md).
 
 Adopted pins were checked against live Thunderstore package APIs on **2026-09-15**. Development
-follows the latest public Valheim client/server and latest mod releases. The current game candidate
-is **1.0.12 / network 40**. Freeze only after the acceptance gate below passes, before launch-world
+follows the latest public Valheim client/server and latest mod releases. The live server runs
+**1.0.14 / network 40** as of 2026-09-17; it had been 1.0.12, and nobody chose the change — the
+container's updater ran its first pass on an idle restart, re-synced the game from Steam and
+re-extracted BepInEx over the plugin tree, which cost one boot with zero plugins loaded. The
+network version did not move, so clients were unaffected. `config/launch/launch.env.example`
+documents exactly this hole: `UPDATE_CRON` is empty, but the updater's startup call still fires
+when the server is idle. Freeze only after the acceptance gate below passes, before launch-world
 creation (ADR-0007, ADR-0009).
 
 The stack was reduced from thirty packages to twenty-three on **2026-09-15**, and every planned
@@ -37,7 +42,7 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset; access-mode limits pinned at upstream values |
 | VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated actions, vanilla skill caps | Private keys on, all global keys blocked; equipment, crafting, cooking, eating, guardian powers and boss summons locked; repairs, building, taming, boats and portals open; skill floor from boss keys with the ceiling at 100 |
 | RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, rarities, enchanting and socketed shardstones | `Item Drop Limits` and `Gated Freebuild Mode` both `PlayerMustKnowRecipe`, so gating reads the player, not world keys; Adventure Mode off; drop rate 0.6, shardstones 0.05; effect counts thinned by patch (#73) |
-| sighsorry/CreatureManager | 1.1.14 | Karma and Enforcer encounters; creature and boss difficulty tier, spawn level, health and damage scaling | Creature cloning and customisation off; `Biome Level Preset = Hard`, so biome tier sets spawn and boss level |
+| sighsorry/CreatureManager | 1.1.14 | Fixed creature and boss multipliers, and holding vanilla's headcount scaling at zero | Cloning and customisation off; `Biome Level Preset = Hard`; **Karma and all three modifier switches off from 2026-09-17 (#84)**; headcount scaling pinned at 0 / 0 / 1 |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Cannon prefabs off, flight off, non-admin debug off, and from 2026-09-17 `AdminsCanOnlyBuildRaft = true`, so no player builds a vehicle. The mod stays installed because it is world-permanent; whether the pin leaves is #82 |
 | turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
@@ -379,6 +384,7 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | MSchmoecker/MultiUserChest | The only candidate that changes networked item movement, which is where duplication and item loss live. The vanilla "someone is in the chest" wait is an annoyance, not a problem. A risk judgement, not a conflict: its own incompatibility list — QuickStore, QuickStack, SimpleSort — touches nothing in this pack (#78) |
 | Crystal/BetterChat | Clan owns the chat window: it patches `Chat.Awake`, `InputText`, `HasFocus`, `Update`, `RPC_ChatMessage` and `SendPing`, and BetterChat rewrites the same input handling and visibility, risking the clan channel's prefixes. It would also add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own settings enforceable (#78) |
 | RustyMods/Seasonality | It sets the world global keys `season_winter`, `season_summer`, `season_spring` and `season_fall`, and this server blocks every global key (ADR-0005, ADR-0010). It also ships seasonal modifiers and weather control, so it is not the visual-only mod it appears to be, and it would reopen a difficulty the run fixed for its whole length (#78) |
+| Smoothbrain/CreatureLevelAndLootControl | **Tried and rejected 2026-09-17, on the live server.** It was the obvious replacement for CreatureManager — plain percentages for creature and boss health, its own affix tables, and the same three multiplayer-scaling keys — but 4.6.4 is from May 2025 and cannot run on Valheim 1.0: its bundled ServerSync reads `ZRoutedRpc.Everybody`, a field the game turned into a const, so its type initializer throws `TypeInitializationException` at boot and the mod does nothing. `scripts/screen-bundled-libs.sh` reports five stale references, and it was not run before the swap — which is the whole reason that script exists (ADR-0002, #84) |
 | WackyMole/WackyEpicMMOSystem | **Removed 2026-09-17, after being pinned.** Character level was the run's second power curve, and a second multiplier on the same numbers is what ADR-0004 existed to avoid; its own XP curve and attribute economy were never tuned (#72 was open for exactly that). Gear plus personal keys carry progression instead (ADR-0014, #80) |
 | WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17, with the mod above.** Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
 

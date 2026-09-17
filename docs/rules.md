@@ -157,10 +157,12 @@ belongs in the pack before the launch world is created, not after (ADR-0009 amen
 them. This is the vanilla Hard portal setting and the one world rule the launch argument set states
 explicitly (`config/launch/launch.env.example`).
 
-**Karma and Enforcers.** Karma is regional pressure that rises as players kill creatures in an area,
-strengthening later spawns. An **Enforcer** is a high-level, modifier-carrying creature that Karma
-summons, in dungeons or the open world. It is the project's stand-in for a scheduled event, since
-there is no game master (`CONTEXT.md:105-115`).
+**No regional pressure, and no scheduled event.** Until 2026-09-17 the run had Karma — pressure
+that rose as players killed in an area — and the Enforcer it eventually summoned, a named creature
+that stood in for an event since there is no game master. Both are switched off
+(`config/enforced/sighsorry.CreatureManager.cfg`, #84). The mod that provided them is still
+installed, because it is also what holds creature multipliers fixed, so turning either back on is
+one config line rather than a Pack change.
 
 **Difficulty.** The creature difficulty tier is `Hard` through CreatureManager's biome level preset:
 it sets the level distribution for every natural spawn in a biome, and bosses follow the same preset
@@ -190,10 +192,12 @@ Per-level growth compounds on top of those floors, so the biome preset still dec
 harder a late biome is: an Ashlands creature at level 3 carries 2 × (1 + 2 × 1) = 6 times vanilla
 health, and a level-2 boss 8 × 1.5 = 12 times.
 
-**Modifiers are rare, and meant to be a moment.** A creature can carry an extra trait — armoured,
-enraged, regenerating and twenty-nine others. About four ordinary creatures in a hundred have one, and
-almost never two. An Enforcer is the exception and usually wears three: that is what makes it read
-as an event rather than a big creature.
+**No creature carries a modifier.** Armoured, enraged, regenerating and twenty-nine other traits
+are off entirely, all three master switches (#84). They were the cause of the 2026-09-16 evening
+where twelve players found ordinary creatures unkillable: the stock chance reads as a per-creature
+rate but is rolled once per group of eight. Cutting the rate to 4 creatures in 100 was the first
+answer; switching the idea off was the owner's second. A creature is now exactly its kind and its
+stars.
 
 - Register: *Intended*. The multipliers are the owner's decision, applied by #68 and retuned on
   2026-09-17, and never yet measured in a real boss fight. Whether eight times is the right wall
@@ -315,7 +319,8 @@ delivery was designed (ADR-0006) and deferred. It is deliberately safe to add mi
 records never enter the world save, so only its buildable piece is one-way. Nothing of it exists
 today, and nothing in the current UI reads it.
 
-**There is no game master and no scheduled events.** Enforcers and Karma are the substitute.
+**There is no game master and no scheduled events.** Karma and its Enforcers were the substitute
+until 2026-09-17, when both were switched off (#84). Nothing stands in for an event today.
 
 **There are no planned mid-Run content injections.** The accepted pack stays fixed; a mid-Run
 upstream replacement requires something actually breaking and passing acceptance again (ADR-0007).
