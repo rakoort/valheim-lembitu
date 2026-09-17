@@ -102,5 +102,33 @@ else
   report fail "an entry outside a section aborts and writes nothing"
 fi
 
+# --- 6. a non-cfg file is seeded when absent and never overwritten ----------------------------
+# SeparateSpawns' roster is the case: the mod writes player assignments back into it, so replacing
+# it on every deploy would erase which clan each player belongs to.
+
+C="$(mkroot '[Placement]
+InnerRadius = 2400
+')"
+printf '{"groups":{"Skadi":{"players":[]}}}\n' > "$WORK/repo/config/dedicated/roster.json"
+mkdir -p "$WORK/target5"
+printf '[Placement]\nInnerRadius = 2400\n' > "$WORK/target5/mod.cfg"
+
+if "$C" "$WORK/target5" > "$WORK/out" 2>&1 \
+   && grep -q 'seeded roster.json' "$WORK/out" \
+   && grep -q 'Skadi' "$WORK/target5/roster.json"; then
+  report ok "seeds a non-cfg file the server does not have yet"
+else
+  report fail "seeds a non-cfg file the server does not have yet"
+fi
+
+printf '{"groups":{"Skadi":{"players":["Steam_1"]}}}\n' > "$WORK/target5/roster.json"
+if "$C" "$WORK/target5" > "$WORK/out" 2>&1 \
+   && grep -q 'kept roster.json' "$WORK/out" \
+   && grep -q 'Steam_1' "$WORK/target5/roster.json"; then
+  report ok "never overwrites a roster the server has written players into"
+else
+  report fail "never overwrites a roster the server has written players into"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

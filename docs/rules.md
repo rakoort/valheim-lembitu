@@ -124,9 +124,11 @@ baked into the terrain at generation and cannot be changed afterwards. **Every p
 for this**, because your client generates the ground itself — without the mod you would see
 different terrain than the server.
 
-**Each clan starts in its own place.** Rather than everyone waking at the sacrificial stones, groups
-are placed in separate scored neighbourhoods, at least 500 metres apart, chosen for a viable start
-with Black Forest and a burial chamber in reach. Meeting another clan is meant to be an event rather
+**Each clan starts in its own place.** Five group starts are provisioned — Skadi, Fenrir, Muninn,
+Vidar and Eir — each in its own scored neighbourhood at least a kilometre from the next, chosen for
+a large Meadows patch with Black Forest and a burial chamber within reach rather than on the
+doorstep. Clans claim a name; the number of places is fixed at world generation and cannot grow
+afterwards. Meeting another clan is meant to be an event rather
 than the first thing that happens.
 
 **Backpacks carry the extra weight.** AdventureBackpacks adds packs with their own storage; the
@@ -154,11 +156,9 @@ flagged crew, and an unflagged one cannot be shelled. Flight stays off.
 vessels were prefabs in the world save, so every ship built before that, and whatever was stored
 aboard, went with it. Build again from scratch.
 
-**The night can be voted away.** One player getting into bed raises a prompt for everyone; once
-half the connected players are in bed or sitting down, the night is skipped
-(`config/enforced/ArgusMagnus.ServersideQoL.JustSleep.cfg`). Sitting counts because a bed for
-everyone is not always to hand. Half is a deliberate number: the package asks for everyone by
-default, which on a twelve-player evening means never (#83).
+**The night cannot be voted away.** The mod for it was adopted and cut on the same day: its
+framework needs a BepInEx patcher in a directory the server container never mirrors, so it never
+worked at all. Nights are vanilla length (#86).
 
 **World Advancement Progression is one-way for a different reason.** Its keys live in character
 saves, so it is not world-permanent, but it clears the world's global keys on startup. It therefore

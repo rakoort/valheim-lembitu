@@ -16,7 +16,9 @@
 #   zip root files           -> dist/plugins/<Mod>/...     (Thunderstore metadata is dropped)
 #   plugins/...              -> dist/plugins/<Mod>/...
 #   BepInEx/plugins/...      -> dist/plugins/<Mod>/...
-#   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (ServersideQoL ships one, #83)
+#   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (no pinned package ships one; ServersideQoL
+#                                                           did and was cut because the container never
+#                                                           mirrors this tree into the game, #86)
 #   BepInEx/config/...       -> dist/config/...            (Clan's emblems and emoji)
 #
 # dist/ mirrors the target BepInEx/ directory, and install-plugins.sh owns the copy into a server.

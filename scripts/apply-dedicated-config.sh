@@ -68,14 +68,33 @@ CONFIG_DIR=$1
 [[ -d "$CONFIG_DIR" ]] || enforced_die "no such directory: $CONFIG_DIR"
 [[ -d "$OVERLAY_DIR" ]] || enforced_die "no overlay at $OVERLAY_DIR"
 
+# A `.cfg` overlay is merged key by key, like the enforced overlay. Anything else is *seeded*: copied
+# only when the target is absent, never over an existing file. That distinction is load-bearing for
+# the one such file today, SeparateSpawns' group roster — the mod writes player assignments back into
+# it, so replacing it on every deploy would erase who belongs to which clan. The repository owns the
+# starting shape; the server owns it from first boot onwards.
 while IFS= read -r rel; do
   target="$CONFIG_DIR/$rel"
-  if [[ ! -f "$target" ]]; then
-    printf 'absent: %s - the mod has not written it yet; boot once and re-run\n' "$rel"
-    missing=$((missing + 1))
-    continue
-  fi
-  enforced_cfg_each "$OVERLAY_DIR/$rel" apply_entry_to "$target"
+  case "$rel" in
+    *.cfg)
+      if [[ ! -f "$target" ]]; then
+        printf 'absent: %s - the mod has not written it yet; boot once and re-run\n' "$rel"
+        missing=$((missing + 1))
+        continue
+      fi
+      enforced_cfg_each "$OVERLAY_DIR/$rel" apply_entry_to "$target"
+      ;;
+    *)
+      if [[ -f "$target" ]]; then
+        echo "kept $rel - the server owns it now, not the repository"
+      else
+        mkdir -p "$(dirname "$target")"
+        cp "$OVERLAY_DIR/$rel" "$target"
+        echo "seeded $rel"
+        changed=1
+      fi
+      ;;
+  esac
 done < <(enforced_overlay_files "$OVERLAY_DIR")
 
 if [[ $missing -gt 0 ]]; then

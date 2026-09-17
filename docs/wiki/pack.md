@@ -557,6 +557,39 @@ day. And SeparateSpawns is version 0.1.0 with one release, stores its layout per
 copies `m_startingGlobalKeys` on a server that blocks every global key; both are worth reading in
 the first boot log.
 
+### The patcher gap, and five provisioned starts (#86)
+
+2026-09-17, late. Thirty pins: `ArgusMagnus/ServersideQoL` and its `JustSleep` module were adopted
+and cut the same day, having never worked once.
+
+**Why they never worked, and what it exposes.** The framework ships a BepInEx *preloader patcher*
+and refuses to initialise unless the DLL sits in the game tree's `patchers/` directory. Our
+installer does deploy `patchers/` — into `/config/bepinex/patchers`, correctly — but the container's
+bootstrap mirrors only `plugins/` into `/opt/valheim`, so every boot logged
+`ServersideQoL.Patchers.dll was not installed correctly` and the module never wrote a config. The
+night-skip was configured, discussed and pinned at 70% while being inert the whole time. That is the
+shape of failure this repository keeps meeting: staged, hash-verified, closure-clean, and dead.
+
+**The gap outlives the mods.** No pinned package ships a patcher now, so `dist/patchers/` is empty
+again — but `scripts/install-plugins.sh` still advertises support the runtime does not deliver. The
+next package that ships one needs a deploy step that copies into the game tree and survives a
+BepInEx re-extract, which is the same problem `scripts/apply-dedicated-config.sh` solves for
+SeparateSpawns' config.
+
+**Five starts, provisioned before generation.** The layout is computed once and frozen on first
+play: `MarkWorldFrozen()` sets a flag, and the bootstrap skips generation when a stored layout
+already holds group spawns. A group added later is recognised by the roster but has no spawn, so its
+players wake at the stones. Five groups are therefore created up front — Skadi, Fenrir, Muninn,
+Vidar, Eir — empty, for clans to claim. Over-provisioning costs search time; under-provisioning
+cannot be fixed without another wipe.
+
+**The spawn scoring is ours now, not upstream's.** `InnerRadius` 3200 for five starts,
+`MinSpawnDistance` 1000 so no two clans are neighbours, `MinBurialChambers` 1 and
+`BlackForestProximity` 800 so crypt-dense seams stop being required, `EikthyrReach` 800 to move the
+first boss out of camp, `MeadowsSizeWeight` 20 against `IslandsWeight` 6 because five spawns inside
+3200 m cannot be on five islands. The roster's per-group `difficulty` numbers order who gets the
+safest of the chosen spawns; that is the only place the mod measures danger at all.
+
 ### Distribution
 
 **The Pack is distributed as a GitHub release on this repository.** `scripts/build-client-pack.sh`

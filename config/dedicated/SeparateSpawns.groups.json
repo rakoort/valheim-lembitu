@@ -1,0 +1,9 @@
+{
+  "groups": {
+    "Skadi": { "players": [], "difficulty": 1 },
+    "Fenrir": { "players": [], "difficulty": 2 },
+    "Muninn": { "players": [], "difficulty": 3 },
+    "Vidar": { "players": [], "difficulty": 4 },
+    "Eir": { "players": [], "difficulty": 5 }
+  }
+}
