@@ -80,10 +80,11 @@ safety (#28), a new native gameplay run, or Milestone acceptance.
 
 **Exercise package lifecycle failures, not just extraction.** The staging regression suite uses real zip fixtures in isolated, pre-seeded caches. It checks asset layouts and preserved build output, removal of stale version files and retired trees, unchanged locks on repeat staging, refusal of tampered bytes, rejection of missing or prefix-only dependency versions, and aborting unsupported package shapes before copying. These are the failure boundaries supporting the staging contract (`test/stage-stack.test.sh:8-10`, `test/stage-stack.test.sh:136-258`, `test/stage-stack.test.sh:260-325`).
 
-**A mod's own data file is changed with a patch, not a fork.** EpicLoot's `loottables.json` is a
+**A mod's own data file is changed with a patch, not a fork.** EpicLoot left the run in #85, but the
+mechanism it taught is worth keeping. Its `loottables.json` was a
 99 KB table the mod owns and regenerates, so committing an edited copy would go stale on the
 next release. The mod reads `BepInEx/config/EpicLoot/patches/*.json` recursively and applies them
-over its embedded default, which is the seam to use: `config/enforced/EpicLoot/patches/loottables.json`
+over its embedded default, which was the seam used: an enforced copy of the loot table under the mod's own patches directory
 holds six `Overwrite` patches against `$.MagicEffectsCount.<Rarity>`, and the overlay applier
 copies it wholesale into exactly the directory `FilePatching.GetPatchesDirectoryPath` computes
 (#73; provenance in `docs/research.md`).
@@ -487,6 +488,36 @@ idle server — the launch configuration says so in a comment nobody had needed 
 eight — and headcount scaling pinned at zero. What it loses is Karma, the Enforcer and every
 modifier, all by switch rather than by removal, so any of them is one config line away from coming
 back.
+
+### Pack v11 — EpicLoot and ValheimRAFT removed (#85)
+
+2026-09-17, and the largest subtraction the run has made. Twenty-four pins. The decision and its
+accepted losses are ADR-0016; this is what the Pack and the server do about it.
+
+**Both removals destroy data, and that was understood before they ran.** EpicLoot's magic properties
+live in a `MagicItemComponent` on each item's custom data, so enchanted gear reverts to plain
+vanilla, and its enchanting and augmenting stations were `PrefabCreator` prefabs that vanish from the
+world. ValheimRAFT was world-permanent: its vessels are prefabs in the world save, so every ship, its
+cargo and the footing of anyone aboard are gone. The world was captured first and the archive kept
+outside the rotation, at `~/lembitu/keep/pre-epicloot-removal-*.tar.gz`.
+
+**Deleting EpicLoot is a player action too.** Loot is rolled where the player is, so a client that
+keeps the mod keeps rolling magic items. That is the one case so far where "update your Pack" is not
+enough advice: the instruction is to delete.
+
+**Five files retire.** `randyknapp.mods.epicloot.cfg`, the `loottables.json` patch that thinned
+effect counts (#73), the client seed that muted the rarity palette, and both ValheimRAFT overlays —
+`zolantris.ValheimRAFT.cfg` and `zolantris.DynamicLocations.cfg`. `config/client/` now holds no
+seeds at all, the first time since v6 introduced it. `DynamicLocations` and `ZdoWatcher` shipped
+inside the RAFT package and leave with it, which is why the plugin count falls by more than two.
+
+**One dependency fact changes.** EpicLoot was the only package declaring Jotunn 2.29.2, so that
+override leaves `scripts/stage-stack.sh`. Jotunn stays pinned at 2.30.0 because the pack loads it,
+not because anything asks for it.
+
+**What the run has left.** Clans, wards, personal keys, portal rules, fixed creature difficulty,
+vanilla gear and vanilla boats. No power curve at all, which ADR-0016 argues is a shape rather than
+an absence — and names the cheapest reversal if it proves wrong.
 
 ### Distribution
 

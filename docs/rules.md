@@ -55,51 +55,31 @@ that no second system can start answering the same question differently.
 - Register: *Intended*. Clan configuration is locked and committed, and its integrations resolve
   against it; a live clan roster and ward behaviour have not been exercised on this pack.
 
-## The one power curve
+## No power curve, only gates
 
-There is exactly one way a character gets stronger: **gear** (ADR-0014). Every other candidate was
-cut, because each was a multiplier landing on the same damage number, tuned by a different author
-against vanilla. Character level was the second curve until 2026-09-17, when it left with the mod
-that provided it; what stands beside gear now is a gate on it rather than a second ladder.
+There is no system that multiplies a character's power (ADR-0016). Character level went on
+2026-09-17, and gear followed the same day when EpicLoot was removed. What remains is vanilla: a
+character gets stronger by crafting and wearing better materials, and what it may wear is gated per
+character by personal keys.
 
-**What left, and what it costs a character.** WackyEpicMMOSystem and its companion gate mod are
-gone. A character's level and attribute points stop applying, so the health, stamina and damage
-bought with them go too — and ordinary creature health was halved in the same change so the
-removal is not a difficulty increase nobody chose. The XP drinks, the three XP meads and
-`Mob_chunks` were that mod's own items, so any sitting in an inventory or a chest disappeared the
-first time it loaded without the mod. Nothing else about a character changed: personal keys,
-vanilla skills and everything worn or carried are untouched.
+**What left, and what it costs.** Magic drops, rarities, enchanting, augmenting, shardstones and
+the enchanting table are gone. Every magic item a player already holds reverts to a plain vanilla
+item and loses its rolled effects, because those effects were stored on the item rather than in the
+world. The enchanting and augmenting stations disappear from the world, since the mod created those
+prefabs. **Delete EpicLoot from your own install too**: loot is rolled where the player is, so a
+client that keeps the mod can still roll magic items nobody else can see the point of.
 
-**Gear** is magic items, rarities, effects and enchanting (EpicLoot). Bounties, treasure maps,
-gambling and the secret stash are **off**: Adventure Mode was disabled on 2026-09-16 because named
-elites with health multipliers and a trader casino read as a different game.
+**Vanilla skills are not a curve either.** They run 0 to 100 as in vanilla and drain by a
+percentage on death. The one deviation: the drain floor rises by 10 for each boss key a character
+holds, so a veteran loses less to a death than a newcomer, while the gain ceiling stays at 100.
 
-**Vanilla skills are not a second curve.** They run 0 to 100 as in vanilla and drain by a percentage
-on death. The one deviation: the drain floor rises by 10 for each boss key a character holds, so a
-veteran loses less to a death than a newcomer, while the gain ceiling stays at 100.
+**Gear is gated by personal keys.** World Advancement Progression refuses to equip or craft an item
+whose materials belong to a biome the character has not unlocked — see "Personal keys" below for
+what earns one. A clan cannot hand a newcomer endgame equipment, which was the intent when a
+character level did this job and remains the intent now.
 
-**Gear is gated by personal keys, not by world progress and no longer by a level.** World
-Advancement Progression refuses to equip or craft an item whose materials belong to a biome the
-character has not unlocked, per personal key — see "Personal keys" below for what earns one. The
-intent is unchanged from when a level threshold did it: a clan cannot hand a newcomer endgame
-equipment. What is gone is the second gate, the armour thresholds at levels 20, 35, 50 and 65;
-material biome is now the whole answer.
-
-**Loot gating reads the player, not the world.** EpicLoot's drop limit is set to
-`PlayerMustKnowRecipe`, so magic drops are gated on what the *requesting player* knows rather than on
-world progression (`config/enforced/randyknapp.mods.epicloot.cfg`). Building pieces follow the same
-rule. Every other gating mode in that setting reads world keys, which this server never writes — see
-"Personal keys" below.
-
-**Magic loot is deliberately quieter than the mod ships it.** The first tester read three shardstones
-from chopping trees and a Legendary shardstone from Eikthyr as a genre change. Three things answer
-that. Drops are cut to 0.6 of stock and shardstones from 0.2 to 0.05. Every rarity rolls one fewer
-effect, with the extra-effect roll thinned as well, so an item usually shows exactly its tier's
-count — one for Magic, five for Ancient (#73). And the rarity palette is muted with generated item
-names off, shipped in the client Pack because those keys cannot be enforced from the server.
-
-- Register: *Intended*. Every value above is decided and none is measured in play. #68 applies them
-  and #73 the effect thinning. #72, which owned the XP question, is closed by #80: there is no XP.
+- Register: *Intended*. Decided 2026-09-17 and not yet played. What the group will discover is
+  whether vanilla gear plus personal keys paces a three-month run on its own.
 
 ## Personal keys, and what earns one
 
@@ -133,15 +113,14 @@ clan can therefore carry another to a boss kill, and that is the intended cooper
 **World-permanent mods land before the launch world is created.** A world-permanent mod writes its
 content into the world save — locations, dungeon rooms, vehicles — so it must be installed before
 the launch world exists and can never be removed during the Run (ADR-0009). Two qualify:
-**Max Dungeon Rooms** (larger dungeons) and **ValheimRAFT** (custom ships, anchoring, vehicle
-building).
+**Max Dungeon Rooms** (larger dungeons). ValheimRAFT was the second until 2026-09-17.
 
-**Custom ships are closed to players, from 2026-09-17.** ValheimRAFT's hammer pieces are registered
-disabled for anyone who is not an admin, so no new vessel can be built
-(`config/enforced/zolantris.ValheimRAFT.cfg`). Anything already afloat still works. The mod stays
-installed rather than removed for the reason in the paragraph above: its vessels are written into
-the world save, so deleting the mod would take every ship, its cargo and anyone standing on it.
-Whether the mod leaves the Pack at all is #82.
+**There are no custom ships any more.** ValheimRAFT is removed (#85). Player building had already
+been closed that morning; the owner then chose removal over a disabled mod, knowing what it costs:
+its vessels were prefabs written into the world save, so every ship built on it, whatever was stored
+aboard, and the footing of anyone standing on one are gone. Boats are vanilla — raft, karve,
+longship, drakkar. This is the one time the run has broken its own rule that a world-permanent mod
+never leaves mid-run (ADR-0009, ADR-0016).
 
 **The night can be voted away.** One player getting into bed raises a prompt for everyone; once
 half the connected players are in bed or sitting down, the night is skipped
@@ -171,7 +150,7 @@ creatures than the `Easy` default, and the earliest biomes still spawn at level 
 so a new character is not softlocked. Expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader.
 
 - Register: *Intended*. The preset is committed and loads; observed boss and creature behaviour in
-  play belongs to #13 and #10. #26 owns ValheimRAFT's vehicles.
+  play belongs to #13 and #10.
 
 **A fight is the same fight whoever turns up.** Vanilla makes every creature tougher for each
 player standing nearby — 30% effective health and 4% damage each, capped at five — so a boss was a

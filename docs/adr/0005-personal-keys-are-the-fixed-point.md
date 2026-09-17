@@ -107,3 +107,11 @@ creature star levels and feeding EpicLoot's rarity roll. With the level mod gone
 level comes from CreatureManager's biome preset and Karma alone, and EpicLoot's rarity roll reads
 that level. Nothing about the fixed point changes: the roll still reads a creature level and a
 requesting player, never a world key.
+
+
+## Amendment — 2026-09-17, second
+
+EpicLoot is removed (ADR-0016, #85), so two claims above describe a mod the run no longer has. The
+`PlayerMustKnowRecipe` drop mode is gone with it, and there is no loot gate left to read the
+requesting player. The fixed point is unaffected and is now simpler: personal keys gate equipping
+and crafting by material biome, and nothing else gates anything.

@@ -8,7 +8,6 @@
   "Azumatt/MouseTweaks@1.0.4": "339d8538fb41d6b4bae0883c9833c5d661f88e178a14bea3f7c72a1cabff1ebe",
   "Azumatt/ProximityVoiceChat@1.0.2": "c45a31e4eae2c071fcfdac993def6d9883bd2bd27aa0c85ce2f741345649ec99",
   "Digitalroot/Max_Dungeon_Rooms@2.0.39": "ffcb6194e91f48082bfa67f373bc46d63449fcce377e923021695bfd7b4e8dea",
-  "RandyKnapp/EpicLoot@0.14.5": "902ac92b375e74277cc6483b75d6cd439a8cabd136c0ee66206a98d60c59bbb8",
   "ValheimModding/Jotunn@2.30.0": "f7f218ac3f97b27a7e65d62b5ebe7c29b93129bf3e56cf41b6870bef1ef161fd",
   "ValheimModding/JsonDotNET@13.0.4": "a221c7be7163ab9739274b962fbd1f63abde65b1418839a62f02aca210868147",
   "ValheimModding/YamlDotNet@16.3.1": "2280480d2add7d6a7a17b882f9b755145160c852e89a14794d1493d08495d2ac",
@@ -22,7 +21,6 @@
   "sighsorry/PortalRules@1.0.7": "30a411029af5e0ca85e9074894e425514e402c160a4ecabb75dfb7e8977a2cd9",
   "sighsorry/STU_Ward@1.3.15": "444d090227dc61e9f290afe32270542a2103d3e050fa80cbdffffb9e828caf4e",
   "sighsorry/SkadiNet@1.1.5": "fcd6af495273764210880fdac855e486c6139b20e57da94e4d1ed80ec28a8bf7",
-  "team0/ValheimRAFT@4.3.2": "e82deeda51df96a572a12f12509745b6af5584dcee1f1c4fce9b753ae66a27ed",
   "turbero/DetailedLevels@2.1.3": "c01b45bf582a14ab787d4b3b121b4f250cde40a06b6e1fd8b4785ba9b18e6828",
   "turbero/PvPBiomeDominions@1.7.8": "e23248d6e9d26c199e261c93dd6f8b6cb11c7e2d43f05dbfd3d720fb4d1f5a8f"
 }
