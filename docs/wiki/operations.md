@@ -87,6 +87,16 @@ and Enforcers keep their own 10s in `karma.yml`'s `Enforcer.modifiers`, which in
 Enforcer roster, its karma thresholds and those modifier rates are all package defaults today, so a
 release that retunes them is a silent rebalance rather than a review.
 
+**One mod keeps its config outside BepInEx, and the overlay cannot own it.** SeparateSpawns 0.1.0
+calls `ModPaths.UseDedicatedConfigLayout()`, true for any headless server, and then writes to
+`<game root>/config/bepinex` instead of `/config`. Putting those keys in `config/enforced/` would
+merge them into a path the mod never reads while `verify-enforced-config.sh` reported success — the
+exact silence ADR-0011 exists to prevent. They live in `config/dedicated/` instead, applied by
+`scripts/apply-dedicated-config.sh` through the same parser, and re-applied on every deploy because
+that directory is inside the tree the container re-extracts when BepInEx updates. One mod, one
+mechanism, and a test file of its own; if a second mod ever needs it, that is the moment to
+generalise rather than now.
+
 **Drift is asserted, not assumed.** `scripts/verify-enforced-config.sh <bepinex-config-dir>`
 compares every overlay entry against the live tree and exits non-zero on any difference, printing
 `file :: section :: key` with expected and live values. `.cfg` overlays are compared key by key

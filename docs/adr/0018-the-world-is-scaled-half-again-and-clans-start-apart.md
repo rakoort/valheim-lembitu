@@ -1,18 +1,21 @@
 # ADR-0018: The world is scaled up, clans start apart, and a third power curve is accepted
 
-Decided 2026-09-17 (#86). A fresh world is generated at **radius 12500 with both stretch factors at
-1.25** — the vanilla layout scaled up by a quarter. The first attempt that day used 15000 and 1.5 and
-was rerolled at 1.25 before anyone built on it, which cost nothing but the generation time — each clan starts in its own place, and four
+Decided 2026-09-17 (#86). A fresh world is generated at **radius 15000, terrain stretch 1.5 and
+biome stretch 1.25**: a disc half again as wide, with biome regions a quarter larger than vanilla so
+there are more distinct neighbourhoods per continent. Three settings were generated that day —
+15000/1.5/1.5, then 12500/1.25/1.25, then this — each rerolled before anyone built, which costs
+nothing but generation time — each clan starts in its own place, and four
 gameplay mods are adopted, one of which breaks ADR-0004's rule about power curves.
 
 ## The world
 
-`JereKuusela/Expand_World_Size` 1.34.0 sets `World radius` to 12500 from vanilla's 10000, with
-`Stretch world` and `Stretch biomes` at 1.25. The distinction matters: raising the radius alone tiles
+`JereKuusela/Expand_World_Size` 1.34.0 sets `World radius` to 15000 from vanilla's 10000, with
+`Stretch world` 1.5 and `Stretch biomes` 1.25. The distinction matters: raising the radius alone tiles
 more biome patches of the same size into a wider disc and pads the outside with Ocean, because
 Ashlands and Deep North are placed by distance from centre. Scaling radius and stretch together
-grows the layout itself, so each biome patch is a quarter wider and every journey between them a
-quarter longer. Area rises about 1.56 times.
+grows the layout itself. Holding biome stretch below terrain stretch is the refinement: continents
+and seas scale with the disc while biome regions scale by a quarter, so a continent carries more
+distinct biomes rather than the same few stretched thin. Area rises about 2.25 times.
 
 The owner's reasoning, recorded as given: each clan needs a viable start, and meeting another clan
 should be a moment that changes how you play. Distance is what buys both.
@@ -35,7 +38,9 @@ their configuration, apply and verify the overlay, and only then wipe and genera
 `Mushroom_Vikings/SeparateSpawns` 0.1.0 places each group in its own scored neighbourhood rather
 than at the sacrificial stones — searching a configurable radius on a 25 m grid, keeping group
 spawns at least 500 m apart, and scoring candidates for Black Forest proximity and burial chambers.
-Upstream values are kept; the scaled world gives the search far more room than it needs.
+The search radius is shortened to 2400 m from 3000, the owner's judgement after reading the first
+layouts: groups were waking 2.3 to 3.0 km out and the walk to the middle was long. Separation is
+unaffected — the scored distance between the two groups was over 5 km at the wider setting.
 
 It stores its layout per world UID and its groups in its own JSON file, so it is world-coupled:
 removing it later returns everyone to the stones. Two things to watch on first boot, both unproven
