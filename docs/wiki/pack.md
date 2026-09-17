@@ -530,6 +530,13 @@ the sequence is: install the mods, boot once with the old world still present so
 generates, let the mods write their config files, apply and verify the overlay, then wipe and
 generate. Getting that backwards produces a vanilla-sized world that has to be thrown away.
 
+**The size overlay was written from the generated file, not from the readme.** `expand_world_size.cfg`
+puts its four numbers in `[1. General]` as `World radius`, `World edge size`, `Stretch world` and
+`Stretch biomes`, with altitude multiplier and delta beside them. Altitude is left at 1 and 0
+deliberately: horizontal stretch already flattens slopes, and multiplying height on top would change
+combat and building on every hillside. The edge stays 500 m, because it exists to stop a ship and
+does that at any radius.
+
 **Every new pin was screened before it landed.** `scripts/screen-bundled-libs.sh` on all five, clean
 against 1.0.14. That is the practice #84 paid for: CreatureLevelAndLootControl staged, hash-verified
 and passed closure while being dead on arrival.
