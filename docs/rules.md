@@ -191,7 +191,7 @@ harder a late biome is: an Ashlands creature at level 3 carries 2 × (1 + 2 × 1
 health, and a level-2 boss 8 × 1.5 = 12 times.
 
 **Modifiers are rare, and meant to be a moment.** A creature can carry an extra trait — armoured,
-enraged, regenerating and twenty-nine others. About one ordinary creature in thirteen has one, and
+enraged, regenerating and twenty-nine others. About four ordinary creatures in a hundred have one, and
 almost never two. An Enforcer is the exception and usually wears three: that is what makes it read
 as an event rather than a big creature.
 

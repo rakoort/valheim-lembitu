@@ -78,7 +78,8 @@ vanilla's own `Game.m_healthScalePerPlayer`, `m_damageScalePerPlayer` and
 `m_difficultyScaleMaxPlayers` from its `[4 - Multiplayer Difficulty]` keys in a `Game.Awake`
 postfix, the live server holds `0 / 0 / 1`, and the drift check matches — so headcount scaling was
 already off and the flat 4× was the intended difficulty. And the fix had to miss two targets:
-ordinary chances are now 0.25 each, about one creature in thirteen, while boss chances stay at 10
+ordinary chances are now 0.125 each, 4 creatures in 100 — cut to 0.25 and halved again the
+same day — while boss chances stay at 10
 and Enforcers keep their own 10s in `karma.yml`'s `Enforcer.modifiers`, which inherits from
 `levels.yml` only for a modifier it does not name. Modifiers remain the Enforcer's signature.
 
