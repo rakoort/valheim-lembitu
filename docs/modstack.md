@@ -61,7 +61,7 @@ belongs in server-locked config rather than a player's file.
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
 | ArgusMagnus/ServersideQoL | 2.0.11 | Server-side QoL framework: the module host every `ServersideQoL_*` feature plugs into. Ships a BepInEx preloader patcher | `Enabled` on, diagnostic logs off. No feature of its own |
 | ArgusMagnus/ServersideQoL_JustSleep | 2.0.11 | Skip the night when enough players are in bed or sitting | Prompt at one player in bed; half the connected players must join in |
-| JereKuusela/Expand_World_Size | 1.34.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 15000, `Stretch world` 1.5, `Stretch biomes` 1.5 — the vanilla layout scaled up by half again (#86) |
+| JereKuusela/Expand_World_Size | 1.34.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 12500, `Stretch world` 1.25, `Stretch biomes` 1.25 — the vanilla layout scaled up by a quarter (#86) |
 | Mushroom_Vikings/SeparateSpawns | 0.1.0 | Each clan starts in its own place, scored for a viable neighbourhood | Search radius, minimum separation between group spawns and the Black Forest scoring left at upstream values |
 | MidnightMods/ProgressivePowers | 0.3.3 | Forsaken power mastery: powers grow with use | A third power curve, adopted against ADR-0004's rule and recorded in ADR-0018 |
 | Vapok/AdventureBackpacks | 2.0.7 | Backpacks with their own storage | One-way: the packs are registered items, so removing the mod deletes them and their contents |

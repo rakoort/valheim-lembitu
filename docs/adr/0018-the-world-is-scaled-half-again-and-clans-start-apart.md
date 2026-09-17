@@ -1,17 +1,18 @@
-# ADR-0018: The world is scaled half again, clans start apart, and a third power curve is accepted
+# ADR-0018: The world is scaled up, clans start apart, and a third power curve is accepted
 
-Decided 2026-09-17 (#86). A fresh world is generated at **radius 15000 with both stretch factors at
-1.5** — the vanilla layout scaled up by half again — each clan starts in its own place, and four
+Decided 2026-09-17 (#86). A fresh world is generated at **radius 12500 with both stretch factors at
+1.25** — the vanilla layout scaled up by a quarter. The first attempt that day used 15000 and 1.5 and
+was rerolled at 1.25 before anyone built on it, which cost nothing but the generation time — each clan starts in its own place, and four
 gameplay mods are adopted, one of which breaks ADR-0004's rule about power curves.
 
 ## The world
 
-`JereKuusela/Expand_World_Size` 1.34.0 sets `World radius` to 15000 from vanilla's 10000, with
-`Stretch world` and `Stretch biomes` at 1.5. The distinction matters: raising the radius alone tiles
+`JereKuusela/Expand_World_Size` 1.34.0 sets `World radius` to 12500 from vanilla's 10000, with
+`Stretch world` and `Stretch biomes` at 1.25. The distinction matters: raising the radius alone tiles
 more biome patches of the same size into a wider disc and pads the outside with Ocean, because
 Ashlands and Deep North are placed by distance from centre. Scaling radius and stretch together
-grows the layout itself, so each biome patch is half again wider and every journey between them is
-half again longer. Area rises about 2.25 times.
+grows the layout itself, so each biome patch is a quarter wider and every journey between them a
+quarter longer. Area rises about 1.56 times.
 
 The owner's reasoning, recorded as given: each clan needs a viable start, and meeting another clan
 should be a moment that changes how you play. Distance is what buys both.

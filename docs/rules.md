@@ -117,9 +117,9 @@ clan can therefore carry another to a boss kill, and that is the intended cooper
 
 ## The world
 
-**The world is half again the size of a vanilla one.** Radius 15000 metres instead of 10000, with
+**The world is a quarter larger than a vanilla one.** Radius 12500 metres instead of 10000, with
 the layout stretched to match, so each biome is wider and every journey between them is longer
-(ADR-0018). Area is roughly 2.25 times vanilla. The size is fixed for the life of this world: it is
+(ADR-0018). Area is roughly 1.56 times vanilla. The size is fixed for the life of this world: it is
 baked into the terrain at generation and cannot be changed afterwards. **Every player needs the Pack
 for this**, because your client generates the ground itself — without the mod you would see
 different terrain than the server.

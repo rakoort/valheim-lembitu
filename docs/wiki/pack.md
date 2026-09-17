@@ -516,7 +516,8 @@ client on v11 is refused.
 
 ### Pack v12 — a scaled world and five new mods (#86)
 
-2026-09-17. Thirty-two pins, a fresh world at radius 15000 with both stretch factors at 1.5, and
+2026-09-17. Thirty-two pins, a fresh world at radius 12500 with both stretch factors at 1.25 — a
+first world at 15000 and 1.5 was rerolled the same day, before anyone had built on it — and
 five adoptions: Expand World Size, SeparateSpawns, ProgressivePowers, AdventureBackpacks and
 BetterArchery. The decisions are ADR-0018; this is what the Pack and the server do about them.
 
@@ -540,6 +541,10 @@ does that at any radius.
 **Every new pin was screened before it landed.** `scripts/screen-bundled-libs.sh` on all five, clean
 against 1.0.14. That is the practice #84 paid for: CreatureLevelAndLootControl staged, hash-verified
 and passed closure while being dead on arrival.
+
+**The size was rerolled once.** The first scaled world used radius 15000 and stretch 1.5; the owner
+chose 1.25 instead within the hour. Rerolling is free while nothing is built and impossible
+afterwards, which is the only window this decision ever has.
 
 **Published and deployed 2026-09-17.** `client-pack-2026-09-17-v12.zip`, 192 MB, thirty-two pins,
 166 files under `BepInEx/plugins/`. The builder's assertions held: `MaxPlayerCount` and
