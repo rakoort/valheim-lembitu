@@ -36,6 +36,7 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
   held the armour thresholds is deleted.
 - **ValheimRAFT:** adopted at 4.3.2, with the entire cannon prefab family disabled through server-synced config, and from 2026-09-17 closed to players entirely: `[Server config] AdminsCanOnlyBuildRaft = true` registers every hammer-menu vehicle piece as disabled for a non-admin. World-permanent launch and client acceptance remain owned by #26; whether the pin itself leaves is #82.
 - **World Advancement Progression and DiscordConnector:** adopted rather than written, replacing the personal-keys, progression-bridge and Discord-relay plugins that were planned (ADR-0010).
+- **ServersideQoL and ServersideQoL_JustSleep:** adopted at 2.0.11 on 2026-09-17 (#83), the first packages here that are server-only *by their author's design* rather than by our reading of where their behaviour executes — the family targets vanilla and console clients. The framework carries no feature of its own; it is the `Processor` host that each `ServersideQoL_*` module plugs into, and JustSleep is the one module adopted. It is also the first pinned package to ship a BepInEx preloader patcher, so `dist/patchers/` is populated for the first time and `scripts/install-plugins.sh` deploys a second tree beside `plugins/`.
 
 ## Exclusions
 

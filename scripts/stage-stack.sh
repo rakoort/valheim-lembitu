@@ -16,7 +16,7 @@
 #   zip root files           -> dist/plugins/<Mod>/...     (Thunderstore metadata is dropped)
 #   plugins/...              -> dist/plugins/<Mod>/...
 #   BepInEx/plugins/...      -> dist/plugins/<Mod>/...
-#   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (no pinned package ships one today)
+#   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (ServersideQoL ships one, #83)
 #   BepInEx/config/...       -> dist/config/...            (Clan's emblems and emoji)
 #
 # dist/ mirrors the target BepInEx/ directory, and install-plugins.sh owns the copy into a server.
@@ -187,12 +187,12 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not a lock on growth: the pack is 24 pins today, and a smaller count means the table
+  # A tripwire, not a lock on growth: the pack is 26 pins today, and a smaller count means the table
   # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
   # purpose means editing this number in the same commit — which the 2026-09-16 review did, taking
-  # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), #78 did in the other direction with
-  # five Azumatt quality-of-life mods, and #80 did again by removing character level.
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 24 ]] \
+  # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), #78 raised it with five Azumatt mods,
+  # #80 lowered it by removing character level, and #83 raised it with ServersideQoL and JustSleep.
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 26 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then

@@ -53,9 +53,11 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
+| ArgusMagnus/ServersideQoL | 2.0.11 | Server-side QoL framework: the module host every `ServersideQoL_*` feature plugs into. Ships a BepInEx preloader patcher | `Enabled` on, diagnostic logs off. No feature of its own |
+| ArgusMagnus/ServersideQoL_JustSleep | 2.0.11 | Skip the night when enough players are in bed or sitting | Prompt at one player in bed; half the connected players must join in |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
-| ValheimModding/YamlDotNet | 16.3.1 | Library | No manifest declares it; its own detector plugin loads it, which is why the pin stays (#66 boot) |
+| ValheimModding/YamlDotNet | 16.3.1 | Library | Declared by ServersideQoL, and its own detector plugin loads it either way (#66 boot) |
 
 ## Where each mod runs
 
@@ -116,6 +118,8 @@ ProximityVoiceChat, where the failure is benign and deliberate.
 | MaxPlayerCount (fork) | Every patched surface runs on the host; a client is told the capacity by the server. Already excluded from the client pack by an assertion in the builder |
 | nwesterhausen/DiscordConnector | Reads server events and posts a webhook; there is no client half |
 | Digitalroot/Max_Dungeon_Rooms | **Server-side only, decided 2026-09-16.** Room counts are applied when the server generates a dungeon, and the result is world data, so a client needs nothing. It leaves the client Pack with DiscordConnector (#70). The generation argument is sound but untested on a client, so #70 proves it by entering a large crypt with a client that does not have the mod |
+| ArgusMagnus/ServersideQoL | **Server-only by design (#83).** The whole family is built for vanilla and console clients, so nothing of it belongs on a client. It is the first pinned package to ship a BepInEx *preloader patcher*, which rewrites `assembly_valheim.dll` in memory to add a property to a game type — deeper than a Harmony patch, and the reason `dist/patchers/` exists at all |
+| ArgusMagnus/ServersideQoL_JustSleep | **Server-only (#83).** The night skip is decided on the host and announced to clients through the framework's own message RPC; a vanilla client needs nothing |
 
 **Client-only — presentation only, reopened 2026-09-16 (#78).** The 2026-09-16 review had cut this
 whole category, on the AdminQoL lesson: a mod the server cannot enforce is a mod whose behaviour

@@ -143,6 +143,12 @@ installed rather than removed for the reason in the paragraph above: its vessels
 the world save, so deleting the mod would take every ship, its cargo and anyone standing on it.
 Whether the mod leaves the Pack at all is #82.
 
+**The night can be voted away.** One player getting into bed raises a prompt for everyone; once
+half the connected players are in bed or sitting down, the night is skipped
+(`config/enforced/ArgusMagnus.ServersideQoL.JustSleep.cfg`). Sitting counts because a bed for
+everyone is not always to hand. Half is a deliberate number: the package asks for everyone by
+default, which on a twelve-player evening means never (#83).
+
 **World Advancement Progression is one-way for a different reason.** Its keys live in character
 saves, so it is not world-permanent, but it clears the world's global keys on startup. It therefore
 belongs in the pack before the launch world is created, not after (ADR-0009 amendment).
