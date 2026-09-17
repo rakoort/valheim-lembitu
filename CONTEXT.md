@@ -74,16 +74,13 @@ _Avoid_: inbox, courier, delivery box
 ### Progression
 
 **Power curve**:
-A system that makes a character stronger over time. The project runs exactly two: character level
-and gear.
+A system that makes a character stronger over time. The project runs exactly one: gear. Character
+level was the second until 2026-09-17, when it left the Pack with the mod that provided it
+(ADR-0014); what remains beside gear is a *gate* on it, not a multiplier.
 _Avoid_: progression system, build system
 
-**Character level**:
-The personal XP ladder and its attribute points. The first power curve.
-_Avoid_: MMO level, rank, XP level
-
 **Gear tier**:
-A magic item's rarity and the effects rolled on it. The second power curve.
+A magic item's rarity and the effects rolled on it. The only power curve.
 _Avoid_: item power, loot tier
 
 **Personal key**:

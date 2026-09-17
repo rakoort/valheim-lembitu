@@ -4,7 +4,7 @@
 #
 # Two numbers are ours; everything else is the package's own table, unchanged.
 #
-#   Global health 4   ordinary creatures, and Enforcers, carry four times vanilla health.
+#   Global health 2   ordinary creatures, and Enforcers, carry twice vanilla health.
 #   Boss health 8     regular bosses carry eight.
 #
 # They exist because headcount scaling is off (`sighsorry.CreatureManager.cfg`,
@@ -17,8 +17,14 @@
 # making it one-shot a player; multiplying damage as well would just move deaths earlier.
 #
 # The per-level growth below still compounds on top, so these are floors rather than ceilings: an
-# Ashlands creature at level 3 is 4 * (1 + 2 * 1) = 12x vanilla health, and a level-2 boss is
+# Ashlands creature at level 3 is 2 * (1 + 2 * 1) = 6x vanilla health, and a level-2 boss is
 # 8 * 1.5 = 12x. `Biome Level Preset = Hard` is what decides how often a high level is rolled.
+#
+# Global health was 4 until 2026-09-17, when character level left the Pack (#80). Attribute points
+# went with it, so every character lost the health, stamina and damage it had bought; halving
+# ordinary creature health is what keeps the fight where it was rather than making the removal a
+# difficulty increase nobody chose. Bosses are untouched: a boss fight is a group's whole evening
+# and twelve players pool damage into one target.
 #
 # Ordinary-creature modifier chances are 0.25 each, a twentieth of the package's 5, because the
 # stock numbers read as a per-creature rate and are not one. The mod rolls **one modifier per
@@ -40,7 +46,7 @@ Global:
   scalePerLevel: 0.1                    # Visual scale per level above 1; skipped in dungeons.
   damage: 1                            # Level-1 damage multiplier.
   damagePerLevel: 0.25                 # Replaces vanilla growth: damage * (1 + (level - 1) * value).
-  health: 4                            # Level-1 max-health multiplier.
+  health: 2                            # Level-1 max-health multiplier.
   healthPerLevel: 1                    # Health = base * health * (1 + (level - 1) * value).
 #   distanceScaling: [0.03, 0.08, 1000, 5] # damageStep, healthStep, stepMeters, maxSteps (0 = unlimited).
 #   modifierDistanceScaling: [0.03, 1000, 8] # chanceStep, stepMeters, maxSteps; 20% -> 20.6% at 1000m, 24.8% at 8000m+.

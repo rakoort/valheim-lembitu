@@ -1,7 +1,7 @@
 # ADR-0004: Two power curves, character level and gear
 
 Date: 2026-09-10
-Status: Accepted
+Status: Superseded by [ADR-0014](0014-one-power-curve-gear.md)
 Issues: #5, #12, #14, #15, #24
 
 ## Context
@@ -62,3 +62,14 @@ The two curves are unchanged: character level and gear. What changes is what sit
   left on that number.
 - **DataForge stays tuning-only**, for the reason given above — the deferred Trade Post ledger
   (ADR-0006) needs stable item identity.
+
+## Amendment — 2026-09-17
+
+One curve, not two. Character level is removed with the mod that provided it, and gear stands alone
+(ADR-0014, #80). The reasoning above survives the change: four multipliers on one damage number was
+the problem, and two was the same problem smaller. What decided it in the end is that gear's inputs
+are ours to shape, while character level's — the XP curve and the attribute economy — were pinned
+at upstream values and never measured, with #72 left open to settle them.
+
+Everything this ADR cut stays cut: ImpactfulSkills, Valheim Enchantment System and ValheimArmory,
+with DataForge tuning-only for ADR-0006's sake.
