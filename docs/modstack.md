@@ -13,12 +13,13 @@ The stack was reduced from thirty packages to twenty-three on **2026-09-15**, an
 plugin of ours except the test harness was cancelled, because upstream mods now cover the
 load-bearing behaviour (ADR-0010). What was removed and why is in [Considered and cut](#considered-and-cut).
 
-**This table is now the repository state** (#66, #70, #78). `modstack.lock.json` carries exactly
-these twenty-six pins — twenty-three after the 2026-09-15 reduction, twenty-one once #70 dropped
-AdminQoL and BoneMod, and twenty-six once #78 adopted five quality-of-life mods. The retired fork
-and plugins are deleted from `src/`, `config/enforced/` holds the overlays below, and `src/forks/`
-contains only MaxPlayerCount. The dated measurements further down are the runs that established
-the pack, not a prediction of it.
+**This table is now the repository state** (#66, #70, #78, #80). `modstack.lock.json` carries
+exactly these twenty-four pins — twenty-three after the 2026-09-15 reduction, twenty-one once #70
+dropped AdminQoL and BoneMod, twenty-six once #78 adopted five quality-of-life mods, and
+twenty-four once #80 removed character level. The retired fork and plugins are deleted from
+`src/`, `config/enforced/` holds the overlays below, and `src/forks/` contains only
+MaxPlayerCount. The dated measurements further down are the runs that established the pack, not a
+prediction of it.
 
 ## Adopted upstream
 
@@ -36,8 +37,6 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset; access-mode limits pinned at upstream values |
 | VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated actions, vanilla skill caps | Private keys on, all global keys blocked; equipment, crafting, cooking, eating, guardian powers and boss summons locked; repairs, building, taming, boats and portals open; skill floor from boss keys with the ceiling at 100 |
 | RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, rarities, enchanting and socketed shardstones | `Item Drop Limits` and `Gated Freebuild Mode` both `PlayerMustKnowRecipe`, so gating reads the player, not world keys; Adventure Mode off; drop rate 0.6, shardstones 0.05; effect counts thinned by patch (#73) |
-| WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | XP curve and attributes pinned at upstream values to be measured first; XP loss band 0.05-0.15; its own creature-level control off, so CreatureManager owns levels; non-combat and PvP XP undecided (#72) |
-| WackyMole/WackyItemRequiresSkillLevel | 1.4.7 | Character-level gates on crafting, equipping and consuming | Curated rules in `WackyMole.ItemRequiresSkillLevel.yml` |
 | sighsorry/CreatureManager | 1.1.14 | Karma and Enforcer encounters; creature and boss difficulty tier, spawn level, health and damage scaling | Creature cloning and customisation off; `Biome Level Preset = Hard`, so biome tier sets spawn and boss level |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Server-synced `CannonPrefabs_Enabled = false` |
@@ -56,7 +55,7 @@ belongs in server-locked config rather than a player's file.
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
-| ValheimModding/YamlDotNet | 16.3.1 | Library | Nothing declares it since the EpicMMOSystem fork was retired; the acceptance boot decides whether it stays |
+| ValheimModding/YamlDotNet | 16.3.1 | Library | No manifest declares it; its own detector plugin loads it, which is why the pin stays (#66 boot) |
 
 ## Where each mod runs
 
@@ -95,8 +94,6 @@ cancelling connection`.
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
 | turbero/PvPBiomeDominions | `PvP Biome Dominions` |
 | turbero/DetailedLevels | `Detailed Levels` |
-| WackyMole/WackyEpicMMOSystem | `EpicMMOSystem`, plus its `ItemManager` and `PieceManager` |
-| WackyMole/WackyItemRequiresSkillLevel | `ItemRequiresSkillLevel` |
 | team0/ValheimRAFT | `ValheimRAFT` |
 | Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, and loaded on the live server 2026-09-16** (`Loading [AzuCraftyBoxes 1.8.19]`, then `Registered 'Azumatt.AzuCraftyBoxes ConfigSync' RPC`), but not yet read from a join: ServerSync announces the version whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. The refusal itself is what the group's first v8 session confirms (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
@@ -210,13 +207,12 @@ That is the whole bar. Per-feature single-client scenario coverage was cancelled
 was written for: nothing in the pack is ours, so proving each mod's own features is upstream's job
 and ours only where the pack combines them.
 
-Two questions belong to that boot rather than to argument:
+One question belongs to that boot rather than to argument:
 
-- **YamlDotNet has no declared consumer** now that the EpicMMOSystem fork is gone. The log decides
-  whether any mod loads it.
-- **Two gates patch the same paths.** WackyItemRequiresSkillLevel refuses on character level, World
-  Advancement Progression refuses on personal keys, and both hook equipping and crafting. One
-  observed refusal from each is required.
+- **One gate refuses crafting and equipping, and it has never been observed doing it.** World
+  Advancement Progression refuses on personal keys, by the biome of an item's materials. Until #80
+  there were two such gates and the boot had to separate them; character level is gone, so a single
+  observed refusal is what the gate needs.
 
 Package hashes are recorded in [modstack.lock.json](modstack.lock.json); `scripts/stage-stack.sh`
 verifies every download against it and refuses a re-published zip under the same version number.
@@ -252,6 +248,11 @@ Four findings the tables above rest on:
   as deliberate overrides; without them the closure check refuses to stage the pack. #66 added
   them.
 
+Two of those four findings have since expired. EpicMMOSystem left the pack in #80, so its
+`Players.json` behaviour no longer matters, and only two adopted packages now declare an older
+BepInEx pack — EpicLoot and DiscordConnector, both at 5.4.2333 — because WackyEpicMMOSystem was the
+one that named 5.4.2202.
+
 ### Config surfaces this pack uses
 
 Read off the generated files in that boot, so the enforced overlays name real keys:
@@ -276,9 +277,13 @@ Read off the generated files in that boot, so the enforced overlays name real ke
   `[4 - Multiplayer Difficulty]` used to be left untouched, on the reasoning that extra players
   should help rather than inflate the boss. The 2026-09-16 review took the opposite decision and
   removed headcount from the question entirely: both percentages are zero and the cap is one, and
-  difficulty is set in `levels.yml` instead, at `Global.health = 4` and `Boss.health = 8`. That
-  file is therefore committed and replaced wholesale, with the cost the earlier note named — it
-  grows fields with every release, so a package update is a review of this file (#68).
+  difficulty is set in `levels.yml` instead, at `Global.health = 2` and `Boss.health = 8`. Ordinary
+  health was 4 until 2026-09-17, when character level left the Pack and every character lost its
+  attribute points (#80). That file is committed and replaced wholesale, with the cost the earlier
+  note named — it grows fields with every release, so a package update is a review of this file
+  (#68). Its ordinary-creature modifier chances are also ours, at 0.25 each rather than the
+  package's 5, because the mod rolls one modifier per group and four groups at 5 put a modifier on
+  nearly every creature.
 
 ## Known interactions
 
@@ -304,13 +309,15 @@ Recorded so they are not rediscovered:
 - **Retention is death-cause blind.** PvPBiomeDominions patches `Player.CreateTombStone`, which
   takes no killer, so a flagged player who drowns keeps their gear too. #8's premise — dying to a
   player costing less than dying to a troll — is only half achievable with this mod.
-- **Character level lives in the character save.** EpicMMOSystem stores level and XP in
-  `Player.m_knownTexts`, and World Advancement Progression stores personal keys in the character
-  file. A client therefore owns its own progression. This is accepted, with no tamper resistance
-  (ADR-0010).
-- **Creature level authority.** Character level rewrites creature star levels, and EpicLoot's rarity
-  rolls and CreatureManager's Karma both read them. Boss level from the biome preset sits on top of
-  that same number.
+- **Progression lives in the character save.** World Advancement Progression stores personal keys
+  in the player's own character file, so a client owns its own progression. This is accepted, with
+  no tamper resistance (ADR-0010). Character level used to live there too, in
+  `Player.m_knownTexts`; #80 removed it, and those keys are now stranded text in every character
+  file that ever had a level.
+- **Creature level authority.** CreatureManager owns creature star levels outright: the biome
+  preset rolls them and Karma raises them. EpicLoot's rarity rolls read that level, and boss level
+  from the same preset sits on top of it. Until #80, character level rewrote those levels first,
+  which is the claim ADR-0005 was written against.
 - **Jotunn piece categories.** Custom pieces can appear in the build menu without a category on this
   game build. Affects ValheimRAFT.
 - **EpicLoot declares an older Jotunn.** 0.14.5 declares 2.29.2 and runs against our 2.30.0 pin;
@@ -350,7 +357,7 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | MidnightMods/ImpactfulSkills | Third power curve (ADR-0004) |
 | sighsorry/Valheim_Enchantment_System | Second enchanting path on the same items (ADR-0004) |
 | MidnightMods/ValheimArmory | New base weapons need community EpicLoot patches to be enchantable (ADR-0004) |
-| MidnightMods/StarLevelSystem | Character level owns creature levels (ADR-0005) |
+| MidnightMods/StarLevelSystem | CreatureManager owns creature levels (ADR-0005, as amended) |
 | Smoothbrain/Groups | Second membership authority (ADR-0008) |
 | sighsorry/InventoryActions | Mutually exclusive with AzuExtendedPlayerInventory, which holds the slots for this run, and smaller |
 | Nosferatu/SmoothServer | One pacing layer only; SkadiNet chosen |
@@ -368,6 +375,8 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | MSchmoecker/MultiUserChest | The only candidate that changes networked item movement, which is where duplication and item loss live. The vanilla "someone is in the chest" wait is an annoyance, not a problem. A risk judgement, not a conflict: its own incompatibility list — QuickStore, QuickStack, SimpleSort — touches nothing in this pack (#78) |
 | Crystal/BetterChat | Clan owns the chat window: it patches `Chat.Awake`, `InputText`, `HasFocus`, `Update`, `RPC_ChatMessage` and `SendPing`, and BetterChat rewrites the same input handling and visibility, risking the clan channel's prefixes. It would also add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own settings enforceable (#78) |
 | RustyMods/Seasonality | It sets the world global keys `season_winter`, `season_summer`, `season_spring` and `season_fall`, and this server blocks every global key (ADR-0005, ADR-0010). It also ships seasonal modifiers and weather control, so it is not the visual-only mod it appears to be, and it would reopen a difficulty the run fixed for its whole length (#78) |
+| WackyMole/WackyEpicMMOSystem | **Removed 2026-09-17, after being pinned.** Character level was the run's second power curve, and a second multiplier on the same numbers is what ADR-0004 existed to avoid; its own XP curve and attribute economy were never tuned (#72 was open for exactly that). Gear plus personal keys carry progression instead (ADR-0014, #80) |
+| WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17, with the mod above.** Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
 
 ## Re-pinning
 

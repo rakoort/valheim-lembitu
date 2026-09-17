@@ -55,33 +55,35 @@ that no second system can start answering the same question differently.
 - Register: *Intended*. Clan configuration is locked and committed, and its integrations resolve
   against it; a live clan roster and ward behaviour have not been exercised on this pack.
 
-## The two power curves
+## The one power curve
 
-There are exactly two ways a character gets stronger: **character level** and **gear**
-(ADR-0004). Everything that offered a third was cut, because four multipliers land on one damage
-number and each was tuned by a different author against vanilla.
+There is exactly one way a character gets stronger: **gear** (ADR-0014). Every other candidate was
+cut, because each was a multiplier landing on the same damage number, tuned by a different author
+against vanilla. Character level was the second curve until 2026-09-17, when it left with the mod
+that provided it; what stands beside gear now is a gate on it rather than a second ladder.
 
-**Character level** is an XP ladder with attribute points (WackyEpicMMOSystem): five points a level,
-a cap of 100, and XP from kills. The curve and the attribute economy are pinned at the mod's own
-values on purpose — the 2026-09-16 review chose to measure real levelling speed before tuning them.
-Dying costs between 5% and 15% of progress toward the current level. What else awards XP is not yet
-decided: chopping trees, mining, gathering, building and even killing players all award it today,
-which #72 settles.
+**What left, and what it costs a character.** WackyEpicMMOSystem and its companion gate mod are
+gone. A character's level and attribute points stop applying, so the health, stamina and damage
+bought with them go too — and ordinary creature health was halved in the same change so the
+removal is not a difficulty increase nobody chose. The XP drinks, the three XP meads and
+`Mob_chunks` were that mod's own items, so any sitting in an inventory or a chest disappeared the
+first time it loaded without the mod. Nothing else about a character changed: personal keys,
+vanilla skills and everything worn or carried are untouched.
 
 **Gear** is magic items, rarities, effects and enchanting (EpicLoot). Bounties, treasure maps,
 gambling and the secret stash are **off**: Adventure Mode was disabled on 2026-09-16 because named
 elites with health multipliers and a trader casino read as a different game.
 
-**Vanilla skills are not a third curve.** They run 0 to 100 as in vanilla and drain by a percentage
+**Vanilla skills are not a second curve.** They run 0 to 100 as in vanilla and drain by a percentage
 on death. The one deviation: the drain floor rises by 10 for each boss key a character holds, so a
 veteran loses less to a death than a newcomer, while the gain ceiling stays at 100.
 
-**Gear is gated by character level, not by world progress.** `WackyItemRequiresSkillLevel` refuses to
-equip the chest, legs and helm of each armour tier past bronze until the character reaches a level:
-iron at 20, wolf at 35, padded at 50, carapace at 65
-(`config/enforced/WackyMole.ItemRequiresSkillLevel.yml`). Crafting is allowed ahead of the level;
-wearing is not. The intent is that a clan cannot hand a newcomer endgame equipment (ADR-0005). Those
-thresholds are a starting point for playtest tuning, not a settled balance decision.
+**Gear is gated by personal keys, not by world progress and no longer by a level.** World
+Advancement Progression refuses to equip or craft an item whose materials belong to a biome the
+character has not unlocked, per personal key — see "Personal keys" below for what earns one. The
+intent is unchanged from when a level threshold did it: a clan cannot hand a newcomer endgame
+equipment. What is gone is the second gate, the armour thresholds at levels 20, 35, 50 and 65;
+material biome is now the whole answer.
 
 **Loot gating reads the player, not the world.** EpicLoot's drop limit is set to
 `PlayerMustKnowRecipe`, so magic drops are gated on what the *requesting player* knows rather than on
@@ -96,8 +98,8 @@ effect, with the extra-effect roll thinned as well, so an item usually shows exa
 count — one for Magic, five for Ancient (#73). And the rarity palette is muted with generated item
 names off, shipped in the client Pack because those keys cannot be enforced from the server.
 
-- Register: *Intended*. Every value above is decided and none is measured in play. #68 applies them,
-  #72 owns the XP question, #73 the effect thinning.
+- Register: *Intended*. Every value above is decided and none is measured in play. #68 applies them
+  and #73 the effect thinning. #72, which owned the XP question, is closed by #80: there is no XP.
 
 ## Personal keys, and what earns one
 
@@ -161,18 +163,28 @@ player standing nearby — 30% effective health and 4% damage each, capped at fi
 different fight depending on who logged in, and inviting a sixth player made it easier. That
 scaling is off entirely (`config/enforced/sighsorry.CreatureManager.cfg`,
 [4 - Multiplayer Difficulty], both percentages at zero and the count cap at one). Difficulty is
-fixed in the level table instead: ordinary creatures and Enforcers carry four times vanilla
-health, regular bosses eight (`config/enforced/CreatureManager/levels.yml`). Damage is untouched,
-so fights are longer rather than deadlier per hit. Bringing more people is then a choice about how
+fixed in the level table instead: ordinary creatures and Enforcers carry twice vanilla health,
+regular bosses eight (`config/enforced/CreatureManager/levels.yml`). Damage is untouched, so
+fights are longer rather than deadlier per hit. Bringing more people is then a choice about how
 fast a boss falls, never a penalty, and a duo and a full group face the same wall.
 
+Ordinary creatures carried four times vanilla health until 2026-09-17. Two things moved that
+number. Twelve players found ordinary mobs unkillable, which was mostly a modifier problem and is
+fixed separately, and character level then left the Pack, taking every character's attribute
+points with it (#80). Halving the multiplier is what keeps the fight where it was.
+
 Per-level growth compounds on top of those floors, so the biome preset still decides how much
-harder a late biome is: an Ashlands creature at level 3 carries 4 × (1 + 2 × 1) = 12 times vanilla
+harder a late biome is: an Ashlands creature at level 3 carries 2 × (1 + 2 × 1) = 6 times vanilla
 health, and a level-2 boss 8 × 1.5 = 12 times.
 
-- Register: *Intended*. The multipliers are the owner's 2026-09-16 decision, applied by #68 and
-  never yet measured in a real boss fight. Whether eight times is the right wall is a question for
-  the first kill after it goes live.
+**Modifiers are rare, and meant to be a moment.** A creature can carry an extra trait — armoured,
+enraged, regenerating and twenty-nine others. About one ordinary creature in thirteen has one, and
+almost never two. An Enforcer is the exception and usually wears three: that is what makes it read
+as an event rather than a big creature.
+
+- Register: *Intended*. The multipliers are the owner's decision, applied by #68 and retuned on
+  2026-09-17, and never yet measured in a real boss fight. Whether eight times is the right wall
+  for a boss is a question for the first kill after it goes live.
 
 ## PvP and death
 
@@ -299,10 +311,9 @@ upstream replacement requires something actually breaking and passing acceptance
 
 These are stated to players rather than discovered by them (#23).
 
-**Progression is client-owned and not tamper-resistant.** Character level, XP and personal keys live
-in the player's own character save file (EpicMMOSystem stores them in `Player.m_knownTexts`; World
-Advancement Progression stores keys in the character file). A determined player can edit their own
-file to grant themselves levels or keys. This is accepted deliberately: it is a private friends'
+**Progression is client-owned and not tamper-resistant.** Personal keys live in the player's own
+character save file, where World Advancement Progression stores them. A determined player can edit
+their own file to grant themselves keys. This is accepted deliberately: it is a private friends'
 server, and a player who edits their own character is a social problem rather than an engineering
 one. No server-side character store will be built for this Run (ADR-0010).
 
@@ -310,10 +321,6 @@ one. No server-side character store will be built for this Run (ADR-0010).
 server's backup captures the world, the admission lists and the biome cache — not characters.
 Restoring the world onto a fresh install returns the *world*; each player's character is restored by
 Steam Cloud or by their own copy (`scripts/backup-world.sh`, `docs/wiki/operations.md`).
-
-**Two gates refuse the same actions.** Character level and personal keys both hook crafting and
-equipping, so a player can satisfy one gate and be refused by the other. This is visible as a refusal
-without an explanation of which gate fired.
 
 **Clan is load-bearing infrastructure.** If its registry fails to load, allied status is unavailable
 rather than wrong: it fails open to an empty registry. Wards, clan chat and friendly-fire checks all

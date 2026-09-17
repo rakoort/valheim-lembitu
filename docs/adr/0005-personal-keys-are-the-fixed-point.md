@@ -90,3 +90,20 @@ The gear gates in `config/enforced/WackyMole.ItemRequiresSkillLevel.yml` also ch
 same review: `BlockCraft` is now false and `BlockEquip` true, so character level gates wearing
 rather than making. Crafting is still gated by material through `LockCrafting`, so the two gates
 remain distinct rather than redundant.
+
+## Amendment — 2026-09-17
+
+Two claims above are no longer true, and both were true when written (ADR-0014, #80).
+
+**Gear keeps one gate, not two.** Character level is removed with WackyEpicMMOSystem, and
+WackyItemRequiresSkillLevel's curated rules went with it because there is no level left to read.
+Personal keys are now the whole gear gate, through World Advancement Progression's `LockEquipment`
+and `LockCrafting` by material biome. The asymmetry recorded in the 2026-09-16 amendment stands —
+equipment is locked while repair is open — and the sentence about `BlockCraft` and `BlockEquip`
+describes a file that no longer exists.
+
+**CreatureManager owns creature levels outright.** The decision above has character level rewriting
+creature star levels and feeding EpicLoot's rarity roll. With the level mod gone, a creature's star
+level comes from CreatureManager's biome preset and Karma alone, and EpicLoot's rarity roll reads
+that level. Nothing about the fixed point changes: the roll still reads a creature level and a
+requesting player, never a world key.

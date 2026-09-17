@@ -28,14 +28,18 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 **Adopt upstream unless maintaining source buys something upstream cannot.** The original 1.0.7 compatibility rationale disappeared for Clan, STU_Ward, PvPBiomeDominions and DetailedLevels when official builds arrived, and on 2026-09-15 the same happened to the last content fork. Project-specific behaviour is no longer accepted as a reason to own source: configuration and enforced config reach it (`docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md`). What remains:
 
 - **MaxPlayerCount:** the only fork. Upstream's 1.2.5 release is binary-only — public source stops at 1.2.4 — and it declares an older BepInEx pack, while admission still uses a ten-player literal. Server-only, not something players install in the Pack (`src/forks/MaxPlayerCount/UPSTREAM.md:15-32`).
-- **WackyEpicMMOSystem:** adopted at 1.9.67. Upstream has a public repository and a current build, and the fork's remaining gains were config: XP tables are files in `BepInEx/config/EpicMMOSystem/`, and the vanilla-fermenter behaviour is a setting.
-- **WackyItemRequiresSkillLevel:** adopted at 1.4.7 after its current-game rebuild replaced bundled ServerSync. The enforced YAML retains character-level equipment rules.
+- **WackyEpicMMOSystem and WackyItemRequiresSkillLevel:** adopted at 1.9.67 and 1.4.7, and **removed
+  on 2026-09-17** (ADR-0014, #80). The adoption lesson is what kept its place here: both had been
+  forks, and both stopped needing to be one — the level mod's remaining gains were config files in
+  `BepInEx/config/EpicMMOSystem/`, and the gate mod's rebuild replaced its bundled ServerSync. Then
+  the run dropped character level altogether, so neither is in the Pack and the enforced YAML that
+  held the armour thresholds is deleted.
 - **ValheimRAFT:** adopted at 4.3.2, with the entire cannon prefab family disabled through server-synced config. World-permanent launch and client acceptance remain owned by #26.
 - **World Advancement Progression and DiscordConnector:** adopted rather than written, replacing the personal-keys, progression-bridge and Discord-relay plugins that were planned (ADR-0010).
 
 ## Exclusions
 
-**Do not add competing authorities or power curves.** ImpactfulSkills would add a third power curve; Valheim Enchantment System would duplicate EpicLoot's enchanting authority; ValheimArmory requires additional community configurations to make its weapons enchantable. StarLevelSystem duplicates character-level creature scaling. Groups and Guilds are excluded even as fallback integrations: Clan alone owns membership. YouAreNotWorthy gates on world keys rather than the chosen character-level rules (`docs/adr/0004-two-power-curves.md:24-38`, `docs/adr/0005-personal-keys-are-the-fixed-point.md:21-38`, `docs/adr/0008-clan-is-the-only-membership-authority.md:21-38`).
+**Do not add competing authorities or power curves.** ImpactfulSkills would add a power curve beside gear; Valheim Enchantment System would duplicate EpicLoot's enchanting authority; ValheimArmory requires additional community configurations to make its weapons enchantable. StarLevelSystem duplicates CreatureManager's creature scaling. Groups and Guilds are excluded even as fallback integrations: Clan alone owns membership. YouAreNotWorthy gates on world keys rather than on personal keys (`docs/adr/0014-one-power-curve-gear.md`, `docs/adr/0005-personal-keys-are-the-fixed-point.md:21-38`, `docs/adr/0008-clan-is-the-only-membership-authority.md:21-38`).
 
 **The remaining cuts are deliberate, not missing installation work.** The recorded exclusion list gives these reasons (`docs/modstack.md:185-216`):
 
@@ -239,6 +243,10 @@ Two seeds ship today, both of them keys marked "Not Synced with Server":
   eitr go back to the game's own bars. The exp fill colour is deliberately left set: `none` there
   removes the XP bar rather than restoring anything, and the XP bar is the part worth keeping.
 
+That second seed is gone as of v9: it existed to undo an HUD the level mod drew, and with
+WackyEpicMMOSystem removed the vanilla bars are simply what the game draws (#80). One seed ships
+today, the EpicLoot palette.
+
 A player edits these afterwards at will; they are display, not rules. What a seed cannot do is
 change anything the server decides, which is exactly why the palette is here and the drop rates
 are not.
@@ -392,10 +400,47 @@ the hover inside another clan's ward, voice attenuation between two players, and
 refused by name in the server log. Every player must install v8 before they can connect at all, so
 the refusal is the first thing the group will meet.
 
-**A fresh world is not a fresh character.** Character level, XP and personal keys live in the
-player's own character file (ADR-0010), and so does whatever they were carrying. Players return to
-the new world with their levels, keys and inventories; only the world, its buildings and its wards
-are gone. Wiping that half is not something the server can do.
+**A fresh world is not a fresh character.** Personal keys live in the player's own character file
+(ADR-0010), and so does whatever they were carrying. Players returned to the new world with their
+keys and inventories; only the world, its buildings and its wards were gone. Wiping that half is
+not something the server can do. Levels were in that same file until v9 removed the mod that read
+them.
+
+### Pack v9 — character level removed (#80)
+
+Two pins out, twenty-four left, and one power curve instead of two. The owner decided on
+2026-09-17 that character level was not worth its own untuned XP curve, and gear plus personal keys
+carry progression (ADR-0014).
+
+`WackyMole/WackyEpicMMOSystem` 1.9.67 and `WackyMole/WackyItemRequiresSkillLevel` 1.4.7 both leave,
+and they had to leave together: the gate mod's curated rules gated iron, wolf, padded and carapace
+armour at levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels.
+What gates gear now is World Advancement Progression's material-biome locks per personal key,
+unchanged and already in place.
+
+**Three files leave with them**, because `verify-enforced-config.sh` fails on an overlay naming a
+file no mod generates — the check reports `missing: <file> - the overlay names it, the mods never
+generated it`, and it is right to. Deleted: the two enforced files
+`WackyMole.EpicMMOSystem.cfg` and `WackyMole.ItemRequiresSkillLevel.yml`, and the client seed
+`WackyMole.EpicMMOSystemUI.cfg`.
+
+**Three costs, accepted.** Every existing character loses the health, stamina and damage bought
+with attribute points. The mod's own registered prefabs — the three XP drinks, the three XP meads,
+`Mob_chunks` and `ResetTrophy` — vanish from any inventory or chest on the first load without the
+mod, because the prefabs no longer exist. And every player re-extracts again, the third Pack in two
+days: a player who keeps either mod gets private rules, either local YAML gating or attribute
+bonuses nobody else has.
+
+**Ordinary creature health drops from 4× to 2× in the same change.** Characters lost their
+attribute bonuses, so leaving the multiplier at four would have made a removal into a difficulty
+increase nobody chose. `Boss.health` stays at 8, and per-player scaling stays off at `0 / 0 / 1`.
+
+#72 is closed by this: it existed to settle what awards XP and how fast the ladder climbs, and
+there is no XP.
+
+**Not observed.** The new arrangement has had no play session. What a player meets first is the
+missing level bar, and what the group will discover is whether the material-biome gate alone paces
+the run.
 
 ### Distribution
 
