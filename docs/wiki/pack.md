@@ -34,7 +34,7 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
   `BepInEx/config/EpicMMOSystem/`, and the gate mod's rebuild replaced its bundled ServerSync. Then
   the run dropped character level altogether, so neither is in the Pack and the enforced YAML that
   held the armour thresholds is deleted.
-- **ValheimRAFT:** adopted at 4.3.2, with the entire cannon prefab family disabled through server-synced config. World-permanent launch and client acceptance remain owned by #26.
+- **ValheimRAFT:** adopted at 4.3.2, with the entire cannon prefab family disabled through server-synced config, and from 2026-09-17 closed to players entirely: `[Server config] AdminsCanOnlyBuildRaft = true` registers every hammer-menu vehicle piece as disabled for a non-admin. World-permanent launch and client acceptance remain owned by #26; whether the pin itself leaves is #82.
 - **World Advancement Progression and DiscordConnector:** adopted rather than written, replacing the personal-keys, progression-bridge and Discord-relay plugins that were planned (ADR-0010).
 
 ## Exclusions
@@ -50,6 +50,19 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 - The 2026-09-15 reduction cut ten further mods, each for a stated reason rather than a version problem: BossRules, ProgressivePowers, More World Locations AIO, Fast_AssetBundle_Loader, CaptainValheim, SecondaryAttacks, AdditiveDamageModifier, VeiledRecipes, RepairRequiresMaterials and Groundwork.
 
 **No planned mid-Run content injections or casual removals.** The accepted combination stays fixed; a mid-Run upstream replacement requires an actual breakage and renewed acceptance. Max Dungeon Rooms and ValheimRAFT are the world-permanent launch decisions, installed before launch-world creation and never removed during the Run. World Advancement Progression is not world-permanent, but it clears the world's global keys on startup, so it belongs in the Pack before the launch world exists. Retire-on-unpin is a staging mechanism, not evidence that a live save can survive removal (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:32-40`, `docs/adr/0009-world-permanent-mods-land-before-world-creation.md`).
+
+**A world-permanent mod is disabled, never removed, while the world lives.** ValheimRAFT is the
+worked example (#82, 2026-09-17). Asked whether the mod could go, the answer that cost nothing was
+its own switch: `AdminsCanOnlyBuildRaft` is `isSynchronized: true` and `UpdatePrefabStatus` applies
+it with no restart on either side, so no player builds a vessel again and every vessel already
+afloat keeps working. Dropping the pin would instead delete each one, its cargo and the footing of
+anyone standing on it, because those vessels are prefabs in the world save.
+
+Two facts make the removal question unanswerable from the outside, and both are worth remembering
+the next time a world-permanent mod is questioned. The mod logs nothing when a vessel is created,
+so an empty server log is not evidence that none exists. And prefab identities in a Valheim save
+are stored as hashes, so grepping the world for a prefab name finds nothing either. The group is
+the only instrument that can answer it.
 
 ## Lessons
 

@@ -136,6 +136,13 @@ the launch world exists and can never be removed during the Run (ADR-0009). Two 
 **Max Dungeon Rooms** (larger dungeons) and **ValheimRAFT** (custom ships, anchoring, vehicle
 building).
 
+**Custom ships are closed to players, from 2026-09-17.** ValheimRAFT's hammer pieces are registered
+disabled for anyone who is not an admin, so no new vessel can be built
+(`config/enforced/zolantris.ValheimRAFT.cfg`). Anything already afloat still works. The mod stays
+installed rather than removed for the reason in the paragraph above: its vessels are written into
+the world save, so deleting the mod would take every ship, its cargo and anyone standing on it.
+Whether the mod leaves the Pack at all is #82.
+
 **World Advancement Progression is one-way for a different reason.** Its keys live in character
 saves, so it is not world-permanent, but it clears the world's global keys on startup. It therefore
 belongs in the pack before the launch world is created, not after (ADR-0009 amendment).
