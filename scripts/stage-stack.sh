@@ -53,9 +53,11 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs and what
 #     scripts/extract-refs.sh compiles against; adopted packages name older ones — EpicLoot,
 #     DiscordConnector and ServersideQoL at 5.4.2333, WackyEpicMMOSystem at 5.4.2202. The 5.4.2202
-#     line has now left and returned in one day, with the mod that declares it (#80, #86),
+#     line has now left and returned in one day, with the mod that declares it (#80, and again on restoration), and
+#     BetterArchery names 5.4.1501, the oldest skew in the pack (#86),
 #   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot declares (docs/modstack.md).
-KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
+KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.1501
+denikson-BepInExPack_Valheim-5.4.2202
 denikson-BepInExPack_Valheim-5.4.2333
 denikson-BepInExPack_Valheim-5.4.2350
 ValheimModding-Jotunn-2.29.2"

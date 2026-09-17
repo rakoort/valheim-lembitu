@@ -42,7 +42,7 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset; access-mode limits pinned at upstream values |
 | VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated actions, vanilla skill caps | Private keys on, all global keys blocked; equipment, crafting, cooking, eating, guardian powers and boss summons locked; repairs, building, taming, boats and portals open; skill floor from boss keys with the ceiling at 100 |
 | RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, rarities, enchanting and socketed shardstones | `Item Drop Limits` and `Gated Freebuild Mode` both `PlayerMustKnowRecipe`, so gating reads the player, not world keys; Adventure Mode off; drop rate 0.6, shardstones 0.05; effect counts thinned by patch (#73) |
-| WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | XP curve and attributes at upstream values; XP loss band 0.05-0.15; its own creature-level control off, so CreatureManager owns levels. Restored 2026-09-17 (#86) without its armour-gate companion, so no level gates gear |
+| WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | XP curve and attributes at upstream values; XP loss band 0.05-0.15; its own creature-level control off, so CreatureManager owns levels. Restored 2026-09-17 (2026-09-17, owner's instruction) without its armour-gate companion, so no level gates gear |
 | sighsorry/CreatureManager | 1.1.14 | Fixed creature and boss multipliers, and holding vanilla's headcount scaling at zero | Cloning and customisation off; `Biome Level Preset = Hard`; **Karma and all three modifier switches off from 2026-09-17 (#84)**; headcount scaling pinned at 0 / 0 / 1 |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Cannon prefabs off, flight off, non-admin debug off, and from 2026-09-17 `AdminsCanOnlyBuildRaft = true`, so no player builds a vehicle. The mod stays installed because it is world-permanent; whether the pin leaves is #82 |
@@ -61,6 +61,11 @@ belongs in server-locked config rather than a player's file.
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
 | ArgusMagnus/ServersideQoL | 2.0.11 | Server-side QoL framework: the module host every `ServersideQoL_*` feature plugs into. Ships a BepInEx preloader patcher | `Enabled` on, diagnostic logs off. No feature of its own |
 | ArgusMagnus/ServersideQoL_JustSleep | 2.0.11 | Skip the night when enough players are in bed or sitting | Prompt at one player in bed; half the connected players must join in |
+| JereKuusela/Expand_World_Size | 1.34.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 15000, `Stretch world` 1.5, `Stretch biomes` 1.5 — the vanilla layout scaled up by half again (#86) |
+| Mushroom_Vikings/SeparateSpawns | 0.1.0 | Each clan starts in its own place, scored for a viable neighbourhood | Search radius, minimum separation between group spawns and the Black Forest scoring left at upstream values |
+| MidnightMods/ProgressivePowers | 0.3.3 | Forsaken power mastery: powers grow with use | A third power curve, adopted against ADR-0004's rule and recorded in ADR-0018 |
+| Vapok/AdventureBackpacks | 2.0.7 | Backpacks with their own storage | One-way: the packs are registered items, so removing the mod deletes them and their contents |
+| ishid4/BetterArchery | 2.0.0 | Quivers, draw and aiming changes for bows | — Declares BepInEx 5.4.1501, a documented override |
 | ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
 | ValheimModding/YamlDotNet | 16.3.1 | Library | Declared by ServersideQoL, and its own detector plugin loads it either way (#66 boot) |
@@ -356,7 +361,7 @@ Recorded so they are not rediscovered:
 Kept out deliberately. Each line is a decision, not an oversight.
 
 Three entries left this table on 2026-09-17, hours after joining it: EpicLoot, ValheimRAFT and
-WackyEpicMMOSystem were removed and then restored the same day (ADR-0017, #86). They are pinned
+WackyEpicMMOSystem were removed and then restored the same day (ADR-0017). They are pinned
 again above. What did not come back is player state — levels, magic item properties and every
 vessel in the save.
 
@@ -392,7 +397,7 @@ vessel in the save.
 | Crystal/BetterChat | Clan owns the chat window: it patches `Chat.Awake`, `InputText`, `HasFocus`, `Update`, `RPC_ChatMessage` and `SendPing`, and BetterChat rewrites the same input handling and visibility, risking the clan channel's prefixes. It would also add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own settings enforceable (#78) |
 | RustyMods/Seasonality | It sets the world global keys `season_winter`, `season_summer`, `season_spring` and `season_fall`, and this server blocks every global key (ADR-0005, ADR-0010). It also ships seasonal modifiers and weather control, so it is not the visual-only mod it appears to be, and it would reopen a difficulty the run fixed for its whole length (#78) |
 | Smoothbrain/CreatureLevelAndLootControl | **Tried and rejected 2026-09-17, on the live server.** It was the obvious replacement for CreatureManager — plain percentages for creature and boss health, its own affix tables, and the same three multiplayer-scaling keys — but 4.6.4 is from May 2025 and cannot run on Valheim 1.0: its bundled ServerSync reads `ZRoutedRpc.Everybody`, a field the game turned into a const, so its type initializer throws `TypeInitializationException` at boot and the mod does nothing. `scripts/screen-bundled-libs.sh` reports five stale references, and it was not run before the swap — which is the whole reason that script exists (ADR-0002, #84) |
-| WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17 and not restored**, unlike the level mod it accompanied (#86). Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
+| WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17 and not restored**, unlike the level mod it accompanied (2026-09-17, owner's instruction). Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
 
 ## Re-pinning
 

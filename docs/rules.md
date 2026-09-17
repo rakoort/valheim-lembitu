@@ -117,6 +117,27 @@ clan can therefore carry another to a boss kill, and that is the intended cooper
 
 ## The world
 
+**The world is half again the size of a vanilla one.** Radius 15000 metres instead of 10000, with
+the layout stretched to match, so each biome is wider and every journey between them is longer
+(ADR-0018). Area is roughly 2.25 times vanilla. The size is fixed for the life of this world: it is
+baked into the terrain at generation and cannot be changed afterwards. **Every player needs the Pack
+for this**, because your client generates the ground itself — without the mod you would see
+different terrain than the server.
+
+**Each clan starts in its own place.** Rather than everyone waking at the sacrificial stones, groups
+are placed in separate scored neighbourhoods, at least 500 metres apart, chosen for a viable start
+with Black Forest and a burial chamber in reach. Meeting another clan is meant to be an event rather
+than the first thing that happens.
+
+**Backpacks carry the extra weight.** AdventureBackpacks adds packs with their own storage; the
+run's inventory mod stays at zero extra rows, so the backpack is the answer to carrying capacity
+rather than a wider screen. Note it is one-way: if the mod ever left, the packs and everything in
+them would go.
+
+**Powers grow with use.** Forsaken powers still come from personal keys, but mastery now deepens as
+you use them (ProgressivePowers). Bows also handle differently: quivers and revised draw and aim
+(BetterArchery).
+
 **World-permanent mods land before the launch world is created.** A world-permanent mod writes its
 content into the world save — locations, dungeon rooms, vehicles — so it must be installed before
 the launch world exists and can never be removed during the Run (ADR-0009). Two qualify:
@@ -124,7 +145,7 @@ the launch world exists and can never be removed during the Run (ADR-0009). Two 
 building).
 
 **Custom ships are back, and they carry cannons.** ValheimRAFT is reinstalled and every player may
-build vehicle pieces again (`config/enforced/zolantris.ValheimRAFT.cfg`, #86). Cannons are enabled,
+build vehicle pieces again (`config/enforced/zolantris.ValheimRAFT.cfg`). Cannons are enabled,
 reversing the decision that disabled them at adoption: a vehicle can now mount the cannon prefab
 family. That lands on the PvP stance rather than on a new rule — a flagged crew can shell another
 flagged crew, and an unflagged one cannot be shelled. Flight stays off.

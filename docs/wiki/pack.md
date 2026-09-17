@@ -488,7 +488,7 @@ eight — and headcount scaling pinned at zero. What it loses is Karma, the Enfo
 modifier, all by switch rather than by removal, so any of them is one config line away from coming
 back.
 
-### Pack v12 — three mods restored, cannons armed (#86)
+### Pack v12 — three mods restored, cannons armed (2026-09-17, owner's instruction)
 
 2026-09-17, the same day they left. `RandyKnapp/EpicLoot` 0.14.5, `team0/ValheimRAFT` 4.3.2 and
 `WackyMole/WackyEpicMMOSystem` 1.9.67 are pinned again: twenty-seven pins. The decision, and the
@@ -513,6 +513,32 @@ buys attributes and gates nothing; personal keys remain the only gear gate.
 
 **Both restored mods rejoin the join-time handshake**, so v12 is mandatory rather than convenient: a
 client on v11 is refused.
+
+### Pack v12 — a scaled world and five new mods (#86)
+
+2026-09-17. Thirty-two pins, a fresh world at radius 15000 with both stretch factors at 1.5, and
+five adoptions: Expand World Size, SeparateSpawns, ProgressivePowers, AdventureBackpacks and
+BetterArchery. The decisions are ADR-0018; this is what the Pack and the server do about them.
+
+**v12 is mandatory in a harder way than any Pack before it.** Previous reissues were enforced by a
+version handshake: a stale client was refused and knew why. Expand World Size changes terrain
+*generation*, and clients generate terrain locally from the seed, so a client without it sees
+different ground rather than a refusal. Tell the group that installing this one is not optional.
+
+**The ordering that protects the world.** The size values have to be in effect before generation, so
+the sequence is: install the mods, boot once with the old world still present so nothing new
+generates, let the mods write their config files, apply and verify the overlay, then wipe and
+generate. Getting that backwards produces a vanilla-sized world that has to be thrown away.
+
+**Every new pin was screened before it landed.** `scripts/screen-bundled-libs.sh` on all five, clean
+against 1.0.14. That is the practice #84 paid for: CreatureLevelAndLootControl staged, hash-verified
+and passed closure while being dead on arrival.
+
+**Two adoptions carry warnings rather than settings.** AdventureBackpacks registers real items, so
+removing it later deletes every pack and its contents — the same shape as the losses earlier that
+day. And SeparateSpawns is version 0.1.0 with one release, stores its layout per world UID, and
+copies `m_startingGlobalKeys` on a server that blocks every global key; both are worth reading in
+the first boot log.
 
 ### Distribution
 

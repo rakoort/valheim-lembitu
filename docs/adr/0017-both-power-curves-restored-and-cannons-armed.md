@@ -1,7 +1,7 @@
 # ADR-0017: Both power curves restored, ValheimRAFT back, cannons armed
 
 On 2026-09-17 the owner removed character level, then gear, then ValheimRAFT, and then restored all
-three within hours (#86). This ADR records the end state and supersedes ADR-0014 and ADR-0016. The
+three within hours (2026-09-17, owner's instruction). This ADR records the end state and supersedes ADR-0014 and ADR-0016. The
 end state: **two power curves — character level and gear — and ValheimRAFT installed with cannons
 enabled and player building open.**
 
