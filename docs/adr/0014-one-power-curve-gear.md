@@ -1,7 +1,5 @@
 # ADR-0014: One power curve, gear
 
-Status: Superseded by [ADR-0016](0016-no-power-curve-and-a-world-permanent-mod-removed.md)
-
 The run keeps exactly one power curve: gear. Character level is removed, and with it
 `WackyMole/WackyEpicMMOSystem` 1.9.67 and `WackyMole/WackyItemRequiresSkillLevel` 1.4.7 (#80,
 decided 2026-09-17). This supersedes ADR-0004's decision to run two curves; every cut ADR-0004 made
@@ -67,11 +65,3 @@ stable item identity.
 - Re-adding character level mid-run is possible and cheap for the world, since nothing of it is in
   the save, but it is not cheap for players: every character would start at level 1 with the keys it
   already holds.
-
-
-## Amendment — 2026-09-17
-
-Gear lasted hours, not weeks. EpicLoot was removed the same day (ADR-0016, #85), so the run keeps no
-power curve at all and progression is vanilla gear gated by personal keys. The reasoning above holds
-in the same direction it always did — every curve was a multiplier on one number — and this is its
-end point rather than a reversal.

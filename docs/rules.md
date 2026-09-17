@@ -55,31 +55,38 @@ that no second system can start answering the same question differently.
 - Register: *Intended*. Clan configuration is locked and committed, and its integrations resolve
   against it; a live clan roster and ward behaviour have not been exercised on this pack.
 
-## No power curve, only gates
+## The two power curves
 
-There is no system that multiplies a character's power (ADR-0016). Character level went on
-2026-09-17, and gear followed the same day when EpicLoot was removed. What remains is vanilla: a
-character gets stronger by crafting and wearing better materials, and what it may wear is gated per
-character by personal keys.
+There are two ways a character gets stronger: **character level** and **gear** (ADR-0017). Both
+were removed earlier on 2026-09-17 and both are back the same day, which is worth knowing because
+it cost you things that did not come back.
 
-**What left, and what it costs.** Magic drops, rarities, enchanting, augmenting, shardstones and
-the enchanting table are gone. Every magic item a player already holds reverts to a plain vanilla
-item and loses its rolled effects, because those effects were stored on the item rather than in the
-world. The enchanting and augmenting stations disappear from the world, since the mod created those
-prefabs. **Delete EpicLoot from your own install too**: loot is rolled where the player is, so a
-client that keeps the mod can still roll magic items nobody else can see the point of.
+**Character level** is an XP ladder with attribute points (WackyEpicMMOSystem): five points a
+level, a cap of 100, and XP from kills. Dying costs between 5% and 15% of progress toward the
+current level. **Every character starts again at level 1**: the mod stores level and XP in the
+character file, and removing it stranded those values rather than preserving them. The armour
+thresholds that used to accompany it — iron at 20, wolf at 35 and so on — are *not* back; nothing
+gates gear by level now.
 
-**Vanilla skills are not a curve either.** They run 0 to 100 as in vanilla and drain by a
-percentage on death. The one deviation: the drain floor rises by 10 for each boss key a character
-holds, so a veteran loses less to a death than a newcomer, while the gain ceiling stays at 100.
+**Gear** is magic items, rarities, effects and enchanting (EpicLoot). Bounties, treasure maps,
+gambling and the secret stash stay off. **Magic items you held before the removal are plain vanilla
+items now**, because their effects lived on the item and were stripped when the mod left. New drops
+roll normally, and the enchanting and augmenting stations must be rebuilt.
 
-**Gear is gated by personal keys.** World Advancement Progression refuses to equip or craft an item
-whose materials belong to a biome the character has not unlocked — see "Personal keys" below for
-what earns one. A clan cannot hand a newcomer endgame equipment, which was the intent when a
-character level did this job and remains the intent now.
+**Vanilla skills are not a third curve.** They run 0 to 100 as in vanilla and drain by a percentage
+on death, with the drain floor rising by 10 for each boss key a character holds.
 
-- Register: *Intended*. Decided 2026-09-17 and not yet played. What the group will discover is
-  whether vanilla gear plus personal keys paces a three-month run on its own.
+**Loot gating reads the player, not the world.** EpicLoot's drop limit is `PlayerMustKnowRecipe`,
+so magic drops are gated on what the requesting player knows rather than on world progression.
+Building pieces follow the same rule.
+
+**Magic loot is quieter than the mod ships it.** Drops are cut to 0.6 of stock and shardstones from
+0.2 to 0.05, every rarity rolls one fewer effect, and the rarity palette is muted with generated
+item names off. Those are the same pinned values as before the removal; the configs came back
+intact from the repository.
+
+- Register: *Intended*. Restored and deployed 2026-09-17, unplayed. What nobody has measured is how
+  a group feels about levelling from 1 again mid-run.
 
 ## Personal keys, and what earns one
 
@@ -113,14 +120,18 @@ clan can therefore carry another to a boss kill, and that is the intended cooper
 **World-permanent mods land before the launch world is created.** A world-permanent mod writes its
 content into the world save — locations, dungeon rooms, vehicles — so it must be installed before
 the launch world exists and can never be removed during the Run (ADR-0009). Two qualify:
-**Max Dungeon Rooms** (larger dungeons). ValheimRAFT was the second until 2026-09-17.
+**Max Dungeon Rooms** (larger dungeons) and **ValheimRAFT** (custom ships, anchoring, vehicle
+building).
 
-**There are no custom ships any more.** ValheimRAFT is removed (#85). Player building had already
-been closed that morning; the owner then chose removal over a disabled mod, knowing what it costs:
-its vessels were prefabs written into the world save, so every ship built on it, whatever was stored
-aboard, and the footing of anyone standing on one are gone. Boats are vanilla — raft, karve,
-longship, drakkar. This is the one time the run has broken its own rule that a world-permanent mod
-never leaves mid-run (ADR-0009, ADR-0016).
+**Custom ships are back, and they carry cannons.** ValheimRAFT is reinstalled and every player may
+build vehicle pieces again (`config/enforced/zolantris.ValheimRAFT.cfg`, #86). Cannons are enabled,
+reversing the decision that disabled them at adoption: a vehicle can now mount the cannon prefab
+family. That lands on the PvP stance rather than on a new rule — a flagged crew can shell another
+flagged crew, and an unflagged one cannot be shelled. Flight stays off.
+
+**Anything you had afloat before is gone.** The mod was removed for part of 2026-09-17, and its
+vessels were prefabs in the world save, so every ship built before that, and whatever was stored
+aboard, went with it. Build again from scratch.
 
 **The night can be voted away.** One player getting into bed raises a prompt for everyone; once
 half the connected players are in bed or sitting down, the night is skipped
@@ -150,7 +161,7 @@ creatures than the `Easy` default, and the earliest biomes still spawn at level 
 so a new character is not softlocked. Expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader.
 
 - Register: *Intended*. The preset is committed and loads; observed boss and creature behaviour in
-  play belongs to #13 and #10.
+  play belongs to #13 and #10. #26 owns ValheimRAFT's vehicles.
 
 **A fight is the same fight whoever turns up.** Vanilla makes every creature tougher for each
 player standing nearby — 30% effective health and 4% damage each, capped at five — so a boss was a

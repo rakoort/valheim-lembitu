@@ -51,13 +51,14 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 
 # Dependencies satisfied by something other than an exact pin:
 #   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs and what
-#     scripts/extract-refs.sh compiles against; two adopted packages name an older pack
-#     (DiscordConnector and ServersideQoL, both 5.4.2333). WackyEpicMMOSystem named 5.4.2202 and
-#     left with character level (#80), so that line went with it,
-#   - the Jotunn 2.29.2 override left with EpicLoot (#85), which was the only package declaring it.
-#     Jotunn stays pinned at 2.30.0 because the pack loads it, not because anything asks for it.
-KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2333
-denikson-BepInExPack_Valheim-5.4.2350"
+#     scripts/extract-refs.sh compiles against; adopted packages name older ones — EpicLoot,
+#     DiscordConnector and ServersideQoL at 5.4.2333, WackyEpicMMOSystem at 5.4.2202. The 5.4.2202
+#     line has now left and returned in one day, with the mod that declares it (#80, #86),
+#   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot declares (docs/modstack.md).
+KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
+denikson-BepInExPack_Valheim-5.4.2333
+denikson-BepInExPack_Valheim-5.4.2350
+ValheimModding-Jotunn-2.29.2"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
@@ -187,12 +188,12 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not a lock on growth: the pack is 24 pins today, and a smaller count means the table
+  # A tripwire, not a lock on growth: the pack is 26 pins today, and a smaller count means the table
   # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
   # purpose means editing this number in the same commit — which the 2026-09-16 review did, taking
   # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), #78 raised it with five Azumatt mods,
   # #80 lowered it by removing character level, and #83 raised it with ServersideQoL and JustSleep.
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 24 ]] \
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 26 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then

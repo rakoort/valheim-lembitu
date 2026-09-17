@@ -74,15 +74,19 @@ _Avoid_: inbox, courier, delivery box
 ### Progression
 
 **Power curve**:
-A system that makes a character stronger over time. The project runs **none**, as of 2026-09-17.
-Character level went first (ADR-0014) and gear followed when EpicLoot was removed (ADR-0016). A
-character grows by what it may wear and craft, gated per character by personal keys — a gate, not a
-multiplier.
+A system that makes a character stronger over time. The project runs two: character level and
+gear. Both were removed on 2026-09-17 and both were restored the same day (ADR-0017), so the count
+has been two, one, none and two again within hours — read the ADR before treating any of it as
+settled.
 _Avoid_: progression system, build system
 
-**Gear tier** (retired vocabulary):
-A magic item's rarity and the effects rolled on it. The word has no referent since EpicLoot left:
-gear is vanilla, so a tier is a material tier and nothing more.
+**Character level**:
+The personal XP ladder and its attribute points. Restored 2026-09-17 without the armour-threshold
+mod that used to accompany it, so a level buys attributes and nothing gates gear by it.
+_Avoid_: MMO level, rank, XP level
+
+**Gear tier**:
+A magic item's rarity and the effects rolled on it. The second power curve.
 _Avoid_: item power, loot tier
 
 **Personal key**:
@@ -95,8 +99,8 @@ _Avoid_: global key, world key, boss flag
 **World key**:
 Valheim's own world-wide progression flag. The thing personal keys deliberately replace, and this
 server writes none: global keys are blocked outright. Adopted mods that used to read them are
-configured to read the player instead. EpicLoot was the clearest case, gating loot on the requesting
-player's known recipes, until it left the run on 2026-09-17 (ADR-0016).
+configured to read the player instead, which is why EpicLoot gates loot on the requesting player's
+known recipes.
 
 ### PvP
 

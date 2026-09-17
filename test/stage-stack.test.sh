@@ -269,11 +269,7 @@ cat > "$WORK/modstack.md" <<'MD'
 MD
 new_tree
 write_file "$WORK/pkg-src/Jotunn.dll" jotunn
-# One dependency satisfied by an exact pin and one by a documented override. The override named here
-# has to be one the script still documents: the Jotunn 2.29.2 line stood here until #85 removed it
-# along with the only package that declared it, and this fixture failed the moment it did — which
-# is the test doing its job.
-printf 'denikson-BepInExPack_Valheim-5.4.2333\nacme-Root-2.0.0\n' > "$WORK/pkg-deps"
+printf 'ValheimModding-Jotunn-2.29.2\ndenikson-BepInExPack_Valheim-5.4.2333\nacme-Root-2.0.0\n' > "$WORK/pkg-deps"
 make_pkg ValheimModding Jotunn 2.30.0
 
 new_tree

@@ -56,12 +56,3 @@ already deploys whole staged trees, and no remaining package ships a `Bundles/` 
 World Advancement Progression is not world-permanent — its keys live in character saves — but it
 clears the world's global keys on startup, so it belongs in the pack before the launch world is
 created rather than after.
-
-
-## Amendment — 2026-09-17
-
-ValheimRAFT was removed mid-run, which this ADR said would not happen (ADR-0016, #85). The owner
-accepted the loss: every vessel in the save, its cargo, and the footing of anyone aboard. The rule
-is not withdrawn. What the exception establishes is its own precondition — a world-permanent mod may
-leave when the owner accepts losing its content, and only then. Max Dungeon Rooms remains covered by
-the rule as written.
