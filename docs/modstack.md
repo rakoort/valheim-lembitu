@@ -37,7 +37,7 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset; access-mode limits pinned at upstream values |
 | VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated actions, vanilla skill caps | Private keys on, all global keys blocked; equipment, crafting, cooking, eating, guardian powers and boss summons locked; repairs, building, taming, boats and portals open; skill floor from boss keys with the ceiling at 100 |
 | RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, rarities, enchanting and socketed shardstones | `Item Drop Limits` and `Gated Freebuild Mode` both `PlayerMustKnowRecipe`, so gating reads the player, not world keys; Adventure Mode off; drop rate 0.6, shardstones 0.05; effect counts thinned by patch (#73) |
-| sighsorry/CreatureManager | 1.1.14 | Karma and Enforcer encounters; creature and boss difficulty tier, spawn level, health and damage scaling | Creature cloning and customisation off; `Biome Level Preset = Hard`, so biome tier sets spawn and boss level |
+| Smoothbrain/CreatureLevelAndLootControl | 4.6.4 | Creature and boss levels, health, damage, loot and creature effects | Player-count scaling off three ways: both percentages zero and the player count clamped to one. Creature health fixed at 200%, damage per star 25%; boss health carried by pinned stars |
 | Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
 | team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Cannon prefabs off, flight off, non-admin debug off, and from 2026-09-17 `AdminsCanOnlyBuildRaft = true`, so no player builds a vehicle. The mod stays installed because it is world-permanent; whether the pin leaves is #82 |
 | turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
@@ -88,7 +88,6 @@ cancelling connection`.
 | sighsorry/Clan | `Clan`, and `Clan Media` as a second channel |
 | sighsorry/STU_Ward | `STUWard` |
 | sighsorry/PortalRules | `PortalRules` |
-| sighsorry/CreatureManager | `CreatureManager` |
 | sighsorry/DataForge | `DataForge` |
 | sighsorry/Dive_In | `DiveIn` |
 | Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` |
@@ -110,6 +109,7 @@ ProximityVoiceChat, where the failure is benign and deliberate.
 | VentureValheim/World_Advancement_Progression | Server-side alone it only blocks the world's global key list. Private keys, every lock, and the skill floor are client features (upstream README, "Server-Side Only?") |
 | ValheimModding/JsonDotNET, ValheimModding/YamlDotNet | Libraries the above load on whichever side they run |
 | Azumatt/ProximityVoiceChat | Voice is captured, encoded and played on the client; the server holds the ranges and the codec through `ConfigSync("Azumatt.ProximityVoiceChat")`. `ModRequired` is false and there is no hand-rolled check, so a friend without the mod joins and plays with no voice rather than being refused (read from `ProximityVoiceChat.dll` 1.0.2) |
+| Smoothbrain/CreatureLevelAndLootControl | Announced as `CL&LC`, but `ConfigSync("CL&LC")` leaves `ModRequired` false and there is no hand-rolled check, so a client without it joins. Creature stats are server-authoritative — the mod works against vanilla and console clients by design — and what a client gains is the star, infusion and affix indicators. The predecessor it replaces *was* mandatory, so this swap loosens the handshake rather than tightening it (#84) |
 
 **Server-only.** Installing these on a client changes nothing a player can see.
 
@@ -271,23 +271,21 @@ Read off the generated files in that boot, so the enforced overlays name real ke
   mode reads `Player.m_localPlayer.IsRecipeKnown`, and EpicLoot gates everything when there is no
   local player, so it only works where loot is rolled on a client. The two-client session must show
   real magic drops rather than universal downgrades; if it does not, the fallback is `Unlimited`.
-- **Difficulty tier** — `sighsorry.CreatureManager.cfg`, section `[2 - Levels]`
-  (`Biome Level Preset = Hard`, `Bosses Follow Biome Level Preset`). The preset is mostly about
-  ordinary creatures: it sets the level distribution for every natural spawn in a biome, and `Hard`
-  spawns roughly 40% stronger creatures than the `Easy` default. Bosses follow the same preset, so
-  boss level and therefore boss health — through the `Boss` `healthPerLevel` default — rises by
-  biome tier; expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader. `Hard` is not the
-  package default, so it is pinned deliberately (#13). Section
-  `[4 - Multiplayer Difficulty]` used to be left untouched, on the reasoning that extra players
-  should help rather than inflate the boss. The 2026-09-16 review took the opposite decision and
-  removed headcount from the question entirely: both percentages are zero and the cap is one, and
-  difficulty is set in `levels.yml` instead, at `Global.health = 2` and `Boss.health = 8`. Ordinary
-  health was 4 until 2026-09-17, when character level left the Pack and every character lost its
-  attribute points (#80). That file is committed and replaced wholesale, with the cost the earlier
-  note named — it grows fields with every release, so a package update is a review of this file
-  (#68). Its ordinary-creature modifier chances are also ours, at 0.25 each rather than the
-  package's 5, because the mod rolls one modifier per group and four groups at 5 put a modifier on
-  nearly every creature.
+- **Difficulty** — `org.bepinex.plugins.creaturelevelcontrol.cfg`, three sections.
+  `[1 - General]` is where the run's standing rule lives: `HP increase per player in multiplayer
+  (percentage)` and `DMG increase per player in multiplayer (percentage)` at zero, and the minimum
+  and maximum player count both at one, with the additional-player key at zero. Any one of those
+  alone would leave a lever, so all four are pinned; CLLC reaches vanilla's scaling by postfixing
+  `Game.GetPlayerDifficulty`, `GetDifficultyDamageScaleEnemy` and `GetDifficultyDamageScalePlayer`
+  rather than by writing the fields, so zeroing them returns exactly 1.
+  `[2 - Creatures]` carries the fixed difficulty: `Base health for creatures (percentage) = 200`
+  and `Damage gained per star for creatures (percentage) = 25`. `[4 - Bosses]` carries boss health,
+  which has no base-health key of its own: it is expressed through boss star chances and
+  `Health gained per star for bosses (percentage)`.
+  This surface replaced CreatureManager's on 2026-09-17 (ADR-0015, #84). The history is worth
+  keeping because the numbers are inherited: the biome preset was `Hard`, ordinary health was 4
+  until character level left the Pack (#80), and the modifier chances were cut twice in one day
+  after twelve players found ordinary creatures unkillable.
 
 ## Known interactions
 
@@ -318,10 +316,10 @@ Recorded so they are not rediscovered:
   no tamper resistance (ADR-0010). Character level used to live there too, in
   `Player.m_knownTexts`; #80 removed it, and those keys are now stranded text in every character
   file that ever had a level.
-- **Creature level authority.** CreatureManager owns creature star levels outright: the biome
-  preset rolls them and Karma raises them. EpicLoot's rarity rolls read that level, and boss level
-  from the same preset sits on top of it. Until #80, character level rewrote those levels first,
-  which is the claim ADR-0005 was written against.
+- **Creature level authority.** CreatureLevelAndLootControl owns creature star levels outright, from
+  its own star chances; EpicLoot's rarity rolls read that level. Two predecessors held this job and
+  both are gone: character level rewrote creature levels until #80, which is the claim ADR-0005 was
+  written against, and CreatureManager's biome preset and Karma did it until #84 (ADR-0015).
 - **Jotunn piece categories.** Custom pieces can appear in the build menu without a category on this
   game build. Affects ValheimRAFT.
 - **EpicLoot declares an older Jotunn.** 0.14.5 declares 2.29.2 and runs against our 2.30.0 pin;
@@ -361,7 +359,7 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | MidnightMods/ImpactfulSkills | Third power curve (ADR-0004) |
 | sighsorry/Valheim_Enchantment_System | Second enchanting path on the same items (ADR-0004) |
 | MidnightMods/ValheimArmory | New base weapons need community EpicLoot patches to be enchantable (ADR-0004) |
-| MidnightMods/StarLevelSystem | CreatureManager owns creature levels (ADR-0005, as amended) |
+| MidnightMods/StarLevelSystem | CreatureLevelAndLootControl owns creature levels (ADR-0015) |
 | Smoothbrain/Groups | Second membership authority (ADR-0008) |
 | sighsorry/InventoryActions | Mutually exclusive with AzuExtendedPlayerInventory, which holds the slots for this run, and smaller |
 | Nosferatu/SmoothServer | One pacing layer only; SkadiNet chosen |
@@ -379,6 +377,7 @@ Kept out deliberately. Each line is a decision, not an oversight.
 | MSchmoecker/MultiUserChest | The only candidate that changes networked item movement, which is where duplication and item loss live. The vanilla "someone is in the chest" wait is an annoyance, not a problem. A risk judgement, not a conflict: its own incompatibility list — QuickStore, QuickStack, SimpleSort — touches nothing in this pack (#78) |
 | Crystal/BetterChat | Clan owns the chat window: it patches `Chat.Awake`, `InputText`, `HasFocus`, `Update`, `RPC_ChatMessage` and `SendPing`, and BetterChat rewrites the same input handling and visibility, risking the clan channel's prefixes. It would also add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own settings enforceable (#78) |
 | RustyMods/Seasonality | It sets the world global keys `season_winter`, `season_summer`, `season_spring` and `season_fall`, and this server blocks every global key (ADR-0005, ADR-0010). It also ships seasonal modifiers and weather control, so it is not the visual-only mod it appears to be, and it would reopen a difficulty the run fixed for its whole length (#78) |
+| sighsorry/CreatureManager | **Removed 2026-09-17, after being pinned since the start.** Adopted for Karma, kept for the flat health multipliers, and retired once its load-bearing job was suppressing a vanilla behaviour rather than adding one. Its modifier table was also the cause of the 2026-09-16 evening where twelve players found ordinary creatures unkillable: 5 per modifier reads as a per-creature rate but is rolled once per group of eight. CreatureLevelAndLootControl expresses the same decisions as plain percentages (ADR-0015, #84). Karma and Enforcers left with it, unreplaced |
 | WackyMole/WackyEpicMMOSystem | **Removed 2026-09-17, after being pinned.** Character level was the run's second power curve, and a second multiplier on the same numbers is what ADR-0004 existed to avoid; its own XP curve and attribute economy were never tuned (#72 was open for exactly that). Gear plus personal keys carry progression instead (ADR-0014, #80) |
 | WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17, with the mod above.** Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
 
