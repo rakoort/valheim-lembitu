@@ -62,6 +62,30 @@ the applier appends the key under a re-declared section, the mod reads its own c
 drift check then passes forever. That evidence file is why it is captured before every overlay
 change: the generated file is the authority on where a key lives, never the decision note.
 
+**A stated chance is not a rate until you know what it is rolled against.** CreatureManager's
+modifier table ships 5 per modifier, which reads as "5% of creatures carry this". It is not: the
+mod rolls **one modifier per group**, and `levels.yml` holds four groups — Offense, Defense,
+Affliction, Special — of eight modifiers each. Each group therefore fired at 40%, and an average
+ordinary creature carried about 1.7 modifiers. Stacked onto the run's flat health multiplier, a
+one-star Greydwarf at 8× vanilla health with `armored`, `regenerating` and `adaptive` is a wall.
+Twelve players met exactly that on 2026-09-16 and reported ordinary creatures taking eight people
+to kill, while bosses were fine — bosses have their own smaller multiplier, and karma and
+Enforcers are blocked during a boss fight.
+
+Two things about the diagnosis are worth keeping. The owner's first reading was that per-player
+scaling had come back, and that was checkable rather than arguable: CreatureManager writes
+vanilla's own `Game.m_healthScalePerPlayer`, `m_damageScalePerPlayer` and
+`m_difficultyScaleMaxPlayers` from its `[4 - Multiplayer Difficulty]` keys in a `Game.Awake`
+postfix, the live server holds `0 / 0 / 1`, and the drift check matches — so headcount scaling was
+already off and the flat 4× was the intended difficulty. And the fix had to miss two targets:
+ordinary chances are now 0.25 each, about one creature in thirteen, while boss chances stay at 10
+and Enforcers keep their own 10s in `karma.yml`'s `Enforcer.modifiers`, which inherits from
+`levels.yml` only for a modifier it does not name. Modifiers remain the Enforcer's signature.
+
+`karma.yml` is **not** in the overlay, unlike `levels.yml`. That is the gap this change leaves: the
+Enforcer roster, its karma thresholds and those modifier rates are all package defaults today, so a
+release that retunes them is a silent rebalance rather than a review.
+
 **Drift is asserted, not assumed.** `scripts/verify-enforced-config.sh <bepinex-config-dir>`
 compares every overlay entry against the live tree and exits non-zero on any difference, printing
 `file :: section :: key` with expected and live values. `.cfg` overlays are compared key by key
