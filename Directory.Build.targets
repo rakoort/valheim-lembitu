@@ -7,6 +7,13 @@
            Text="Missing BepInEx reference assemblies in lib/bepinex/. Run scripts/extract-refs.sh (see docs/build.md)." />
   </Target>
 
+  <!-- A plugin that hooks an adopted mod compiles against the pinned package staged in dist/plugins/
+       (StagedMod metadata on the Reference), so it is checked against exactly what we deploy. -->
+  <Target Name="CheckStagedModReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'%(Reference.StagedMod)' != '' and !Exists('%(Reference.HintPath)')"
+           Text="Missing %(Reference.StagedMod) in dist/plugins/. Run scripts/stage-stack.sh before dotnet build (see docs/build.md)." />
+  </Target>
+
   <!-- BepInPlugin's arguments must be compile-time constants, so identity lives in the project file
        and reaches the code through this generated class. Restating it in both places is how a
        version bump ends up lying in the server log. -->

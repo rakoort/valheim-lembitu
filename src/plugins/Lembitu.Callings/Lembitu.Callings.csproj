@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.callings</PluginGuid>
+    <Version>0.1.0</Version>
+    <Description>Callings (ADR-0021, ADR-0022): four focus professions chosen at the Oathstone, the steep curve for every other profession, shadow levels, focus protection on death, and the Herbalist and Fishing bonus output.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <!-- Compiled against the pinned packages scripts/stage-stack.sh puts in dist/plugins/. World
+       Advancement Progression is publicized because its skill floor, drain and gain rules are
+       protected members; the death drain and the shadow level reuse them rather than copy them. -->
+  <ItemGroup>
+    <Reference Include="VentureValheim.Progression" Private="false" StagedMod="World_Advancement_Progression">
+      <HintPath>$(PluginDistDir)World_Advancement_Progression/Plugins/VentureValheim.Progression.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="Jotunn" Private="false" StagedMod="Jotunn">
+      <HintPath>$(PluginDistDir)Jotunn/Jotunn.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro" Private="false">
+      <HintPath>$(ValheimRefDir)Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

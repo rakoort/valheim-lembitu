@@ -17,6 +17,9 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <DebugType>portable</DebugType>
     <NeutralLanguage>en</NeutralLanguage>
+    <!-- Several adopted mods we compile against target net48. Everything runs in the game's one Mono
+         runtime, so a reference's framework attribute says nothing about what we can call. -->
+    <ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>
   </PropertyGroup>
 
   <ItemGroup>

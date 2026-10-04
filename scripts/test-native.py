@@ -4,7 +4,8 @@
 python3 scripts/test-native.py --mode full-pack --port 2486 --repeat 2
 python3 scripts/test-native.py --mode minimal --port 2496 --repeat 2
 
-Requires built/staged dist/ and the pinned BepInEx pack. Never installs into the
+Requires built/staged dist/, the pinned BepInEx pack and an initialized native
+preference profile (--preferences; docs/build.md, first-run settings). Never installs into the
 source games. Copies use Linux reflinks when available (otherwise normal copies).
 Each repetition owns private games, saves, characters, world, IPC and process groups.
 Proof survives cleanup under --output; minimal success is NOT full-pack acceptance.
@@ -45,6 +46,14 @@ def save_json(path, value):
 
 def inventory_count(state, prefab):
     return sum(item['stack'] for item in state['inventory'] if item['prefab'] == prefab)
+
+
+def preferences_initialized(profile):
+    # Valheim's first-run Settings stores the chosen language here. Without it, the first
+    # Localization access migrates platform keys through Steamworks before Steam starts; the
+    # throw lands in Herbalist's and AdditiveDamageModifier's Awake, so they never write config.
+    prefs = profile / 'unity3d/unknown/unknown/prefs'
+    return prefs.is_file() and 'name="language"' in prefs.read_text(errors='replace')
 
 
 class Run:
@@ -195,7 +204,8 @@ class Run:
         saves = self.work / (name + '-saves')
         saves.mkdir()
         env = dict(os.environ, VALHEIM_CLIENT_DIR=str(game), LEMBITU_DISPLAY=self.args.display,
-                   LEMBITU_CHARACTER='N' + uuid.uuid4().hex[:12])
+                   LEMBITU_CHARACTER='N' + uuid.uuid4().hex[:12],
+                   XDG_CONFIG_HOME=str(self.args.preferences))
         command = [str(ROOT / 'scripts/test-client.sh'), 'run',
                    '--control-dir', str(self.control), '--save-dir', str(saves),
                    '--log-file', str(self.directory / (name + '-unity.log'))]
@@ -442,6 +452,8 @@ def main():
     parser.add_argument('--repeat', type=int, default=2)
     parser.add_argument('--client-dir', type=Path, default=Path.home() / '.cache/valheim-lembitu/client')
     parser.add_argument('--server-dir', type=Path, default=Path.home() / '.cache/valheim-lembitu/server')
+    parser.add_argument('--preferences', type=Path, default=Path.home() / '.cache/valheim-lembitu/client-preferences',
+                        help="initialized native preference profile; the client's XDG_CONFIG_HOME")
     parser.add_argument('--display', default=os.environ.get('LEMBITU_DISPLAY', ':0'))
     parser.add_argument('--output', type=Path, default=Path.home() / '.local/state/lembitu/native-tests')
     parser.add_argument('--startup-timeout', type=float, default=1500)
@@ -456,6 +468,9 @@ def main():
     require(platform.system() == 'Linux' and platform.machine() == 'x86_64', 'real game requires x86_64 Linux')
     for source, binary in [(args.client_dir, 'valheim.x86_64'), (args.server_dir, 'valheim_server.x86_64')]:
         require((source / binary).is_file(), f'missing {source / binary}')
+    args.preferences = args.preferences.expanduser().resolve()
+    require(preferences_initialized(args.preferences),
+            f'{args.preferences} has no chosen language; run the first-run settings setup in docs/build.md')
     require(subprocess.run(['xdpyinfo', '-display', args.display], stdout=subprocess.DEVNULL,
                            stderr=subprocess.DEVNULL).returncode == 0, 'start a GPU-backed display first; runner will not own your compositor')
     require(subprocess.run(['pgrep', '-f', 'ubuntu12_32/steam'], stdout=subprocess.DEVNULL).returncode == 0,

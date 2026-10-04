@@ -17,7 +17,8 @@
 #                    these the plugins are inert files in a folder and the game refuses to load
 #                    them: a player who extracts only mods gets a vanilla client, which this
 #                    server rejects outright at the handshake.
-#   plugins/         the adopted pin list, plus every package's assets and config seeds.
+#   plugins/         the adopted pin list, plus every package's assets and config seeds, plus our own
+#                    Lembitu.Oathbound and Lembitu.Callings from the build output.
 #   config/          the package-supplied config seeds, and the client-relevant locked settings.
 #
 # It is NOT the server's dist/: five things differ, and all of them matter.
@@ -77,6 +78,11 @@ EXCLUDED=("${NEVER_STAGED[@]}" "${SERVER_ONLY[@]}")
 # "Where each mod runs"; #78). This assertion used to name BoneMod, which the 2026-09-16 review
 # dropped along with every other client-only mod (#70).
 REQUIRED=(Jotunn AzuCraftyBoxes)
+# Our own plugins every player needs, taken from the build output rather than the pin table. Both
+# declare Jotunn's EveryoneMustHaveMod, so the server refuses a client without them (ADR-0022).
+PLAYER_PLUGINS=(Lembitu.Oathbound Lembitu.Callings)
+# Overridable for the same reason as BEPINEX_PACK: the tests supply fixtures.
+OWN_PLUGINS="${OWN_PLUGINS:-$REPO_ROOT/dist/plugins}"
 
 # Repository-owned client configuration seeds, copied over the package seeds after staging. These
 # are the settings the server cannot hold - every key in them is "Not Synced with Server" - so
@@ -170,6 +176,12 @@ tail -3 "$stage/stage.log" >&2
 # its plugin and is left alone.
 for name in "${SERVER_ONLY[@]}"; do
   rm -rf -- "${stage:?}/plugins/$name" "${stage:?}/patchers/$name"
+done
+
+mkdir -p "$stage/plugins"
+for name in "${PLAYER_PLUGINS[@]}"; do
+  [[ -f "$OWN_PLUGINS/$name.dll" ]] || die "no $name.dll in $OWN_PLUGINS; run dotnet build first"
+  cp -a "$OWN_PLUGINS/$name.dll" "$stage/plugins/"
 done
 
 # --- the loader, and the install shape ---------------------------------------------------------

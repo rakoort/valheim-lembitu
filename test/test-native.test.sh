@@ -66,5 +66,23 @@ while True:
                     finally:
                         run.cleanup()
 
+class PreferenceProfile(unittest.TestCase):
+    # Any launch writes the game's own prefs file; only the first-run Settings choice records the
+    # language that keeps early Localization off Steamworks, so only that counts.
+    def test_only_a_chosen_language_counts_as_initialized(self):
+        header = '<unity_prefs version_major="1" version_minor="1">\n'
+        with tempfile.TemporaryDirectory() as temporary:
+            profile = Path(temporary)
+            self.assertFalse(native.preferences_initialized(profile), 'empty profile accepted')
+            game = profile / 'unity3d/IronGate/Valheim/prefs'
+            game.parent.mkdir(parents=True)
+            game.write_text(header + '\t<pref name="ShouldTryAutoLogin" type="int">1</pref>\n</unity_prefs>\n')
+            unity = profile / 'unity3d/unknown/unknown/prefs'
+            unity.parent.mkdir(parents=True)
+            unity.write_text(header + '\t<pref name="MasterVolume" type="float">1</pref>\n</unity_prefs>\n')
+            self.assertFalse(native.preferences_initialized(profile), 'profile without a language accepted')
+            unity.write_text(header + '\t<pref name="language" type="string">RW5nbGlzaA==</pref>\n</unity_prefs>\n')
+            self.assertTrue(native.preferences_initialized(profile), 'initialized profile refused')
+
 unittest.main()
 PY

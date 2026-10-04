@@ -278,9 +278,85 @@ internal sealed class HarnessControl
                     throw new ArgumentException("fixture position must be finite and within 20m of player");
                 GameObject prefab = ZNetScene.instance.GetPrefab(command.target);
                 if (prefab == null || prefab.GetComponent<ZNetView>() == null) throw new ArgumentException("network prefab not found");
-                GameObject spawned = UnityEngine.Object.Instantiate(prefab, position, Quaternion.identity);
+                GameObject spawned = UnityEngine.Object.Instantiate(prefab, position, Quaternion.Euler(0f, command.yaw, 0f));
                 fixtureSpawned = spawned.GetInstanceID().ToString();
                 yield return null;
+                break;
+            }
+            case "fixture.skill":
+            {
+                RequireFixtures();
+                Skills.SkillType type = SkillType(command.target);
+                if (!Finite(command.x) || !Finite(command.y) || command.x < 0 || command.x > 100 || command.y < 0)
+                    throw new ArgumentException("skill level must be in [0,100] and accumulator non-negative");
+                Skills.Skill skill = player.GetSkills().GetSkill(type);
+                if (skill.m_info == null) throw new ArgumentException("skill has no definition: " + command.target);
+                skill.m_level = command.x;
+                skill.m_accumulator = command.y;
+                yield return null;
+                break;
+            }
+            case "fixture.give":
+            {
+                RequireFixtures();
+                GameObject prefab = ObjectDB.instance.GetItemPrefab(command.target);
+                int amount = (int)command.x;
+                if (prefab == null || amount < 1 || amount > 999) throw new ArgumentException("item prefab not found or amount outside [1,999]");
+                for (int given = 0; given < amount;)
+                {
+                    int stack = Mathf.Min(amount - given, prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_maxStackSize);
+                    if (!player.GetInventory().AddItem(prefab, stack)) throw new InvalidOperationException("inventory full");
+                    given += stack;
+                }
+                yield return null;
+                break;
+            }
+            case "fixture.teleport":
+            {
+                RequireFixtures();
+                Vector3 target = new(command.x, command.y, command.z);
+                if (!Finite(command.x) || !Finite(command.y) || !Finite(command.z)) throw new ArgumentException("teleport position must be finite");
+                if (command.target.StartsWith("location:", StringComparison.Ordinal))
+                {
+                    string location = command.target.Substring("location:".Length);
+                    var icons = new Dictionary<Vector3, string>();
+                    ZoneSystem.instance.GetLocationIcons(icons);
+                    KeyValuePair<Vector3, string> icon = icons.FirstOrDefault(i => i.Value == location);
+                    if (icon.Value != location) throw new ArgumentException("no location icon named " + location);
+                    target += icon.Key;
+                }
+                else if (command.target.Length > 0) throw new ArgumentException("teleport target must be empty or location:<name>");
+                if (!player.TeleportTo(target, player.transform.rotation, distantTeleport: true)) throw new InvalidOperationException("engine refused teleport");
+                float end = Time.realtimeSinceStartup + 60f;
+                while (player.IsTeleporting())
+                {
+                    if (Time.realtimeSinceStartup >= end) throw new TimeoutException("teleport did not finish");
+                    yield return null;
+                }
+                break;
+            }
+            case "fixture.catch":
+            {
+                // The reel-in is skipped; landing itself is vanilla's FishingFloat.Catch.
+                RequireFixtures();
+                Fish fish = Target(command.target).GetComponent<Fish>() ?? throw new ArgumentException("target is not a fish");
+                FishingFloat.Catch(fish, player);
+                yield return null;
+                yield return null;
+                break;
+            }
+            case "fixture.die":
+            {
+                RequireFixtures();
+                var hit = new HitData { m_point = player.transform.position };
+                hit.m_damage.m_damage = 1e6f;
+                player.Damage(hit);
+                float end = Time.realtimeSinceStartup + 10f;
+                while (!player.IsDead())
+                {
+                    if (Time.realtimeSinceStartup >= end) throw new TimeoutException("lethal damage did not kill the player");
+                    yield return null;
+                }
                 break;
             }
             default: throw new ArgumentException("unknown action: " + command.action);
@@ -292,6 +368,15 @@ internal sealed class HarnessControl
         if (!Finite(seconds) || seconds <= 0 || seconds > 10) throw new ArgumentException("seconds must be in (0,10]");
     }
     private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+    private void RequireFixtures()
+    {
+        if (!fixtures) throw new InvalidOperationException("fixture actions require -lembitu-fixtures; never gameplay proof");
+    }
+    /// <summary>A vanilla skill by enum name, or "hash:Name" for a Jotunn or bundled-manager skill.</summary>
+    private static Skills.SkillType SkillType(string reference) =>
+        reference.StartsWith("hash:", StringComparison.Ordinal)
+            ? (Skills.SkillType)Math.Abs(reference.Substring("hash:".Length).GetStableHashCode())
+            : (Skills.SkillType)Enum.Parse(typeof(Skills.SkillType), reference);
     private static void CheckPlayer(Player player)
     {
         if (player == null || player != Player.m_localPlayer || player.IsDead() || player.IsTeleporting())
@@ -371,6 +456,11 @@ internal sealed class HarnessControl
                 name = i.m_shared.m_name, stack = i.m_stack, equipped = i.m_equipped, x = i.m_gridPos.x, y = i.m_gridPos.y }).ToArray(),
             entities = nearby.ToArray(),
             progression = player.m_knownTexts.Select(k => new TextState { key = k.Key, value = k.Value }).ToArray(),
+            customData = player.m_customData.Select(k => new TextState { key = k.Key, value = k.Value }).ToArray(),
+            skills = player.GetSkills().m_skillData.Values.Where(s => s.m_info != null).Select(s => new SkillState
+                { type = (int)s.m_info.m_skill, name = s.m_info.m_skill.ToString(), level = s.m_level, accumulator = s.m_accumulator }).ToArray(),
+            messages = MessageHud.instance == null ? new MessageState() : new MessageState
+                { center = MessageHud.instance.m_messageCenterText.text, topLeft = MessageHud.instance.m_messageText.text },
             ui = new UiState { inventory = InventoryGui.IsVisible(), map = Minimap.IsOpen(), crafting = gui != null && gui.m_craftTimer >= 0,
                 buttons = buttonStates.ToArray(), craftEnabled = gui != null && gui.m_craftButton.IsInteractable(),
                 recipes = gui == null ? Array.Empty<string>() : gui.m_availableRecipes.Select(r => r.Recipe.name).ToArray() },
@@ -391,7 +481,7 @@ internal sealed class HarnessControl
     private sealed class Request
     {
         public string id = "", action = "", target = "", item = "", recipe = "";
-        public float x = 0, y = 0, z = 0, seconds = 0;
+        public float x = 0, y = 0, z = 0, seconds = 0, yaw = 0;
         public bool secondary = false, value = false;
     }
     private sealed class Status { public bool ready; public string error = ""; }
@@ -401,7 +491,9 @@ internal sealed class HarnessControl
         public PlayerState player = null!;
         public ItemState[] inventory = null!;
         public EntityState[] entities = null!;
-        public TextState[] progression = null!;
+        public TextState[] progression = null!, customData = null!;
+        public SkillState[] skills = null!;
+        public MessageState messages = null!;
         public UiState ui = null!;
         public string connection = "", fixtureSpawned = "";
     }
@@ -409,6 +501,8 @@ internal sealed class HarnessControl
     private sealed class ItemState { public string id = "", prefab = "", name = ""; public int stack, x, y; public bool equipped; }
     private sealed class EntityState { public string id = "", prefab = "", name = ""; public float x, y, z, health; public bool isPlayer, interactable; }
     private sealed class TextState { public string key = "", value = ""; }
+    private sealed class SkillState { public int type; public string name = ""; public float level, accumulator; }
+    private sealed class MessageState { public string center = "", topLeft = ""; }
     private sealed class UiState { public bool inventory, map, crafting, craftEnabled; public string[] recipes = null!; public ButtonState[] buttons = null!; }
     private sealed class ButtonState { public string id = "", text = ""; public bool active, interactable; }
 }

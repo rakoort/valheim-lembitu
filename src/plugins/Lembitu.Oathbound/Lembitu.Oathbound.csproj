@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.oathbound</PluginGuid>
+    <Version>0.1.0</Version>
+    <Description>Adapts Oathbound (ADR-0022): respec and class switch reset to level 1, kill XP shared within the killer's party, and the gathering tools open to every class.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <!-- Compiled against the pinned packages scripts/stage-stack.sh puts in dist/plugins/, so the
+       hooks are checked against exactly what we deploy. Oathbound and SocialSystem are publicized:
+       every hook reaches private members, and each one is re-verified at startup. -->
+  <ItemGroup>
+    <Reference Include="WarriorRpg" Private="false" StagedMod="Oathbound">
+      <HintPath>$(PluginDistDir)Oathbound/WarriorRpg/WarriorRpg.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="Warrior.Core" Private="false" StagedMod="Oathbound">
+      <HintPath>$(PluginDistDir)Oathbound/WarriorRpg/Warrior.Core.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="SocialSystem" Private="false" StagedMod="SocialSystem">
+      <HintPath>$(PluginDistDir)SocialSystem/SocialSystem.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="Jotunn" Private="false" StagedMod="Jotunn">
+      <HintPath>$(PluginDistDir)Jotunn/Jotunn.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro" Private="false">
+      <HintPath>$(ValheimRefDir)Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
