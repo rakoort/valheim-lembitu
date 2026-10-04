@@ -803,3 +803,23 @@ directory per session with every command and response under `steps/`, is under
 
 Not covered: kill XP split within a party of two or more, which needs a second Steam account; the
 owner tests it by hand. A client without the plugins being refused at join is not yet read.
+
+### Full-pack native acceptance — 2026-10-04
+
+`scripts/test-native.py --mode full-pack --repeat 1` passed on astral-tricep with no test shim: public
+server **1.0.16** installed by `scripts/test-server.sh install`, client build **25527674** from the
+Steam library, all 63 pins, the enforced overlay, both gameplay plugins, the harness and the
+MaxPlayerCount fork, with the native preference profile the runner now sets itself. Every check
+passed: generated configs and the
+enforced overlay on both sides, fixture refusal, wrong-password rejection (`ErrorPassword`), quit
+without a local player, movement, PvP held off by the pack, UI toggles and the Skills click, pickup,
+refused and successful crafting, equipping, a club hit leaving the Greydwarf below full health,
+natural death, respawn and movement, and quit.
+
+Three fresh characters were created and saved with ExpertExplorer loaded and no
+`ArgumentNullException` in any log; every boot logged `New characters survive ExpertExplorer's first
+save: on`. `skills.png` and `combat.png` were inspected: the world, HUD, Skills panel with the
+Calling stars, the hit's damage number and the Clubs skill-up render. Getting here took three runner
+changes for the pack's rules, recorded in `docs/wiki/native-testing.md`. Evidence:
+`/home/ra/lembitu-native-tests/20261004T165744Z-full-pack-a3d33296/` on astral-tricep. One repetition
+only, and not a two-client or party check.

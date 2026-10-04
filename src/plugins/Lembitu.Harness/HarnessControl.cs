@@ -435,6 +435,7 @@ internal sealed class HarnessControl
             Vector3 p = go.transform.position;
             nearby.Add(new EntityState { id = id, prefab = Utils.GetPrefabName(go), name = character != null ? character.GetHoverName() : go.name,
                 x = p.x, y = p.y, z = p.z, health = character != null ? character.GetHealth() : -1,
+                maxHealth = character != null ? character.GetMaxHealth() : -1,
                 isPlayer = character is Player, interactable = go.GetComponentInParent<Interactable>() != null });
         }
         buttons.Clear();
@@ -499,7 +500,7 @@ internal sealed class HarnessControl
     }
     private sealed class PlayerState { public string id = "", name = ""; public float x, y, z, health; public bool dead, pvp; }
     private sealed class ItemState { public string id = "", prefab = "", name = ""; public int stack, x, y; public bool equipped; }
-    private sealed class EntityState { public string id = "", prefab = "", name = ""; public float x, y, z, health; public bool isPlayer, interactable; }
+    private sealed class EntityState { public string id = "", prefab = "", name = ""; public float x, y, z, health, maxHealth; public bool isPlayer, interactable; }
     private sealed class TextState { public string key = "", value = ""; }
     private sealed class SkillState { public int type; public string name = ""; public float level, accumulator; }
     private sealed class MessageState { public string center = "", topLeft = ""; }

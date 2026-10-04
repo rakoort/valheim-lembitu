@@ -214,15 +214,15 @@ host, and a client is told the server's capacity by the server. Its config defau
 | Plugin | What it owns | Ticket |
 | --- | --- | --- |
 | Lembitu.Oathbound | Adapts Oathbound 0.21.14 where it has no setting (ADR-0022): respec and class switch reset to level 1, with a confirmation before a switch and the tree's labels saying so; kill XP split within the killer's SocialSystem party near the kill; the fishing rod for every class and Mining and Wood Cutting from a Monk's bare hands. Patches Oathbound at runtime; each feature verifies its own hooks at startup and switches off alone on a mismatch. Settings in `config/enforced/lembitu.oathbound.cfg` | ADR-0022 |
-| Lembitu.Callings | Professions and the Calling (ADR-0021, ADR-0022): the skills-window star changed at the Oathstone, the steep curve, shadow levels, focus protection and one death drain for every profession skill, and the Herbalist and Fishing bonus output. Hooks vanilla, World Advancement Progression and the bundled skill managers, never Oathbound. Settings in `config/enforced/lembitu.callings.cfg` | ADR-0022 |
+| Lembitu.Callings | Professions and the Calling (ADR-0021, ADR-0022): the skills-window star changed at the Oathstone, the steep curve, shadow levels, focus protection and one death drain for every profession skill, and the Herbalist and Fishing bonus output. Also keeps ExpertExplorer from aborting a new character's first save. Hooks vanilla, World Advancement Progression, ExpertExplorer and the bundled skill managers, never Oathbound. Settings in `config/enforced/lembitu.callings.cfg` | ADR-0022 |
 | Lembitu.Harness | Client-side test harness: joins the test server from a real client and drives a character through code | #10 |
 
 Both gameplay plugins run on the server and every client: they declare Jotunn's
 `EveryoneMustHaveMod`, so the server refuses a client without them, and their settings are locked
 from the server through Jotunn. `scripts/build-client-pack.sh` takes them from the build output, not
 the pin table. Each is pinned to the packages it was read from: an Oathbound bump re-checks
-`Lembitu.Oathbound`, a World Advancement Progression, BlacksmithingExpanded or Herbalist bump re-checks
-`Lembitu.Callings`, and both log `<feature>: on` or the reason a feature switched off.
+`Lembitu.Oathbound`, a World Advancement Progression, BlacksmithingExpanded, Herbalist or ExpertExplorer
+bump re-checks `Lembitu.Callings`, and both log `<feature>: on` or the reason a feature switched off.
 
 The harness is test infrastructure, not pack content. It is inert unless the client is launched with
 `-lembitu-harness`, and it ships to the disposable test client only. Its fixture actions (set a
@@ -342,17 +342,20 @@ Read off the generated files in that boot, so the enforced overlays name real ke
 
 Recorded so they are not rediscovered:
 
-- **ExpertExplorer 1.7.0 stops every new character from being created — open, owner's call.** Its
-  `Player.Save` prefix loads exploration data the first time it meets a character, and
-  `PlayerExplorationData.IsLegacySave` passes the missing `PlayerExplorationData` entry straight to
-  `Regex.IsMatch`, which throws `ArgumentNullException` (`PlayerExplorationData.cs:136-184`).
-  `FejdStartup.OnNewCharacterDone` saves the fresh preview character that `OnCharacterNew` builds,
-  so the exception escapes and nothing is written. Confirmed 2026-10-04 through the real menu on
-  astral-tricep (client build 25527674, the full pack): pointer clicks on Start, New and Done left
-  the new-character panel open, saved no character and logged the throw. The same clicks without
-  ExpertExplorer saved the character. A player sees a Done button that does nothing. Evidence,
-  with screenshots, is under `~/lembitu-menu-evidence/` on astral-tricep. The plugin sessions ran
-  with a test-client-only shim that seeds the entry.
+- **ExpertExplorer 1.7.0 stopped every new character from being created — fixed in
+  `Lembitu.Callings` (ADR-0022).** Its `Player.Save` prefix loads exploration data the first time it
+  meets a character, and `PlayerExplorationData.IsLegacySave` passes the missing
+  `PlayerExplorationData` entry straight to `Regex.IsMatch`, which throws `ArgumentNullException`
+  (`PlayerExplorationData.cs:136-184`). `FejdStartup.OnNewCharacterDone` saves the fresh preview
+  character that `OnCharacterNew` builds, so the exception escaped and nothing was written. Confirmed
+  2026-10-04 through the real menu on astral-tricep (client build 25527674, the full pack): pointer
+  clicks on Start, New and Done left the new-character panel open, saved no character and logged the
+  throw; the same clicks without ExpertExplorer saved the character. Evidence, with screenshots, is
+  under `~/lembitu-menu-evidence/` on astral-tricep. `Lembitu.Callings` now answers a missing tag as
+  "old format", which reads nothing from a character without data; the full-pack acceptance of the
+  same day created three characters with no throw (`docs/build.md`). A character made before
+  ExpertExplorer was installed meets the same check on load and gets the same answer; that path is
+  read from the code, not exercised.
 - **Guilds clamps `[5 - Territory] MembersPerUpgrade` to 1..100 on boot, and the cap holds anyway.**
   Observed 2026-10-04: an enforced 0 came back as 1 on every boot. Established from `Guilds.dll`
   1.2.2, sha256 `c9303d4f…89ef40`, decompiled with ilspycmd 11: the member cap is

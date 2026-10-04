@@ -131,6 +131,18 @@ localization key (`[skill_1208107160]`), so the first overlay aimed at `[Blacksm
 and a native death on 2026-10-04 drained Blacksmithing twice (20 → 19 → 18.05) before this was
 changed.
 
+**A new character survives ExpertExplorer's first save.** ExpertExplorer 1.7.0, the Exploration
+profession's mod, aborts the first save of every new character: its old-format check passes a missing
+version tag to `Regex.IsMatch`, which throws (`docs/modstack.md`, "Known interactions"). A
+Thunderstore search on 2026-10-04 found no better-built replacement. Advize/CartographySkill 3.2.0
+sets the reveal radius back to base each time a world loads and raises it again only at the next
+level-up (`Minimap.Awake` postfix; `UpdateExploreRadius` called from `OnSkillLevelup`).
+blacks7ar/Explorer 1.1.7 tracks resources, dungeons and caves, the radar ADR-0019 rules out.
+Smoothbrain/Exploration is deprecated. ExpertExplorer has no newer release and no upstream issue for
+this. `Lembitu.Callings` therefore answers a missing tag the way the check answers any non-version
+tag, "old format"; the old-format readers find nothing to read on a character without data. The same
+answer covers a character made before ExpertExplorer was installed, which meets the check on load.
+
 How it is built, decided from the code rather than asked:
 
 - **Gain.** A lowest-priority prefix on `Skills.RaiseSkill(SkillType, float)` scales `factor` for the

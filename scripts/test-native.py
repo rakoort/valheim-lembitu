@@ -254,10 +254,14 @@ class Run:
         require(state['connection'] == 'Connected', 'not connected')
         self.move()
         self.checked('native movement')
+        # The full pack holds PvP off for everyone (Venture Multiplayer Tweaks, enforced; ADR-0019), so
+        # there a request to turn it on must not stick. Minimal mode has no such rule.
+        pvp_allowed = self.args.mode != 'full-pack'
         for enabled in [True, False]:
             state = self.command('pvp', value=enabled)
-            require(state['player']['pvp'] == enabled, 'native PvP toggle did not apply')
-        self.checked('native PvP toggles')
+            require(state['player']['pvp'] == (enabled and pvp_allowed),
+                    'PvP toggle did not apply' if pvp_allowed else 'PvP turned on despite the pack holding it off')
+        self.checked('native PvP toggles' if pvp_allowed else 'PvP held off by the pack')
         for target in ['inventory', 'map']:
             for value in [True, False]:
                 state = self.command('ui', target=target, value=value)
@@ -301,13 +305,16 @@ class Run:
         state = self.spawn('Greydwarf', 1.3, 0.2)
         enemy_id = state['fixtureSpawned']
         enemy = next(e for e in state['entities'] if e['id'] == enemy_id)
-        require(enemy['health'] > 0, 'fixture enemy not alive')
+        require(0 < enemy['health'] == enemy['maxHealth'], 'fixture enemy not alive and unhurt')
         state = self.command('attack', target=enemy_id, seconds=0.2)
         after = next((e for e in state['entities'] if e['id'] == enemy_id), None)
-        require(after is not None and 0 <= after['health'] < enemy['health'],
-                'attack did not observe enemy health decrease (disappearance is not proof)')
+        # The full pack's creature levels can raise a creature's health after it spawns (observed 40
+        # at spawn and 74 after one club hit). The scaling keeps damage already taken, so a hit shows
+        # as health below the creature's own maximum, not below the first reading.
+        require(after is not None and 0 <= after['health'] < after['maxHealth'],
+                'attack did not leave the enemy below full health (disappearance is not proof)')
         self.screenshot('combat.png')
-        self.checked('native club attack decreased observed enemy health')
+        self.checked('native club attack left the enemy below full health')
         # Natural enemy AI, not a damage/death command. The same IPC endpoint remains
         # in use while the local player object disappears during normal respawn.
         state = self.spawn('Skeleton', 1.5)
@@ -409,6 +416,11 @@ class Run:
                      x=player['x'] + 3, y=player['y'] + 0.3, z=player['z'])
         self.checked('fixtures refused without opt-in')
         self.quit_client()
+        # AutoServerPassword saves the password of a good join and enters it itself next time, which
+        # turns this check into a join. The refusal under test is the server's, so the client forgets it.
+        saved = client_game / 'BepInEx/config/AutoServerPassword/passwords.json'
+        saved.unlink(missing_ok=True)
+        self.event('saved-password-forgotten', path=str(saved))
         self.start_client(client_game, 'wrong-password', password + 'wrong', False)
         self.wait_ready(wrong_password=True)
         self.checked('wrong password rejected with ErrorPassword')
