@@ -17,9 +17,10 @@
 #   plugins/...              -> dist/plugins/<Mod>/...
 #   BepInEx/plugins/...      -> dist/plugins/<Mod>/...
 #   BepInEx/patchers/...     -> dist/patchers/<Mod>/...    (no pinned package ships one; ServersideQoL
-#                                                           did and was cut because the container never
-#                                                           mirrors this tree into the game, #86)
-#   BepInEx/config/...       -> dist/config/...            (Clan's emblems and emoji)
+#                                                           and EpicLoot_ProgressionFix did and were cut,
+#                                                           and the container never mirrors this tree
+#                                                           into the game, #86)
+#   BepInEx/config/...       -> dist/config/...            (CreatureManager's seeds)
 #
 # dist/ mirrors the target BepInEx/ directory, and install-plugins.sh owns the copy into a server.
 # Every directory this script stages is recorded in dist/.staged-dirs and wiped before restaging,
@@ -52,17 +53,25 @@ DIST_DIR="$REPO_ROOT/dist"
 CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 
 # Dependencies satisfied by something other than an exact pin:
-#   - denikson-BepInExPack_Valheim 5.4.2350 is what scripts/test-server.sh installs and what
-#     scripts/extract-refs.sh compiles against; adopted packages name older ones — EpicLoot,
-#     DiscordConnector and ServersideQoL at 5.4.2333, WackyEpicMMOSystem at 5.4.2202. The 5.4.2202
-#     line has now left and returned in one day, with the mod that declares it (#80, and again on restoration), and
-#     BetterArchery names 5.4.1501, the oldest skew in the pack (#86),
-#   - Jotunn is pinned at 2.30.0, overriding the 2.29.2 EpicLoot declares (docs/modstack.md).
-KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.1501
-denikson-BepInExPack_Valheim-5.4.2202
+#   - denikson-BepInExPack_Valheim 5.4.2351 is what scripts/test-server.sh installs and what
+#     scripts/extract-refs.sh compiles against; adopted packages name older ones — most at 5.4.2350,
+#     EpicLoot, DiscordConnector and Jotunn at 5.4.2333, SearsCatalog at 5.4.2202. The 5.4.2202
+#     line has left and returned more than once, with the mods that declare it (#80); the 5.4.1501
+#     skew left with BetterArchery on 2026-10-04,
+#   - Jotunn is pinned at 2.30.2, overriding the 2.29.0 Guilds and Marketplace declare, the 2.29.2
+#     EpicLoot declares, the 2.30.0 that World Advancement Progression, ProgressivePowers, XPortal and
+#     others declare, and PlanBuild's 2.30.1 (docs/modstack.md),
+#   - Zen_ModLib is pinned at its latest release, overriding the older minimum ZenRaids declares
+#     (2026-10-04).
+KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
 denikson-BepInExPack_Valheim-5.4.2333
 denikson-BepInExPack_Valheim-5.4.2350
-ValheimModding-Jotunn-2.29.2"
+denikson-BepInExPack_Valheim-5.4.2351
+ValheimModding-Jotunn-2.29.0
+ValheimModding-Jotunn-2.29.2
+ValheimModding-Jotunn-2.30.0
+ValheimModding-Jotunn-2.30.1
+ZenDragon-Zen_ModLib-1.14.14"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
@@ -141,6 +150,7 @@ map_stage_path() {  # map_stage_path <mod> <zip-entry>
     BepInEx/plugins/*)  printf 'plugins/%s/%s\n' "$mod" "${entry#BepInEx/plugins/}" ;;
     BepInEx/patchers/*) printf 'patchers/%s/%s\n' "$mod" "${entry#BepInEx/patchers/}" ;;
     BepInEx/config/*)   printf 'config/%s\n' "${entry#BepInEx/config/}" ;;
+    config/*)           printf 'config/%s\n' "${entry#config/}" ;;  # root config/ is BepInEx/config, as mod managers place it
     BepInEx/*)          return 2 ;;
     README.md|CHANGELOG.md|icon.png|manifest.json) return 1 ;;
     *)                  printf 'plugins/%s/%s\n' "$mod" "$entry" ;;
@@ -192,12 +202,24 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not a lock on growth: the pack is 26 pins today, and a smaller count means the table
+  # A tripwire, not a lock on growth: the pack is 49 pins today, and a smaller count means the table
   # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
   # purpose means editing this number in the same commit — which the 2026-09-16 review did, taking
   # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), #78 raised it with five Azumatt mods,
-  # #80 lowered it by removing character level, and #83 raised it with ServersideQoL and JustSleep.
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 26 ]] \
+  # #80 lowered it by removing character level, #83 raised it with ServersideQoL and JustSleep, and
+  # 2026-10-03 took it to 27 by dropping Max Dungeon Rooms, ValheimRAFT and PvPBiomeDominions, then
+  # to 37 by adding ten building, ship, season, portal and content mods, then to 36 by dropping
+  # PortalRules; 2026-10-04 took it to 35 by dropping Almanac, then to 49 by adding fourteen farming,
+  # magic, storage, map, station and skill mods, then to 83 by adding thirty-five packages around
+  # Guilds and dropping Clan, then to 78 by swapping EpicMMO, MagicPlugin and five rejected
+  # progression packages for Oathbound and SocialSystem (ADR-0020), then to 75 by dropping the
+  # three map-sharing mods, then to 74 by dropping STU_Ward for Guilds' wards, then to 70 by
+  # dropping OCDheim and the client-side Infinity Hammer tools, then to 68 by dropping the two
+  # chest sorters, then to 67 by dropping ComfyAutoRepair, then to 66 by dropping ZenBossStone,
+  # then back to 67 by adding Item_Requirement as the master-recipe gate (ADR-0021), then to 66 by
+  # scrapping Seasonality, then to 65 by dropping BetterStations, then to 64 by dropping
+  # BetterArchery, then to 63 by dropping Njord so the Sailing profession owns ship speed (ADR-0024).
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 63 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then
@@ -246,10 +268,12 @@ PLAN="$WORK/plan"
 while IFS=$'\t' read -r team mod version; do
   zip="$CACHE_DIR/$team-$mod-$version.zip"
   while IFS= read -r entry; do
-    [[ -n "$entry" && "$entry" != */ ]] || continue
+    # Windows-built zips (Jotunn 2.30.x, ExpertExplorer) store backslash separators, directory
+    # entries included; mod managers treat them as /. Normalise before the directory check.
+    [[ -n "$entry" && "${entry//\\//}" != */ ]] || continue
     entry="${entry#./}"   # some packers prefix entries with ./
     map_rc=0
-    dest="$(map_stage_path "$mod" "$entry")" || map_rc=$?
+    dest="$(map_stage_path "$mod" "${entry//\\//}")" || map_rc=$?
     case $map_rc in
       1) continue ;;
       2) die "unexpected package shape in $mod $version: $entry" ;;
@@ -285,7 +309,8 @@ done < "$NEW_DIRS"
 while IFS=$'\t' read -r zip entry pkg dest; do
   [[ -n "$pkg" ]] || continue
   mkdir -p "$DIST_DIR/$(dirname "$dest")"
-  unzip -p "$zip" "$entry" > "$DIST_DIR/$dest"
+  # unzip reads the name as a wildcard pattern, where a backslash escapes; double it to match.
+  unzip -p "$zip" "${entry//\\/\\\\}" > "$DIST_DIR/$dest"
 done < "$PLAN"
 cp "$NEW_DIRS" "$DIST_DIR/.staged-dirs"
 

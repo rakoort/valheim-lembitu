@@ -2,19 +2,23 @@
 # CreatureManager data files: the mod owns its shape, and committing it is what makes a package
 # default that ships different numbers a review rather than a silent rebalance.
 #
-# Two numbers are ours; everything else is the package's own table, unchanged.
+# Ours: the health and damage numbers below, and every modifier chance (explained further down).
 #
-#   Global health 2   ordinary creatures, and Enforcers, carry twice vanilla health.
-#   Boss health 8     regular bosses carry eight.
+#   Global health 2, damage 1.2   ordinary creatures, and Enforcers, carry twice vanilla health
+#                                 and hit 20% harder.
+#   Boss health 8, damage 1.5     regular bosses carry eight times vanilla health and hit 50% harder.
 #
 # They exist because headcount scaling is off (`sighsorry.CreatureManager.cfg`,
 # [4 - Multiplayer Difficulty]). Vanilla makes a creature tougher for each player standing
 # nearby, which means a fight's difficulty depends on who happened to log in. This run fixes the
-# difficulty instead: a boss is the same fight for two players or for eight, and the group
-# decides how many to bring rather than being punished for bringing them.
+# difficulty instead (ADR-0019): every value here is fixed, whoever turns up, and the group decides
+# how many to bring rather than being punished or rewarded for bringing them.
 #
-# Damage is deliberately untouched at 1. Health is the lever because it lengthens a fight without
-# making it one-shot a player; multiplying damage as well would just move deaths earlier.
+# Damage was held at 1 until 2026-10-04, on the reasoning that health lengthens a fight without
+# making it one-shot a player. With Oathbound's talents adding player power, the owner raised it
+# (2026-10-04) so fights are dangerous rather than merely long: deaths come from mistakes, not
+# attrition. The Shakedown measures both against the tuning targets: bosses for eight players,
+# creatures for two.
 #
 # The per-level growth below still compounds on top, so these are floors rather than ceilings: an
 # Ashlands creature at level 3 is 2 * (1 + 2 * 1) = 6x vanilla health, and a level-2 boss is
@@ -26,19 +30,18 @@
 # difficulty increase nobody chose. Bosses are untouched: a boss fight is a group's whole evening
 # and twelve players pool damage into one target.
 #
-# Ordinary-creature modifier chances are 0.125 each, a fortieth of the package's 5, because the
-# stock numbers read as a per-creature rate and are not one. The mod rolls **one modifier per
-# group**, and there are four groups of eight below, so 5 each meant a 40% roll per group and about
-# 1.7 modifiers on every creature: 76 in every 100 carried one. Twelve players met that on
-# 2026-09-16 and ordinary mobs took eight people to kill.
+# Modifier chances are ours (2026-10-04, owner's decisions). The mod rolls **one modifier per
+# group**, four groups of eight, so an entry is not a per-creature rate: stock 5 each meant a 40%
+# roll per group and 76 ordinary creatures in 100 carrying one, which twelve players on 2026-09-16
+# found unkillable.
 #
-# At 0.125 a group fires 1% of the time, so **4 creatures in 100** carry a modifier and a quarter of
-# one in 100 carries two. The first cut was to 0.25 and 8 in 100; the owner halved it again the same
-# day. The relationship is near enough linear at these values, so the number to move is this one.
-#
-# Enforcers are unaffected. Their chances are their own, 10 each in `karma.yml`'s `Enforcer.modifiers`,
-# which inherits from this file only for a modifier it does not name. Modifiers stay the Enforcer's
-# signature, which is what CONTEXT.md means by one. Boss chances below are untouched.
+# - deathward, regenerating, omen and blamer are excluded (chance 0) for every target: the first
+#   two stretch fights already lengthened by the health floor, the last two feed Karma.
+# - Global (ordinary creatures): each group fires about 2.6% of the time, 0.33 per entry in the
+#   eight-entry groups and 0.44 in the six-entry ones, so about **10 creatures in 100** carry one.
+# - Boss: each group fires about 25%, 3.12 or 4.17 per entry, so a boss carries **about one**.
+# - Enforcers use `karma.yml`'s own table, about two each; it inherits from this file only for a
+#   modifier it does not name.
 # Targets: Global, Boss, biome, group, or prefab; omitted fields inherit independently.
 # Priority: non-boss/Enforcer prefab > group > biome > Global; regular boss prefab > group > Boss.
 # Nested biome blocks override their parent target in that biome.
@@ -47,7 +50,7 @@
 Global:
   level: [80, 20]                       # Weights by level: level 1 = 80, level 2 = 20.
   scalePerLevel: 0.1                    # Visual scale per level above 1; skipped in dungeons.
-  damage: 1                            # Level-1 damage multiplier.
+  damage: 1.2                          # Level-1 damage multiplier.
   damagePerLevel: 0.25                 # Replaces vanilla growth: damage * (1 + (level - 1) * value).
   health: 2                            # Level-1 max-health multiplier.
   healthPerLevel: 1                    # Health = base * health * (1 + (level - 1) * value).
@@ -55,85 +58,85 @@ Global:
 #   modifierDistanceScaling: [0.03, 1000, 8] # chanceStep, stepMeters, maxSteps; 20% -> 20.6% at 1000m, 24.8% at 8000m+.
   modifiers:                           # One per group; totals below 100 allow none, above 100 are weights.
     # Offense: Enraged to Undodgeable
-    enraged: 0.125, 0.15                 # chance%, outgoingDamageBonus
-    fire: 0.125, 0.2                     # chance%, addedFireDamage
-    frost: 0.125, 0.1                    # chance%, addedFrostDamage
-    lightning: 0.125, 0.1                # chance%, addedLightningDamage
-    spirit: 0.125, 0.05                  # chance%, addedSpiritDoT
-    armorPiercing: 0.125, 0.3            # chance%, ignoredPlayerArmor
-    staggering: 0.125, 0.6               # chance%, staggerBonus
-    undodgeable: 0.125, 0.25             # chance%, damageReduction
+    enraged: 0.33, 0.15                 # chance%, outgoingDamageBonus
+    fire: 0.33, 0.2                     # chance%, addedFireDamage
+    frost: 0.33, 0.1                    # chance%, addedFrostDamage
+    lightning: 0.33, 0.1                # chance%, addedLightningDamage
+    spirit: 0.33, 0.05                  # chance%, addedSpiritDoT
+    armorPiercing: 0.33, 0.3            # chance%, ignoredPlayerArmor
+    staggering: 0.33, 0.6               # chance%, staggerBonus
+    undodgeable: 0.33, 0.25             # chance%, damageReduction
     # Defense: Armored to Chameleon
-    armored: 0.125, 0.3                 # chance%, damageReduction
-    deathward: 0.125, 0.2, 10, 3         # chance%, restoredHealth, cooldownSeconds, maxActivations
-    regenerating: 0.125, 0.01, 20      # chance%, maxHealthRatioPerSecond, healthPerSecondCap (0 = unlimited)
-    reflection: 0.125, 0.1, 0.5         # chance%, actualMeleeDamageReflected, procChance
-    vortex: 0.125, 0.5                  # chance%, projectileIgnoreProc
-    adaptive: 0.125, 0.5                # chance%, rememberedTypeDamageReduction
-    unflinching: 0.125                    # chance%
-    chameleon: 0.125, 10                  # chance%, immunitySwitchSeconds
+    armored: 0.44, 0.3                 # chance%, damageReduction
+    deathward: 0, 0.2, 10, 3         # chance%, restoredHealth, cooldownSeconds, maxActivations
+    regenerating: 0, 0.01, 20      # chance%, maxHealthRatioPerSecond, healthPerSecondCap (0 = unlimited)
+    reflection: 0.44, 0.1, 0.5         # chance%, actualMeleeDamageReflected, procChance
+    vortex: 0.44, 0.5                  # chance%, projectileIgnoreProc
+    adaptive: 0.44, 0.5                # chance%, rememberedTypeDamageReduction
+    unflinching: 0.44                    # chance%
+    chameleon: 0.44, 10                  # chance%, immunitySwitchSeconds
     # Affliction: Exposed to ToxicDeath
-    exposed: 0.125, 0.2, 0.5, 5          # chance%, damageTaken, proc, duration
-    weakened: 0.125, 0.2, 0.5, 5         # chance%, outgoingDamageReduction, proc, duration
-    withered: 0.125, 0.5, 0.5, 5         # chance%, healingReduction, proc, duration
-    crippling: 0.125, 0.5, 0.5, 0.5, 5  # chance%, moveReduction, jumpReduction, proc, duration
-    disruptive: 0.125, 0.5, 0.5, 0.5, 5  # chance%, staminaRegenReduction, eitrRegenReduction, proc, duration
-    adrenalineDrain: 0.125, 0.5, 0.5, 0.5, 5 # chance%, currentAdrenalineRemoved, adrenalineGainReduction, procChance, duration
-    corrosive: 0.125, 0.5, 0.5, 5          # chance%, durabilityLossBonus, procChance, duration
-    toxicDeath: 0.25, 0.3, 4, blob_aoe   # chance%, maxHealthDamage, radius, triggerEffect
+    exposed: 0.33, 0.2, 0.5, 5          # chance%, damageTaken, proc, duration
+    weakened: 0.33, 0.2, 0.5, 5         # chance%, outgoingDamageReduction, proc, duration
+    withered: 0.33, 0.5, 0.5, 5         # chance%, healingReduction, proc, duration
+    crippling: 0.33, 0.5, 0.5, 0.5, 5  # chance%, moveReduction, jumpReduction, proc, duration
+    disruptive: 0.33, 0.5, 0.5, 0.5, 5  # chance%, staminaRegenReduction, eitrRegenReduction, proc, duration
+    adrenalineDrain: 0.33, 0.5, 0.5, 0.5, 5 # chance%, currentAdrenalineRemoved, adrenalineGainReduction, procChance, duration
+    corrosive: 0.33, 0.5, 0.5, 5          # chance%, durabilityLossBonus, procChance, duration
+    toxicDeath: 0.33, 0.3, 4, blob_aoe   # chance%, maxHealthDamage, radius, triggerEffect
     # Special: Swift to Blamer
-    swift: 0.125, 0.4                  # chance%, movementSpeedBonus
-    attackSpeed: 0.125, 0.3            # chance%, attackSpeedBonus
-    vampiric: 0.125, 0.3               # chance%, actualDirectDamageHealing
-    reaping: 0.125, 0.05, 20, 0.1, 2, 0.01, 0.2, 0.05, 0.5 # chance%, heal/base, healMaxActivations, maxHealth/base, maxHealthCap, damagePerKill, damageCap, scalePerKill, scaleCap
-    blink: 0.125, 6, 16, fx_Adrenaline1  # chance%, cooldown, maxRange, startEffect
-    omen: 0.125, 0.5                  # chance%, forcedEnforcerChance
-    juggernaut: 0.125, 150, 5           # chance%, minimumPushForce, cooldownSeconds
-    blamer: 0.125, 0.5, 45, 0.75           # chance%, karmaPerSecond, maxKarmaGain (0 = unlimited), fleeHealthRatio
+    swift: 0.44, 0.4                  # chance%, movementSpeedBonus
+    attackSpeed: 0.44, 0.3            # chance%, attackSpeedBonus
+    vampiric: 0.44, 0.3               # chance%, actualDirectDamageHealing
+    reaping: 0.44, 0.05, 20, 0.1, 2, 0.01, 0.2, 0.05, 0.5 # chance%, heal/base, healMaxActivations, maxHealth/base, maxHealthCap, damagePerKill, damageCap, scalePerKill, scaleCap
+    blink: 0.44, 6, 16, fx_Adrenaline1  # chance%, cooldown, maxRange, startEffect
+    omen: 0, 0.5                  # chance%, forcedEnforcerChance
+    juggernaut: 0.44, 150, 5           # chance%, minimumPushForce, cooldownSeconds
+    blamer: 0, 0.5, 45, 0.75           # chance%, karmaPerSecond, maxKarmaGain (0 = unlimited), fleeHealthRatio
 
 Boss:                                  # Regular bosses only; Enforcers use non-boss rules.
   # level: [100]                       # Boss fallback: level 1; omit to allow the enabled built-in biome preset ([] is invalid).
   scalePerLevel: 0.1
-  damage: 1
+  damage: 1.5
   damagePerLevel: 0.1
   health: 8
   healthPerLevel: 0.5
   modifiers:                           # One per group; totals below 100 allow none, above 100 are weights.
     # Offense: Enraged to Undodgeable
-    enraged: 10, 0.15                 # chance%, outgoingDamageBonus
-    fire: 10, 0.2                     # chance%, addedFireDamage
-    frost: 10, 0.1                    # chance%, addedFrostDamage
-    lightning: 10, 0.1                # chance%, addedLightningDamage
-    spirit: 10, 0.05                  # chance%, addedSpiritDoT
-    armorPiercing: 10, 0.3            # chance%, ignoredPlayerArmor
-    staggering: 10, 0.6               # chance%, staggerBonus
-    undodgeable: 10, 0.25             # chance%, damageReduction
+    enraged: 3.12, 0.15                 # chance%, outgoingDamageBonus
+    fire: 3.12, 0.2                     # chance%, addedFireDamage
+    frost: 3.12, 0.1                    # chance%, addedFrostDamage
+    lightning: 3.12, 0.1                # chance%, addedLightningDamage
+    spirit: 3.12, 0.05                  # chance%, addedSpiritDoT
+    armorPiercing: 3.12, 0.3            # chance%, ignoredPlayerArmor
+    staggering: 3.12, 0.6               # chance%, staggerBonus
+    undodgeable: 3.12, 0.25             # chance%, damageReduction
     # Defense: Armored to Chameleon
-    armored: 10, 0.3                 # chance%, damageReduction
-    deathward: 10, 0.2, 10, 3         # chance%, restoredHealth, cooldownSeconds, maxActivations
-    regenerating: 10, 0.002, 20      # chance%, maxHealthRatioPerSecond, healthPerSecondCap (0 = unlimited)
-    reflection: 10, 0.1, 0.5         # chance%, actualMeleeDamageReflected, procChance
-    vortex: 10, 0.5                  # chance%, projectileIgnoreProc
-    adaptive: 10, 0.5                # chance%, rememberedTypeDamageReduction
-    unflinching: 10                    # chance%
-    chameleon: 10, 10                  # chance%, immunitySwitchSeconds
+    armored: 4.17, 0.3                 # chance%, damageReduction
+    deathward: 0, 0.2, 10, 3         # chance%, restoredHealth, cooldownSeconds, maxActivations
+    regenerating: 0, 0.002, 20      # chance%, maxHealthRatioPerSecond, healthPerSecondCap (0 = unlimited)
+    reflection: 4.17, 0.1, 0.5         # chance%, actualMeleeDamageReflected, procChance
+    vortex: 4.17, 0.5                  # chance%, projectileIgnoreProc
+    adaptive: 4.17, 0.5                # chance%, rememberedTypeDamageReduction
+    unflinching: 4.17                    # chance%
+    chameleon: 4.17, 10                  # chance%, immunitySwitchSeconds
     # Affliction: Exposed to ToxicDeath
-    exposed: 10, 0.2, 0.5, 5          # chance%, damageTaken, proc, duration
-    weakened: 10, 0.2, 0.5, 5         # chance%, outgoingDamageReduction, proc, duration
-    withered: 10, 0.5, 0.5, 5         # chance%, healingReduction, proc, duration
-    crippling: 10, 0.5, 0.5, 0.5, 5  # chance%, moveReduction, jumpReduction, proc, duration
-    disruptive: 10, 0.5, 0.5, 0.5, 5  # chance%, staminaRegenReduction, eitrRegenReduction, proc, duration
-    adrenalineDrain: 10, 0.5, 0.5, 0.5, 5 # chance%, currentAdrenalineRemoved, adrenalineGainReduction, procChance, duration
-    corrosive: 10, 0.5, 0.5, 5          # chance%, durabilityLossBonus, procChance, duration
-    toxicDeath: 10, 0.3, 4, blob_aoe   # chance%, maxHealthDamage, radius, triggerEffect
+    exposed: 3.12, 0.2, 0.5, 5          # chance%, damageTaken, proc, duration
+    weakened: 3.12, 0.2, 0.5, 5         # chance%, outgoingDamageReduction, proc, duration
+    withered: 3.12, 0.5, 0.5, 5         # chance%, healingReduction, proc, duration
+    crippling: 3.12, 0.5, 0.5, 0.5, 5  # chance%, moveReduction, jumpReduction, proc, duration
+    disruptive: 3.12, 0.5, 0.5, 0.5, 5  # chance%, staminaRegenReduction, eitrRegenReduction, proc, duration
+    adrenalineDrain: 3.12, 0.5, 0.5, 0.5, 5 # chance%, currentAdrenalineRemoved, adrenalineGainReduction, procChance, duration
+    corrosive: 3.12, 0.5, 0.5, 5          # chance%, durabilityLossBonus, procChance, duration
+    toxicDeath: 3.12, 0.3, 4, blob_aoe   # chance%, maxHealthDamage, radius, triggerEffect
     # Special: Swift to Blamer
-    swift: 10, 0.4                  # chance%, movementSpeedBonus
-    attackSpeed: 10, 0.3            # chance%, attackSpeedBonus
-    vampiric: 10, 0.3               # chance%, actualDirectDamageHealing
-    reaping: 10, 0.05, 20, 0.1, 2, 0.01, 0.2, 0.05, 0.5 # chance%, heal/base, healMaxActivations, maxHealth/base, maxHealthCap, damagePerKill, damageCap, scalePerKill, scaleCap
-    blink: 10, 6, 16, fx_Adrenaline1  # chance%, cooldown, maxRange, startEffect
-    omen: 10, 0.5                  # chance%, forcedEnforcerChance
-    juggernaut: 10, 150, 5           # chance%, minimumPushForce, cooldownSeconds
+    swift: 4.17, 0.4                  # chance%, movementSpeedBonus
+    attackSpeed: 4.17, 0.3            # chance%, attackSpeedBonus
+    vampiric: 4.17, 0.3               # chance%, actualDirectDamageHealing
+    reaping: 4.17, 0.05, 20, 0.1, 2, 0.01, 0.2, 0.05, 0.5 # chance%, heal/base, healMaxActivations, maxHealth/base, maxHealthCap, damagePerKill, damageCap, scalePerKill, scaleCap
+    blink: 4.17, 6, 16, fx_Adrenaline1  # chance%, cooldown, maxRange, startEffect
+    omen: 0, 0.5                  # chance%, forcedEnforcerChance
+    juggernaut: 4.17, 150, 5           # chance%, minimumPushForce, cooldownSeconds
     blamer: 0, 1, 60, 0.75           # chance%, karmaPerSecond, maxKarmaGain (0 = unlimited), fleeHealthRatio
 
 TentaRoot:

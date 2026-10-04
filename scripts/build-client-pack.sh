@@ -20,7 +20,7 @@
 #   plugins/         the adopted pin list, plus every package's assets and config seeds.
 #   config/          the package-supplied config seeds, and the client-relevant locked settings.
 #
-# It is NOT the server's dist/: two things differ, and both matter.
+# It is NOT the server's dist/: five things differ, and all of them matter.
 #
 #   MaxPlayerCount   server-only. Every surface it patches - the admission literal in
 #                    ZNet.RPC_PeerInfo, the Steam capacity prefix, the PlayFab lobby request - runs
@@ -30,6 +30,13 @@
 #                    the assertion below is what keeps that true if it ever moves.
 #   Lembitu.Harness  our test harness. Inert without -lembitu-harness, and it belongs to the
 #                    disposable test client, not to players.
+#   DiscordConnector the server's Discord webhook relay; there is no client half.
+#   Server_devcommands  the server half of the admin tools (2026-10-04). Admins install Infinity
+#                    Hammer and its companions on their own clients; players never need it.
+#   OdinEye          a server-only REST/WebSocket API (2026-10-04); a player gains nothing from it.
+#
+# The last three are adopted pins, so the stager stages them for the server like any other; this
+# builder takes them out of the player's tree, then asserts that all five are absent.
 #
 # Client-only mods were cut by the 2026-09-16 review, because a mod the server cannot enforce
 # behaves differently for every player: AdminQoL proved it and BoneMod fell to the same argument
@@ -56,9 +63,13 @@ VERSION=""
 PINS_ARGS=()
 LIST=0
 
-# Plugins that must NOT reach a player. Matched as path components anywhere in the staged tree, so a
-# rename of the containing directory does not quietly reintroduce one.
-EXCLUDED=(MaxPlayerCount Lembitu.Harness)
+# Plugins that must NOT reach a player, in two kinds. Matched as path components anywhere in the
+# staged tree, so a rename of the containing directory does not quietly reintroduce one.
+# Never staged: ours or a fork, not in the adopted table. Finding one means the build is wrong.
+NEVER_STAGED=(MaxPlayerCount Lembitu.Harness)
+# Adopted but server-only: staged for the server like every pin, so the builder withholds them.
+SERVER_ONLY=(DiscordConnector Server_devcommands OdinEye)
+EXCLUDED=("${NEVER_STAGED[@]}" "${SERVER_ONLY[@]}")
 # Adopted packages a client needs, each because its absence is a hard failure rather than a
 # feature nobody notices. Jotunn, because a client without it is refused at the handshake
 # outright. AzuCraftyBoxes, because from v8 the server runs it and it version-checks every peer,
@@ -109,10 +120,24 @@ done
 
 [[ -x "$STAGER" ]] || die "no stager at $STAGER"
 
+is_server_only() {  # is_server_only <mod>
+  local name
+  for name in "${SERVER_ONLY[@]}"; do [[ "$1" == "$name" ]] && return 0; done
+  return 1
+}
+
+# The client pin list: the stager's list without the server-only pins. Asking the stager is what
+# keeps the client list from drifting from the adopted table.
+client_pins() {
+  local team mod version
+  "$STAGER" --list "${PINS_ARGS[@]}" | while IFS=$'\t' read -r team mod version; do
+    is_server_only "$mod" || printf '%s\t%s\t%s\n' "$team" "$mod" "$version"
+  done
+}
+
 if [[ $LIST == 1 ]]; then
-  # The stager owns the pin list; asking it is what keeps the client list from drifting from the
-  # adopted table.
-  exec "$STAGER" --list "${PINS_ARGS[@]}"
+  client_pins
+  exit 0
 fi
 
 OUT_ABS="$OUT"
@@ -139,6 +164,13 @@ if ! "$STAGER" --dist "$stage" "${PINS_ARGS[@]}" > "$stage/stage.log" 2>&1; then
   die "staging failed (log kept at $OUT_ABS/stage-failed.log)"
 fi
 tail -3 "$stage/stage.log" >&2
+
+# Withhold the adopted server-only packages. The stager places a package under plugins/<Mod>/ and
+# patchers/<Mod>/ (scripts/stage-stack.sh, map_stage_path); a config seed it ships is inert without
+# its plugin and is left alone.
+for name in "${SERVER_ONLY[@]}"; do
+  rm -rf -- "${stage:?}/plugins/$name" "${stage:?}/patchers/$name"
+done
 
 # --- the loader, and the install shape ---------------------------------------------------------
 #
@@ -246,8 +278,8 @@ fi
 
 # --- assertions --------------------------------------------------------------------------------
 
-# Absence: our server-only plugin and our test harness must not be in a player's pack. The search
-# is by stem so both a directory and a bare DLL are caught.
+# Absence: no server-only plugin and not our test harness may be in a player's pack. The search is
+# by stem so both a directory and a bare DLL are caught.
 for name in "${EXCLUDED[@]}"; do
   found="$(find "$stage" \( -name "$name" -o -name "$name.dll" \) -print -quit)"
   [[ -z "$found" ]] || die "client pack contains '$name' ($found); it must not ship to players"
@@ -328,7 +360,7 @@ while IFS=$'\t' read -r team mod version; do
   [[ -n "$hash" ]] || die "no locked hash for $team/$mod@$version; the pack is not byte-verifiable"
   [[ -z "$pins_lines" ]] || pins_lines+=$'\n'
   pins_lines+="  \"$team/$mod@$version\": \"$hash\""
-done < <("$STAGER" --list "${PINS_ARGS[@]}")
+done < <(client_pins)
 
 {
   printf '{\n'

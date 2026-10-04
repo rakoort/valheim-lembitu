@@ -47,3 +47,15 @@ file must exist (ADR-0022, ADR-0023). Every check marked *plugin* depends on the
 | Crew sailing | Trip time on one route with one sailor and with a crew. | ADR-0024's crew bonus. |
 | Market round-trip | List, buy and withdraw one smith-made item and one EpicLoot item; relog; check durability, maker and enchantments survived. | ADR-0023; Northarun/Marketplace. |
 | Presence radius | At a boss kill, who got the key, the mastery credit and the party XP, with distances. Keys measure from the player controlling the boss, the other two from the boss. | ADR-0022; `config/enforced/MidnightsFX.ProgressivePowers.cfg`. |
+
+## Accepted as configured, watched in play
+
+CreatureManager and EpicLoot were reviewed against the 2026-10-04 decisions and kept as configured
+(owner, 2026-10-04). Four interactions are watched rather than changed:
+
+| Check | Do and record | Feeds |
+| --- | --- | --- |
+| EpicLoot profession effects | Which profession-touching magic effects players roll and wear: +Pickaxes, +Fishing, +Axes (which also counts for Wood Cutting), +Cooking and Crafting, more ore, bountiful harvest, harvest XP, sailing speed, carry weight, fishing luck (`EpicLoot.cs:30242-30268`). They raise the level the perks read, not the level the ladder reads. Record whether enchanted gear lets a non-specialist feel like a specialist. | ADR-0024's "no obvious best pick"; an EpicLoot effect patch if it does. |
+| `Combat hard` on top of CreatureManager | Whether creature damage feels doubled-up: the launch's world modifier stacks with CreatureManager's 1.2× and 1.5× damage. | ADR-0019's tuning targets; the launch modifier or `levels.yml`. |
+| Class XP pace from creature health | Oathbound pays XP by a creature's maximum health, so CreatureManager's health multipliers also set class-level pace. Read alongside "Class level pace" above. | ADR-0022's no-cap decision. |
+| Sieges and CreatureManager | Whether siege troops carry CreatureManager's health and modifiers, and whether defending a base raises Karma and Enforcers around it. | ADR-0020; `config/enforced/CreatureManager/karma.yml`. |

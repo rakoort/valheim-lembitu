@@ -9,7 +9,7 @@
 #
 # dist/ mirrors the BepInEx directory it deploys into: plugins/ holds our plugin DLLs and whole
 # staged mod trees (see scripts/stage-stack.sh), patchers/ holds BepInEx patcher DLLs, and config/
-# holds config files a package ships as seeds, such as Clan's emblems. Everything in those three
+# holds config files a package ships as seeds, such as CreatureManager's. Everything in those three
 # trees is deployed preserving relative paths, so a DLL at the top of dist/plugins/ lands in the
 # plugins root and a directory lands there as one self-contained tree. See docs/build.md.
 #
@@ -85,7 +85,7 @@ path_is_client_only() {  # path_is_client_only <dist-relative-path>
 
 # One line per staged tree, so a 230-file bundle tree is summarized instead of scrolled:
 #   installed plugins/MaxPlayerCount.dll
-#   removed stale plugins/ValheimRAFT/ (40 files)
+#   removed stale plugins/RetiredMod/ (40 files)
 # Groups are the first two path components - tree and package - because with dist/ mirroring
 # BepInEx/ the first component alone would collapse every package into "plugins/".
 report() {  # report <verb> <relative-path>...

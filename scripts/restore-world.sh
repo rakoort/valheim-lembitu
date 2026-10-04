@@ -19,8 +19,8 @@
 #   BepInEx config The enforced overlay is applied from the repository
 #                 (scripts/apply-enforced-config.sh), not carried in the archive.
 #
-# The world-permanent mods (Max Dungeon Rooms, ValheimRAFT) must be installed in the server before it
-# loads a restored world. A restore into a server missing them is not a valid recovery (ADR-0009).
+# Restore with the generation settings used by that world, including Expand_World_Size.
+# Removing world content is not a tested recovery path (ADR-0009, ADR-0018).
 
 set -euo pipefail
 

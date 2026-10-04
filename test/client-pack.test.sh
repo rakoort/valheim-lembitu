@@ -335,6 +335,56 @@ else
   report fail "refuses a pack containing a server-only plugin, and publishes no archive"
 fi
 
+# --- 4b. an adopted server-only pin is withheld, not refused ------------------------------------
+# DiscordConnector, Server_devcommands and OdinEye are adopted pins: the stager stages them for the
+# server like every other pin, so the builder must take them out of a player's pack itself. Before
+# 2026-10-04 it only asserted their absence, so a real build either died on that assertion or, for a
+# package missing from the list, shipped it. The pack must build, without the package, and neither
+# the manifest nor --list may claim it.
+
+cat > "$WORK/modstack-withheld.md" <<'MD'
+# The mod stack
+
+## Adopted upstream
+
+| Mod | Pin | Role | Enforced config |
+| --- | --- | --- | --- |
+| acme/Jotunn | 1.0.2 | Library | — |
+| acme/AzuCraftyBoxes | 1.8.19 | Container pulls | — |
+| acme/OdinEye | 1.2.37 | Server-only API | — |
+MD
+
+make_zip "$CACHE/acme-OdinEye-1.2.37.zip" \
+  'plugins/OdinEye.dll:OdinEye' \
+  'manifest.json:{"name":"OdinEye","version_number":"1.2.37","dependencies":[]}'
+{
+  printf '{\n'
+  printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
+  printf '  "acme/AzuCraftyBoxes@1.8.19": "%s",\n' "$(shasum -a 256 "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" | cut -d' ' -f1)"
+  printf '  "acme/OdinEye@1.2.37": "%s"\n' "$(shasum -a 256 "$CACHE/acme-OdinEye-1.2.37.zip" | cut -d' ' -f1)"
+  printf '}\n'
+} > "$WORK/lock-withheld.json"
+
+OUT4B="$WORK/out4b"
+if BEPINEX_PACK="$BEPINEX_PACK" "$BUILDER" --out "$OUT4B" --version t \
+     --pins "$WORK/modstack-withheld.md" --cache "$CACHE" --lock "$WORK/lock-withheld.json" \
+     > "$WORK/out" 2>&1; then
+  listing="$(unzip -Z1 "$OUT4B/lembitu-client-pack-t.zip")"
+  manifest4b="$OUT4B/lembitu-client-pack-t.manifest.json"
+  listed="$("$BUILDER" --list --pins "$WORK/modstack-withheld.md" 2>/dev/null)"
+  if ! grep -q 'OdinEye' <<<"$listing" \
+     && grep -qx 'BepInEx/plugins/Jotunn/Jotunn.dll' <<<"$listing" \
+     && [[ "$(json_value "$manifest4b" excluded_server_only)" == *OdinEye* ]] \
+     && [ "$(pin_count "$manifest4b")" -eq 2 ] \
+     && ! grep -q 'OdinEye' <<<"$listed" && grep -q 'Jotunn' <<<"$listed"; then
+    report ok "withholds an adopted server-only pin from the pack, its manifest and --list"
+  else
+    report fail "withholds an adopted server-only pin from the pack, its manifest and --list"
+  fi
+else
+  report fail "withholds an adopted server-only pin from the pack, its manifest and --list"
+fi
+
 # --- 5. a missing client-side package is refused, not silently dropped -----------------------
 # Once per name in REQUIRED, because the builder dies on the first one missing: a table that pins
 # the others still has to be refused for the one it dropped. Naming the package in the assertion is

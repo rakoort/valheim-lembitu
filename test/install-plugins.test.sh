@@ -434,8 +434,8 @@ rm -rf "$WORK/deep" "$WORK/outside.txt"
 rm -rf "$WORK/bepinex"
 mkdir -p "$WORK/dist/plugins" "$WORK/bepinex/plugins"
 write_file "$WORK/dist/plugins/Current.dll" c
-write_file "$WORK/bepinex/plugins/Old Mod.dll" o          # legal for the old script, not this one
-printf 'Old Mod.dll\n' > "$WORK/bepinex/plugins/.lembitu-installed"
+write_file "$WORK/bepinex/plugins/Old;Mod.dll" o          # legal for the old script, not this one
+printf 'Old;Mod.dll\n' > "$WORK/bepinex/plugins/.lembitu-installed"
 
 if ! run_install \
    && grep -q 'unsafe entry in .*plugins/\.lembitu-installed' "$WORK/out" \
