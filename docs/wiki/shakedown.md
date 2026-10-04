@@ -5,8 +5,9 @@ what the 2026-10-04 decisions could only estimate (ADR-0019 to ADR-0024). Each c
 to do, what to record, and the decision it feeds. Record results in this page, dated, with the pack
 version, and change the decision's ADR or overlay when a number moves.
 
-Before the Shakedown starts, `Lembitu.Oathbound`, `Lembitu.Callings` and the Item_Requirement rule
-file must exist (ADR-0022, ADR-0023). Every check marked *plugin* depends on them.
+`Lembitu.Oathbound`, `Lembitu.Callings` and the Item_Requirement rule file exist since 2026-10-04
+(ADR-0022, ADR-0023). Every check marked *plugin* depends on them; their startup lines
+(`<feature>: on`) belong in the record of the pack the Shakedown runs.
 
 ## Progression pace
 
@@ -34,8 +35,8 @@ file must exist (ADR-0022, ADR-0023). Every check marked *plugin* depends on the
 | Check | Do and record | Feeds |
 | --- | --- | --- |
 | Respec and switch | Respec and a class switch each land at level 1; switching back does not restore the old class; unlocked classes stay unlocked. | ADR-0022. |
-| Party XP | XP each member receives for one kill at party sizes 1, 2, 4 and 8, members in and out of 100 m; whether partying feels worth it. | ADR-0022's 100% to 150% curve. |
-| Gathering tools | A Rogue, Monk, Berserker, Highlander and Breaker can fish; a Monk's bare-handed mining and chopping raise Mining and Wood Cutting. | ADR-0022. |
+| Party XP | XP each member receives for one kill at party sizes 1, 2, 4 and 8, members in and out of 100 m, and a killer standing beyond 100 m (who still earns their share); the server logs every split as `Party kill XP:`. Whether partying feels worth it. | ADR-0022's 100% to 150% curve. |
+| Gathering tools | A Rogue, Monk, Berserker, Highlander and Breaker can fish; a Monk's bare-handed mining and chopping raise Mining and Wood Cutting. Time a Monk's Mining and Wood Cutting against a pickaxe or axe user: the fist raises by Oathbound's 0.25 per gathering hit. | ADR-0022; the Monk's gather pace. |
 | Oathbound at join | A client without Oathbound tries to join; record whether it is refused. | `docs/modstack.md`, "Where each mod runs". |
 
 ## Difficulty and world

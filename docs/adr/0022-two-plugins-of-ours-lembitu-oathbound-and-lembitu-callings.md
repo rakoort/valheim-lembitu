@@ -1,7 +1,7 @@
 # ADR-0022: Two plugins of ours — Lembitu.Oathbound and Lembitu.Callings
 
 Date: 2026-10-04
-Status: Accepted; the specification below grows as the 2026-10-04 grilling settles it
+Status: Accepted; implemented 2026-10-04 in `src/plugins/Lembitu.Oathbound` and `src/plugins/Lembitu.Callings`
 Amends: ADR-0020 (scope of `Lembitu.Oathbound`), ADR-0021 (owner of the Callings code)
 
 ## Context
@@ -55,7 +55,9 @@ reported position, among connected members. It is the same radius World Advancem
 for a boss key and ProgressivePowers for mastery credit (pinned to 100 m the same day), so "present
 for the fight" means one distance across the server. The centres differ slightly: a boss key is
 measured from the player whose game controls the boss. A member SocialSystem holds in the party while
-disconnected is never in range.
+disconnected is never in range, and neither is a dead member. The killer always counts, wherever
+they stand: an unpartied killer earns a long-range kill in full, so joining a party never costs the
+killer a kill (decided from the code, 2026-10-04).
 
 **Every class may gather with every profession.** Oathbound's equipment rules (`Equipment.Allows`)
 treat the fishing rod as a two-handed weapon, so Rogue, Monk, Berserker, Highlander and Breaker could
@@ -68,16 +70,28 @@ bow restrictions stay as Oathbound ships them. A class therefore never narrows a
 How it is built, decided from the code rather than asked:
 
 - **Respec.** After `Warrior.Core.Progression.Respec` clears the active class's talents, its XP is
-  set to zero, so the class is at level 1. The tree's "Reset for free" button says what it now costs.
+  set to zero, so the class is at level 1. The tree's "Reset for free" button reads "Reset to level
+  1".
 - **Class switch.** After a successful `Progression.SwitchClass`, both the class left and the class
   taken have their XP and talents cleared. Their records are kept, because Oathbound keys the unlock
-  of Berserker, Highlander, Breaker and Dragonsworn on the record existing.
+  of Berserker, Highlander, Breaker and Dragonsworn on the record existing. Oathbound switches at
+  the first click on "Take this oath", so when either class has progress the button now asks once
+  more and names both classes; the picker's and the notice's "each class keeps its own progress"
+  say the opposite now.
 - **Kill XP.** Oathbound's server-side `RouteDeath` keeps its validation and its per-creature XP
-  (`KillRewards.Experience`); only the recipient list and amounts change. Party membership comes
-  from SocialSystem's server-side party service by player ID, not from the party ID clients publish
-  on their character, which a client writes and the server cannot vouch for.
-- **Gathering tools.** A postfix on `Equipment.Allows` admits the fishing rod for every class; the
-  Monk's bare-handed hits on rocks and trees raise Mining or Wood Cutting.
+  (`KillRewards.Experience`); only the send of the killer's reward is replaced, by a transpiler on its
+  one `ZRpc.Invoke` and its listen-host `ReceiveReward` call. Party membership comes from
+  SocialSystem's server-side party service by player ID, not from the party ID clients publish on
+  their character, which a client writes and the server cannot vouch for. Shares are rounded at
+  random so each averages exactly, and the server logs each split.
+- **Gathering tools.** Every class check describes the item through Oathbound's `Plugin.Describe`
+  and asks `Equipment.Allows` about that `EquipmentItem`, which records the rod as a two-handed
+  weapon and nothing more. A postfix on `Describe` describes a fishing rod as no weapon at all, which
+  every class may hold. The vanilla rod has no skill (`None`) and the float is carried by the bait it
+  fires, so the rod is recognised by its name (`$item_fishingrod`) or, for a modded rod, by firing
+  bait (measured 2026-10-04). A Monk's
+  bare-handed hit on a rock or tree (`Plugin.MonkGather`) raises Mining or Wood Cutting instead of
+  Unarmed, by the same amount Oathbound gave Unarmed.
 - **Enforced Oathbound config.** `SharedExperience = false` and `ExperienceMultiplier = 1` are pinned,
   because the design above depends on them.
 
@@ -108,9 +122,14 @@ no extra skill XP.
 **Every profession skill drains by one rule.** BlacksmithingExpanded and Herbalist bring bundled
 skill managers that take their skill out of the list during death, apply their own loss and put it
 back, so World Advancement Progression's drain and floor never see it (Blacksmithing lost 5% even
-below the floor; Herbalist lost nothing). Both mods' own loss is set to 0, and `Lembitu.Callings`
-drains a non-focus Blacksmithing or Herbalist by World Advancement Progression's settings and
-boss-key floor in the same death step where it protects focuses and drains shadows.
+below the floor; Herbalist lost nothing). `Lembitu.Callings` records both skills before the death,
+puts them back after the managers' own handling, and drains a non-focus Blacksmithing or Herbalist
+once by World Advancement Progression's settings and boss-key floor, in the same death step where
+it protects focuses and drains shadows. The managers' own loss setting therefore never counts. It
+could not be pinned anyway: BlacksmithingExpanded files it under a section named after an unresolved
+localization key (`[skill_1208107160]`), so the first overlay aimed at `[Blacksmithing]` did nothing,
+and a native death on 2026-10-04 drained Blacksmithing twice (20 → 19 → 18.05) before this was
+changed.
 
 How it is built, decided from the code rather than asked:
 
@@ -121,18 +140,35 @@ How it is built, decided from the code rather than asked:
   per-skill rates and any learning bonus are already in `factor`. World Advancement Progression's
   `Skill.Raise` replacement then applies its ceiling as before.
 - **Shadow levels.** Only a focus skill stores one; a non-focus skill's shadow always equals its real
-  level. When a skill becomes a focus its shadow starts at its current level, and every later gain
-  also advances the shadow at the steep-curve rate against vanilla's level requirement. Dropping
-  the focus sets the real level to the shadow and clears its accumulator.
+  level. When a skill becomes a focus its shadow starts at its current level and progress, and every
+  later gain also advances the shadow at the steep-curve rate against vanilla's level requirement,
+  through World Advancement Progression's own gain rule (`SkillsManager.GetSkillAccumulationGain`).
+  Dropping the focus sets the real level to the shadow and clears its accumulator.
 - **Death.** A focus skill's level and accumulator are saved before `Skills.OnDeath` and restored
   after every other patch on it has run, the two bundled skill managers' own drain included; their
   drain therefore never reaches a focused Blacksmithing or Herbalist. ImpactfulSkills restores its
-  hidden skills the same way (`ImpactfulSkills.cs:4710-4737`). The shadow is drained with World
-  Advancement Progression's settings at the same moment.
-- **Storage.** A versioned record in `Player.m_customData`, beside Oathbound's own, holding the four
-  focuses and their shadows.
-- **Settings.** The curve bands and rates are server-locked through Jotunn, which the Pack already
-  requires.
+  hidden skills the same way (`ImpactfulSkills.cs:4710-4737`). The shadow, and a non-focus
+  Blacksmithing or Herbalist, are drained at the same moment by World Advancement Progression's own
+  `GetSkillDrain`, floor and normalisation, with vanilla's factor (`m_DeathLowerFactor` ×
+  `Game.m_skillReductionRate`). That step runs whenever `Skills.OnDeath` runs; a mod that blocks
+  `LowerAllSkills` (Venture Multiplayer Tweaks' `SkillLossOnAnyDeath = false`) would stop the other
+  skills draining but not these, so that setting stays at its default.
+- **The star.** A badge on each profession row's icon with its own button and tooltip, added after
+  DetailedLevels' own Setup postfixes. The rows follow `GetSkillList` inside `SkillsDialog.Setup`,
+  where ImpactfulSkills' hidden-skill filter and DetailedLevels' sort are both in force. The Oathstone
+  is found as a loaded `WarriorOathstone` network object within 10 m, without linking Oathbound.
+  Dropping a focus confirms in the game's own yes/no popup.
+- **Bonus output.** Herbalist's 17 products and every vanilla mead base (`MeadBase*` and
+  `BarleyWineBase`) count as Herbalist crafts. The bonus is granted only when `InventoryGui.DoCrafting`
+  actually added the product, with the same quality, variant and crafter, and never for upgrades. A
+  catch is `FishingFloat.Catch` on the fisher's own client; the extra fish are copies of the landed
+  one and drop at the fisher's feet when the inventory is full. Both read the producer's skill as the
+  perks do, status effects included.
+- **Storage.** A versioned record in `Player.m_customData` (`lembitu.callings`), beside Oathbound's
+  own, holding the four focuses and their shadows. A record that cannot be read is never
+  overwritten; the character plays with no Calling and its stars say to ask an admin.
+- **Settings.** The curve bands and rates, the Oathstone range and both bonus rates are server-locked
+  through Jotunn, which the Pack already requires (`config/enforced/lembitu.callings.cfg`).
 
 ## Consequences
 

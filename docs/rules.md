@@ -62,12 +62,13 @@ things: map positions, and kill XP. It never answers "who owns this".
 - The kill is credited to whoever landed the killing blow. Companions and burning count for their
   owner. Others who hit the creature but are not in the killer's party earn nothing.
 - Party members within **100 m** of the creature when it dies split its XP equally. That is the same
-  distance that earns a boss key. A member further away, or disconnected, earns nothing and does not
-  count. Being in a party never waives proximity.
+  distance that earns a boss key. A member further away, disconnected or dead earns nothing and does
+  not count. Being in a party never waives proximity. The killer always counts, wherever they stand,
+  so partying never costs the killer a kill.
 - The party's total rises with the members in range: 100% of the kill for one, about 107% for two,
   about 121% for four, **150% for eight**, which is 18.75% of the kill each.
 
-- Register: *Planned*. Parties are *Intended*; the XP split is `Lembitu.Oathbound` code.
+- Register: *Intended* (`Lembitu.Oathbound`, `config/enforced/lembitu.oathbound.cfg`).
 
 ## Classes, levels and talents
 
@@ -91,15 +92,17 @@ Oathbound's XP pace, so a level-80 character owns all 79 nodes; level 80 needs a
 kills (ADR-0022).
 
 **Respec and class switch cost the class level.** Resetting your talents puts the class back to
-level 1, and so does switching to another class. You level one class at a time. This is cheap
-early and expensive late (ADR-0020, ADR-0022).
+level 1, and so does switching to another class: both the class you leave and the class you take
+start over. You level one class at a time. This is cheap early and expensive late (ADR-0020,
+ADR-0022). The tree says so: its reset button reads "Reset to level 1", and taking an oath while
+either class has progress asks once more.
 
 **Class equipment rules stay, except for tools.** Classes keep Oathbound's armour, weapon, shield
 and bow rules: Mages, Warlocks, Rangers, Monks and Rogues wear no metal armour, Shieldbearers and
 Valkyries carry no bow, and so on. Every class may use the fishing rod, and a Monk's bare-handed blows
 on rocks and trees train Mining and Wood Cutting, so no class is shut out of a profession (ADR-0022).
 
-- Register: classes and levels *Intended*; respec, switch and tools *Planned* (`Lembitu.Oathbound`).
+- Register: *Intended* (`Lembitu.Oathbound`).
 
 ## Professions and Callings
 
@@ -131,7 +134,7 @@ focus: what it would be without the focus, earning at the slow rate and draining
 non-focus skill. Dropping the focus sets the skill to that level. Early on the two hardly differ;
 a master who switches gives up the faster gain and the death protection together.
 
-- Register: *Planned* (`Lembitu.Callings`, ADR-0022).
+- Register: *Intended* (`Lembitu.Callings`, `config/enforced/lembitu.callings.cfg`, ADR-0022).
 
 ## What professions make: the biome ladder
 
@@ -179,7 +182,8 @@ Berserker ×1.25 damage, Swift ×1.2 speed, Jump ×1.5, Fast Learner ×1.5 skill
 Defender as shipped (very resistant, but you deal a fifth of your damage), Invisibility 60 s,
 Heavy Lifter 60 s, Slow Fall as shipped. Durations grow with the drinker's own Herbalist skill.
 
-- Register: the ladder *Planned* (Item_Requirement's rule file is still to be generated); elixir and
+- Register: the ladder *Intended* (364 rules in `config/enforced/ItemRequirement/`, generated from the
+  game's item database; a rung follows an item's materials, not its name, ADR-0023); elixir and
   smith numbers *Intended*.
 
 ## Perks
@@ -203,8 +207,8 @@ up to 2.5 times the sail force and rows faster.
 | 70 | Whole-vein mining, an extra star on tamed animals, no ram damage to your ship |
 
 - Register: rungs and magnitudes *Intended* (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`,
-  `config/enforced/com.milkwyzard.ExpertExplorer.cfg`); the Herbalist and Fishing bonus *Planned*.
-  The Shakedown judges the balance by playing each focus.
+  `config/enforced/com.milkwyzard.ExpertExplorer.cfg`); the Herbalist and Fishing bonus *Intended*
+  (`Lembitu.Callings`). The Shakedown judges the balance by playing each focus.
 
 ## Personal keys, and what earns one
 
@@ -246,8 +250,8 @@ Deaths are meant to cost something (ADR-0019):
 - **The corpse run:** your tombstone holds what vanilla death rules take, and you go back for it.
   Carried items and durability are otherwise untouched.
 
-- Register: class and floor *Intended*; focus protection and the Blacksmithing and Herbalist drain
-  *Planned* (`Lembitu.Callings`).
+- Register: class, floor, focus protection and the Blacksmithing and Herbalist drain *Intended*
+  (`Lembitu.Callings`).
 
 ## The world
 

@@ -1,7 +1,7 @@
 # ADR-0023: What professions make climbs a biome ladder
 
 Date: 2026-10-04
-Status: Accepted; open edges are settled as the 2026-10-04 grilling reaches them
+Status: Accepted; the rule file is generated (2026-10-04, `scripts/generate-ladder.py`)
 Amends: ADR-0021 (what makes the top of a skill worth having)
 
 ## Context
@@ -97,5 +97,18 @@ of the way to 100.
   the consumer's skill; the ladder makes the specialist the only source of late tonics and dishes,
   not the source of stronger ones.
 - No item exists that the Run cannot keep, so no Marketplace listing can point at a missing prefab.
-- The rule file holds one entry per gated item, roughly two hundred, generated from the game's item
-  database and World Advancement Progression's biome mapping rather than written by hand.
+- The rule file holds one entry per gated item: 364 at the 2026-10-04 generation, from a native
+  1.0.16 ObjectDB dump of the Pack (`config/enforced/ItemRequirement/`). The generator reads World
+  Advancement Progression's own material maps from the running game. Version 1.0.0 knows no bait
+  trophy, no Herbalist herb and no Deep North material, so where it knows none of an item's
+  materials the generator fills in the material's real biome from game data (creature spawns and
+  drops, vegetation, Deep North locations) in a cited override table that can only raise a rung.
+  121 rules rest on such an override; there the ladder gates an item World Advancement Progression's
+  own lock does not.
+- A rung follows the materials, not the name. The Deep North bait uses a Mountains trophy and sits on
+  rung 30; the Plains feast uses a spice World Advancement Progression places after the Plains boss,
+  so it sits on rung 50. Items whose materials are all Meadows stay open: SeaAnimals' saddle, the
+  Meadows backpack, the Runner elixir, and the strength and swimmer mead bases.
+- An item and its upgrades share one rule, so the rule takes the highest rung any quality needs. The
+  1.0.16 Deep North gear is made from `*Uncooked` intermediates converted at the Frost Foundry; those
+  intermediates carry the Blacksmithing rule, so the foundry is no way around the smith.

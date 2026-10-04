@@ -20,13 +20,16 @@ The current buildable projects under `src/` are:
 | Project | Purpose and source |
 | --- | --- |
 | `src/plugins/Lembitu.Harness/` | Real-client test harness, inert without `-lembitu-harness` (`src/plugins/Lembitu.Harness/Lembitu.Harness.csproj:3-7`). |
+| `src/plugins/Lembitu.Oathbound/` | Adapts Oathbound: respec and class switch reset to level 1, party kill XP, gathering tools for every class (ADR-0022). Compiles against the staged Oathbound, SocialSystem and Jotunn. |
+| `src/plugins/Lembitu.Callings/` | Professions and the Calling: steep curve, shadow levels, focus protection on death, the skills-window star, Herbalist and Fishing bonus output (ADR-0021, ADR-0022). Compiles against the staged World Advancement Progression and Jotunn. |
+| `src/plugins/Shared/` | Source linked into both plugins: hook verification and all-or-nothing patching per feature (`src/plugins/Shared/Hooks.cs`). Not a project. |
 | `src/forks/MaxPlayerCount/` | Configurable admission limit and advertised Steam/PlayFab capacities (`src/forks/MaxPlayerCount/MaxPlayerCount.csproj:3-14`). |
 
 ## Exclusions
 
 - **No checked-in extracted binaries or build products.** Game and BepInEx assemblies are local inputs reproduced by extraction, not repository contents. The ignore rules cover `lib/valheim/`, `lib/bepinex/`, `lib/.cache/`, `bin/`, `obj/` and `dist/`; the generated reference lock therefore lives with ignored local inputs, not as a committed dependency lock (`docs/build.md:20-27`; `.gitignore:1-10`; `scripts/extract-refs.sh:20-24`).
 - **No framework DLLs copied from Unity.** Extraction deliberately excludes `mscorlib`, `netstandard` and `System.*`: NuGet supplies the net472 framework references, and combining both sets produces duplicate-type errors. Game and loader references use `Private="false"`, keeping those assemblies out of plugin output because the server already supplies them (`scripts/extract-refs.sh:26-39`; `Directory.Build.props:27-56`).
-- **No vendored ServerSync.** The shared-source library fork existed for the EpicMMOSystem fork and `Lembitu.Hello`; both are retired, and nothing we still build synchronises config from the server (ADR-0002, ADR-0010).
+- **No vendored ServerSync.** The shared-source library fork existed for the EpicMMOSystem fork and `Lembitu.Hello`; both are retired (ADR-0002, ADR-0010). Our two plugins lock their settings through Jotunn's `SynchronizationManager` instead (`docs/build.md`, "Server-synced config").
 - **No automatic build of adopted mods.** Root compilation discovers source projects; adopted packages are staged separately. Own plugins and forks remain separate so source ownership and licensing stay visible (`Valheim.Lembitu.proj:9-18`; `docs/build.md:54-55`; `src/forks/README.md:3-5`).
 
 ## Lessons

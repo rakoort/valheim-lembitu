@@ -75,4 +75,4 @@ so the boss-key skill floor and the professions keep working.
   warband from the world's boss keys, which World Advancement Progression blocks, so it would have
   stayed at its weakest tier all Run; and their sense and star multipliers are each player's local,
   unsynced setting, applied on the player's own machine, which the Pack rule forbids.
-- `Lembitu.Oathbound` is decided but not yet written.
+- `Lembitu.Oathbound` is written (`src/plugins/Lembitu.Oathbound`, 2026-10-04; ADR-0022).

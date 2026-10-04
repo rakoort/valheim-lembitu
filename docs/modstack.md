@@ -71,17 +71,17 @@ belongs in server-locked config rather than a player's file.
 | OdinPlus/OdinCampsite | 1.6.5 | Camping-style building pieces | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
 | blacks7ar/SeedBed | 1.2.9 | Plant seeds in a bed instead of cultivated ground | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
 | Marlthon/SeaAnimals | 0.3.9 | Dangerous and rideable ocean creatures | — Added 2026-10-04 (owner's instruction) |
-| blacks7ar/Herbalist | 1.5.0 | Herbalism skill, a crafting station, tonics and recovery items | Its own tonic tiers set to 1 so Item_Requirement's biome ladder is the one gate; all eight elixirs kept and retuned to boss-fight strength (Berserker ×1.25, Swift ×1.2, Jump ×1.5, Fast Learner ×1.5, Invisibility and Heavy Lifter 60 s); its own death loss pinned at 0, because `Lembitu.Callings` drains it by World Advancement Progression's floor; config locked (2026-10-04, ADR-0022, ADR-0024). One-way: its station lives in the world save |
+| blacks7ar/Herbalist | 1.5.0 | Herbalism skill, a crafting station, tonics and recovery items | Its own tonic tiers set to 1 so Item_Requirement's biome ladder is the one gate; all eight elixirs kept and retuned to boss-fight strength (Berserker ×1.25, Swift ×1.2, Jump ×1.5, Fast Learner ×1.5, Invisibility and Heavy Lifter 60 s); config locked (2026-10-04, ADR-0024). Its bundled skill manager's own death handling never counts: `Lembitu.Callings` puts the skill back and drains it by World Advancement Progression's floor (ADR-0022). One-way: its station lives in the world save |
 | MSchmoecker/DynamicStoragePiles | 0.8.1 | Stack and pile containers that show their fill level | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
 | Searica/DodgeShortcut | 1.4.0 | A single dodge key | — Added 2026-10-04 (owner's instruction) |
-| OdinPlus/BlacksmithingExpanded | 1.2.4 | Blacksmithing skill that improves crafting, smelting and kiln output | The smithing profession; ImpactfulSkills' Forging and Crafting are off so the two never stack. Gear bonuses follow the smith's level only: +1% damage, +0.5 armour and +1 block per 10 levels, no per-upgrade extra, no elemental rider; its own death loss 0, because `Lembitu.Callings` drains it by World Advancement Progression's floor (2026-10-04, ADR-0022, ADR-0024). Its main settings carry no lock entry, a Shakedown check |
+| OdinPlus/BlacksmithingExpanded | 1.2.4 | Blacksmithing skill that improves crafting, smelting and kiln output | The smithing profession; ImpactfulSkills' Forging and Crafting are off so the two never stack. Gear bonuses follow the smith's level only: +1% damage, +0.5 armour and +1 block per 10 levels, no per-upgrade extra, no elemental rider (2026-10-04, ADR-0024). Its own 5% death loss cannot be pinned, because it lives under a section named after an unresolved localization key (`[skill_1208107160]`); `Lembitu.Callings` puts the skill back after it and drains a non-focus Blacksmithing once, by World Advancement Progression's floor (ADR-0022). Its main settings carry no lock entry, a Shakedown check |
 | xtavim/BetterMap | 1.1.0 | Boats, carts and resources on the map; automatic pins for what a player walks past | Creature radar and trader reveal off, automatic pins within 15 m only, exploration radius at the vanilla 100 m, config locked (2026-10-04, ADR-0019: readouts but no radar) |
 | MilkMediaProductions/ExpertExplorer | 1.7.0 | Exploration skill that grows as points of interest are found | On-foot reveal radius 250 m at skill 100, from BetterMap's 100 m (2026-10-04, ADR-0024). It overwrites ImpactfulSkills' larger reveal while sailing, an open interaction |
 | Northarun/Guilds | 1.2.2 | Guilds: ranks, guild chat, shared vault, guild-bound wards, a banner territory, guild levels, upgrades and achievements | Five members at most and the Members upgrade neutralised; boss keys never shared with absent members; Comfort upgrade at guild level 12 and 20, monster ward at level 10; coin donations buy guild XP at 50 coins per point, so trade feeds the guild (2026-10-04, ADR-0019). The membership and ward authority since Clan left |
 | Northarun/Marketplace | 1.4.0 | Server-wide marketplace and order board: coin sales, buy orders, bounties, a bank | The one remote trade system; a 5% fee on every payout keeps coins scarce (2026-10-04, ADR-0019) |
 | M2Valheim/SocialSystem | 1.0.4 | Invite-only parties of up to eight across guilds, party positions on the map, friends and party chat | Defaults pinned: parties of eight at most, positions shared within the party. Party kill-XP sharing is `Lembitu.Oathbound`'s, which reads party membership from SocialSystem's server-side party service rather than the party ID clients publish (2026-10-04, ADR-0020, ADR-0022) |
 | MidnightMods/ImpactfulSkills | 0.21.0 | Land and Road professions and Cooking: yield, area work, growth timers, taming, sailing and hauling perks | Forging and Crafting off, `ScaleCraftedEquipmentQuality` included (BlacksmithingExpanded owns smithing); every Combat and Body perk off, the weapon equip-speed factor included; Knowledge Sharing off (ADR-0021). Switch-on perks on rungs 40-70, outliers brought to the middle: chop and dig ×1.5, wood and ore ×1.67, taming, slaughter and honey ×2.5, carry +100 (2026-10-04, ADR-0024). Sailing perks as shipped; they own ship speed since Njord left |
-| Radamanto/Item_Requirement | 1.1.3 | The profession ladder: crafting gated by earned profession level, modded skills included | Adopted 2026-10-04 (ADR-0021). It blocks the craft itself, not just the button, and reads raw skill level. What each profession makes climbs ten levels per biome, Blacksmithing's weapons and armour included, crafting blocked and use never blocked (ADR-0023). The rule file is still to be generated from the game's item database |
+| Radamanto/Item_Requirement | 1.1.3 | The profession ladder: crafting gated by earned profession level, modded skills included | Adopted 2026-10-04 (ADR-0021). It blocks the craft itself, not just the button, and reads raw skill level. What each profession makes climbs ten levels per biome, Blacksmithing's weapons and armour included, crafting blocked and use never blocked (ADR-0023). `config/enforced/ItemRequirement/radamanto.ItemRequirement.professions.yml` holds 364 rules (Blacksmithing 254, Cooking 59, Herbalist 34, Fishing 8, Hauling 5, Animal Handling 3, Farming 1), generated by `scripts/generate-ladder.py` from a native 1.0.16 ObjectDB dump of this pack and loaded in full on a test boot (2026-10-04). Its `main.yml` is committed as `[]`, because the package writes example equip gates when no rule file exists. Upgrades share an item's rule, so a rule takes the highest rung across qualities |
 | sighsorry/AdditiveDamageModifier | 1.2.4 | Resistances and weaknesses stack additively | Players always take at least 25% of each floored damage type (package: 10%), so stacked resistances never reach immunity; config locked (2026-10-04) |
 | VentureValheim/Venture_Multiplayer_Tweaks | 1.0.0 | Server tweaks: PvP, map positions, trader pins, death behaviour | PvP held off for everyone; public map positions off (guild and party positions come from Guilds and SocialSystem); trader map pins off, temple pin on; vanilla respawn and skill loss on death (2026-10-04, ADR-0019) |
 | VentureValheim/Venture_Logout_Tweaks | 1.0.0 | Restores status effects such as Rested from the last logout | — Added 2026-10-04 (owner's instruction) |
@@ -136,6 +136,7 @@ cancelling connection`.
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
 | turbero/DetailedLevels | `Detailed Levels` |
 | LionAndOtter/Oathbound | Not yet read from a join. Jotunn-registered; whether it refuses a client without it is unverified |
+| Lembitu.Oathbound, Lembitu.Callings | Jotunn's module check: both declare `NetworkCompatibility(EveryoneMustHaveMod, Minor)` (`src/plugins/*/…Plugin.cs`). Loaded on both sides and joined together on 2026-10-04; Jotunn logs nothing for a matching set, and the refusal of a client without them is not yet read from a join |
 | Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, and loaded on the live server 2026-09-16** (`Loading [AzuCraftyBoxes 1.8.19]`, then `Registered 'Azumatt.AzuCraftyBoxes ConfigSync' RPC`), but not yet read from a join: ServerSync announces the version whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. The refusal itself is what the group's first v8 session confirms (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
 
@@ -212,10 +213,20 @@ host, and a client is told the server's capacity by the server. Its config defau
 
 | Plugin | What it owns | Ticket |
 | --- | --- | --- |
+| Lembitu.Oathbound | Adapts Oathbound 0.21.14 where it has no setting (ADR-0022): respec and class switch reset to level 1, with a confirmation before a switch and the tree's labels saying so; kill XP split within the killer's SocialSystem party near the kill; the fishing rod for every class and Mining and Wood Cutting from a Monk's bare hands. Patches Oathbound at runtime; each feature verifies its own hooks at startup and switches off alone on a mismatch. Settings in `config/enforced/lembitu.oathbound.cfg` | ADR-0022 |
+| Lembitu.Callings | Professions and the Calling (ADR-0021, ADR-0022): the skills-window star changed at the Oathstone, the steep curve, shadow levels, focus protection and one death drain for every profession skill, and the Herbalist and Fishing bonus output. Hooks vanilla, World Advancement Progression and the bundled skill managers, never Oathbound. Settings in `config/enforced/lembitu.callings.cfg` | ADR-0022 |
 | Lembitu.Harness | Client-side test harness: joins the test server from a real client and drives a character through code | #10 |
 
+Both gameplay plugins run on the server and every client: they declare Jotunn's
+`EveryoneMustHaveMod`, so the server refuses a client without them, and their settings are locked
+from the server through Jotunn. `scripts/build-client-pack.sh` takes them from the build output, not
+the pin table. Each is pinned to the packages it was read from: an Oathbound bump re-checks
+`Lembitu.Oathbound`, a World Advancement Progression, BlacksmithingExpanded or Herbalist bump re-checks
+`Lembitu.Callings`, and both log `<feature>: on` or the reason a feature switched off.
+
 The harness is test infrastructure, not pack content. It is inert unless the client is launched with
-`-lembitu-harness`, and it ships to the disposable test client only.
+`-lembitu-harness`, and it ships to the disposable test client only. Its fixture actions (set a
+skill, give an item, teleport, land a fish, die) arrange a scene and are never gameplay proof.
 
 ## Deferred capability
 
@@ -331,6 +342,23 @@ Read off the generated files in that boot, so the enforced overlays name real ke
 
 Recorded so they are not rediscovered:
 
+- **ExpertExplorer 1.7.0 stops every new character from being created — open, owner's call.** Its
+  `Player.Save` prefix loads exploration data the first time it meets a character, and
+  `PlayerExplorationData.IsLegacySave` passes the missing `PlayerExplorationData` entry straight to
+  `Regex.IsMatch`, which throws `ArgumentNullException` (`PlayerExplorationData.cs:136-184`).
+  `FejdStartup.OnNewCharacterDone` saves the fresh preview character that `OnCharacterNew` builds,
+  so the exception escapes and nothing is written. Confirmed 2026-10-04 through the real menu on
+  astral-tricep (client build 25527674, the full pack): pointer clicks on Start, New and Done left
+  the new-character panel open, saved no character and logged the throw. The same clicks without
+  ExpertExplorer saved the character. A player sees a Done button that does nothing. Evidence,
+  with screenshots, is under `~/lembitu-menu-evidence/` on astral-tricep. The plugin sessions ran
+  with a test-client-only shim that seeds the entry.
+- **Guilds clamps `[5 - Territory] MembersPerUpgrade` to 1..100 on boot, and the cap holds anyway.**
+  Observed 2026-10-04: an enforced 0 came back as 1 on every boot. Established from `Guilds.dll`
+  1.2.2, sha256 `c9303d4f…89ef40`, decompiled with ilspycmd 11: the member cap is
+  `MaxMembers + tier("members") × MembersPerUpgrade`, and the server refuses an upgrade whose `L`
+  token exceeds the guild's level, which never passes MaxLevel (30). With `members = P1,L99` no
+  guild reaches tier 1, so the cap stays five. The overlay pins 1, the lowest value the file keeps.
 - **AzuEPI's vanity system has no off switch, and hiding its button is enough.** Established from
   `AzuExtendedPlayerInventory.dll` 2.4.14, sha256 `852dcde0…6840b6`, decompiled with ilspycmd 11,
   because the readme only claims the `Minimal` preset "turns off the vanity button". One key

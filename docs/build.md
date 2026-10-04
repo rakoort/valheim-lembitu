@@ -54,15 +54,17 @@ git clone https://github.com/rakoort/valheim-lembitu.git
 cd valheim-lembitu
 nix develop                      # dotnet SDK 8, curl, unzip, zip
 scripts/test-server.sh install   # latest public server, fresh references, BepInEx (also updates)
-dotnet build                     # every plugin -> dist/plugins/
 scripts/stage-stack.sh           # every adopted mod at its pin -> dist/{plugins,patchers,config}/
+dotnet build                     # every plugin -> dist/plugins/
 scripts/install-plugins.sh ~/.cache/valheim-lembitu/server/BepInEx
 scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
 
 `scripts/test-server.sh install` runs `scripts/extract-refs.sh` for you, since the server it just
 downloaded is the best source of reference assemblies. Run `scripts/extract-refs.sh` on its own when
-you build against a different install (`VALHEIM_MANAGED=…`) or after a game update.
+you build against a different install (`VALHEIM_MANAGED=…`) or after a game update. Staging comes
+before the build because `Lembitu.Oathbound` and `Lembitu.Callings` compile against the pinned mods
+staged in `dist/plugins/` (see [Compiling against an adopted mod](#compiling-against-an-adopted-mod)).
 
 Without Nix, any .NET SDK 8 or newer works; `Microsoft.NETFramework.ReferenceAssemblies` supplies
 the net472 reference assemblies, so no Windows or Mono install is needed.
@@ -141,6 +143,26 @@ that rots:
 Exclude the assemblies `Directory.Build.props` already declares, or they are referenced twice. One module cannot be referenced at all: `UnityEngine.ImageConversionModule`
 targets netstandard 2.1, which a net472 assembly cannot consume (CS1705).
 
+## Compiling against an adopted mod
+
+A plugin that patches an adopted mod compiles against the exact package `scripts/stage-stack.sh`
+staged, so its hooks are checked against what we deploy. Reference the DLL inside
+`$(PluginDistDir)<Mod>/` and name the staged package in `StagedMod`; the build then fails with
+"run scripts/stage-stack.sh" instead of a missing-type error when the package is not staged:
+
+```xml
+<Reference Include="WarriorRpg" Private="false" StagedMod="Oathbound">
+  <HintPath>$(PluginDistDir)Oathbound/WarriorRpg/WarriorRpg.dll</HintPath>
+  <Publicize>true</Publicize>
+</Reference>
+```
+
+`dotnet clean` empties `dist/plugins/`, staged packages included, so restage after it. Several of
+these packages target net48; `Directory.Build.props` lets a net472 plugin reference them, since
+everything runs in the game's one Mono runtime. A pin bump of such a package means rebuilding the
+plugin and reading its startup lines: each feature verifies the members and IL it patches and logs
+`<feature>: on`, or switches itself off with the reason (`src/plugins/Shared/Hooks.cs`).
+
 ## Depending on a library another mod ships
 
 Several pinned packages are plain libraries — `ValheimModding/JsonDotNET` (Newtonsoft.Json),
@@ -196,22 +218,26 @@ future release that starts synchronising config would make the same reference li
 
 ## Server-synced config
 
-Nothing we build needs it. The vendored ServerSync source is gone with its only two consumers, the
+`Lembitu.Oathbound` and `Lembitu.Callings` lock their settings through Jotunn, which the Pack already
+requires: every entry carries `ConfigurationManagerAttributes { IsAdminOnly = true }`, Jotunn's
+`SynchronizationManager` sends the server's values to each client at join and locks them, and
+`[NetworkCompatibility(EveryoneMustHaveMod, Minor)]` makes both plugins mandatory on both sides. No
+ServerSync is involved. The vendored ServerSync source left with its only two consumers, the
 EpicMMOSystem fork and the probe plugin (ADR-0002, ADR-0010), and the remaining fork enforces its
 player limit on the host's own admission path without a handshake.
 
-What survives is the hazard, and it now belongs to adopted packages rather than to us: every pre-1.0
-build of ServerSync throws `MissingFieldException` the moment a mod broadcasts, because
-`ZRoutedRpc.Everybody` became a `const`. Several pinned packages carry their own ILRepacked copy.
-If a plugin of ours ever needs server-enforced settings again, vendor the library as source and
-recompile it rather than shipping a prebuilt DLL, and name game members with `nameof` so a rename
-is a build error instead of a runtime one.
+What survives is the hazard, and it belongs to adopted packages: every pre-1.0 build of ServerSync
+throws `MissingFieldException` the moment a mod broadcasts, because `ZRoutedRpc.Everybody` became a
+`const`. Several pinned packages carry their own ILRepacked copy. A plugin of ours that needs a
+second sync mechanism should vendor the library as source and recompile it rather than ship a
+prebuilt DLL, and name game members with `nameof` so a rename is a build error instead of a runtime
+one.
 
 ## Install loop
 
 ```sh
-dotnet build                                  # -> dist/plugins/
 scripts/stage-stack.sh                        # -> dist/plugins/, dist/patchers/, dist/config/
+dotnet build                                  # -> dist/plugins/
 scripts/install-plugins.sh <bepinex-dir>      # sync into a server's BepInEx directory
 ```
 
@@ -481,7 +507,8 @@ rejection, 4 IPC failure, 5 timeout, 6 assertion failure, 130 interruption.
 Run the permanent coordinator on the Linux test host after building and staging `dist/`:
 
 ```sh
-export XDG_CONFIG_HOME="$HOME/.cache/valheim-lembitu/client-preferences"
+# The client runs with XDG_CONFIG_HOME set to --preferences
+# (default ~/.cache/valheim-lembitu/client-preferences).
 nix shell nixpkgs#python3 --command python3 scripts/test-native.py \
   --mode full-pack --port 2486 --repeat 2
 
@@ -490,8 +517,11 @@ nix shell nixpkgs#python3 --command python3 scripts/test-native.py \
   --mode minimal --port 2496 --repeat 2
 ```
 
-Steam must already be logged in, the native preference profile initialized as above, and a
-GPU-backed X display available (`--display :0`). The coordinator copies the current game installations
+Steam must already be logged in and a GPU-backed X display available (`--display :0`). The
+coordinator sets the client's `XDG_CONFIG_HOME` to `--preferences` and refuses to start unless that
+profile records a chosen language, the mark of the first-run setup above. Without it, Herbalist's
+and AdditiveDamageModifier's `Awake` throw on early Steamworks access and never write their config,
+so the full-pack configuration wait cannot end. The coordinator copies the current game installations
 into private working directories. Each
 repetition gets fresh worlds, characters, save directories and IPC. It uses the existing launchers;
 `test-client.sh run --save-dir DIR --log-file FILE` forwards absolute native storage paths.
@@ -742,3 +772,34 @@ Residual FastAssetBundleLoader Linux `DriveInfo` exceptions remain in the succes
 This is full-pack coverage of the existing scenario, not exhaustive mod-feature acceptance or
 simultaneous two-client verification. Those limits still prevent a launch freeze.
 
+### Plugin native checks — 2026-10-04
+
+`Lembitu.Oathbound` and `Lembitu.Callings` were exercised in a real client on astral-tricep: public
+server **1.0.16** installed by `scripts/test-server.sh`, client build **25527674**, all 63 pins, the
+enforced overlay including the ladder rule file, and both plugins built against references extracted
+from that server. Each session ran `scripts/test-native.py`'s full-pack setup through a throwaway
+wrapper that holds the session open for harness commands, with a test-client-only shim for
+ExpertExplorer's new-character crash (`docs/modstack.md`, "Known interactions"). The first four
+sessions ran without `XDG_CONFIG_HOME` set, so Herbalist and AdditiveDamageModifier failed to load
+on their clients; the Herbalist checks below come from the later sessions, which set it as above.
+Fixtures only arranged the scene: skill levels, items, teleports, a lethal hit, and
+landing a spawned fish through vanilla `FishingFloat.Catch` in place of the reel-in. Evidence, one
+directory per session with every command and response under `steps/`, is under
+`/home/ra/lembitu-plugins-evidence/` on astral-tricep.
+
+| Check | Observed |
+| --- | --- |
+| Startup | Every feature of both plugins logged `on`, on the server and the client; no `MissingFieldException` or `MissingMethodException` |
+| Stars | Eight profession rows carry a star; away from the Oathstone a click only says "Change your Calling at the Oathstone."; within 10 m four clicks set the Calling and a third Land is refused ("Your Calling already holds 2 Land; drop one first.") |
+| Steep curve and shadow | Herbalist at 45 as a focus: +1.0 per tonic craft, shadow +0.5. Non-focus: +0.5. A re-focus starts the shadow at the skill's level and progress |
+| Dropping a focus | The yes/no popup names the level ("falls from level 45 to 45"); Yes sets the level to the shadow and clears its progress |
+| Death | Focuses kept level and progress (Wood Cutting 45 with 3.0 progress); shadows drained 5% (45 → 42.75); non-focus Blacksmithing drained once (20 → 19), Fishing and Cooking 5% by World Advancement Progression. Before the fix in `SkillHooks.DeathPlan` Blacksmithing drained twice (20 → 19 → 18.05) |
+| Herbalist bonus | 8 tonic crafts at Herbalist 45 gave 6 extra tonics (expected 5.4); one set of ingredients per craft, no extra XP |
+| Fishing bonus | 8 landed catches at Fishing 50 gave 6 extra fish (expected 5) |
+| Oathbound texts | The picker's "Every oath keeps its own progress" line replaced (screenshot; reworded once more after), "Monk oath active at level 1.", "Reset to level 1" |
+| Respec and switch | A kill paid 10 class XP (the server logged each routed kill; no party, no split); respec returned it to 0; switching Monk → Ranger first showed "Confirm: Monk and Ranger restart at level 1" and changed nothing, the second click switched and left both records at 0 |
+| Monk gathering | Bare-handed punches on a tree raised Wood Cutting (+2.0 over four attacks) and its shadow at half that |
+| Fishing rod | First refused for a Monk: the vanilla rod has skill `None` and its float rides on the bait, so neither first identification matched (measured with a test-only probe). Recognised by name since, and a Monk equips it |
+
+Not covered: kill XP split within a party of two or more, which needs a second Steam account; the
+owner tests it by hand. A client without the plugins being refused at join is not yet read.

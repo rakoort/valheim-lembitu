@@ -1,7 +1,7 @@
 # ADR-0021: Callings — four focus professions across Craft, Land and Road
 
 Date: 2026-10-04
-Status: Accepted (design); implementation pending in `Lembitu.Callings` (ADR-0022)
+Status: Accepted; implemented in `Lembitu.Callings` (ADR-0022, 2026-10-04)
 Amends: ADR-0019 (professions), ADR-0020 (scope of our own plugin code)
 
 ## Context
@@ -70,8 +70,8 @@ recipes and withdrew premium items authored in DataForge).
 - The skill floor from World Advancement Progression is a death-drain threshold only; it raises no
   skill (corrected in ADR-0019). It does not interact with the steep curve.
 - BlacksmithingExpanded and Herbalist drain their skills with their own bundled managers, outside the
-  boss-key floor. Their own loss is set to 0 and `Lembitu.Callings` drains them by World
-  Advancement Progression's rule instead (ADR-0022).
+  boss-key floor. `Lembitu.Callings` undoes that drain and applies World Advancement Progression's
+  rule instead (ADR-0022).
 - ImpactfulSkills' Crafting perks are off as well as Forging, because they duplicate
   BlacksmithingExpanded.
 - Perk thresholds are settled in ADR-0024; boss trophies were considered as ingredients and left
