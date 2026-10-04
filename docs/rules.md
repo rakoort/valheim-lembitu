@@ -5,293 +5,373 @@ are. It is the human-readable companion to `CONTEXT.md` (the vocabulary) and `do
 (what runs at which version). Decisions and their reasons are in `docs/adr/`.
 
 Every claim about current behaviour carries a citation to the configuration, source or decision that
-implements it. Read the three registers below before trusting any sentence here.
+implements it. Read the four registers below before trusting any sentence here.
 
 | Register | Meaning |
 | --- | --- |
 | **Proven** | Measured on the current pack, with the measurement recorded. |
-| **Intended** | Decided and enforced in `config/enforced/`, but not yet observed in play. |
+| **Intended** | Decided and enforced in `config/enforced/` or the launch arguments, but not yet observed in play. |
+| **Planned** | Decided in an ADR and waiting on code of ours (`Lembitu.Oathbound`, `Lembitu.Callings`) or a generated rule file that does not exist yet. |
 | **Unresolved** | Policy nobody has settled. Do not read an answer into it. |
 
-The distinction is not pedantry. This pack is a candidate until the acceptance gate passes
-(`docs/modstack.md:92-115`), so "intended" is the honest register for most gameplay rules: the
-configuration is committed, the overlay is applied, and no client has yet exercised it.
+The pack is a candidate until the acceptance gate passes (`docs/modstack.md`, "Acceptance gate"),
+and this page was rewritten on 2026-10-04 from the decisions of that day (ADR-0019 to ADR-0024).
+Almost everything below is therefore *Intended* or *Planned*; the Shakedown is where it gets measured.
 
 ## What this server is
 
-A private, modded Valheim server for one invited group of fifteen, run as a fixed three-month
-**Run** with an announced start and end (`CONTEXT.md:12-19`). It is not a public server and not a
-persistent world: the Run ends, and a later Run is a new set of decisions.
+A private, modded Valheim server for one group of about eight active players, organised into
+guilds of three to five (ADR-0019). The **Run** is open-ended, but every system is sized for an
+actively playing group to kill Fader in about one month. Before it comes the **Shakedown**, played on
+a world that will be discarded, where the rules below are tried and corrected.
 
-The design goal is MMO-lite: clans matter, and personal progress matters. Everything below follows
-from those two, and the deliberate exclusions follow from refusing everything else that offered the
-same feeling by adding another multiplier or another authority.
+The concept is **MMORPG-lite for rival guilds that must cooperate**. There is no PvP. Guilds compete
+through progress, territory and the Market, and the numbers are set so that they need each other: a
+boss is tuned for eight players, and a guild of five cannot make everything it needs at the level it
+needs. Anyone can do anything given time; specialising is how you do it well.
 
-## The group
+Seven things make a character or a guild stronger: class level, talents, professions, gear tiers,
+boss powers, guild progression and magic schools (ADR-0019, ADR-0020).
 
-**Admission is by password alone.** The server is public and password-protected, so anyone who can
-see it and knows the password can join. There is no whitelist and no per-person admission control.
-A password is not a person filter: it cannot stop someone who has it from joining, and this pack
-ships no moderation mod. That is the accepted shape for a known friend group, and it is a deliberate
-change from the earlier invited-roster plan (`docs/wiki/operations.md`).
+## Admission
 
-**Cap twenty.** The MaxPlayerCount fork raises the server's admission limit and the capacity it
-advertises to Steam above Valheim's vanilla ten (ADR-0007). Twenty is a configured value and a
-rewritten literal; an eleventh simultaneous connection has **not** been admitted, and #9 records
-that gap rather than closing it.
+**Admission is by password alone.** The server is public and password-protected; there is no
+whitelist and no moderation mod. That is the accepted shape for a known friend group
+(`docs/wiki/operations.md`).
 
-**Clan is the only membership authority.** A Clan is a named group with roles, private chat and its
-own friendly-fire rule. It is the *only* concept in the project that answers "is this player my
-ally" (ADR-0008, `CONTEXT.md:27-33`). Groups and Guilds are not installed, not even as fallbacks, so
-that no second system can start answering the same question differently.
+**Cap twenty.** The MaxPlayerCount fork raises the admission limit above Valheim's ten (ADR-0007).
+An eleventh simultaneous connection has not yet been observed (#9).
 
-- Roles are Leader, Officer and Member, held in a player's primary clan.
-- A **guest clan** is a second, persistent connection. While it is active it is the clan used for
-  chat, the HUD, pings, shared positions and friendly-fire checks. Code that asks "is X my clanmate"
-  must ask Clan, which resolves primary versus guest, rather than comparing stored clan ids.
-- **Friendly fire inside a clan is off**, server-locked, so clanmates cannot damage each other even
-  when both have PvP flags on. This is the one rule that makes clan identity mechanically visible
-  (`config/enforced/sighsorry.Clan.cfg:1-7`).
-- Register: *Intended*. Clan configuration is locked and committed, and its integrations resolve
-  against it; a live clan roster and ward behaviour have not been exercised on this pack.
+## Guilds and parties
 
-## The two power curves
+**A guild is who you belong to.** Northarun/Guilds supplies ranks, guild chat, a shared vault,
+guild-bound wards, a banner territory, guild levels, upgrades and achievements. A guild has at most
+five members, and the server does not limit how many guilds exist
+(`config/enforced/adrian.valheim.guilds.cfg`, ADR-0019). Guild progress buys base safety later in the
+Run: the monster ward at guild level 10 and comfort upgrades at 12 and 20. Coin donations buy guild
+XP at 50 coins a point, so trade feeds the guild.
 
-There are two ways a character gets stronger: **character level** and **gear** (ADR-0017). Both
-were removed earlier on 2026-09-17 and both are back the same day, which is worth knowing because
-it cost you things that did not come back.
+- Register: *Intended*.
 
-**Character level** is an XP ladder with attribute points (WackyEpicMMOSystem): five points a
-level, a cap of 100, and XP from kills. Dying costs between 5% and 15% of progress toward the
-current level. **Every character starts again at level 1**: the mod stores level and XP in the
-character file, and removing it stranded those values rather than preserving them. The armour
-thresholds that used to accompany it — iron at 20, wolf at 35 and so on — are *not* back; nothing
-gates gear by level now.
+**A party is who you hunt with.** M2Valheim/SocialSystem parties are invite-only, hold up to eight
+players and may mix guilds (`config/enforced/M2Valheim.SocialSystem.cfg`). A party shares exactly two
+things: map positions, and kill XP. It never answers "who owns this".
 
-**Gear** is magic items, rarities, effects and enchanting (EpicLoot). Bounties, treasure maps,
-gambling and the secret stash stay off. **Magic items you held before the removal are plain vanilla
-items now**, because their effects lived on the item and were stripped when the mod left. New drops
-roll normally, and the enchanting and augmenting stations must be rebuilt.
+**Kill XP goes to the killer's party, and only to members near the kill** (ADR-0022):
 
-**Vanilla skills are not a third curve.** They run 0 to 100 as in vanilla and drain by a percentage
-on death, with the drain floor rising by 10 for each boss key a character holds.
+- The kill is credited to whoever landed the killing blow. Companions and burning count for their
+  owner. Others who hit the creature but are not in the killer's party earn nothing.
+- Party members within **100 m** of the creature when it dies split its XP equally. That is the same
+  distance that earns a boss key. A member further away, or disconnected, earns nothing and does not
+  count. Being in a party never waives proximity.
+- The party's total rises with the members in range: 100% of the kill for one, about 107% for two,
+  about 121% for four, **150% for eight**, which is 18.75% of the kill each.
 
-**Loot gating reads the player, not the world.** EpicLoot's drop limit is `PlayerMustKnowRecipe`,
-so magic drops are gated on what the requesting player knows rather than on world progression.
-Building pieces follow the same rule.
+- Register: *Planned*. Parties are *Intended*; the XP split is `Lembitu.Oathbound` code.
 
-**Magic loot is quieter than the mod ships it.** Drops are cut to 0.6 of stock and shardstones from
-0.2 to 0.05, every rarity rolls one fewer effect, and the rarity palette is muted with generated
-item names off. Those are the same pinned values as before the removal; the configs came back
-intact from the repository.
+## Classes, levels and talents
 
-- Register: *Intended*. Restored and deployed 2026-09-17, unplayed. What nobody has measured is how
-  a group feels about levelling from 1 again mid-run.
+**Your class comes from Oathbound, chosen at the Oathstone.** Oathbound (LionAndOtter) gives thirteen
+classes, each with active abilities and a 79-node talent tree: Huscarl, Shieldbearer, Valkyrie,
+Ranger, Mage, Warlock, Rogue, Monk, Hunter, Berserker, Highlander, Breaker and Dragonsworn. Four are
+unlocked by doing something first: equip paired axes (Berserker), a two-handed sword (Highlander) or
+a two-handed axe (Breaker), or carry a dragon tear (Dragonsworn). Mage and Warlock are the magic
+schools. Hunter and Dragonsworn fight beside a companion (ADR-0020).
+
+**Go to the Oathstone first.** It stands 17-21 m from the start temple near the centre of the world.
+Guilds start far from there, so reaching it is the first journey of the Run. A character with no
+class earns no class XP at all (`Warrior.Core.Progression.GrantExperience`). Class, talents and your
+Calling change only at the Oathstone (`config/enforced/local.warrior.rpg.cfg`, `AccessMode =
+Oathstone`).
+
+**Class level.** Kills earn XP for your active class, up to level 80. A kill pays about
+2·√(its maximum health), between 10 and 80, four times that for a boss, plus up to 5 for creatures
+that hit hard. Each level gives one talent point. There is no cap on points and no change to
+Oathbound's XP pace, so a level-80 character owns all 79 nodes; level 80 needs about 2,500 to 3,000
+kills (ADR-0022).
+
+**Respec and class switch cost the class level.** Resetting your talents puts the class back to
+level 1, and so does switching to another class. You level one class at a time. This is cheap
+early and expensive late (ADR-0020, ADR-0022).
+
+**Class equipment rules stay, except for tools.** Classes keep Oathbound's armour, weapon, shield
+and bow rules: Mages, Warlocks, Rangers, Monks and Rogues wear no metal armour, Shieldbearers and
+Valkyries carry no bow, and so on. Every class may use the fishing rod, and a Monk's bare-handed blows
+on rocks and trees train Mining and Wood Cutting, so no class is shut out of a profession (ADR-0022).
+
+- Register: classes and levels *Intended*; respec, switch and tools *Planned* (`Lembitu.Oathbound`).
+
+## Professions and Callings
+
+**Eleven professions in three groups** (ADR-0021):
+
+| Group | Professions |
+| --- | --- |
+| Craft | Blacksmithing, Herbalist, Cooking |
+| Land | Mining, Wood Cutting, Farming, Fishing, Animal Handling |
+| Road | Exploration, Sailing, Hauling |
+
+Combat skills (weapons, magic, blocking, dodge) and body skills (run, jump, swim, sneak, ride) are
+not professions and are not affected by anything in this section.
+
+**Your Calling is four focus professions: two Land, one Craft, one Road.** A focus levels at full
+speed to 100. Every other profession levels at full speed to 30, half speed to 60, a quarter to 80
+and a tenth beyond. Nothing is capped, so anyone can master anything given time; a non-focus skill
+needs 1.8 times the work of a focus to reach 60, 2.5 times to reach 70 and nearly 6 times to reach
+100. Until you choose, every profession follows the slow curve, which changes
+nothing below 30.
+
+**You mark focuses with a star in the skills window, but only at the Oathstone.** Away from it the
+stars only show your Calling. Dropping a focus asks first, and names the level the skill falls to.
+
+**A focus keeps its XP when you die.** Every other skill drains as described under *Death*.
+
+**Dropping a focus costs exactly what the focus gave.** The game keeps a second, hidden level for each
+focus: what it would be without the focus, earning at the slow rate and draining on death like a
+non-focus skill. Dropping the focus sets the skill to that level. Early on the two hardly differ;
+a master who switches gives up the faster gain and the death protection together.
+
+- Register: *Planned* (`Lembitu.Callings`, ADR-0022).
+
+## What professions make: the biome ladder
+
+**What a profession makes climbs ten levels per biome** (ADR-0023). Crafting an item needs the
+matching profession at its rung, by the biome of its materials, the same biome World Advancement
+Progression reads for its boss-key locks:
+
+| Biome | Level to craft |
+| --- | --- |
+| Meadows | none |
+| Black Forest | 10 |
+| Swamp | 20 |
+| Mountains | 30 |
+| Plains | 40 |
+| Mistlands | 50 |
+| Ashlands | 60 |
+| Deep North | 70 |
+
+Up to the Mountains a rung only asks for practice. From the Plains on, a crafter without the focus
+needs 1.5 times the skill XP at 40, rising to 2.5 times at 70.
+
+| Profession | What climbs the ladder |
+| --- | --- |
+| Blacksmithing | Every weapon, shield and armour piece, capes and Galdr-table magic gear included, crafted or upgraded. Pickaxes and axes are weapons too; the iron pickaxe that silver needs sits on the Swamp rung. |
+| Herbalist | Mead bases, Herbalist's tonics and elixirs |
+| Cooking | Dishes made in the crafting menu, up to the feasts. Meat cooked on a cooking station is not a recipe and stays open. |
+| Fishing | Biome baits |
+| Animal Handling | Saddles |
+| Hauling | Backpacks |
+| Farming | The Scythe |
+| Mining, Wood Cutting, Exploration, Sailing | Nothing to craft; their perks are their reward |
+
+**Only crafting is gated, never use.** Anyone may wear, wield, drink or buy what a specialist made.
+Repairs, ammunition, the hammer, hoe and cultivator, and utility items stay open to everyone.
+
+**The smith is the guild's armourer and the alchemist its apothecary** (ADR-0024). From the Plains
+on, every new piece of gear comes from a smith at the right rung, and every vanilla mead (healing,
+stamina, eitr, and the poison, frost and fire resistance meads) and every elixir comes from an
+alchemist. Gear is bought once per tier; potions are used up every fight. A master smith's gear is
+also a little better: +1% damage, +0.5 armour and +1 block power per 10 Blacksmithing levels.
+EpicLoot drops still give gear no smith made.
+
+**Herbalist's elixirs, retuned to boss-fight strength** (`config/enforced/blacks7ar.Herbalist.cfg`):
+Berserker ×1.25 damage, Swift ×1.2 speed, Jump ×1.5, Fast Learner ×1.5 skill XP at half health,
+Defender as shipped (very resistant, but you deal a fifth of your damage), Invisibility 60 s,
+Heavy Lifter 60 s, Slow Fall as shipped. Durations grow with the drinker's own Herbalist skill.
+
+- Register: the ladder *Planned* (Item_Requirement's rule file is still to be generated); elixir and
+  smith numbers *Intended*.
+
+## Perks
+
+**A focus makes you visibly better at the job, and no profession is the obvious pick** (ADR-0024).
+Perks grow with every level: more wood and ore per swing, faster taming and more from each animal,
+more carry weight, a wider map reveal, longer-lasting tools and faster smelting. At 100, for
+example, chopping and digging hit 1.5 times as hard and yield 1.67 times the wood or ore, taming runs
+2.5 times as fast, a hauler carries 100 more and an explorer reveals 250 m around them. Herbalist and
+Fishing get extra output instead: about 1.5 extra items per craft and 1.25 extra fish per catch at
+100, from `Lembitu.Callings`, because their mods give the maker nothing. A master sailor's ship takes
+up to 2.5 times the sail force and rows faster.
+
+**Perks that switch on at a level sit on the ladder's rungs**, never below 30:
+
+| Level | Perks |
+| --- | --- |
+| 40 | Cooking bonus servings, honey bonus, mining critical hits, area harvesting, planting several at once, faster paddling |
+| 50 | Hives in any biome, boat damage reduction, area mining, better wind angles |
+| 60 | Crops in any biome |
+| 70 | Whole-vein mining, an extra star on tamed animals, no ram damage to your ship |
+
+- Register: rungs and magnitudes *Intended* (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`,
+  `config/enforced/com.milkwyzard.ExpertExplorer.cfg`); the Herbalist and Fishing bonus *Planned*.
+  The Shakedown judges the balance by playing each focus.
 
 ## Personal keys, and what earns one
 
-Valheim's own progression is a set of **world keys** — kill a boss and the whole world advances.
-This server does not use them. It uses **personal keys** instead: a boss or progression unlock
-stored per character, not in world state (ADR-0005, ADR-0010).
+Valheim's own progression is a set of **world keys**: kill a boss and the whole world advances. This
+server writes none. It uses **personal keys**: a boss unlock stored per character (ADR-0005,
+ADR-0010).
 
-**Presence earns a key, not damage.** When a boss dies, the mod awards the key to every player
-within a hundred metres of the chunk host. Presence, not measured contribution, is what counts. One
-clan can therefore carry another to a boss kill, and that is the intended cooperation
-(`CONTEXT.md:78-84`).
+**Presence earns a key, not damage.** When a boss dies, every player within 100 m of the client
+controlling the boss gets the key, and nobody else. Guilds do not share keys with absent members
+(`config/enforced/adrian.valheim.guilds.cfg`). A late joiner catches up by being carried through
+re-kills, never by skipping content.
 
-- Personal keys are on, and the world's global key list is blocked outright
-  (`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). A flip of either would
-  hand the first clan's boss kill to the whole roster.
-- Raids are evaluated **per player**, so a player who has not killed a boss is not raided by that
-  boss's events.
-- Progression gates more than gear. Key-locked: equipment, crafting, **cooking**, **eating**,
-  guardian powers (forsaken powers), and boss summons. Deliberately not key-locked: equipment
-  repair, building, building repair, taming, boats and portals. Every lock is material-scoped, so a
-  keyless character still cooks and eats Meadows food and builds in wood (ADR-0005 amendment,
-  2026-09-16).
-- Register: *Partly observed*, 2026-09-16. After the run's first boss kill the live world's newest
-  committed save held no global keys at all, and a character file on a client held its `defeated_*`
-  keys, so blocking and per-character storage both work. What is still unobserved: whether the
-  player who made the kill received the key, and whether a bystander beyond a hundred metres
-  correctly did not. The locks themselves have not been seen refusing anything.
+**A key unlocks a biome's gear for both crafting and wearing.** Key-locked: equipment, crafting,
+cooking, eating, guardian powers and boss summons. Not key-locked: repairs, building, taming, boats
+and portals. Every lock follows the biome of the item's materials
+(`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). Trade helps, but never
+skips a boss.
+
+**Boss powers are passive and grow with boss kills** (ProgressivePowers). You attune one Forsaken
+power at a time; it gives passive bonuses rather than the vanilla active power, and it gains up to
+seven mastery levels as you are present (within 100 m) at boss kills, later bosses included
+(`config/enforced/MidnightsFX.ProgressivePowers.cfg`).
+
+- Register: *Partly proven*, 2026-09-16, on an earlier pack: the world held no global keys after the
+  first boss kill and a character file held its keys. The locks have not been seen refusing anything.
+
+## Death
+
+Deaths are meant to cost something (ADR-0019):
+
+- **Class XP:** you lose half your progress into the current class level, never a level
+  (Oathbound).
+- **Skills:** each non-focus skill loses 5% of its level, but only while it is above your skill
+  floor, which rises by 10 for every personal boss key you hold
+  (`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). The floor never raises a
+  skill; it only stops the drain. A skill just above it can end a little below after one death.
+  Focus professions lose nothing. Blacksmithing and Herbalist follow the same rule as every other
+  profession (ADR-0022).
+- **The corpse run:** your tombstone holds what vanilla death rules take, and you go back for it.
+  Carried items and durability are otherwise untouched.
+
+- Register: class and floor *Intended*; focus protection and the Blacksmithing and Herbalist drain
+  *Planned* (`Lembitu.Callings`).
 
 ## The world
 
-**The world is half again as wide as a vanilla one.** Radius 15000 metres instead of 10000, with
-terrain stretched to match and biomes a quarter larger (ADR-0018), so a continent carries more
-distinct biome neighbourhoods rather than a few stretched thin. Area is roughly 2.25 times vanilla. The size is fixed for the life of this world: it is
-baked into the terrain at generation and cannot be changed afterwards. **Every player needs the Pack
-for this**, because your client generates the ground itself — without the mod you would see
-different terrain than the server.
+**About 1.76 times the area of a vanilla world.** Radius 13,250 m, world stretch 1.325, biome stretch
+1.25, and points of interest at vanilla density (Expand_World_Size, ADR-0019). The size is baked into
+the terrain when the world is created and cannot change afterwards. Every player needs the Pack,
+because your client generates the ground itself.
 
-**Each clan starts in its own place.** Five group starts are provisioned — Skadi, Fenrir, Muninn,
-Vidar and Eir — each in its own scored neighbourhood at least a kilometre from the next, chosen for
-a large Meadows patch with Black Forest and a burial chamber within reach rather than on the
-doorstep. Clans claim a name; the number of places is fixed at world generation and cannot grow
-afterwards. Meeting another clan is meant to be an event rather
-than the first thing that happens.
+**Each guild starts in its own place.** One scored start region per guild, at least a kilometre from
+the next (SeparateSpawns, ADR-0018). Meeting another guild is meant to be an event rather than the
+first thing that happens.
 
-**Backpacks carry the extra weight.** AdventureBackpacks adds packs with their own storage; the
-run's inventory mod stays at zero extra rows, so the backpack is the answer to carrying capacity
-rather than a wider screen. Note it is one-way: if the mod ever left, the packs and everything in
-them would go.
+**Ore does not teleport, until the Ashlands.** Ordinary portals refuse ore and metal, so they travel
+by ship or cart (`config/launch/launch.env.example`, `Portals hard`). Vanilla's Ashlands stone portal
+carries everything, metal included, and that late reward is kept. XPortal only lets you pick a
+destination.
 
-**Powers grow with use.** Forsaken powers still come from personal keys, but mastery now deepens as
-you use them (ProgressivePowers). Bows also handle differently: quivers and revised draw and aim
-(BetterArchery).
+**Maps are personal.** You share what you have explored at a cartography table, and guilds share
+pins. Party members see each other on the map. There is no creature radar, no automatic pins for
+distant resources or dungeons, and everyone's public position is off (`config/enforced/xtav1m.BetterMap.cfg`,
+`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`). Readouts are welcome: hover stats,
+skill progress, a clock and the weather forecast.
 
-**World generation settings stay fixed while the world lives.** Expand_World_Size is
-world-permanent in this sense (ADR-0018). No remaining mod adds the dungeon rooms or vehicle
-prefabs covered by ADR-0009. Max Dungeon Rooms and ValheimRAFT, including its bundled
-DynamicLocations, were removed on 2026-10-03 at the owner's instruction. Removal risks losing
-existing vessels, their cargo and dungeon layout; it is not a tested safe migration.
+**There is no PvP.** It is held off for everyone (`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`).
 
-**The night cannot be voted away.** The mod for it was adopted and cut on the same day: its
-framework needs a BepInEx patcher in a directory the server container never mirrors, so it never
-worked at all. Nights are vanilla length (#86).
+## Difficulty
 
-**World Advancement Progression is one-way for a different reason.** Its keys live in character
-saves, so it is not world-permanent, but it clears the world's global keys on startup. It therefore
-belongs in the pack before the launch world is created, not after (ADR-0009 amendment).
+**Harder than vanilla, and the same fight whoever turns up** (ADR-0019). Nothing scales with the
+number of players nearby. Bosses are tuned for eight players and ordinary creatures for two:
 
-**Ore does not teleport.** Portals are restricted so that ore and processed metal cannot pass through
-them. This is the vanilla Hard portal setting and the one world rule the launch argument set states
-explicitly (`config/launch/launch.env.example`).
+- Ordinary creatures carry twice vanilla health and 1.2 times its damage; bosses eight times its
+  health and 1.5 times its damage (`config/enforced/CreatureManager/levels.yml`).
+- Creature levels follow CreatureManager's `Hard` biome preset, so a late biome spawns stronger
+  creatures and bosses follow suit (`config/enforced/sighsorry.CreatureManager.cfg`).
+- The game's own `Combat hard` world modifier is also set (`config/launch/launch.env.example`).
+- About 10 in 100 ordinary creatures carry a **creature modifier** (armoured, enraged, an elemental
+  infusion and others), a boss about one, and an Enforcer two. Deathward, regenerating, omen and
+  blamer are off (`config/enforced/CreatureManager/levels.yml`, `karma.yml`).
+- **Karma:** an area where players kill heavily grows more dangerous, and eventually an
+  **Enforcer**, an elite hunt target worth a group's effort, appears.
+- **Additive resistances:** resistances stack additively, and a player always takes at least 25%
+  of each damage type, so stacked resistances never reach immunity
+  (`config/enforced/sighsorry.AdditiveDamageModifier.cfg`).
 
-**No regional pressure, and no scheduled event.** Until 2026-09-17 the run had Karma — pressure
-that rose as players killed in an area — and the Enforcer it eventually summoned, a named creature
-that stood in for an event since there is no game master. Both are switched off
-(`config/enforced/sighsorry.CreatureManager.cfg`, #84). The mod that provided them is still
-installed, because it is also what holds creature multipliers fixed, so turning either back on is
-one config line rather than a Pack change.
+Bringing more people makes a boss fall faster; it never makes it harder or easier per hit.
 
-**Difficulty.** The creature difficulty tier is `Hard` through CreatureManager's biome level preset:
-it sets the level distribution for every natural spawn in a biome, and bosses follow the same preset
-(`config/enforced/sighsorry.CreatureManager.cfg`). `Hard` spawns roughly 40% stronger ordinary
-creatures than the `Easy` default, and the earliest biomes still spawn at level 1 most of the time,
-so a new character is not softlocked. Expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader.
+- Register: *Intended*. The numbers are measured against real fights in the Shakedown.
 
-- Register: *Intended*. The preset is committed and loads; observed boss and creature behaviour in
-  play belongs to #13 and #10.
+**Raids are Oathbound's sieges.** Whenever vanilla would start a random raid, a siege starts instead
+at a ready outpost: a portal, or a crafting station with six or more pieces within 90 m. With no
+outpost, nothing happens. A siege warns you, sends an assault and reinforcements, and ends when you
+kill its commander; it pauses while nobody is within 100 m. Its strength follows the biome the
+outpost stands in, never how many players are online, and from the Black Forest tier up its raiders
+do full damage to buildings. Sieges come less often than vanilla raids (`Raids less` in
+`config/launch/launch.env.example`), because each one is a bigger fight. ZenRaids keeps natural
+spawns out of a base with a lit fire, and the guild monster ward, from guild level 10, starves a
+siege of places to spawn. There are no blood moons (`config/enforced/local.warrior.rpg.cfg`).
 
-**A fight is the same fight whoever turns up.** Vanilla makes every creature tougher for each
-player standing nearby — 30% effective health and 4% damage each, capped at five — so a boss was a
-different fight depending on who logged in, and inviting a sixth player made it easier. That
-scaling is off entirely (`config/enforced/sighsorry.CreatureManager.cfg`,
-[4 - Multiplayer Difficulty], both percentages at zero and the count cap at one). Difficulty is
-fixed in the level table instead: ordinary creatures and Enforcers carry twice vanilla health,
-regular bosses eight (`config/enforced/CreatureManager/levels.yml`). Damage is untouched, so
-fights are longer rather than deadlier per hit. Bringing more people is then a choice about how
-fast a boss falls, never a penalty, and a duo and a full group face the same wall.
+- Register: *Intended* (ADR-0019, ADR-0020).
 
-Ordinary creatures carried four times vanilla health until 2026-09-17. Two things moved that
-number. Twelve players found ordinary mobs unkillable, which was mostly a modifier problem and is
-fixed separately, and character level then left the Pack, taking every character's attribute
-points with it (#80). Halving the multiplier is what keeps the fight where it was.
+## Gear and loot
 
-Per-level growth compounds on top of those floors, so the biome preset still decides how much
-harder a late biome is: an Ashlands creature at level 3 carries 2 × (1 + 2 × 1) = 6 times vanilla
-health, and a level-2 boss 8 × 1.5 = 12 times.
+**Magic gear comes from EpicLoot.** Magic items, rarities, effects, enchanting and Haldor's adventure
+trade: treasure maps, bounties (at most five in progress per player), gambling and the secret stash.
+Drops run at 0.6 of stock and shardstones at 0.1; a failed tempering can destroy the item. A drop is
+gated on recipes the player knows rather than on world progress (`Item Drop Limits =
+PlayerMustKnowRecipe`). A boss drops one trophy, one Wishbone and one swamp key per kill, not one per
+player present, so killing it again pays (`config/enforced/randyknapp.mods.epicloot.cfg`).
 
-**No creature carries a modifier.** Armoured, enraged, regenerating and twenty-nine other traits
-are off entirely, all three master switches (#84). They were the cause of the 2026-09-16 evening
-where twelve players found ordinary creatures unkillable: the stock chance reads as a per-creature
-rate but is rolled once per group of eight. Cutting the rate to 4 creatures in 100 was the first
-answer; switching the idea off was the owner's second. A creature is now exactly its kind and its
-stars.
+## The Market
 
-- Register: *Intended*. The multipliers are the owner's decision, applied by #68 and retuned on
-  2026-09-17, and never yet measured in a real boss fight. Whether eight times is the right wall
-  for a boss is a question for the first kill after it goes live.
-
-## PvP and death
-
-**PvP is the vanilla toggle.** Each player chooses whether to flag. Vanilla's ten-second
-post-combat toggle gate remains, and the flag is off at login. No place-bound or persistent
-stance has been implemented.
-
-**Deaths follow vanilla rules for everyone.** PvPBiomeDominions was removed on 2026-10-03
-at the owner's instruction. Flagged-player equipped-item and hotbar retention left with it,
-as did its tombstone-looting restrictions and five-minute post-death PvP grace. There is no
-killer-only tombstone access or replacement death mechanic in the stack. The earlier stance
-and victim-scoped access decisions in ADR-0012 and ADR-0013 are not current behaviour.
-
-
-**Carrying capacity does not grow with progression, and that is a deliberate choice.**
-AzuEPI's extra rows are a flat 0 to 5 for everyone, with no way to unlock them as a character
-advances. Rather than hand every new character several extra rows from the first minute, the run
-pins extra rows at zero, so carrying capacity is vanilla plus whatever Haldor sells and the mod's
-equipment and quick slots. Multicraft, the crafting grid with search and sort, and scrollable
-tooltips have no counterpart in AzuEPI and the Pack no longer offers them; they were conveniences,
-not rules. **Favourites do survive the swap**, which an earlier version of this page denied:
-AzuEPI 2.4.14 ships a `[10 - Favoriting]` section whose `Favoriting Modifier Key` — Left Shift by
-default — marks an item or a slot so storage mods leave it alone. It is a client key, so each
-player owns their own binding (read from `AzuExtendedPlayerInventory.dll` 2.4.14, #78).
-
-- Register: *Current stack policy*. Vanilla death rules replace the removed mod's rules;
-  this documentation change is not a gameplay measurement.
+**One server-wide market that works while the other side is offline.** Northarun/Marketplace offers
+coin sales, buy orders, bounties and a bank. A 5% fee on every payout keeps coins scarce
+(`config/enforced/adrian.valheim.marketplace.cfg`). Under the ladder the Market is where a guild buys
+what its own members cannot yet make.
 
 ## Crafting, building and comforts
 
-**Materials come from containers near the station.** A workbench, forge, stonecutter or the
-building hammer pulls from every container within **20 m**, so a chest beside the bench feeds it
-and a storage hut across the base does not. Nothing is excluded: everything in range is pullable
-(AzuCraftyBoxes, `config/enforced/Azumatt.AzuCraftyBoxes.cfg`). The mod is part of the server's
-join-time version check, so it is not optional — a client without it is refused at join, the same
-way the slot mod already behaves.
+**Materials come from containers near the station.** A station or the hammer pulls from every
+container within 20 m (AzuCraftyBoxes, `config/enforced/Azumatt.AzuCraftyBoxes.cfg`). A client without
+the mod is refused at join.
 
-**Voice carries as far as your voice would.** Players within 4 m are heard at full volume and
-fade out to nothing by 45 m, and the server holds those distances for everyone
-(ProximityVoiceChat, `config/enforced/Azumatt.ProximityVoiceChat.cfg`). Your microphone, your
-volume, your mute and your keybinds are yours: the server pins none of them. A player who removes
-the mod simply has no voice and plays normally, so voice is a convenience rather than a rule.
+**Every piece costs full materials at its station.** PlanBuild's plans, Extra Snap Points and the
+building-piece mods help you plan and place precisely, but PlanBuild's direct build and terrain tools
+are off for players, so a plan is finished with real materials (`config/enforced/marcopogo.PlanBuild.cfg`).
+Free-building tools are for admins only.
 
-**Three comforts are yours to keep or remove.** Hover readouts on creatures, pieces, chests and
-crafting stations (AzuHoverStats), an on-screen clock with the weather forecast (AzuClock), and
-mouse-and-modifier stack moving, splitting and dropping (MouseTweaks). None of them changes a
-rule, none is enforced, and a player who deletes them sees vanilla. Hovering a chest inside
-another clan's ward shows nothing, because the readout asks the same access check the ward
-answers.
+**Carrying.** The inventory stays at vanilla rows, with equipment, quick and special slots
+(`config/enforced/Azumatt.AzuExtendedPlayerInventory.cfg`). AdventureBackpacks' packs carry the extra
+weight; they are one-way, so if the mod ever left, the packs and their contents would go. Its
+automation settings are yours.
 
-- Register: *Intended*. Live since 2026-09-16: both server-side mods are deployed, the overlay
-  verifies drift-free, and Pack v8 carries the client halves. Nothing here has been watched in
-  play yet — the 20 m pull against a chest at 30 m, the voice distances, the hover inside another
-  clan's ward. The group's first session is the measurement.
+**Voice carries as far as your voice would.** Full volume within 4 m, fading to nothing by 45 m
+(ProximityVoiceChat, `config/enforced/Azumatt.ProximityVoiceChat.cfg`). Your microphone, volume and
+keybinds are yours.
 
-## What is not here
-
-**The Trade Post is not built.** A clan trading interface with contracts, escrow and mailbox
-delivery was designed (ADR-0006) and deferred. It is deliberately safe to add mid-Run because its
-records never enter the world save, so only its buildable piece is one-way. Nothing of it exists
-today, and nothing in the current UI reads it.
-
-**There is no game master and no scheduled events.** Karma and its Enforcers were the substitute
-until 2026-09-17, when both were switched off (#84). Nothing stands in for an event today.
-
-**There are no planned mid-Run content injections.** The accepted pack stays fixed; a mid-Run
-upstream replacement requires something actually breaking and passing acceptance again (ADR-0007).
+**Your own settings may only express preference.** Snapping, convenience automation, keybinds and
+interface layout are yours. Anything that changes difficulty, combat or what one player gets over
+another is locked by the server or not in the Pack (ADR-0019).
 
 ## Known gaps and accepted risks
 
 These are stated to players rather than discovered by them (#23).
 
-**Progression is client-owned and not tamper-resistant.** Personal keys live in the player's own
-character save file, where World Advancement Progression stores them. A determined player can edit
-their own file to grant themselves keys. This is accepted deliberately: it is a private friends'
-server, and a player who edits their own character is a social problem rather than an engineering
-one. No server-side character store will be built for this Run (ADR-0010).
+**Our two plugins do not exist yet.** Respec and class-switch resets, party XP, the open gathering
+tools, Callings, focus protection, the Herbalist and Fishing bonus and the profession drain rule are
+decisions waiting on `Lembitu.Oathbound` and `Lembitu.Callings` (ADR-0022). Until they exist,
+Oathbound's own behaviour applies: free respec, kept progress across class switches, and XP for the
+killer only.
 
-**A server-only backup cannot restore progression.** Because those stores are client-owned, the
-server's backup captures the world, the admission lists and the biome cache — not characters.
-Restoring the world onto a fresh install returns the *world*; each player's character is restored by
-Steam Cloud or by their own copy (`scripts/backup-world.sh`, `docs/wiki/operations.md`).
+**Progression is client-owned and not tamper-resistant.** Personal keys, Oathbound's class progress
+and the Calling all live in your own character file. A determined player can edit it. That is
+accepted on a friends' server (ADR-0010).
 
-**Clan is load-bearing infrastructure.** If its registry fails to load, allied status is unavailable
-rather than wrong: it fails open to an empty registry. Wards, clan chat and friendly-fire checks all
-depend on it.
+**A server-only backup cannot restore progression.** The server's backup captures the world, not
+characters. Each character is restored by Steam Cloud or the player's own copy
+(`scripts/backup-world.sh`, `docs/wiki/operations.md`).
 
-**Boss scaling is a weighting, not a tier step.** A boss rolls its level from the biome preset, so
-any single kill can land above or below its expected health multiplier.
+**Some settings are not proven locked.** BlacksmithingExpanded's main settings are synced from the
+server but carry no lock entry; whether a player can change them while connected is a Shakedown check
+(ADR-0024).
+
+**Boss health is a weighting, not a fixed step.** A boss rolls its level from the biome preset, so a
+single kill can land above or below its expected health.
 
 ## Where the rest lives
 

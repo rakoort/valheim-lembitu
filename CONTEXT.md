@@ -44,8 +44,9 @@ A named tier inside a guild that carries permissions such as ward access, vault 
 
 **Party**:
 An intentional, invite-only group of up to eight players that may mix guilds. It exists to share a
-hunt: members split kill XP and see each other on the map, nothing else. Temporary by nature, and
-never the answer to "who owns this".
+hunt: the killer's party members within 100 m of a kill split its XP, and members see each other on
+the map, nothing else. Being in a party never waives that proximity. Temporary by nature, and never
+the answer to "who owns this".
 _Avoid_: group, squad, raid group
 
 **Ward**:
@@ -81,8 +82,8 @@ talents, abilities and companions are available. A character levels one class at
 _Avoid_: job, profession, build
 
 **Oathstone**:
-The stone near the starting sacrificial stones where a character chooses a class and buys talents.
-Reaching it from a guild's start is the first journey of the Run.
+The stone near the starting sacrificial stones where a character chooses a class, buys talents and
+changes their Calling. Reaching it from a guild's start is the first journey of the Run.
 
 **Class level**:
 The active class's XP ladder, earned from kills, which grants one talent point per level. Death
@@ -108,9 +109,20 @@ _Avoid_: class, role, build
 
 **Focus**:
 A profession inside a character's Calling. It levels at full speed to 100, while every other
-profession follows the steep curve. Dropping a focus sets that skill to what it would have been
-without the focus.
+profession follows the steep curve, and it keeps its XP when the character dies. Dropping a focus
+sets that skill to what it would have been without the focus, deaths included.
 _Avoid_: specialisation, main, primary
+
+**Shadow level**:
+The hidden level a focus profession carries: what the skill would be without the focus, earning at
+the steep-curve rate and draining on death like a non-focus skill. Dropping the focus sets the skill
+to it (ADR-0021, ADR-0022).
+
+**Profession ladder**:
+The level a profession needs to craft what it makes, ten per biome of the item's materials, from
+none in the Meadows to 70 in the Deep North. Each step is a **rung**. Only crafting is gated; anyone
+may use what a specialist made (ADR-0023).
+_Avoid_: master recipe, recipe tier, gate level
 
 **Gear tier**:
 A magic item's rarity and the effects rolled on it.
@@ -158,6 +170,12 @@ players to move on rather than farm one spot.
 **Enforcer**:
 An elite, modifier-carrying creature that appears as a hunt event in the open world or a dungeon,
 worth a group's effort. The stand-in for a game master.
+
+**Siege**:
+Oathbound's raid: a staged attack on an outpost (a portal, or a crafting station with six or more
+pieces nearby) that ends when its commander dies. Sieges replace vanilla's random raids and scale by
+the outpost's biome, never by headcount (ADR-0020).
+_Avoid_: raid event, invasion
 
 **Creature modifier**:
 An extra trait a creature can spawn with, such as armoured, enraged or an elemental infusion. The

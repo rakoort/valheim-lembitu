@@ -1,13 +1,11 @@
 # PvP: stance and tombstone access
 
-Current rules are in [The Run: concept and rules](../rules.md), under "PvP and death".
-PvPBiomeDominions was removed on 2026-10-03 at the owner's instruction. Deaths now follow
-vanilla rules for everyone. Flagged-player equipment and hotbar retention, tombstone-looting
-restrictions and the mod's five-minute post-death grace left with it. No killer-only access
-or replacement death mechanic is installed.
-
-PvP remains the vanilla toggle. Its ten-second post-combat gate remains, and the flag is off
-at login. The place-bound, persistent stance described below was never implemented.
+There is no PvP on this server (ADR-0019, 2026-10-04): it is held off for everyone by
+Venture_Multiplayer_Tweaks (`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`), and
+deaths follow the rules under "Death" in [The Run: concept and rules](../rules.md).
+PvPBiomeDominions was removed on 2026-10-03, taking flagged-player retention, tombstone-looting
+restrictions and its post-death grace with it. The place-bound, persistent stance described below
+was never implemented.
 
 The rest of this page is the historical 2026-09-16 decision and binary-research record for
 #67, ADR-0012 and ADR-0013. It does not describe the current stack or promise these mechanics.

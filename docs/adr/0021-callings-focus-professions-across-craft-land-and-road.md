@@ -1,7 +1,7 @@
 # ADR-0021: Callings — four focus professions across Craft, Land and Road
 
 Date: 2026-10-04
-Status: Accepted (design); implementation pending in a plugin of ours
+Status: Accepted (design); implementation pending in `Lembitu.Callings` (ADR-0022)
 Amends: ADR-0019 (professions), ADR-0020 (scope of our own plugin code)
 
 ## Context
@@ -46,30 +46,33 @@ and Body skills are not affected. The numbers are tuned in the Shakedown.
 
 **Changing a focus knocks the dropped skill down to what it would have been without the focus.**
 Every profession skill carries a shadow level that earns the same XP at the non-focus rate and
-drains on death by the same proportion as the real skill. Dropping a focus sets the real level to
-the shadow level. Below 30 the two never differ, so early switching is free; a master who switches
-gives up exactly the advantage the focus gave.
+drains on death as a non-focus skill would. A focus skill itself keeps its XP on death (ADR-0022).
+Dropping a focus sets the real level to the shadow level. Below 30 the two differ only by the deaths
+the focus absorbed, so early switching is nearly free; a master who switches gives up exactly the
+advantage the focus gave, in gain and in death protection.
 
 **Choosing.** A player marks their focus professions with a star in the normal skills window, but a
 change only takes effect while standing at the Oathstone, where the class is chosen too. Until a
 Calling is chosen, every profession follows the steep curve; below 30 that changes nothing.
 
 **What makes the top of a skill worth having.** Each mod's best perks are retuned to sit above the
-full-speed band, and master recipes are gated at profession level with Radamanto/Item_Requirement,
-which blocks the craft itself and reads modded skills such as Blacksmithing and Herbalist. Where
-the item pool has nothing worth gating, premium items are authored in DataForge.
+full-speed band. What a profession makes, weapons and armour included for Blacksmithing, is gated
+by profession level with Radamanto/Item_Requirement on a ladder of ten levels per biome, which
+blocks the craft itself and reads modded skills such as Blacksmithing and Herbalist. Only items
+already in the game and the Pack are gated (ADR-0023, which replaced the first plan of a few master
+recipes and withdrew premium items authored in DataForge).
 
 ## Consequences
 
-- A plugin of ours owns the focus choice, the steep curve and the shadow levels, by hooking skill
-  gain for the eleven profession skills and storing the Calling on the character. This widens
-  ADR-0020's single patch plugin into our progression layer.
+- Our second plugin, `Lembitu.Callings`, owns the focus choice, the steep curve and the shadow
+  levels, by hooking skill gain for the eleven profession skills and storing the Calling on the
+  character. It is separate from `Lembitu.Oathbound` (ADR-0022).
 - The skill floor from World Advancement Progression is a death-drain threshold only; it raises no
   skill (corrected in ADR-0019). It does not interact with the steep curve.
-- BlacksmithingExpanded and Herbalist drain their skills with their own death-loss setting instead
-  of the boss-key floor. Their loss percentage is set to match the vanilla drain.
+- BlacksmithingExpanded and Herbalist drain their skills with their own bundled managers, outside the
+  boss-key floor. Their own loss is set to 0 and `Lembitu.Callings` drains them by World
+  Advancement Progression's rule instead (ADR-0022).
 - ImpactfulSkills' Crafting perks are off as well as Forging, because they duplicate
   BlacksmithingExpanded.
-- Still open: the retuned perk thresholds per mod and the master-recipe list per profession. Boss
-  trophies are a candidate ingredient for master recipes: boss loot is one drop per kill (EpicLoot
-  `Boss Trophy Drop Mode = Default`), so re-killing a boss pays.
+- Perk thresholds are settled in ADR-0024; boss trophies were considered as ingredients and left
+  out (ADR-0023).

@@ -38,13 +38,17 @@ so the boss-key skill floor and the professions keep working.
   replaces their files without losing ours:
   1. Respec resets the active class to level 1. Cheap early, expensive late.
   2. Switching class also starts over at level 1: one levelled class at a time.
-  3. Kill XP goes to party members near the kill, split so the party's total is about 110-125% of
-     a solo kill, using the party ID SocialSystem stores on each player. Oathbound's server-side
-     kill routing is the one place this happens.
-  4. A cap on talent points, if the Shakedown shows level 80 arrives too early in the month.
+  3. Kill XP goes to the killer's party members near the kill, split so the party's total rises
+     from 100% of the kill for one member to 150% for eight (ADR-0022; first written as 110-125%),
+     using SocialSystem's server-side party membership. Oathbound's server-side kill routing is the
+     one place this happens.
+  4. ~~A cap on talent points~~ Dropped the same day (ADR-0022): no cap and Oathbound's stock XP
+     pace. If level 80 comes too fast, that is revisited after it is observed.
+  5. Added the same day (ADR-0022): every class may use the gathering tools of every profession —
+     the fishing rod for all classes, and Mining and Wood Cutting progress for a Monk's bare hands.
 - **Kept as Oathbound ships them:** the death penalty (half the progress into the current level,
-  never a level), companions, sieges, blood moons and the Oathstone. Walking from a guild's start
-  to the Oathstone is itself early progression.
+  never a level), companions, sieges and the Oathstone. Walking from a guild's start to the
+  Oathstone is itself early progression. Blood moons were turned off the same day (below).
 
 ## Consequences
 
@@ -62,6 +66,13 @@ so the boss-key skill floor and the professions keep working.
   before the Run world is created (ADR-0009).
 - Every character's EpicMMO level, attributes, XP orbs and meads are gone, along with all
   MagicPlugin items. The Shakedown world absorbs that.
-- Sieges and blood moons add to raids and creature levels. Their interaction with ZenRaids,
-  personal raids, the Guilds monster ward and CreatureManager's tuning is a Shakedown question.
+- Sieges replace vanilla's random raids rather than adding to them (found 2026-10-04 in the
+  grilling's mod checks; kept by the owner): when vanilla would start a random raid, a siege starts
+  at a ready outpost instead, scaled by the outpost's biome, and with no outpost nothing happens.
+  The Guilds monster ward starves a siege of spawn points. CreatureManager's tuning remains a
+  Shakedown question.
+- Blood moons are off (`[BloodMoon] Enabled = false`, owner, 2026-10-04). Their siege picks its
+  warband from the world's boss keys, which World Advancement Progression blocks, so it would have
+  stayed at its weakest tier all Run; and their sense and star multipliers are each player's local,
+  unsynced setting, applied on the player's own machine, which the Pack rule forbids.
 - `Lembitu.Oathbound` is decided but not yet written.

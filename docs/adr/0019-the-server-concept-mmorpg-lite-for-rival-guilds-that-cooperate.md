@@ -30,9 +30,10 @@ launch and starts in its own scored region.
 two, with no dynamic scaling of any kind: no headcount health, damage or raid-chance bonus.
 CreatureManager's modifiers and tables are the fine-tuning knob. Tuning bosses for eight means a
 single guild needs another guild for a boss, which is the cooperation incentive built into the
-numbers. Deaths are costly: class-level XP loss, skill drain down to the boss-key floor and a corpse
-run. Carried items and durability are not touched. (A timed debuff after respawn was dropped the
-same day: no well-built mod provides one, and the other three costs are enough.)
+numbers. Deaths are costly: class-level XP loss, skill drain down to the boss-key floor (focus
+professions excepted, ADR-0022) and a corpse run. Carried items and durability are not touched. (A
+timed debuff after respawn was dropped the same day: no well-built mod provides one, and the other
+three costs are enough.)
 
 **Pace.** An actively playing group should kill Fader in about one month. The server is open-ended
 after that, but systems are sized for that month, not for a long endgame.
@@ -53,15 +54,18 @@ reaches outside its axis has those parts switched off. To be revisited once the 
 
 **Parties.** An intentional, invite-only group of up to eight that may mix guilds, separate from
 guild membership. Party members share kill XP and see each other's map positions, nothing else. The
-party's total XP lands only slightly above what its members would earn apart, around 110-125% of
-solo. Group-only bonuses count anyone in the party, whatever their guild.
+party's total XP lands above what one member would earn alone, rising from 100% for one member near
+the kill to 150% for eight (revised the same day from 110-125%, ADR-0022). Group-only bonuses count
+anyone in the party, whatever their guild.
 
-**World.** Vanilla portal rules: ore and metal travel by ship or cart. Maps are personal, shared by
-choice at a cartography table or through guild pins. Interfaces may show readouts (hover stats,
-skill progress, clock, forecast) but no creature radar and no automatic distant resource or dungeon
-pins. Vanilla raids in every biome early, with permanent base safety earned later through guild
-progress. Creature modifiers, hunt events and regional pressure are in. (Seasons that change spawns,
-farming and cold were scrapped the same day, with the Seasonality mod.)
+**World.** Vanilla portal rules: ore and metal travel by ship or cart, until the Ashlands' stone
+portal, which carries everything as vanilla intends (kept deliberately the same day). Maps are
+personal, shared by choice at a cartography table or through guild pins. Interfaces may show
+readouts (hover stats, skill progress, clock, forecast) but no creature radar and no automatic
+distant resource or dungeon pins. Raids from early on, with permanent base safety earned later
+through guild progress. Raids are Oathbound's sieges, which replace vanilla's random raids (revised
+the same day, ADR-0020). Creature modifiers, hunt events and regional pressure are in. (Seasons that
+change spawns, farming and cold were scrapped the same day, with the Seasonality mod.)
 
 **Economy.** One remote, server-wide market that works while the other side is offline. Personal
 boss keys lock both crafting and equipping a biome's gear, so trade helps but never skips a boss.

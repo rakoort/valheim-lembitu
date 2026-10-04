@@ -189,7 +189,8 @@ are read from that file rather than from the caller's shell.
 
 **Every world rule is an explicit `-modifier`; nothing is inferred from a preset.** The arg string is
 `-savedir /config/save` followed by five modifiers — `Combat hard`, `DeathPenalty default`,
-`Resources default`, `Raids default`, `Portals hard` — and it was verified against the game's own log
+`Resources default`, `Raids less` (from 2026-10-03; every raid is an Oathbound siege since
+2026-10-04, ADR-0020), `Portals hard` — and the form was verified against the game's own log
 on Valheim 1.0.12, which printed one `Setting world modifier: <Name>-><value>` line per rule and no
 parse error.
 
@@ -217,6 +218,21 @@ becomes the first word of the command. `RESTART_CRON` still restarts on Sunday m
 calls `update()` on its first loop iteration and re-syncs the installed game from its Steam download
 when the server is idle. The real freeze is the one ADR-0007 names: install the accepted versions
 once, by a controlled installation, and do not re-create the host from scratch mid-Run.
+
+### Pre-launch checklist
+
+Two steps need information that exists only once the guilds have formed. Both belong between the
+Shakedown and the creation of the Run world (2026-10-04, owner's decision to defer them):
+
+1. **Roster SeparateSpawns by guild.** `config/dedicated/SeparateSpawns.groups.json` still holds the
+   three empty, randomly filled groups of the 2026-10-03 setup. Replace them with one group per
+   guild, listing each member's Steam ID, before the Run world is created, because start regions
+   are scored and assigned at generation (ADR-0018, ADR-0019). Needed: every guild's name and its
+   members' Steam IDs.
+2. **Seed ServerQuickConnect in the Pack.** Its main-menu button joins a preset server; the Run
+   server's address goes into a Pack config seed under `config/client/` when the Pack is built.
+   Never the password: it stays with each player (`docs/modstack.md`, ServerQuickConnect row).
+   Needed: the public address and port.
 
 ## Backups — #20
 
