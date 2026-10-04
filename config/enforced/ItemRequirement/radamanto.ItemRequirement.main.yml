@@ -1,0 +1,3 @@
+# Upstream's example Blocking/Swim equip gates are intentionally disabled.
+# Profession crafting rules live in radamanto.ItemRequirement.professions.yml.
+[]
