@@ -38,6 +38,8 @@ version, and change the decision's ADR or overlay when a number moves.
 | Party XP | XP each member receives for one kill at party sizes 1, 2, 4 and 8, members in and out of 100 m, and a killer standing beyond 100 m (who still earns their share); the server logs every split as `Party kill XP:`. Whether partying feels worth it. | ADR-0022's 100% to 150% curve. |
 | Gathering tools | A Rogue, Monk, Berserker, Highlander and Breaker can fish; a Monk's bare-handed mining and chopping raise Mining and Wood Cutting. Time a Monk's Mining and Wood Cutting against a pickaxe or axe user: the fist raises by Oathbound's 0.25 per gathering hit. | ADR-0022; the Monk's gather pace. |
 | Oathbound at join | A client without Oathbound tries to join; record whether it is refused. | `docs/modstack.md`, "Where each mod runs". |
+| Our plugins at join | A client without `Lembitu.Oathbound` and `Lembitu.Callings` tries to join; record whether Jotunn refuses it. Both declare `EveryoneMustHaveMod`, but no join has shown the refusal yet (owner's decision 2026-10-04 to check it here). | `docs/modstack.md`, "Where each mod runs". |
+| Existing characters with ExpertExplorer | Each player's first join with a character made before ExpertExplorer was installed: it loads, joins and keeps its skills, and no `ArgumentNullException` appears in the client log. The `Lembitu.Callings` fix covers this load path by code reading only. | ADR-0022; `docs/modstack.md`, "Known interactions". |
 
 ## Difficulty and world
 

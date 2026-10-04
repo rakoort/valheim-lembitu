@@ -746,8 +746,9 @@ updates are recorded in `modstack.md`; official BossRules **1.0.10** replaces th
 The clean isolated build passed with 13 existing fork warnings and zero errors. Packaging, installer
 and config suites passed 35 checks; the native listener-readiness regression also passed.
 
-On astral-bicep, the exact tested source/build copy is
-`/home/ra/.cache/valheim-lembitu/update-20260913`; the existing working checkout was left untouched.
+On astral-bicep, the exact tested source/build copy was
+`/home/ra/.cache/valheim-lembitu/update-20260913` (removed 2026-10-04 by owner decision; the run's
+evidence below remains); the existing working checkout was left untouched.
 
 ```sh
 cd ~/.cache/valheim-lembitu/update-20260913
@@ -783,9 +784,9 @@ ExpertExplorer's new-character crash (`docs/modstack.md`, "Known interactions").
 sessions ran without `XDG_CONFIG_HOME` set, so Herbalist and AdditiveDamageModifier failed to load
 on their clients; the Herbalist checks below come from the later sessions, which set it as above.
 Fixtures only arranged the scene: skill levels, items, teleports, a lethal hit, and
-landing a spawned fish through vanilla `FishingFloat.Catch` in place of the reel-in. Evidence, one
-directory per session with every command and response under `steps/`, is under
-`/home/ra/lembitu-plugins-evidence/` on astral-tricep.
+landing a spawned fish through vanilla `FishingFloat.Catch` in place of the reel-in. The per-session
+evidence, every command and response under `steps/`, was kept on astral-tricep and removed on
+2026-10-04 by owner decision; this table is what remains of it.
 
 | Check | Observed |
 | --- | --- |

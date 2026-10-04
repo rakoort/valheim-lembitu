@@ -233,6 +233,12 @@ Shakedown and the creation of the Run world (2026-10-04, owner's decision to def
    server's address goes into a Pack config seed under `config/client/` when the Pack is built.
    Never the password: it stays with each player (`docs/modstack.md`, ServerQuickConnect row).
    Needed: the public address and port.
+3. **Drop `Lembitu.LevelUpSound` from the live server.** The current server loads
+   `Lembitu.LevelUpSound.dll`, deployed 2026-10-03 from untracked source in the bicep checkout; the
+   owner retired it on 2026-10-04. The live install manifest owns it
+   (`config/bepinex/.lembitu-installed`), so installing from a `dist/` without it prunes it, and
+   `prune-mirror` then clears the container's copy. Install from a clean build: the bicep checkout's
+   `dist/plugins/` still holds the DLL and would put it back.
 
 ## Backups — #20
 

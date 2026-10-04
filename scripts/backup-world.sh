@@ -7,7 +7,8 @@
 # `worlds_local/<World>/_main.<n>.fwl2` with `.db2`, `.chunks`, `.chunk` siblings and an `.ok`
 # marker written last. A `*.fwl`/`*.db` glob therefore captures nothing on Valheim 1.0 and is not
 # used here. The stores below were enumerated from a real pack boot
-# (`~/.cache/valheim-lembitu/ticket-66-20260915/*-saves/`) and from the live server's save tree.
+# (`~/.cache/valheim-lembitu/ticket-66-20260915/*-saves/` on astral-tricep, removed 2026-10-04) and
+# from the live server's save tree.
 #
 # What is captured, and who owns it (see docs/wiki/operations.md):
 #

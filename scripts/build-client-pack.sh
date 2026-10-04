@@ -299,12 +299,14 @@ done
 
 # Presence: a client-side adopted package must be staged, or the pack is silently missing content.
 for name in "${REQUIRED[@]}"; do
-  found="$(find "$stage" -type d -name "$name" | head -1)"
+  found="$(find "$stage" -type d -name "$name" -print -quit)"
   [[ -n "$found" ]] || die "client pack is missing required client-side package '$name'"
 done
 
-# The pack must not be empty: an empty distribution installs nothing and looks successful.
-( cd "$stage" && find BepInEx/plugins -mindepth 2 -type f | grep -q . ) \
+# The pack must not be empty: an empty distribution installs nothing and looks successful. `-quit`
+# rather than a pipe into `grep -q`: under pipefail, find dies of SIGPIPE once grep has its match,
+# and a full stack's file list is long enough that it reliably does.
+[[ -n "$(cd "$stage" && find BepInEx/plugins -mindepth 2 -type f -print -quit)" ]] \
   || die "client pack staged no package files under BepInEx/plugins"
 
 # Nothing may sit at the game root except the loader's own files. A `plugins/` or `config/` at the

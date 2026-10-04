@@ -144,7 +144,7 @@ standalone build output are removed; its twelve enforced rules loaded from the r
 The deleted fork's YamlDotNet rationale now lives beside EpicMMOSystem's reference.
 
 Verification used one isolated dedicated server on **astral-tricep**, with no client and no live-server changes:
-`/home/ra/.cache/valheim-lembitu/ticket-64-20260914/`. The `source/` build started at
+`/home/ra/.cache/valheim-lembitu/ticket-64-20260914/` (removed 2026-10-04 by owner decision). The `source/` build started at
 `f4ff4e7` plus this Ticket's staged changes. `runtime-source.sha256` matches all 137 staged
 runtime source/config inputs to that tested copy. The pre-existing, unrelated BossRules plugin
 retirement was excluded from this commit and test source. Pins and package bytes are identified

@@ -45,18 +45,22 @@ table and the hash lock, which is what the build consumes.
 
 These are this project's own evidence. They are **external to the repository** by design — logs,
 saves and binaries are large, machine-specific and sometimes contain private identities — and they
-live on the hosts that produced them. Dates are the measurement dates, not the commit dates.
+live on the hosts that produced them. Dates are the measurement dates, not the commit dates. The
+seven `ticket-*` directories were removed on 2026-10-04 by owner decision; their rows stay as the
+record of what was measured, and the excerpts quoted in `docs/build.md` and the wiki are what remains.
 
 | Location | Host | Date | What it proves |
 | --- | --- | --- | --- |
-| `~/.cache/valheim-lembitu/ticket-66-20260915/` | astral-tricep | 2026-09-15 | The reduced 23-package pack stages with verified hashes and declared closure, builds only MaxPlayerCount and Lembitu.Harness with zero errors and zero warnings, and boots to `Chainloader startup complete` and the native Steam listener with twenty-nine plugins and no `MissingFieldException`/`MissingMethodException`. Also the generated-config surface the enforced overlays were written against. |
-| `~/.cache/valheim-lembitu/ticket-64-20260914/` | astral-tricep | 2026-09-14 | Server-synced cannon disablement: baseline logs `Registered HandCannon`; after the overlay, zero registrations. Assembly coexistence for ValheimRAFT's bundled ServerSync and two Newtonsoft.Json copies. |
-| `~/.cache/valheim-lembitu/ticket-62-20260914/` | astral-tricep | 2026-09-14 | EpicMMO panel drag ownership, with rendered screenshots and before/after state. |
-| `~/.cache/valheim-lembitu/ticket-36-20260915/` | astral-tricep | 2026-09-15 | EpicLoot dictionary-warning safety: baseline vs. fixed logs, `verification.json`, `installed-files.json`. |
-| `~/.cache/valheim-lembitu/ticket-35-20260915/` | astral-tricep | 2026-09-15 | Configuration generation and the boot that followed it. |
-| `~/.cache/valheim-lembitu/ticket-32-20260914/` | astral-tricep | 2026-09-14 | Generated StoneOutlook content and the restoration blocker. |
-| `~/.cache/valheim-lembitu/ticket-61-20260914/` | astral-tricep | 2026-09-14 | Committed-binary identity and the diagnostic instrumentation hashes. |
+| `~/.cache/valheim-lembitu/ticket-66-20260915/` (removed 2026-10-04) | astral-tricep | 2026-09-15 | The reduced 23-package pack stages with verified hashes and declared closure, builds only MaxPlayerCount and Lembitu.Harness with zero errors and zero warnings, and boots to `Chainloader startup complete` and the native Steam listener with twenty-nine plugins and no `MissingFieldException`/`MissingMethodException`. Also the generated-config surface the enforced overlays were written against. |
+| `~/.cache/valheim-lembitu/ticket-64-20260914/` (removed 2026-10-04) | astral-tricep | 2026-09-14 | Server-synced cannon disablement: baseline logs `Registered HandCannon`; after the overlay, zero registrations. Assembly coexistence for ValheimRAFT's bundled ServerSync and two Newtonsoft.Json copies. |
+| `~/.cache/valheim-lembitu/ticket-62-20260914/` (removed 2026-10-04) | astral-tricep | 2026-09-14 | EpicMMO panel drag ownership, with rendered screenshots and before/after state. |
+| `~/.cache/valheim-lembitu/ticket-36-20260915/` (removed 2026-10-04) | astral-tricep | 2026-09-15 | EpicLoot dictionary-warning safety: baseline vs. fixed logs, `verification.json`, `installed-files.json`. |
+| `~/.cache/valheim-lembitu/ticket-35-20260915/` (removed 2026-10-04) | astral-tricep | 2026-09-15 | Configuration generation and the boot that followed it. |
+| `~/.cache/valheim-lembitu/ticket-32-20260914/` (removed 2026-10-04) | astral-tricep | 2026-09-14 | Generated StoneOutlook content and the restoration blocker. |
+| `~/.cache/valheim-lembitu/ticket-61-20260914/` (removed 2026-10-04) | astral-tricep | 2026-09-14 | Committed-binary identity and the diagnostic instrumentation hashes. |
 | `~/.local/state/lembitu/native-tests/` | astral-bicep / astral-tricep | 2026-09-13 | The full-pack native acceptance repetitions: `proof.json`, `events.jsonl`, IPC replies, installed-file hashes, screenshots and logs. Two repetitions passed; simultaneous two-client acceptance did not run. |
+| `~/lembitu-native-tests/20261004T165744Z-full-pack-a3d33296/` | astral-tricep | 2026-10-04 | The full-pack native acceptance with `Lembitu.Oathbound` and `Lembitu.Callings`, no test shim: every check passed, three new characters were created with ExpertExplorer loaded, and both screenshots render (`docs/build.md`). |
+| `~/lembitu-menu-evidence/` | astral-tricep | 2026-10-04 | ExpertExplorer's new-character crash through the real menu, with and without the mod, with screenshots; and the deletion of the probe's Steam Cloud character through the game's save API. |
 
 `docs/build.md` and the wiki pages carry the quoted excerpts from these runs, dated and scoped, so a
 reader without host access can still see what was observed. The rule applied throughout: a

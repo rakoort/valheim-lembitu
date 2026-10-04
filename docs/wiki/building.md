@@ -58,4 +58,5 @@ usefully: the first attempt selected an XP potion whose stat callbacks are disab
 callback sequence correctly failed verification rather than passing quietly. And current world
 saves use named directories with `.fwl2` checkpoints, not top-level `.fwl` files, which a fixture
 that guesses the older shape will miss. Diagnostic code stays outside the repository; its evidence
-lives on the host that produced it, under `/home/ra/.cache/valheim-lembitu/ticket-61-20260914/`.
+lived on the host that produced it, under `/home/ra/.cache/valheim-lembitu/ticket-61-20260914/`,
+until the owner had it removed on 2026-10-04.

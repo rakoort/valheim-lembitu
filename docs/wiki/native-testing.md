@@ -41,9 +41,9 @@ unexplained, and #59 owns it.
 
 The EpicMMO panel-drag ownership record (#62) and the StoneOutlook restoration blocker (#32)
 described code and content that are no longer in the pack: the EpicMMOSystem fork is retired in
-favour of upstream 1.9.67, and More World Locations AIO is cut. Their retained evidence stays on
+favour of upstream 1.9.67, and More World Locations AIO is cut. Their evidence was kept on
 astral-tricep under `/home/ra/.cache/valheim-lembitu/ticket-62-20260914/` and
-`ticket-32-20260914/` for anyone re-treading that ground.
+`ticket-32-20260914/` until 2026-10-04, when the owner had it removed.
 
 One measurement from the StoneOutlook work is worth carrying: a location a mod registers can be
 missing from the mod's own definitions rather than from an operator setting, and a shipped
@@ -91,8 +91,8 @@ assets. Jotunn’s [2.30.0 resolver](https://github.com/Valheim-Modding/Jotunn/b
 emits the unsupported-dictionary warning before reading the field value.
 The warning therefore does not establish that any entry needs replacement.
 
-Evidence is retained on astral-tricep in
-`/home/ra/.cache/valheim-lembitu/ticket-36-20260915/`: native logs,
+Evidence was retained on astral-tricep in
+`/home/ra/.cache/valheim-lembitu/ticket-36-20260915/` until its removal on 2026-10-04: native logs,
 `verification.json`, `installed-files.json`, `SetRarityColor.cs` and archived
 diagnostic instrumentation. The source input is
 `ac9f18c81e9a76d93391267f3e91216c34643886`; fresh server references, the complete
