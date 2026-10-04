@@ -1,6 +1,6 @@
 # valheim-lembitu
 
-A private, modded Valheim server for one invited group, run as a fixed three-month **run**.
+A private, modded Valheim server for one invited group, run as an open-ended **Run**.
 This file is the project's glossary: what the words mean when we use them in tickets, ADRs, code and
 player-facing text. The stack itself is in [docs/modstack.md](docs/modstack.md); decisions are in
 [docs/adr/](docs/adr/).
@@ -10,8 +10,8 @@ player-facing text. The stack itself is in [docs/modstack.md](docs/modstack.md);
 ### The group
 
 **Run**:
-The three-month period the server is open, with an announced start and end date, optionally
-extended while interest lasts.
+The period the server is open for play, from an announced start date. Open-ended, but every system
+is sized for an actively playing group to kill the last boss in about one month (ADR-0019).
 _Avoid_: season, wipe cycle, campaign
 
 **Shakedown**:
@@ -31,88 +31,113 @@ The set of mods and versions a player installs. During development it is a candi
 acceptance it is frozen for the run. A run client using anything else is a support problem, not a variant.
 _Avoid_: modpack, profile, loadout
 
-### Clans
+### Guilds and parties
 
-**Clan**:
-A named group of players with roles, private chat and its own friendly-fire rule. The only
-membership concept in the project — nothing else answers "is this player my ally".
-_Avoid_: guild, group, party, team, tribe
+**Guild**:
+A named group of three to five players with ranks, a shared vault, guild chat, its own start region
+and land it claims. The membership that owns things: land, vault, wards and guild progress. Guilds
+are rivals and cooperators at once (ADR-0019).
+_Avoid_: clan, tribe, team, faction
 
-**Clan role**:
-One of Leader, Officer or Member, held in a player's primary clan.
+**Guild rank**:
+A named tier inside a guild that carries permissions such as ward access, vault access and inviting.
 
-**Guest clan**:
-A second, persistent clan connection a player holds alongside their primary membership. While it is
-active it is the clan used for chat, HUD, pings, shared positions and friendly-fire checks.
-_Avoid_: secondary clan, alliance
+**Party**:
+An intentional, invite-only group of up to eight players that may mix guilds. It exists to share a
+hunt: members split kill XP and see each other on the map, nothing else. Temporary by nature, and
+never the answer to "who owns this".
+_Avoid_: group, squad, raid group
 
 **Ward**:
 A buildable claim that controls who may build, open and use things inside its radius, resolved
-against clan membership.
-_Avoid_: territory, claim, protection zone
+against guild membership and rank.
+_Avoid_: territory, protection zone
 
-**Trade Post** (deferred, not built):
-A clan's single buildable trading interface. What players see; the contracts and balances behind it
-are server records, not chests. Deferred for this run and safe to add mid-run, because the records
-never enter the world save (ADR-0006).
-_Avoid_: market, shop, auction house
+**Guild territory**:
+The square of land a guild claims around its banner, where only permitted members may build or use
+things. The base safety a guild earns later in the Run lives here.
+_Avoid_: claim, zone
 
-**Contract** (deferred, not built):
-A standing offer posted at a Trade Post: goods wanted, price paid. Payment is held from the moment
-it is posted, and it can be filled by another clan while its author is offline.
-_Avoid_: order, listing, trade, offer
-
-**Escrow** (deferred, not built):
-The payment a posted contract holds until it is filled, expires or is cancelled. A server-side
-balance, never coins in a container.
-
-**Mailbox** (deferred, not built):
-The per-player queue that delivers filled-contract goods and returned escrow at next login. How the
-project would make trade work between players who never share an evening.
-_Avoid_: inbox, courier, delivery box
+**Market**:
+The single server-wide place where players sell items, post buy orders and settle trades while the
+other side is offline. Remote by design, because players log in at any time.
+_Avoid_: trade post, auction house, shop
 
 ### Progression
 
-**Power curve**:
-A system that makes a character stronger over time. The project runs two: character level and
-gear. Both were removed on 2026-09-17 and both were restored the same day (ADR-0017), so the count
-has been two, one, none and two again within hours — read the ADR before treating any of it as
-settled.
-_Avoid_: progression system, build system
+**Progression pillar**:
+One of the seven systems that make a character or guild stronger: class level, talents,
+professions, gear tiers, boss powers, guild progression and magic schools (ADR-0019).
+_Avoid_: power curve, progression system
 
-**Character level**:
-The personal XP ladder and its attribute points. Restored 2026-09-17 without the armour-threshold
-mod that used to accompany it, so a level buys attributes and nothing gates gear by it.
-_Avoid_: MMO level, rank, XP level
+**Axis**:
+The kind of power a pillar owns, such as base attributes, playstyle perks or crafting efficiency.
+Pillars prefer to own separate axes; overlap is accepted where a mod is well built and its overlap
+can be tuned (ADR-0020).
+
+**Class**:
+The role a character chooses at the Oathstone, such as Mage, Ranger or Hunter. It decides which
+talents, abilities and companions are available. A character levels one class at a time.
+_Avoid_: job, profession, build
+
+**Oathstone**:
+The stone near the starting sacrificial stones where a character chooses a class and buys talents.
+Reaching it from a guild's start is the first journey of the Run.
+
+**Class level**:
+The active class's XP ladder, earned from kills, which grants one talent point per level. Death
+costs half the progress into the current level, never a level. Respecing or switching class starts
+the character over at level 1.
+_Avoid_: character level, MMO level, rank, XP level
+
+**Talent**:
+A perk bought with a talent point from the active class's tree. Changing talents means a respec,
+which costs the class level.
+_Avoid_: skill (that word is Valheim's own skills)
+
+**Profession**:
+One of eleven non-combat skills in three categories: Craft (Blacksmithing, Herbalist, Cooking),
+Land (Mining, Wood Cutting, Farming, Fishing, Animal Handling) and Road (Exploration, Sailing,
+Hauling). Anyone can practise any profession; specialists are better at it (ADR-0021).
+_Avoid_: class, job, trade skill
+
+**Calling**:
+A character's four focus professions: two from Land, one from Craft and one from Road. A Calling
+is a supply chain the player builds, and the way a guild divides its work.
+_Avoid_: class, role, build
+
+**Focus**:
+A profession inside a character's Calling. It levels at full speed to 100, while every other
+profession follows the steep curve. Dropping a focus sets that skill to what it would have been
+without the focus.
+_Avoid_: specialisation, main, primary
 
 **Gear tier**:
-A magic item's rarity and the effects rolled on it. The second power curve.
+A magic item's rarity and the effects rolled on it.
 _Avoid_: item power, loot tier
 
 **Personal key**:
-A boss or progression unlock stored per character, not in world state. Killing a boss advances the
-players who were there for it and nobody else: the adopted World Advancement Progression mod awards
-the key to every player within a hundred metres of the chunk host when the boss dies. Presence, not
-measured damage, is what earns it — cooperation between clans is the point (ADR-0010).
+A boss or progression unlock stored per character, not in world state. Killing a boss awards it to
+every player present at the kill and nobody else; guilds do not share keys. A biome's key is needed
+both to craft and to equip that biome's gear (ADR-0005, ADR-0019).
 _Avoid_: global key, world key, boss flag
 
 **World key**:
 Valheim's own world-wide progression flag. The thing personal keys deliberately replace, and this
-server writes none: global keys are blocked outright. Adopted mods that used to read them are
-configured to read the player instead, which is why EpicLoot gates loot on the requesting player's
-known recipes.
+server writes none.
 
-### PvP
+**Skill floor**:
+The level at or below which death does not drain a Valheim skill, raised by each personal boss key.
+It protects progress from death; it never raises a skill, so it is not a catch-up mechanism.
 
-**Stance**:
-A character's standing choice to be open to player-versus-player combat, changed only at a permitted
-place and held until changed there again. Not a per-fight state and not a shield: it survives
-logout and death, and dropping it costs the same journey as taking it up.
-_Avoid_: PvP flag, PvP toggle, PvP mode
+### Conflict
+
+There is no PvP on this server (ADR-0019). Players never damage each other, and rivalry between
+guilds plays out through progress, territory and the Market.
 
 **Tombstone**:
-The container a character's death leaves behind, holding whatever the death took. Who may open one
-follows the dead character's stance, not the opener's.
+The container a character's death leaves behind, holding whatever vanilla death rules take. Getting
+it back is the corpse run, one of the costs of dying.
 _Avoid_: grave, corpse, gravestone, headstone
 
 ### The world
@@ -126,18 +151,22 @@ A mod whose content is written into the world save — locations, dungeon rooms,
 be installed before the launch world is created and can never be removed during the run.
 _Avoid_: world-gen mod, sticky mod
 
-**Karma** (switched off, 2026-09-17):
-The regional pressure that rose as players killed creatures in an area, strengthening later spawns.
-Off since #84, with the mod that provides it still installed, so the word describes a switch rather
-than a mechanic in play.
+**Karma**:
+Regional pressure: an area where players kill heavily grows more dangerous over time, which pushes
+players to move on rather than farm one spot.
 
-**Enforcer** (switched off with Karma):
-A high-level, modifier-carrying creature Karma summoned, in dungeons or the open world. It was the
-project's stand-in for a scheduled event, since there is no game master. Nothing replaces it.
+**Enforcer**:
+An elite, modifier-carrying creature that appears as a hunt event in the open world or a dungeon,
+worth a group's effort. The stand-in for a game master.
 
-**Creature modifier** (switched off, 2026-09-17):
-An extra trait a creature could spawn with — armoured, enraged, an elemental infusion. Off at the
-master switch. The word survives because the retired chance tables still name them.
+**Creature modifier**:
+An extra trait a creature can spawn with, such as armoured, enraged or an elemental infusion. The
+main knob for fine-tuning difficulty.
+
+**Tuning target**:
+The number of players a fight is balanced for: eight for bosses, two for ordinary creatures. Fixed,
+never scaled by how many players are nearby (ADR-0019).
+_Avoid_: player scaling, headcount
 
 **Enforced config**:
 The deliberate deviations this project pins in a mod's generated configuration, and nothing else: a
@@ -148,8 +177,8 @@ _Avoid_: server settings, config overrides, the overlay
 
 **Difficulty tier**:
 The biome level preset that decides what level a creature spawns at, and through it how much health
-a boss has. It is one setting for the whole run, not a per-creature value, and it is not a power
-curve: players do not advance through tiers.
+a boss has. It is one setting for the whole Run, not a per-creature value, and it is not a
+progression pillar: players do not advance through tiers.
 _Avoid_: level preset, difficulty, boss scaling
 
 ### Mods

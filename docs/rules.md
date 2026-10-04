@@ -140,21 +140,11 @@ them would go.
 you use them (ProgressivePowers). Bows also handle differently: quivers and revised draw and aim
 (BetterArchery).
 
-**World-permanent mods land before the launch world is created.** A world-permanent mod writes its
-content into the world save — locations, dungeon rooms, vehicles — so it must be installed before
-the launch world exists and can never be removed during the Run (ADR-0009). Two qualify:
-**Max Dungeon Rooms** (larger dungeons) and **ValheimRAFT** (custom ships, anchoring, vehicle
-building).
-
-**Custom ships are back, and they carry cannons.** ValheimRAFT is reinstalled and every player may
-build vehicle pieces again (`config/enforced/zolantris.ValheimRAFT.cfg`). Cannons are enabled,
-reversing the decision that disabled them at adoption: a vehicle can now mount the cannon prefab
-family. That lands on the PvP stance rather than on a new rule — a flagged crew can shell another
-flagged crew, and an unflagged one cannot be shelled. Flight stays off.
-
-**Anything you had afloat before is gone.** The mod was removed for part of 2026-09-17, and its
-vessels were prefabs in the world save, so every ship built before that, and whatever was stored
-aboard, went with it. Build again from scratch.
+**World generation settings stay fixed while the world lives.** Expand_World_Size is
+world-permanent in this sense (ADR-0018). No remaining mod adds the dungeon rooms or vehicle
+prefabs covered by ADR-0009. Max Dungeon Rooms and ValheimRAFT, including its bundled
+DynamicLocations, were removed on 2026-10-03 at the owner's instruction. Removal risks losing
+existing vessels, their cargo and dungeon layout; it is not a tested safe migration.
 
 **The night cannot be voted away.** The mod for it was adopted and cut on the same day: its
 framework needs a BepInEx patcher in a directory the server container never mirrors, so it never
@@ -182,7 +172,7 @@ creatures than the `Easy` default, and the earliest biomes still spawn at level 
 so a new character is not softlocked. Expected boss health runs ×1.05 for Eikthyr to ×2.11 for Fader.
 
 - Register: *Intended*. The preset is committed and loads; observed boss and creature behaviour in
-  play belongs to #13 and #10. #26 owns ValheimRAFT's vehicles.
+  play belongs to #13 and #10.
 
 **A fight is the same fight whoever turns up.** Vanilla makes every creature tougher for each
 player standing nearby — 30% effective health and 4% damage each, capped at five — so a boss was a
@@ -216,61 +206,16 @@ stars.
 
 ## PvP and death
 
-**PvP is each character's own stance, and today it is still a button.** Every biome rule is
-`PlayerChoose`, so the server never forces PvP on anyone and Wards follow the biome rule
-(`config/enforced/Turbero.PvPBiomeDominions.cfg:16-32`). Nothing restricts where or how often a
-player flips it, and only a five-minute post-death grace slows them.
+**PvP is the vanilla toggle.** Each player chooses whether to flag. Vanilla's ten-second
+post-combat toggle gate remains, and the flag is off at login. No place-bound or persistent
+stance has been implemented.
 
-**What the stance becomes, decided 2026-09-16 and not yet built (#67).** A stance may be changed
-only within 20 m of the sacrificial stones — the circle of boss power stones at the spawn point —
-or inside a Ward that is enabled and claimed by the character's own clan, primary or Guest as
-`ClanApi` resolves it. Both directions cost that journey: dropping a stance is no freer than taking
-one up, which is what makes it a stance rather than a shield. It survives logout and death, because
-the server keeps it per character rather than on the player's ZDO (ADR-0013), and the server
-re-asserts its record and logs the attempt when a client's flag disagrees. There is no admin
-bypass. Refusal is visible: the toggle still takes the click and a centre message names where the
-stance can be changed. Vanilla's ten-second post-combat gate and the five-minute post-death grace
-both stay as they are.
+**Deaths follow vanilla rules for everyone.** PvPBiomeDominions was removed on 2026-10-03
+at the owner's instruction. Flagged-player equipped-item and hotbar retention left with it,
+as did its tombstone-looting restrictions and five-minute post-death PvP grace. There is no
+killer-only tombstone access or replacement death mechanic in the stack. The earlier stance
+and victim-scoped access decisions in ADR-0012 and ADR-0013 are not current behaviour.
 
-- Register: *Decided, not built*. The behaviour exists in no published mod — a survey of all 11,269
-  Thunderstore Valheim packages on 2026-09-16 found neither the place gate nor victim-scoped
-  tombstone access — so the run writes it (ADR-0012).
-
-**Death rules differ by whether you opted in.** The server pins both sides, because the PvE side is
-the rule for everyone who has not opted in and an upstream default flip must not change it silently:
-
-| | Unflagged (PvE) | Flagged (PvP) |
-| --- | --- | --- |
-| Keep equipped items on death | no | **yes** |
-| Keep hotbar items on death | no | **yes** |
-| Loot another player's tombstone | no | **yes** |
-| No items lost on death | off | off |
-
-**That last-but-one row is about the looter, not the victim.** The upstream rules are area-scoped —
-"in PvE areas all tombstones can be looted" — and with every biome on `PlayerChoose` the effective
-area is whichever flag the *acting* player carries. So a flagged player may loot an unflagged
-player's tombstone, which is the opposite of what the run wants. Observed by the owner, 2026-09-16.
-
-**What tombstone access becomes, decided 2026-09-16 and not yet built (#67).** Access follows the
-dead character, not the opener. An unflagged character's tombstone may be opened by that character
-and by the clan that `ClanApi` says was active at the moment of death, recorded on the tombstone
-when it is created so later roster changes cannot grant or remove access. A flagged character's
-tombstone may be opened by any flagged player, so spoils require standing in the same danger and a
-permanently unflagged player cannot farm graves from safety. Only the killer is not expressible:
-PvPBiomeDominions patches `Player.CreateTombStone`, which takes no killer.
-
-The tombstone still has to exist for any of it to matter, so no-item-loss stays off in both columns.
-PvPBiomeDominions is the only authority on what a death takes: AzuExtendedPlayerInventory, which
-owns the extra slots, has no death rules of its own, so nothing competes with it.
-What happens to items in the extra equipment and quick slots on death follows from two assemblies
-and is not yet confirmed in play. AzuEPI raises the grave's height in its
-`Inventory.MoveInventoryToGrave` prefix, so extra-row items do reach the tombstone;
-PvPBiomeDominions keeps an item only when it is `m_equipped`, or when `m_gridPos.y == 0`, which is
-the vanilla hotbar row alone. Armour worn in an equipment slot is equipped, so a flagged player
-keeps it; a quick slot sits on a row below the backpack, so its contents drop even though the HUD
-shows them beside the hotbar. Read from `PvPBiomeDominions.dll` 1.7.8 and
-`AzuExtendedPlayerInventory.dll` 2.4.14, decompiled 2026-09-16. One character dying twice, once
-flagged and once not, turns it into a measurement; #67 carries that.
 
 **Carrying capacity does not grow with progression, and that is a deliberate choice.**
 AzuEPI's extra rows are a flat 0 to 5 for everyone, with no way to unlock them as a character
@@ -283,18 +228,8 @@ AzuEPI 2.4.14 ships a `[10 - Favoriting]` section whose `Favoriting Modifier Key
 default — marks an item or a slot so storage mods leave it alone. It is a client key, so each
 player owns their own binding (read from `AzuExtendedPlayerInventory.dll` 2.4.14, #78).
 
-**Two things to know that the configuration does not say:**
-
-- **Retention is death-cause blind.** The mod's tombstone patch takes no killer, so a flagged player
-  who drowns also keeps their gear. Dying to a player is not mechanically distinct from dying to a
-  troll for a flagged player (`config/enforced/Turbero.PvPBiomeDominions.cfg:6-10`).
-- **Loot permission depends on a non-empty alert message.** The loot restriction lives in a prefix
-  that returns early — allowing everyone to loot every grave — when the alert toggle is off or the
-  message is empty. Both are therefore pinned, and the message is load-bearing configuration rather
-  than decoration.
-
-- Register: *Intended*. Flag behaviour, retention and grave access have not been observed on this
-  pack; #8's policy question is settled by the overlay above, but the behaviour is not measured.
+- Register: *Current stack policy*. Vanilla death rules replace the removed mod's rules;
+  this documentation change is not a gameplay measurement.
 
 ## Crafting, building and comforts
 

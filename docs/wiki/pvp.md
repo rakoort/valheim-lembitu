@@ -1,12 +1,18 @@
 # PvP: stance and tombstone access
 
-Why the Run writes its own PvP rules, what was decided and what the game and the pinned mods
-actually do. The rules players experience are in [The Run: concept and rules](../rules.md) under
-"PvP and death"; the contract being built is `issue://67`. Terms are `CONTEXT.md`: a **Stance** is a
-character's standing choice to be open to player-versus-player combat, a **Tombstone** is what a
-death leaves behind.
+Current rules are in [The Run: concept and rules](../rules.md), under "PvP and death".
+PvPBiomeDominions was removed on 2026-10-03 at the owner's instruction. Deaths now follow
+vanilla rules for everyone. Flagged-player equipment and hotbar retention, tombstone-looting
+restrictions and the mod's five-minute post-death grace left with it. No killer-only access
+or replacement death mechanic is installed.
 
-## Decisions
+PvP remains the vanilla toggle. Its ten-second post-combat gate remains, and the flag is off
+at login. The place-bound, persistent stance described below was never implemented.
+
+The rest of this page is the historical 2026-09-16 decision and binary-research record for
+#67, ADR-0012 and ADR-0013. It does not describe the current stack or promise these mechanics.
+
+## Historical decisions — 2026-09-16
 
 Settled with the owner on 2026-09-16, in one interview. Each entry names the alternative that lost,
 because the alternatives are what a future reader will wonder about.
@@ -53,7 +59,7 @@ because the alternatives are what a future reader will wonder about.
   turns the rule into a courtesy; and constants in the plugin, where retuning a radius costs a
   rebuild, a Pack reissue and a client re-extract.
 
-## Exclusions
+## Historical exclusions — 2026-09-16
 
 - **Boss summoning altars and `Vegvisir` runestones are not permitted places.** The altar was the
   first proposal and the owner replaced it with the spawn stones; Vegvisir number in the hundreds,
@@ -75,7 +81,7 @@ because the alternatives are what a future reader will wonder about.
   Recorded because the earlier plan called for a simultaneous two-client native session, which both
   test hosts sharing one Steam account made a licence problem rather than a test.
 
-## Lessons
+## Historical lessons — 2026-09-16
 
 These are read from binaries and a catalogue, not decided. Full attribution in
 [Research provenance](../research.md).

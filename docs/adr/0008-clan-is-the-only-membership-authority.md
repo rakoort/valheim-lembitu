@@ -1,7 +1,7 @@
 # ADR-0008: Clan is the only membership authority
 
 Date: 2026-09-10
-Status: Accepted
+Status: Superseded by [ADR-0019](0019-the-server-concept-mmorpg-lite-for-rival-guilds-that-cooperate.md)
 Issues: #3, #22
 
 ## Context

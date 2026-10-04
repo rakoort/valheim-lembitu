@@ -1,5 +1,7 @@
 # ADR-0012: We write the PvP stance and corpse-access rules ourselves
 
+Status: Superseded by [ADR-0019](0019-the-server-concept-mmorpg-lite-for-rival-guilds-that-cooperate.md) — there is no PvP
+
 The run wants two PvP rules no published mod implements: a stance a player may change only at a boss
 runestone or inside their own clan's ward, and corpse access decided by the dead player's stance
 rather than the looter's. A survey of the whole Thunderstore Valheim catalogue on 2026-09-16 — 11,269

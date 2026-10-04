@@ -1,7 +1,7 @@
 # ADR-0006: The Trade Post is a server ledger with mailbox delivery
 
 Date: 2026-09-10
-Status: Accepted
+Status: Superseded by [ADR-0019](0019-the-server-concept-mmorpg-lite-for-rival-guilds-that-cooperate.md)
 Issue: #16
 
 ## Context

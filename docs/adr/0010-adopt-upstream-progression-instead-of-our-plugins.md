@@ -1,7 +1,7 @@
 # ADR-0010: Adopt upstream progression instead of writing our own plugins
 
 Date: 2026-09-15
-Status: Accepted
+Status: Accepted; amended by [ADR-0020](0020-oathbound-owns-class-level-talents-and-magic.md) for one patch plugin, `Lembitu.Oathbound`
 Issues: #11, #12, #13, #14, #15, #16, #17, #27, #44
 
 ## Context

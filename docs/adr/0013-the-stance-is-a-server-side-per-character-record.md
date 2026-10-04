@@ -1,5 +1,7 @@
 # ADR-0013: The stance is a server-side per-character record
 
+Status: Superseded by [ADR-0019](0019-the-server-concept-mmorpg-lite-for-rival-guilds-that-cooperate.md) — there is no PvP
+
 A player's PvP stance is stored by the server, in a plugin-owned file inside the save tree, keyed by
 character. The server is the only authority on it: on spawn it writes the recorded stance onto the
 player, and when a client's live flag disagrees with the record it re-asserts the record and logs the

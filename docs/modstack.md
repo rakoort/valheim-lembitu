@@ -4,7 +4,8 @@ What the development candidate runs, at which version, and what we changed about
 This file records exact versions for reproducible tests, not a prelaunch freeze. The reasoning is
 in [adr/](adr/) and the vocabulary in [../CONTEXT.md](../CONTEXT.md).
 
-Adopted pins were checked against live Thunderstore package APIs on **2026-09-15**. Development
+Adopted pins were checked against live Thunderstore package APIs on **2026-10-03**, and the test
+server booted the pack on **1.0.16 / network 40** with BepInExPack 5.4.2351 that day. Development
 follows the latest public Valheim client/server and latest mod releases. The live server runs
 **1.0.14 / network 40** as of 2026-09-17; it had been 1.0.12, and nobody chose the change — the
 container's updater ran its first pass on an idle restart, re-synced the game from Steam and
@@ -18,35 +19,29 @@ The stack was reduced from thirty packages to twenty-three on **2026-09-15**, an
 plugin of ours except the test harness was cancelled, because upstream mods now cover the
 load-bearing behaviour (ADR-0010). What was removed and why is in [Considered and cut](#considered-and-cut).
 
-**This table is now the repository state** (#66, #70, #78, #80). `modstack.lock.json` carries
-exactly these twenty-four pins — twenty-three after the 2026-09-15 reduction, twenty-one once #70
-dropped AdminQoL and BoneMod, twenty-six once #78 adopted five quality-of-life mods, and
-twenty-four once #80 removed character level. The retired fork and plugins are deleted from
-`src/`, `config/enforced/` holds the overlays below, and `src/forks/` contains only
-MaxPlayerCount. The dated measurements further down are the runs that established the pack, not a
-prediction of it.
+**This table is the repository state.** It carries sixty-four pins after the 2026-10-04 review.
+That day the owner added thirty-five packages and removed Clan, settled the server concept
+(ADR-0019), and then judged every mod against it; Oathbound replaced the level and magic mods
+(ADR-0020). Each removal is a row in [Considered and cut](#considered-and-cut). The lock records
+the exact package bytes.
+The retired fork and plugins are deleted from `src/`, and `src/forks/` contains only
+MaxPlayerCount. The dated measurements below established earlier packs, not this candidate.
 
 ## Adopted upstream
 
 Every mod here is pinned at exactly this version; the side it runs on is in
 [Where each mod runs](#where-each-mod-runs). Most are installed on the server *and* the client
-pack, two are withheld from the Pack as server-only — DiscordConnector and Max Dungeon Rooms —
+pack, DiscordConnector is withheld from the Pack as server-only,
 and three ride in the Pack alone: AzuHoverStats, AzuClock and MouseTweaks. Candidate staging is
 not deployment or verification. "Enforced config" is a deliberate deviation from the defaults and
 belongs in server-locked config rather than a player's file.
 
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
-| sighsorry/Clan | 1.0.10 | Clans, roles, clan chat, guest clans, clan pings | Friendly fire off; config locked |
-| sighsorry/STU_Ward | 1.3.15 | Wards resolved against clan membership | — |
-| sighsorry/PortalRules | 1.0.7 | Portal access control | Access modes only: no fares, no map picker, no admin portals, GlobalKey gates unset; access-mode limits pinned at upstream values |
 | VentureValheim/World_Advancement_Progression | 1.0.0 | Personal keys: private per-character progression, per-player raids, key-gated actions, vanilla skill caps | Private keys on, all global keys blocked; equipment, crafting, cooking, eating, guardian powers and boss summons locked; repairs, building, taming, boats and portals open; skill floor from boss keys with the ceiling at 100 |
-| RandyKnapp/EpicLoot | 0.14.5 | Gear tiers: magic drops, rarities, enchanting and socketed shardstones | `Item Drop Limits` and `Gated Freebuild Mode` both `PlayerMustKnowRecipe`, so gating reads the player, not world keys; Adventure Mode off; drop rate 0.6, shardstones 0.05; effect counts thinned by patch (#73) |
-| WackyMole/WackyEpicMMOSystem | 1.9.67 | Character level: XP, attributes, level band, XP meads | XP curve and attributes at upstream values; XP loss band 0.05-0.15; its own creature-level control off, so CreatureManager owns levels. Restored 2026-09-17 (2026-09-17, owner's instruction) without its armour-gate companion, so no level gates gear |
-| sighsorry/CreatureManager | 1.1.14 | Fixed creature and boss multipliers, and holding vanilla's headcount scaling at zero | Cloning and customisation off; `Biome Level Preset = Hard`; **Karma and all three modifier switches off from 2026-09-17 (#84)**; headcount scaling pinned at 0 / 0 / 1 |
-| Digitalroot/Max_Dungeon_Rooms | 2.0.39 | Larger dungeons | — |
-| team0/ValheimRAFT | 4.3.2 | Custom ships, anchoring and vehicle building | Cannon prefabs off, flight off, non-admin debug off, and from 2026-09-17 `AdminsCanOnlyBuildRaft = true`, so no player builds a vehicle. The mod stays installed because it is world-permanent; whether the pin leaves is #82 |
-| turbero/PvPBiomeDominions | 1.7.8 | PvP death and retention rules | Biome-forced PvP off everywhere |
+| RandyKnapp/EpicLoot | 0.14.13 | Gear tiers: magic drops, rarities, enchanting, shardstones and Haldor's adventure trade | Rebuilt from package defaults 2026-10-04: `Item Drop Limits = PlayerMustKnowRecipe`, because the boss-kill mode reads world keys this server blocks; `Gated Freebuild Mode = BossKillUnlocksCurrentBiomePieces`, which in practice lets FreeBuild skip only the workbench; drop rate 0.6; shardstones 0.1; failed tempering can destroy the item; Adventure Mode on with at most five bounties per player; one boss trophy, Wishbone and swamp key per kill rather than per player present, so re-killing a boss pays (2026-10-04) |
+| LionAndOtter/Oathbound | 0.21.14 | Class level and talents: thirteen classes with 79-node trees, active abilities, companions, elemental and blood magic, sieges and blood moons | — Adopted 2026-10-04 in place of EpicMMO and MagicPlugin (ADR-0020). Respec, class switching, party XP and the talent-point cap are changed by our `Lembitu.Oathbound`, because the mod has no settings for them |
+| sighsorry/CreatureManager | 1.2.5 | Fixed creature and boss multipliers, monster modifiers, Karma and Enforcers, and holding vanilla's headcount scaling at zero | Every value fixed, never scaled by players present (ADR-0019): ordinary creatures 2x health and 1.2x damage, bosses 8x health and 1.5x damage (damage raised 2026-10-04 for Oathbound's talents); `Biome Level Preset = Hard`; Karma at `KarmaLevelAndEnforcer` with the cap and four blocking switches pinned; modifiers on at about 10 in 100 ordinary creatures, about one per boss and two per Enforcer, without deathward, regenerating, omen or blamer (`levels.yml`, `karma.yml`); headcount scaling pinned at 0 / 0 / 1; cloning and customisation off |
 | sighsorry/Dive_In | 1.2.3 | Diving, water combat, underwater creature pursuit | — |
 | Azumatt/AzuExtendedPlayerInventory | 2.4.14 | Equipment slots, quick slots, Wishbone and Demister slots | Extra rows 0, three quick slots, equipment and special slots on; the vanity button off, which is the only switch the mod has for it |
 | Azumatt/AzuCraftyBoxes | 1.8.19 | Crafting and building pull materials from containers near the station | `Container Range` 20 m; `Leave One Item` off; `Mod Enabled` on; config locked; `Azumatt.AzuCraftyBoxes.yml` committed empty, so everything in range is pullable |
@@ -55,16 +50,56 @@ belongs in server-locked config rather than a player's file.
 | Azumatt/MouseTweaks | 1.0.4 | Inventory moving, stack splitting and quick-dropping with mouse and modifier | — Client-only |
 | Azumatt/ProximityVoiceChat | 1.0.2 | Positional voice chat, quieter with distance, no external program | Voice ranges and the Opus codec pinned; microphone, playback, indicators and keybinds stay the player's |
 | turbero/DetailedLevels | 2.1.3 | Skill progress readout | — |
-| sighsorry/DataForge | 1.3.4 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
-| sighsorry/SkadiNet | 1.1.5 | Peer-aware network pacing, dungeon-layer filtering | — |
+| sighsorry/DataForge | 1.3.5 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
+| sighsorry/SkadiNet | 1.1.6 | Peer-aware network pacing, dungeon-layer filtering | — |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
-| JereKuusela/Expand_World_Size | 1.34.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 15000, `Stretch world` 1.5, `Stretch biomes` 1.25 — a disc half again as wide with biome regions a quarter larger (#86) |
-| Mushroom_Vikings/SeparateSpawns | 0.1.0 | Each clan starts in its own place, scored for a viable neighbourhood | `InnerRadius` 2400 so groups wake closer to the middle. Its config lives in the game tree rather than BepInEx's, so `config/dedicated/` and `scripts/apply-dedicated-config.sh` own it, not the enforced overlay |
-| MidnightMods/ProgressivePowers | 0.3.3 | Forsaken power mastery: powers grow with use | A third power curve, adopted against ADR-0004's rule and recorded in ADR-0018 |
-| Vapok/AdventureBackpacks | 2.0.7 | Backpacks with their own storage | One-way: the packs are registered items, so removing the mod deletes them and their contents |
-| ishid4/BetterArchery | 2.0.0 | Quivers, draw and aiming changes for bows | — Declares BepInEx 5.4.1501, a documented override |
-| ValheimModding/Jotunn | 2.30.0 | Library | Overrides the 2.29.2 pin declared by EpicLoot |
+| JereKuusela/Expand_World_Size | 1.43.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 13250, `Stretch world` 1.325, `Stretch biomes` 1.25, `Locations` 1.75: about 1.76x vanilla area with points of interest at vanilla density, chosen 2026-10-04 for rival-but-cooperating guilds (ADR-0019); before that 12500/1.25/1.25, and ADR-0018's 15000/1.5/1.25 |
+| Mushroom_Vikings/SeparateSpawns | 0.1.1 | One scored start region per guild | `InnerRadius` 2400, starts 1 km apart. From 2026-10-04 one group per guild, rostered by Steam ID before launch (ADR-0019); the committed roster still holds the three empty, randomly filled groups of the collaborative 2026-10-03 setup until the guilds are known. Its config lives in the game tree rather than BepInEx's, so `config/dedicated/` and `scripts/apply-dedicated-config.sh` own it, not the enforced overlay |
+| MidnightMods/ProgressivePowers | 0.3.4 | Forsaken power mastery: powers grow with use | The boss-power pillar (ADR-0019) |
+| Vapok/AdventureBackpacks | 2.2.5 | Backpacks with their own storage | One-way: the packs are registered items, so removing the mod deletes them and their contents. Its automation settings (craft from backpack, auto-store) are each player's own; accepted 2026-10-04 as preference under the Pack rule (ADR-0019) |
+| OdinPlus/OdinArchitect | 1.7.9 | Larger and new building pieces | — Added 2026-10-03 (owner's instruction). One-way: its pieces live in the world save |
+| MathiasDecrock/PlanBuild | 0.20.0 | Plan, copy and share builds | Direct build and terrain tools off for players, so a plan is finished with real materials at the right station; admins keep both (2026-10-04, ADR-0019) |
+| OdinPlus/OdinsKingdom | 1.6.2 | Castle building pieces with their own build tool | — Added 2026-10-03 (owner's instruction). One-way: its pieces live in the world save |
+| ComfyMods/SearsCatalog | 1.9.0 | Resizable, movable build panel | — Added 2026-10-03 (owner's instruction). Declares BepInEx 5.4.2202, a documented override |
+| SpikeHimself/XPortal | 1.2.25 | Pick a portal destination from a list | — Added 2026-10-03 (owner's instruction). The only portal mod since PortalRules left the same day |
+| Marlthon/OdinShip | 0.8.7 | Seven cargo and war ships | — Added 2026-10-03 (owner's instruction). One-way: its ships live in the world save |
+| blacks7ar/GlassPieces | 1.2.8 | Glass, iron and copper building pieces and a minable resource | — Added 2026-10-03 (owner's instruction). One-way: its pieces live in the world save |
+| Marlthon/TheFisher | 0.3.9 | New fish, aquatic creatures and aquariums | — Added 2026-10-03 (owner's instruction) |
+| Advize/PlantEverything | 1.21.3 | Cultivator plants berry bushes, flowers, mushrooms, extra trees and more | Biome rules enforced for its own plantables and vanilla crops, so planting anywhere stays ImpactfulSkills' high-level Farming reward (2026-10-04, ADR-0021) |
+| OdinPlus/OdinsFoodBarrels | 1.3.9 | Buildable storage barrels for seeds, fruit and vegetables | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
+| OdinPlus/OdinCampsite | 1.6.5 | Camping-style building pieces | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
+| blacks7ar/SeedBed | 1.2.9 | Plant seeds in a bed instead of cultivated ground | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
+| Marlthon/SeaAnimals | 0.3.9 | Dangerous and rideable ocean creatures | — Added 2026-10-04 (owner's instruction) |
+| blacks7ar/Herbalist | 1.5.0 | Herbalism skill, a crafting station, tonics and recovery items | — Added 2026-10-04 (owner's instruction). One-way: its station lives in the world save |
+| MSchmoecker/DynamicStoragePiles | 0.8.1 | Stack and pile containers that show their fill level | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
+| Searica/DodgeShortcut | 1.4.0 | A single dodge key | — Added 2026-10-04 (owner's instruction) |
+| OdinPlus/BlacksmithingExpanded | 1.2.4 | Blacksmithing skill that improves crafting, smelting and kiln output | — Added 2026-10-04 (owner's instruction). The smithing profession: ImpactfulSkills' Forging is off so the two never stack (2026-10-04) |
+| xtavim/BetterMap | 1.1.0 | Boats, carts and resources on the map; automatic pins for what a player walks past | Creature radar and trader reveal off, automatic pins within 15 m only, exploration radius at the vanilla 100 m, config locked (2026-10-04, ADR-0019: readouts but no radar) |
+| MilkMediaProductions/ExpertExplorer | 1.7.0 | Exploration skill that grows as points of interest are found | — Added 2026-10-04 (owner's instruction) |
+| Northarun/Guilds | 1.2.2 | Guilds: ranks, guild chat, shared vault, guild-bound wards, a banner territory, guild levels, upgrades and achievements | Five members at most and the Members upgrade neutralised; boss keys never shared with absent members; Comfort upgrade at guild level 12 and 20, monster ward at level 10; coin donations buy guild XP at 50 coins per point, so trade feeds the guild (2026-10-04, ADR-0019). The membership and ward authority since Clan left |
+| Northarun/Marketplace | 1.4.0 | Server-wide marketplace and order board: coin sales, buy orders, bounties, a bank | The one remote trade system; a 5% fee on every payout keeps coins scarce (2026-10-04, ADR-0019) |
+| M2Valheim/SocialSystem | 1.0.4 | Invite-only parties of up to eight across guilds, party positions on the map, friends and party chat | — Adopted 2026-10-04 (ADR-0020). Party kill-XP sharing is `Lembitu.Oathbound`'s, which reads the party ID SocialSystem stores on each player |
+| MidnightMods/ImpactfulSkills | 0.21.0 | Land and Road professions and Cooking: yield, area work, growth timers, taming, sailing and hauling perks | Forging and Crafting off (BlacksmithingExpanded owns smithing); every Combat and Body perk off, the weapon equip-speed factor included; Knowledge Sharing off (2026-10-04, ADR-0021) |
+| Radamanto/Item_Requirement | 1.1.3 | Master recipes: crafting gated by earned profession level, modded skills included | — Adopted 2026-10-04 (ADR-0021). It blocks the craft itself, not just the button, and reads raw skill level. The recipe list is still to be written |
+| sighsorry/AdditiveDamageModifier | 1.2.4 | Resistances and weaknesses stack additively | Players always take at least 25% of each floored damage type (package: 10%), so stacked resistances never reach immunity; config locked (2026-10-04) |
+| VentureValheim/Venture_Multiplayer_Tweaks | 1.0.0 | Server tweaks: PvP, map positions, trader pins, death behaviour | PvP held off for everyone; public map positions off (guild and party positions come from Guilds and SocialSystem); trader map pins off, temple pin on; vanilla respawn and skill loss on death (2026-10-04, ADR-0019) |
+| VentureValheim/Venture_Logout_Tweaks | 1.0.0 | Restores status effects such as Rested from the last logout | — Added 2026-10-04 (owner's instruction) |
+| ZenDragon/ZenRaids | 1.2.3 | Lit fires keep spawns out of a base; raid trigger control | Vanilla raid odds with no per-player bonus, raids in every biome including the Meadows (2026-10-04, ADR-0019). Base safety is earned later through the Guilds monster ward at guild level 10 |
+| ZenDragon/Zen_ModLib | 1.14.20 | Library | Declared by ZenRaids |
+| Searica/Extra_Snap_Points_Made_Easy | 2.1.0 | Extra snap points on vanilla pieces | — Added 2026-10-04 (owner's instruction). Its settings are plain local config despite their "synced" labels, so snapping is each player's preference; accepted under the Pack rule (ADR-0019) |
+| JereKuusela/Server_devcommands | 1.115.0 | Server side of the admin tools: remote devcommands and permissions for admins | Server-only, withheld from the Pack. Admins install Infinity Hammer, its addon and World Edit Commands on their own clients; none of them is in the player stack (2026-10-04) |
+| Wubarrk/Njord | 2.0.7 | Ship handling and steering, with a harbour vendor | Quality of life only (2026-10-04): no permanent tailwind, its own acceleration boost and the free first hull off, hull upgrades off, steering at 1.5x; config locked. It replaces vanilla propulsion, so the per-hull speed caps are set to measured vanilla top speeds in the Shakedown |
+| Nekitker/SaunaMod | 2.1.0 | Buildable, upgradable sauna: steam heal, buffs and up to +2 comfort | — Added 2026-10-04 (owner's instruction). Its comfort stacks with the Guilds Comfort upgrade; both kept, the guild one priced late |
+| ValMedia/OdinOnDemand | 1.3.0 | Cinema screens and music players | — Added 2026-10-04 (owner's instruction), kept after review. Every client fetches streams itself; only the Windows video player is bundled, so Mac and Linux players may get no video |
+| ValMedia/OOD_LIB | 1.2.0 | Library | Declared by OdinOnDemand |
+| SeasonedProfessionals/OdinEye | 1.2.37 | Server data over a REST API and WebSocket, for future tooling | Bound to loopback, never a published port: the API has no authentication and can push in-game messages (2026-10-04). Server-only, withheld from the Pack |
+| MSchmoecker/WhichModAddedThis | 0.1.2 | Mod name in item tooltips and the build HUD | — Added 2026-10-04 (owner's instruction) |
+| VentureValheim/Deluxe_Particles | 1.0.0 | Larger particle effect on dropped items | — Added 2026-10-04 (owner's instruction) |
+| Pumpkin/ValheimVisualEnhanced | 0.5.18 | Client-side world-aware visual effects | — Added 2026-10-04 (owner's instruction) |
+| Allifreyr/AutoServerPassword | 1.0.2 | Remembers server passwords after the first entry | — Kept 2026-10-04. Client-only; it stores passwords in plain text on each player's own PC |
+| Radamanto/ServerQuickConnect | 1.0.4 | Main-menu button that joins a preset server | — Kept 2026-10-04. Client-only and unsynced; the server address goes into a Pack seed when the Pack is built, never the password, which stays with each player |
+| ValheimModding/Jotunn | 2.30.2 | Library | Overrides the 2.29.2 pin declared by EpicLoot and the 2.29.0 declared by Guilds and Marketplace |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
 | ValheimModding/YamlDotNet | 16.3.1 | Library | Declared by ServersideQoL, and its own detector plugin loads it either way (#66 boot) |
 
@@ -94,19 +129,14 @@ cancelling connection`.
 
 | Mod | Announced as |
 | --- | --- |
-| sighsorry/Clan | `Clan`, and `Clan Media` as a second channel |
-| sighsorry/STU_Ward | `STUWard` |
-| sighsorry/PortalRules | `PortalRules` |
 | sighsorry/CreatureManager | `CreatureManager` |
 | sighsorry/DataForge | `DataForge` |
 | sighsorry/Dive_In | `DiveIn` |
 | Azumatt/AzuExtendedPlayerInventory | `AzuExtendedPlayerInventory` |
 | sighsorry/SkadiNet | `SkadiNet` |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
-| turbero/PvPBiomeDominions | `PvP Biome Dominions` |
 | turbero/DetailedLevels | `Detailed Levels` |
-| WackyMole/WackyEpicMMOSystem | `EpicMMOSystem`, plus its `ItemManager` and `PieceManager` |
-| team0/ValheimRAFT | `ValheimRAFT` |
+| LionAndOtter/Oathbound | Not yet read from a join. Jotunn-registered; whether it refuses a client without it is unverified |
 | Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, and loaded on the live server 2026-09-16** (`Loading [AzuCraftyBoxes 1.8.19]`, then `Registered 'Azumatt.AzuCraftyBoxes ConfigSync' RPC`), but not yet read from a join: ServerSync announces the version whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. The refusal itself is what the group's first v8 session confirms (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
 
@@ -127,7 +157,8 @@ ProximityVoiceChat, where the failure is benign and deliberate.
 | --- | --- |
 | MaxPlayerCount (fork) | Every patched surface runs on the host; a client is told the capacity by the server. Already excluded from the client pack by an assertion in the builder |
 | nwesterhausen/DiscordConnector | Reads server events and posts a webhook; there is no client half |
-| Digitalroot/Max_Dungeon_Rooms | **Server-side only, decided 2026-09-16.** Room counts are applied when the server generates a dungeon, and the result is world data, so a client needs nothing. It leaves the client Pack with DiscordConnector (#70). The generation argument is sound but untested on a client, so #70 proves it by entering a large crypt with a client that does not have the mod |
+| JereKuusela/Server_devcommands | Admin remote commands run on the server; players never use them. Withheld from the client pack by the builder's exclusion list |
+| SeasonedProfessionals/OdinEye | A REST/WebSocket API on the server's loopback; there is no player half. Withheld from the client pack by the builder's exclusion list |
 
 **Client-only — presentation only, reopened 2026-09-16 (#78).** The 2026-09-16 review had cut this
 whole category, on the AdminQoL lesson: a mod the server cannot enforce is a mod whose behaviour
@@ -138,7 +169,7 @@ rule changes. A gameplay-bearing mod the server cannot reach still does not ship
 
 | Mod | Decision |
 | --- | --- |
-| Azumatt/AzuHoverStats | **Adopted client-only.** Hover readouts for creatures, pieces, items and chests. Nothing in it is server-synced — every entry is a plain `Config.Bind` and there is no `ConfigSync` in the assembly — so the server could pin nothing even if it ran the mod, while installing it server-side *would* refuse every client that lacks it through its hand-rolled `AzuHoverStats_VersionCheck`. Its chest readout is not an information bypass: the `Container.GetHoverText` postfix bails on `m_checkGuardStone && !PrivateArea.CheckAccess(...)`, and STU_Ward prefixes exactly that method with clan-resolved trust, so another clan's warded chest shows nothing (#78) |
+| Azumatt/AzuHoverStats | **Adopted client-only.** Hover readouts for creatures, pieces, items and chests. Nothing in it is server-synced — every entry is a plain `Config.Bind` and there is no `ConfigSync` in the assembly — so the server could pin nothing even if it ran the mod, while installing it server-side *would* refuse every client that lacks it through its hand-rolled `AzuHoverStats_VersionCheck`. Its chest readout is not an information bypass: the `Container.GetHoverText` postfix bails on `m_checkGuardStone && !PrivateArea.CheckAccess(...)`, the vanilla ward check that Guilds extends to guild members with ward access, so an outsider sees nothing in a warded chest (#78) |
 | Azumatt/AzuClock | **Adopted client-only.** Clock and weather forecast on screen. It bundles ServerSync but is not installed on the server, so nothing of it is synchronised; a player who removes it loses a readout |
 | Azumatt/MouseTweaks | **Adopted client-only.** Mouse and modifier handling for moving, splitting and dropping stacks. Plain `Config.Bind` throughout, keybinds and thresholds only |
 | sighsorry/AdminQoL | **Dropped.** All 29 settings are client-decided: none is marked `[Synced with Server]` and it takes no part in the handshake (#70) |
@@ -162,10 +193,9 @@ AzuCraftyBoxes joins it for the same reason from v8 on: once the server runs it,
 it would refuse every player who installed that Pack. `test/client-pack.test.sh` covers the
 assertion.
 
-**The pack also ships server-only mods.** The v5 archive contains `DiscordConnector` and
-`Max_Dungeon_Rooms`; both leave in v6. They are inert on a client but they inflate a 128 MB
-download that players extract by hand. Trimming is #70's work, and the dungeon mod's removal
-carries the one check worth doing: a client without it must still load a generated crypt correctly.
+**Historical client-pack trimming — 2026-09-16.** The v5 archive contained DiscordConnector
+and Max_Dungeon_Rooms; both left the client pack in v6 (#70). This was client-side trimming,
+not the 2026-10-03 removal of the dungeon mod from the stack.
 
 ## Forks
 
@@ -198,8 +228,10 @@ stable item identity.
 
 ## World-permanent mods
 
-These write content into the world save, so they are installed before the launch world is created
-and never removed during the run (ADR-0009): **Max Dungeon Rooms**, **ValheimRAFT**.
+No remaining mod writes the added dungeon-room or vehicle-prefab content covered by ADR-0009.
+Expand_World_Size is world-permanent for terrain generation, as described in ADR-0018; its
+settings must stay fixed while that world lives. The 2026-10-03 removal risk is recorded in
+[Pack](wiki/pack.md).
 
 EpicLoot and World Advancement Progression are one-way for a different reason: removing them
 destroys player gear or per-character progress rather than corrupting the world. World Advancement
@@ -213,7 +245,7 @@ No pin is cleared for the launch pack until, on the current public test game:
 1. the whole pack boots clean on a dedicated server — chainloader completion, the native Steam
    listener, and no `MissingFieldException` or `MissingMethodException`,
 2. one manual two-client session covers a boss kill, personal keys surviving reconnect, a ward, a
-   portal and a raft.
+   portal and a vanilla boat.
 
 That is the whole bar. Per-feature single-client scenario coverage was cancelled with the plugins it
 was written for: nothing in the pack is ours, so proving each mod's own features is upstream's job
@@ -293,9 +325,9 @@ Read off the generated files in that boot, so the enforced overlays name real ke
   health was 4 until 2026-09-17, when character level left the Pack and every character lost its
   attribute points (#80). That file is committed and replaced wholesale, with the cost the earlier
   note named — it grows fields with every release, so a package update is a review of this file
-  (#68). Its ordinary-creature modifier chances are also ours, at 0.25 each rather than the
-  package's 5, because the mod rolls one modifier per group and four groups at 5 put a modifier on
-  nearly every creature.
+  (#68). Its modifier chances are also ours (2026-10-04): the mod rolls one modifier per group,
+  four groups, so the tables are tuned per group to give about 10 in 100 ordinary creatures, one
+  modifier per boss and, in `karma.yml`, two per Enforcer.
 
 ## Known interactions
 
@@ -318,9 +350,8 @@ Recorded so they are not rediscovered:
   AzuExtendedPlayerInventory participates in the join-time version handshake, so any change to
   which slot mod the server runs refuses an older Pack outright rather than mismatching silently.
   Every player needs the current Pack before they can connect (#74).
-- **Retention is death-cause blind.** PvPBiomeDominions patches `Player.CreateTombStone`, which
-  takes no killer, so a flagged player who drowns keeps their gear too. #8's premise — dying to a
-  player costing less than dying to a troll — is only half achievable with this mod.
+- **Removal — 2026-10-03.** PvPBiomeDominions left at the owner's instruction. Its
+  flagged-player retention and tombstone-looting rules no longer apply; deaths use vanilla rules.
 - **Progression lives in the character save.** World Advancement Progression stores personal keys
   in the player's own character file, so a client owns its own progression. This is accepted, with
   no tamper resistance (ADR-0010). Character level used to live there too, in
@@ -330,11 +361,11 @@ Recorded so they are not rediscovered:
   preset rolls them and Karma raises them. EpicLoot's rarity rolls read that level, and boss level
   from the same preset sits on top of it. Until #80, character level rewrote those levels first,
   which is the claim ADR-0005 was written against.
-- **Jotunn piece categories.** Custom pieces can appear in the build menu without a category on this
-  game build. Affects ValheimRAFT.
-- **EpicLoot declares an older Jotunn.** 0.14.5 declares 2.29.2 and runs against our 2.30.0 pin;
-  DiscordConnector likewise declares an older BepInEx pack. Both are accepted skews, proven by the
-  acceptance boot rather than by their manifests.
+- **Historical piece-category finding — September 2026.** Custom pieces from ValheimRAFT
+  could appear without a build-menu category. That package left on 2026-10-03.
+- **Current dependency skews are explicit.** EpicLoot runs against the Jotunn 2.30.2 pin;
+  the staging script lists accepted older dependency declarations. Manifest closure is not
+  proof that this refreshed combination passes gameplay acceptance.
 - **AzuCraftyBoxes' restriction file is committed empty, and one API can rewrite it.** Read from
   `AzuCraftyBoxes.dll` 1.8.19, sha256 `5a191f9c…3084d`. `YamlUtils.ReadYaml` turns a blank file
   into an empty dictionary, and `CanItemBePulled` returns true for any container the dictionary
@@ -356,45 +387,62 @@ Recorded so they are not rediscovered:
 
 Kept out deliberately. Each line is a decision, not an oversight.
 
-Three entries left this table on 2026-09-17, hours after joining it: EpicLoot, ValheimRAFT and
-WackyEpicMMOSystem were removed and then restored the same day (ADR-0017). They are pinned
-again above. What did not come back is player state — levels, magic item properties and every
-vessel in the save.
+EpicLoot, ValheimRAFT and WackyEpicMMOSystem were removed and restored on 2026-09-17
+(ADR-0017). Levels, magic item properties and vessels lost in that removal did not return.
+On 2026-10-03 the owner removed ValheimRAFT again, along with Max Dungeon Rooms and
+PvPBiomeDominions. On 2026-10-04 Oathbound replaced WackyEpicMMOSystem (ADR-0020).
 
 | Mod | Why not |
 | --- | --- |
 | sighsorry/BossRules | World Advancement Progression gates boss summons and guardian powers per key; its remaining refunds and stones did not justify the mod, its overlay and the altar-scan guard we had to write |
-| MidnightMods/ProgressivePowers | Forsaken power mastery dropped; powers are vanilla, gated per character by personal keys (ADR-0004) |
-| warpalicious/More_World_Locations_AIO | 185 locations at the cost of a world-permanent dependency and four open defect tickets; vanilla locations plus Max Dungeon Rooms carry the run |
+| MidnightMods/ProgressivePowers | Cut on 2026-09-15, then restored; currently adopted above |
+| warpalicious/More_World_Locations_AIO | 185 locations at the cost of a world-permanent dependency and four open defect tickets; the stack now uses vanilla locations |
 | sighsorry/Fast_AssetBundle_Loader | Existed for MWL's 200+ bundles, and produced Linux `DriveInfo` failures and a shared-cache isolation deviation |
-| sighsorry/CaptainValheim, sighsorry/SecondaryAttacks, sighsorry/AdditiveDamageModifier | Three combat layers landing on one damage number; removed rather than tuned |
+| sighsorry/CaptainValheim, sighsorry/SecondaryAttacks | Combat layers landing on one damage number; removed rather than tuned. AdditiveDamageModifier, cut with them, was readopted on 2026-10-04 |
 | sighsorry/VeiledRecipes | Recipe discovery is already what EpicLoot's `PlayerMustKnowRecipe` gating reads |
 | sighsorry/RepairRequiresMaterials | Friction without a rule behind it |
 | sighsorry/Groundwork | Tool scaling not worth another mod on the placement path it already broke once |
-| MidnightMods/ImpactfulSkills | Third power curve (ADR-0004) |
 | sighsorry/Valheim_Enchantment_System | Second enchanting path on the same items (ADR-0004) |
 | MidnightMods/ValheimArmory | New base weapons need community EpicLoot patches to be enchantable (ADR-0004) |
 | MidnightMods/StarLevelSystem | CreatureManager owns creature levels (ADR-0005, as amended) |
-| Smoothbrain/Groups | Second membership authority (ADR-0008) |
+| Smoothbrain/Groups | Deprecated, and its bundled ServerSync reads `ZRoutedRpc.Everybody`, a const on Valheim 1.0. Parties are SocialSystem's (ADR-0020) |
 | sighsorry/InventoryActions | Mutually exclusive with AzuExtendedPlayerInventory, which holds the slots for this run, and smaller |
 | Nosferatu/SmoothServer | One pacing layer only; SkadiNet chosen |
 | WackyMole/WackysDatabase | DataForge covers tuning |
-| Tristan/Valheim_PvP_Tweaks | Overlaps PvPBiomeDominions; oldest pins on the list |
+| Tristan/Valheim_PvP_Tweaks | Excluded in September 2026 for overlapping PvPBiomeDominions and old pins; not adopted as a replacement after the 2026-10-03 removal |
 | sighsorry/ServerManager | Its Discord and logging role is DiscordConnector's |
 | AWLGaming/DiscordBot_AWL, warpalicious/DiscordTools, RustyMods/DiscordBot | Need an external bot host or two-way chat; the relay is a webhook |
 | warpalicious/Discord_Screenshots | Client-only, nothing depends on it |
 | sighsorry/YouAreNotWorthy | Gates on world keys, which this server does not write |
-| shudnal/ProtectiveWards | STU_Ward covers wards |
+| shudnal/ProtectiveWards | Guilds covers wards (ADR-0019) |
 | Therzie/Warfare | Untouched since March 2025 |
-| ZenDragon/ZenBossStone | Per-player boss trophies, but pulls a second mod library into the closure |
 | Hex_Viking/HexResourceTracker, GChallenge/GCValheimStats, Tristan/Player_Activity, Eilif/EilifPaths | Client-only and unenforceable; EilifPaths also changes gameplay per player |
 | KGvalheim/Marketplace_And_Server_NPCs_Revamped | Deprecated on Thunderstore and pre-1.0. Design reference for the deferred Trade Post only |
 | MSchmoecker/MultiUserChest | The only candidate that changes networked item movement, which is where duplication and item loss live. The vanilla "someone is in the chest" wait is an annoyance, not a problem. A risk judgement, not a conflict: its own incompatibility list — QuickStore, QuickStack, SimpleSort — touches nothing in this pack (#78) |
 | Crystal/BetterChat | Clan owns the chat window: it patches `Chat.Awake`, `InputText`, `HasFocus`, `Update`, `RPC_ChatMessage` and `SendPing`, and BetterChat rewrites the same input handling and visibility, risking the clan channel's prefixes. It would also add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own settings enforceable (#78) |
-| RustyMods/Seasonality | It sets the world global keys `season_winter`, `season_summer`, `season_spring` and `season_fall`, and this server blocks every global key (ADR-0005, ADR-0010). It also ships seasonal modifiers and weather control, so it is not the visual-only mod it appears to be, and it would reopen a difficulty the run fixed for its whole length (#78) |
 | ArgusMagnus/ServersideQoL, ArgusMagnus/ServersideQoL_JustSleep | **Removed 2026-09-17, hours after adoption, without ever working.** The framework ships a BepInEx *preloader patcher* and aborts unless it sits in the game tree's `patchers/` directory. `scripts/install-plugins.sh` deploys `patchers/` into `/config/bepinex`, but the container mirrors only `plugins/` into `/opt/valheim`, so the mod logged `ServersideQoL.Patchers.dll was not installed correctly` on every boot and JustSleep never wrote a config. Fixing it needs a second bespoke deploy step, like the one SeparateSpawns already needs; the owner judged a night-skip not worth that and cut both. The patcher gap in our installer is real and outlives the mods (#86) |
 | Smoothbrain/CreatureLevelAndLootControl | **Tried and rejected 2026-09-17, on the live server.** It was the obvious replacement for CreatureManager — plain percentages for creature and boss health, its own affix tables, and the same three multiplayer-scaling keys — but 4.6.4 is from May 2025 and cannot run on Valheim 1.0: its bundled ServerSync reads `ZRoutedRpc.Everybody`, a field the game turned into a const, so its type initializer throws `TypeInitializationException` at boot and the mod does nothing. `scripts/screen-bundled-libs.sh` reports five stale references, and it was not run before the swap — which is the whole reason that script exists (ADR-0002, #84) |
 | WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17 and not restored**, unlike the level mod it accompanied (2026-09-17, owner's instruction). Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
+| seneaL/SeneaL_UI | **Considered and dropped 2026-10-04** (owner's decision). It replaces the whole UI and by default takes over the inventory from AzuExtendedPlayerInventory, crafts from nearby chests beside AzuCraftyBoxes, and auto-feeds smelters beside BetterStations |
+| sighsorry/Clan | **Removed 2026-10-04** (owner's instruction). Guilds of three to five are the membership, with parties for shared hunts (ADR-0019, superseding ADR-0008) |
+| WackyMole/WackyEpicMMOSystem | **Replaced 2026-10-04 by Oathbound** (ADR-0020). Level and attributes only, with no talent tree; its party XP reads the deprecated Smoothbrain/Groups API, and its death penalty subtracts the retained XP from the total rather than the lost XP |
+| blacks7ar/MagicPlugin | **Replaced 2026-10-04 by Oathbound's Mage and Warlock** (ADR-0020). One magic system, owned by the class pillar |
+| blacks7ar/MagicRevamp | **Cut 2026-10-04: does not load.** Its assembly hard-depends on `org.bepinex.plugins.backpacks`, the deprecated Smoothbrain/Backpacks, which its manifest omits |
+| Tenemo/EpicLoot_ProgressionFix | **Cut 2026-10-04: fails at startup.** It requires AzuCraftyBoxes 1.8.27 exactly, throws against our 1.8.19 and unpatches all its gameplay fixes. It also ships a preloader patcher the container never deploys (#86), and forces server-wide chat and armour-before-block with no switch |
+| M2Valheim/SkillsReworked, M2Valheim/TalentTree | **Rejected 2026-10-04.** SkillsReworked's death drain writes skill levels directly, bypassing the boss-key floor. TalentTree rewrites the damage roll and armour for everyone with no setting, and its Last Bastion talent prevents death |
+| friendly_neighbor/ExperienceSystem | **Rejected 2026-10-04.** Second Life cancels deaths and has no off switch; respec is free |
+| korCaptain/CaptainSkillTree, treextr/PathOfValheiman, Lorska/Valheim_Level_System_by_Lorska, Ketanol/LevelingSystem_SharingXP and nine other level, class and party mods | **Reviewed 2026-10-04 and not adopted.** Decompiled verdicts are in `local/mod-review-2026-10-04/fit-*.md` |
+| Mydayyy/ServerSideMap, NightOfGames/Huginn_Map | **Cut 2026-10-04.** Both share every player's explored map server-wide, while maps are personal and shared only by choice (ADR-0019) |
+| ZenDragon/ZenMap | **Cut 2026-10-04.** No-map play resets exploration, its table radius is overwritten by ExpertExplorer, and it blocks the pin-naming Guilds' shared `!` pins rely on |
+| sighsorry/STU_Ward | **Cut 2026-10-04.** Its `Guilds` group provider looks up the deprecated Smoothbrain Guilds (`org.bepinex.plugins.guilds`), not Northarun's `adrian.valheim.guilds`, so it cannot resolve wards against guilds. By default it also disables the vanilla ward recipe, the ward Northarun binds to a guild. Guild-bound vanilla wards and the banner territory protect bases instead |
+| javadevils/OCDheim | **Cut 2026-10-04.** Transpiles the same placement method as Extra Snap Points and adds a second set of terrain tools; Extra Snap Points and PlanBuild cover precision building |
+| JereKuusela/Infinity_Hammer, sighsorry/InfinityHammerAddon, JereKuusela/World_Edit_Commands | **Admin-only from 2026-10-04, not pinned.** Free copying, placement without cost, ignoring wards and removing anything contradict full-cost building, so admins install them on their own clients. Server_devcommands stays on the server for them |
+| ValheimQoL/StorageGroups, Heyaeyaeya/ChestSorter | **Cut 2026-10-04.** Both route items between chests and their range is a per-player setting the server cannot lock, which the Pack rule refuses (ADR-0019). AzuCraftyBoxes and DynamicStoragePiles cover crafting from chests and seeing what is in them |
+| ComfyMods/ComfyAutoRepair | **Cut 2026-10-04** (owner's decision). Vanilla one-item repair keeps repair trips deliberate; the mod also capped station level at 4, so higher-tier gear might not have auto-repaired |
+| ZenDragon/ZenBossStone | **Cut 2026-10-04** (owner's decision). World Advancement Progression's personal keys already track each player's boss progress; its sacrifice-for-loot fallback would also have dropped CreatureManager's and EpicLoot's boss rewards |
+| RustyMods/Seasonality | **Scrapped 2026-10-04** (owner's decision, "for now"). Seasonal spawns, ice shelves and the rest leave with it; the world keeps fixed difficulty without a calendar |
+| blacks7ar/BetterStations | **Cut 2026-10-04** (owner's decision). Its smelter, kiln and other stations are new types rather than vanilla ones, so BlacksmithingExpanded's smelting and kiln perks, which patch the vanilla stations, would not reach them, and the smith's production speed would stop being a profession reward |
+| ishid4/BetterArchery | **Cut 2026-10-04** (owner's decision). Its settings have no server sync, so arrow velocity, gravity and accuracy were each player's own to change, against the Pack rule, and archery belongs to Oathbound's Ranger and Hunter classes |
 
 ## Re-pinning
 
