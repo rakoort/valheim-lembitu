@@ -34,13 +34,19 @@ _Avoid_: modpack, profile, loadout
 ### Guilds and parties
 
 **Guild**:
-A named group of three to five players with ranks, a shared vault, guild chat, its own start region
-and land it claims. At most three exist, each agreed before launch. The membership that owns things:
-land, vault, wards and guild progress. Guilds are rivals and cooperators at once (ADR-0019).
+A named group of three to five players with ranks, a shared vault, guild chat, the start region it
+claims and land it claims. Founded in game; at most three hold a start region. The membership that
+owns things: land, vault, wards and guild progress. Guilds are rivals and cooperators at once
+(ADR-0019, ADR-0028).
 _Avoid_: clan, tribe, team, faction
 
 **Guild rank**:
 A named tier inside a guild that carries permissions such as ward access, vault access and inviting.
+
+**Start region**:
+One of three scored places 0.5 to 1.2 km from the sacrificial stones, each reached through its own
+portal in a ring around the stones. A founded guild claims one as its members' home (ADR-0028).
+_Avoid_: spawn group, base, guild start
 
 **Party**:
 An intentional, invite-only group of up to eight players that may mix guilds. It exists to share a
@@ -82,8 +88,8 @@ talents, abilities and companions are available. A character levels one class at
 _Avoid_: job, profession, build
 
 **Oathstone**:
-The stone near the starting sacrificial stones where a character chooses a class, buys talents and
-changes their Calling. Reaching it from a guild's start, 0.5 to 1.2 km away, is the first trip of the Run.
+The stone beside the sacrificial stones where a character chooses a class, buys talents and changes
+their Calling. Every new character wakes beside it, so the first evening of the Run is spent there.
 
 **Class level**:
 The active class's XP ladder, earned from kills, which grants one talent point per level. Death

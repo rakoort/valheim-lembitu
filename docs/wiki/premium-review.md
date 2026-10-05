@@ -5,7 +5,8 @@ one-question-at-a-time interview with the owner. The research is first-party dec
 upstream package metadata, kept in `local/premium-review-2026-10-04/` (summary in its `README.md`,
 evidence in the eight handbacks beside it). Nothing in that research was run in game; the numbers it
 proposes are Shakedown starting points, not measurements. Implementation is tracked in #87 (configs
-and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`) and #90 (`Lembitu.Guide`).
+and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Guide`) and #91
+(`Lembitu.Guilds`).
 
 ## Decisions
 
@@ -24,6 +25,17 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`) and #90 (`Lembitu
 - **Coin donations buy guild XP at 10 coins a point** (owner, 2026-10-04), the package default, in
   place of 50; to be applied. Donated coins are destroyed (`Plugin.cs:211`), so the Market's coins
   feed guild progress and leave the economy; level 20 would still cost about 880,000 coins.
+- **Founding a guild is free** (owner, 2026-10-05): Guilds `[2 - Server] CreateCost = 0` in place of
+  the package's 1,000 coins; to be applied (#87). A new character has no coins and admins cannot
+  create a guild (Guilds 1.2.2 `guildadmin` offers only list, disband, leader and kick), so at 1,000
+  no guild, guild ward, vault or chat would exist until after some Black Forest play
+  (`GuildServer.cs:834-909`).
+- **Guilds form in game and claim start regions** (owner, 2026-10-05; ADR-0028): every new player
+  wakes at the sacrificial stones; a founded guild's leader claims an unclaimed region at its portal
+  stone in the ring, after a confirmation window; the region follows membership (join gives its
+  respawn and portal, leave returns to the stones, disband frees it); beds override as in vanilla.
+  A new plugin, `Lembitu.Guilds`, owns the bridge; to be implemented (#91). Fact: SeparateSpawns assigns
+  unrostered players to a random region with no setting to stop it (`GroupSpawnResolver.cs:158-177`).
 - **Party XP reaches its 150% total at four members** (owner, 2026-10-04): `lembitu.oathbound.cfg`
   `[Party] FullPartySize = 4`, bonus 0.5 unchanged; to be applied. Two members earn about 58% of a
   kill each, three 44%, four 37.5%, eight 18.75%. Fact: under the linear curve to eight a three-player

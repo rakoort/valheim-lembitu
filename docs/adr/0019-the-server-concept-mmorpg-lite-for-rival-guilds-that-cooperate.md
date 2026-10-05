@@ -23,9 +23,11 @@ and group play. It is not meant to run forever.
 incentives for both rather than hope for them.
 
 **Scale.** Content is balanced around eight active players. A guild has three to five members; the
-server caps a guild at five. There are at most three guilds, one per scored start region, each
-agreed before launch; the limit is the roster's, not a mod setting (owner, 2026-10-04 premium
-review; first written as "does not cap how many guilds exist").
+server caps a guild at five. There are at most three guilds, one per scored start region. Guilds form
+in game, not before launch: every new player wakes at the sacrificial stones, guilds are founded
+there, and a founded guild claims one of the three start regions as its members' home (owner,
+2026-10-05; first written as "agreed before launch", and before that "does not cap how many guilds
+exist").
 
 **Difficulty.** Harder than vanilla. Bosses are tuned for eight players and ordinary creatures for
 two: at that size, average players with gear of the biome win with margin, and six or seven skilled

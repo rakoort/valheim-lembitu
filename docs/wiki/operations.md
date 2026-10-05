@@ -221,14 +221,12 @@ once, by a controlled installation, and do not re-create the host from scratch m
 
 ### Pre-launch checklist
 
-Two steps need information that exists only once the guilds have formed. Both belong between the
-Shakedown and the creation of the Run world (2026-10-04, owner's decision to defer them):
+Two steps remain before the Pack is built:
 
-1. **Roster SeparateSpawns by guild.** `config/dedicated/SeparateSpawns.groups.json` still holds the
-   three empty, randomly filled groups of the 2026-10-03 setup. Replace them with one group per
-   guild, listing each member's Steam ID, before the Run world is created, because start regions
-   are scored and assigned at generation (ADR-0018, ADR-0019). Needed: every guild's name and its
-   members' Steam IDs.
+1. **No roster.** Guilds form in game and claim start regions at their portals (ADR-0028), so
+   `config/dedicated/SeparateSpawns.groups.json` keeps its three empty regions (Skadi, Fenrir,
+   Muninn), and `Lembitu.Guilds` assigns players to them by guild. Superseded: the 2026-10-04 plan to
+   roster each guild's Steam IDs before the Run world.
 2. **Seed ServerQuickConnect in the Pack.** Its main-menu button joins a preset server; the Run
    server's address goes into a Pack config seed under `config/client/` when the Pack is built.
    Never the password: it stays with each player (`docs/modstack.md`, ServerQuickConnect row).
