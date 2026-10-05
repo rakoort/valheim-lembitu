@@ -29,6 +29,7 @@ version, and change the decision's ADR or overlay when a number moves.
 | Elixirs | Whether Berserker (×1.25), Swift (×1.2), Fast Learner (×1.5) and the others are bought for hard fights without being mandatory. | ADR-0024; `config/enforced/blacks7ar.Herbalist.cfg`. |
 | Smith's mastery bonus | Damage and armour on gear from a high-level smith against a fresh one; whether players notice and ask for a particular smith. | ADR-0024; `config/enforced/org.bepinex.plugins.blacksmithingexpanded.cfg`. |
 | BlacksmithingExpanded lock | With the server running, a non-admin player changes one of its settings locally while connected; record that the change has no effect — `Lembitu.Callings` locks the sync at startup, so this is a fix verified in play, not an open check (#89). Verified 2026-10-05 in a native session: a connected non-admin's cfg edit to 9.9 plus `Config.Reload()` left the effective `Skill gain factor` at the server's 1.0 with `IsLocked` true (`smith-connected-before.json`, `smith-after-client-edit.json`); a Shakedown run only needs to repeat it with a second real player. | ADR-0022; the startup lock. |
+| Seed beds and tonics in play | Not yet seen in game (2026-10-05 native run `20261005T151436Z-callings` hit its time box). Plant carrot seeds in a Meadows bed at Farming below 60 and at 60: both accepted, 5 seeds give 5 carrots. Mistlands mushrooms in a Meadows bed: refused below Farming 60, accepted at 60, 5 give 15. Press E at an empty bed with mixed seeds and record which it picks. Drink a large tonic with the Mistlands key: it is consumed and the bottle comes back. Proven 2026-10-05: the barley refusal on both paths, barley 5 → 10 at Farming 60, the tonic refusal without the key. | ADR-0022; `Lembitu.Callings` (#89). |
 
 ## Classes and parties (*plugin*)
 
@@ -38,7 +39,7 @@ version, and change the decision's ADR or overlay when a number moves.
 | Party XP | XP each member receives for one kill at party sizes 1, 2, 4 and 8, members in and out of 100 m, and a killer standing beyond 100 m (who still earns their share); the server logs every split as `Party kill XP:`. Whether partying feels worth it. | ADR-0022's 100% to 150% curve. |
 | Gathering tools | A Rogue, Monk, Berserker, Highlander and Breaker can fish; a Monk's bare-handed mining and chopping raise Mining and Wood Cutting. Time a Monk's Mining and Wood Cutting against a pickaxe or axe user: the fist raises by Oathbound's 0.25 per gathering hit. | ADR-0022; the Monk's gather pace. |
 | Oathbound at join | A client without Oathbound tries to join; record whether it is refused. | `docs/modstack.md`, "Where each mod runs". |
-| Our plugins at join | A client without `Lembitu.Oathbound` and `Lembitu.Callings` tries to join; record whether Jotunn refuses it. Both declare `EveryoneMustHaveMod`, but no join has shown the refusal yet (owner's decision 2026-10-04 to check it here). | `docs/modstack.md`, "Where each mod runs". |
+| Our plugins at join | A client without one of `Lembitu.Oathbound`, `Lembitu.Callings`, `Lembitu.Guide` or `Lembitu.Guilds` tries to join. All four declare `EveryoneMustHaveMod`; on 2026-10-05 a client without `Lembitu.Guide` was refused with `Missing mod on client: Lembitu.Guide` (`~/lembitu-native-tests/20261005T123002Z-demo/`), so this repeats it with a player's real install. | `docs/modstack.md`, "Where each mod runs". |
 | Existing characters with ExpertExplorer | Each player's first join with a character made before ExpertExplorer was installed: it loads, joins and keeps its skills, and no `ArgumentNullException` appears in the client log. The `Lembitu.Callings` fix covers this load path by code reading only. | ADR-0022; `docs/modstack.md`, "Known interactions". |
 
 ## Difficulty and world
@@ -66,7 +67,7 @@ CreatureManager and EpicLoot were reviewed against the 2026-10-04 decisions and 
 ## From the premium review (2026-10-05)
 
 The decisions in `docs/wiki/premium-review.md` and ADR-0025 set starting values; these checks decide
-whether they stand. Tickets #87 to #90 carry the changes.
+whether they stand. Tickets #87 to #91 carry the changes.
 
 Guide's final permitted native script (2026-10-05) proved fresh First steps, legible chapter titles,
 real F1 opening/closing and normal movement after close, then stopped because its Tab press did
