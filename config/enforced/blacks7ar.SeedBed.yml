@@ -1,0 +1,95 @@
+# Enforced conversion list for SeedBed 1.2.9 (2026-10-05, ADR-0022). SeedBed reads this file (named
+# blacks7ar.SeedBed.yml, its ymlFileName) and syncs it to clients as the "Item Conversions" custom
+# value; each entry is From (a seed or crop prefab), To (what the bed grows and returns),
+# SeedAmount (how many go in) and ProducedItems (how many come back). The mod's own default is
+# 5 -> 15 for everything, regardless of the normal yield of the corresponding soil crop.
+#
+# Cultivator conversions use soil's yields: what planting the same thing in cultivated ground
+# returns, from the vanilla Plant and its grown Pickable. Crops double (barley and flax
+# 5 -> 10); a vegetable seed grows one vegetable (5 -> 5); a vegetable grows three seed batches
+# (5 -> 15); the two plantable Mistlands mushrooms triple (5 -> 15), and only grow in the Mistlands
+# (Lembitu.Callings refuses them elsewhere below Farming 60, as soil does).
+#
+# Inputs without a vanilla cultivator piece remain available, with SeedBed's pinned conversion
+# defaults: there is no soil crop to compare, so the biome rule does not invent a restriction.
+# The ten cultivator conversions below use the corresponding Plant's grown Pickable amount.
+- From: Barley
+  To: Barley
+  SeedAmount: 5
+  ProducedItems: 10
+- From: CarrotSeeds
+  To: Carrot
+  SeedAmount: 5
+  ProducedItems: 5
+- From: Carrot
+  To: CarrotSeeds
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Flax
+  To: Flax
+  SeedAmount: 5
+  ProducedItems: 10
+- From: MushroomJotunPuffs
+  To: MushroomJotunPuffs
+  SeedAmount: 5
+  ProducedItems: 15
+- From: MushroomMagecap
+  To: MushroomMagecap
+  SeedAmount: 5
+  ProducedItems: 15
+- From: OnionSeeds
+  To: Onion
+  SeedAmount: 5
+  ProducedItems: 5
+- From: Onion
+  To: OnionSeeds
+  SeedAmount: 5
+  ProducedItems: 15
+- From: TurnipSeeds
+  To: Turnip
+  SeedAmount: 5
+  ProducedItems: 5
+- From: Turnip
+  To: TurnipSeeds
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Dandelion
+  To: Dandelion
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Fiddleheadfern
+  To: Fiddleheadfern
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Mushroom
+  To: Mushroom
+  SeedAmount: 5
+  ProducedItems: 15
+- From: MushroomYellow
+  To: MushroomYellow
+  SeedAmount: 5
+  ProducedItems: 15
+- From: MushroomSmokePuff
+  To: MushroomSmokePuff
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Thistle
+  To: Thistle
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Blueberries
+  To: Blueberries
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Cloudberry
+  To: Cloudberry
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Raspberry
+  To: Raspberry
+  SeedAmount: 5
+  ProducedItems: 15
+- From: Vineberry
+  To: Vineberry
+  SeedAmount: 5
+  ProducedItems: 15

@@ -28,7 +28,7 @@ version, and change the decision's ADR or overlay when a number moves.
 | Focus death protection | A focus keeps its level and progress through a death; a non-focus Blacksmithing or Herbalist drains 5% only above the skill floor; dropping a focus lands on the shadow level the confirmation named. | ADR-0022 (*plugin*). |
 | Elixirs | Whether Berserker (×1.25), Swift (×1.2), Fast Learner (×1.5) and the others are bought for hard fights without being mandatory. | ADR-0024; `config/enforced/blacks7ar.Herbalist.cfg`. |
 | Smith's mastery bonus | Damage and armour on gear from a high-level smith against a fresh one; whether players notice and ask for a particular smith. | ADR-0024; `config/enforced/org.bepinex.plugins.blacksmithingexpanded.cfg`. |
-| BlacksmithingExpanded lock | With the server running, a non-admin player changes one of its settings locally; record that the change has no effect once `Lembitu.Callings` locks the sync (#89). | ADR-0022; the lock patch. |
+| BlacksmithingExpanded lock | With the server running, a non-admin player changes one of its settings locally while connected; record that the change has no effect — `Lembitu.Callings` locks the sync at startup, so this is a fix verified in play, not an open check (#89). Verified 2026-10-05 in a native session: a connected non-admin's cfg edit to 9.9 plus `Config.Reload()` left the effective `Skill gain factor` at the server's 1.0 with `IsLocked` true (`smith-connected-before.json`, `smith-after-client-edit.json`); a Shakedown run only needs to repeat it with a second real player. | ADR-0022; the startup lock. |
 
 ## Classes and parties (*plugin*)
 

@@ -1,7 +1,8 @@
 # ADR-0021: Callings — four focus professions across Craft, Land and Road
 
 Date: 2026-10-04
-Status: Accepted; implemented in `Lembitu.Callings` (ADR-0022, 2026-10-04)
+Status: Accepted; implemented in `Lembitu.Callings` (ADR-0022, 2026-10-04); the Calling window and
+the read-only stars of the 2026-10-05 amendment implemented 2026-10-05 (#89)
 Amends: ADR-0019 (professions), ADR-0020 (scope of our own plugin code)
 
 ## Context

@@ -94,6 +94,10 @@ internal static class CallingStore
 {
     public const string CustomDataKey = "lembitu.callings";
 
+    /// <summary>Set to "1" the first time the Calling window opens for a character, never cleared
+    /// (contract); Lembitu.Guide opens the Calling page once for it.</summary>
+    public const string WindowSeenKey = "lembitu.callings.window-seen";
+
     private sealed class Entry(Calling calling, bool readable)
     {
         public Calling Calling { get; } = calling;

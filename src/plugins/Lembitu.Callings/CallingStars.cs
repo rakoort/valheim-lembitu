@@ -8,9 +8,10 @@ namespace Lembitu.Callings;
 
 /// <summary>
 /// Each profession row of the skills window carries a star showing the Calling (ADR-0022). The star
-/// is its own click target, because DetailedLevels replaces the row's own click with its skill-buff
-/// toggle. A click changes the Calling only near the Oathstone; dropping a focus asks first and names
-/// the level the skill falls to.
+/// is its own marker beside the row, because DetailedLevels replaces the row's own click with its
+/// skill-buff toggle. Since the Calling window of 2026-10-05 the star changes nothing: it shows the
+/// Calling and carries the tooltip; the Calling is changed in the window opened from the Calling
+/// button.
 /// </summary>
 internal static class CallingStars
 {
@@ -70,11 +71,13 @@ internal static class CallingStars
         return null;
     }
 
-    /// <summary>A badge on the top-left corner of the skill's icon, clear of the skill's name.</summary>
+    /// <summary>A badge on the top-left corner of the skill's icon, clear of the skill's name. No
+    /// Button; its raycastable Image keeps the tooltip reachable, while clicks belong to the row
+    /// (DetailedLevels), not to the Calling.</summary>
     private static Transform Create(GameObject row)
     {
         Transform icon = IconOf(row);
-        var star = new GameObject(StarName, typeof(RectTransform), typeof(Image), typeof(Button));
+        var star = new GameObject(StarName, typeof(RectTransform), typeof(Image));
         var rect = (RectTransform)star.transform;
         rect.SetParent(icon, worldPositionStays: false);
         rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
@@ -85,7 +88,6 @@ internal static class CallingStars
         image.sprite = StarSprite.Get();
         image.preserveAspect = true;
         image.raycastTarget = true;
-        star.GetComponent<Button>().targetGraphic = image;
         var tooltip = star.AddComponent<UITooltip>();
         tooltip.m_tooltipPrefab = row.GetComponentInChildren<UITooltip>(includeInactive: true)?.m_tooltipPrefab;
         return star.transform;
@@ -100,10 +102,6 @@ internal static class CallingStars
         bool focus = calling.IsFocus(profession.Type);
         star.GetComponent<Image>().color = focus ? FocusColour : OtherColour;
 
-        var button = star.GetComponent<Button>();
-        button.onClick = new Button.ButtonClickedEvent();
-        button.onClick.AddListener(() => Clicked(profession));
-
         string group = Professions.Describe(profession.Group);
         string topic = focus ? $"In your Calling ({group})" : $"{group} profession";
         string state = focus
@@ -114,79 +112,21 @@ internal static class CallingStars
         {
             action = "Your Calling record could not be read; ask an admin.";
         }
-        else if (!atStone)
+        else if (focus && !atStone)
         {
-            action = "Change your Calling at the Oathstone.";
-        }
-        else if (focus)
-        {
-            action = $"Click to drop it: it falls to level {FallsTo(calling, profession)}.";
-        }
-        else if (calling.HasRoomFor(profession))
-        {
-            action = $"Click to add it to your Calling ({calling.CountIn(profession.Group)} of {Professions.Quota(profession.Group)} {group} chosen).";
+            action = "Open the Calling window from the button below the list; changes happen at the Oathstone.";
         }
         else
         {
-            action = $"Your Calling already holds {Professions.Quota(profession.Group)} {group}; drop one first.";
+            action = "Open the Calling window from the button below the list.";
         }
         var rowRect = (RectTransform)row.transform;
         star.GetComponent<UITooltip>().Set(topic, state + "\n" + action, dialog.m_tooltipAnchor,
             new Vector2(0f, Math.Min(255f, rowRect.localPosition.y + 10f)));
     }
 
-    private static int FallsTo(Calling calling, Profession profession) =>
-        calling.TryGetShadow(profession.Type, out Shadow shadow) ? (int)shadow.Level : 0;
-
-    private static void Clicked(Profession profession)
-    {
-        Player player = Player.m_localPlayer;
-        if (player == null || !CallingStore.IsReadable(player))
-        {
-            return;
-        }
-        if (!Oathstone.IsNear(player))
-        {
-            player.Message(MessageHud.MessageType.Center, "Change your Calling at the Oathstone.");
-            return;
-        }
-        Calling calling = CallingStore.Of(player);
-        string name = profession.DisplayName;
-        if (calling.IsFocus(profession.Type))
-        {
-            Skills.Skill skill = player.GetSkills().GetSkill(profession.Type);
-            int falls = FallsTo(calling, profession);
-            UnifiedPopup.Push(new YesNoPopup(
-                $"Drop {name}?",
-                $"{name} leaves your Calling and falls from level {(int)skill.m_level} to {falls}, the level it would have without the focus.",
-                () =>
-                {
-                    UnifiedPopup.Pop();
-                    if (Player.m_localPlayer == player && Oathstone.IsNear(player) && calling.IsFocus(profession.Type))
-                    {
-                        calling.Drop(profession, skill);
-                        CallingStore.Save(player);
-                        player.Message(MessageHud.MessageType.Center, $"{name} left your Calling at level {falls}.");
-                        Refresh(player);
-                    }
-                },
-                UnifiedPopup.Pop,
-                localizeText: false));
-            return;
-        }
-        if (!calling.HasRoomFor(profession))
-        {
-            player.Message(MessageHud.MessageType.Center,
-                $"Your Calling already holds {Professions.Quota(profession.Group)} {Professions.Describe(profession.Group)}; drop one first.");
-            return;
-        }
-        calling.Add(profession, player.GetSkills().GetSkill(profession.Type));
-        CallingStore.Save(player);
-        player.Message(MessageHud.MessageType.Center, $"{name} joins your Calling.");
-        Refresh(player);
-    }
-
-    private static void Refresh(Player player)
+    /// <summary>Re-runs the skills dialog's Setup, so the stars follow a Calling changed in the window.</summary>
+    internal static void Refresh(Player player)
     {
         if (InventoryGui.instance != null && InventoryGui.instance.m_skillsDialog.gameObject.activeInHierarchy)
         {

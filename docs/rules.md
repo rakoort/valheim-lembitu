@@ -125,8 +125,10 @@ needs 1.8 times the work of a focus to reach 60, 2.5 times to reach 70 and nearl
 100. Until you choose, every profession follows the slow curve, which changes
 nothing below 30.
 
-**You mark focuses with a star in the skills window, but only at the Oathstone.** Away from it the
-stars only show your Calling. Dropping a focus asks first, and names the level the skill falls to.
+**You choose your focuses in the Calling window**, opened from the Calling button in the skills
+window. It can be read anywhere; a change takes effect only while standing at the Oathstone, and
+elsewhere the controls say to go there. The stars on the profession rows are read-only markers with
+their tooltip. Dropping a focus asks first, and names the level the skill falls to.
 
 **A focus keeps its XP when you die.** Every other skill drains as described under *Death*.
 
@@ -134,6 +136,13 @@ stars only show your Calling. Dropping a focus asks first, and names the level t
 focus: what it would be without the focus, earning at the slow rate and draining on death like a
 non-focus skill. Dropping the focus sets the skill to that level. Early on the two hardly differ;
 a master who switches gives up the faster gain and the death protection together.
+
+**A seed bed is a planter that follows soil's rules** (ADR-0022). It returns soil's yields — barley
+and flax 5 → 10, a vegetable seed 5 → 5 vegetables, a vegetable 5 → 15 seeds, the Mistlands
+mushrooms 5 → 15 — and it refuses what soil refuses: a seed whose plant cannot grow in the bed's
+biome, until Farming 60 lifts the biome rule as it does for soil (`Lembitu.Callings`; the yields in
+`config/enforced/blacks7ar.SeedBed.yml`). A seed with no vanilla cultivator piece stays allowed;
+its existing SeedBed conversion is not removed.
 
 - Register: *Intended* (`Lembitu.Callings`, `config/enforced/lembitu.callings.cfg`, ADR-0022).
 
@@ -229,8 +238,10 @@ re-kills, never by skipping content.
 **A key unlocks a biome's gear for both crafting and wearing.** Key-locked: equipment, crafting,
 cooking, eating, guardian powers and boss summons. Not key-locked: repairs, building, taming, boats
 and portals. Every lock follows the biome of the item's materials
-(`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). Trade helps, but never
-skips a boss.
+(`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). Drinking follows the
+same rule for Herbalist's tonics and elixirs (ADR-0022): each needs the personal boss key of its
+strongest herb's biome, a biome World Advancement Progression does not know on its own
+(`Lembitu.Callings`). Trade helps, but never skips a boss.
 
 **Boss powers are passive and grow with boss kills** (ProgressivePowers). You attune one Forsaken
 power at a time; it gives passive bonuses rather than the vanilla active power, and it gains up to

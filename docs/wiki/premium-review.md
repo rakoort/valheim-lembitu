@@ -73,9 +73,16 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
 - **SeedBed stays as a planter with soil's rules and yields** (owner, 2026-10-05; ADR-0022): a bed
   refuses seeds whose plant cannot grow in its biome unless the planter has Farming 60, and its
   synced conversions match soil yields (for example barley and flax 5 → 10, carrot seeds 5 → 5, in
-  place of 5 → 15); to be implemented in `Lembitu.Callings` and SeedBed's YAML. Fact: SeedBed 1.2.9
+  place of 5 → 15); implemented 2026-10-05 in `Lembitu.Callings` and
+  `config/enforced/blacks7ar.SeedBed.yml`. Fact: SeedBed 1.2.9
   has no biome check (`Germination.UseItem`, decompile `SeedBed.cs:852-874`) and defaults every
-  entry to 5 → 15 (`SeedBed.cs:360-500`).
+  entry to 5 → 15 (`SeedBed.cs:360-500`). The ten enforced conversions are exactly the game's ten
+  cultivator Plants with grown Pickable yields (native prefab readout,
+  `~/lembitu-native-tests/20261005T151436Z-callings/native-plant-pickable-soil.json`: barley and
+  flax Pickable amount 2, carrot/onion/turnip 1, seed pieces and Mistlands mushrooms 3/1/1); the
+  ten other enforced inputs have no cultivator piece and keep SeedBed's 5 → 15 defaults. In play
+  the same session proved one full cycle: a Meadows bed refused barley at Farming 30 (E and
+  item-on-bed paths, exact message) and at Farming 60 planted it, 5 in → 10 out.
 - **Creatures hit like vanilla hard mode again** (owner, 2026-10-05): `levels.yml` `Global.damage 1.2
   → 1.0`, so ordinary creatures hit 1.5× vanilla at level 1 through `Combat hard` alone; bosses keep
   `Boss.damage 1.5` (2.25×); health untouched; applied 2026-10-05 (#87). The 1.2 had been raised on 2026-10-04
@@ -83,7 +90,7 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   trim, an average Ashlands creature hits about 2.0× vanilla.
 - **Our plugin locks BlacksmithingExpanded's settings** (owner, 2026-10-05; ADR-0022): its main
   config sync is synced but never locked (`AuditCombat.md` §2); `Lembitu.Callings` locks it at
-  startup; to be implemented. This replaces the Shakedown's "BlacksmithingExpanded lock" check with a
+  startup; implemented 2026-10-05. This replaces the Shakedown's "BlacksmithingExpanded lock" check with a
   fix.
 - **Azumatt's six mods move to Hexium** (owner, 2026-10-05; ADR-0026): latest Hexium releases for
   all six, with a per-pin download source in staging and the lock's version and SHA-256 still
@@ -96,7 +103,12 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
 - **Drinking a tonic needs its biome's boss key, like food** (owner, 2026-10-05; ADR-0022):
   `Lembitu.Callings` maps Herbalist's herbs to biomes and refuses a tonic or elixir whose highest herb
   biome the drinker has no key for; implemented 2026-10-05. Fact: World Advancement Progression passes
-  materials it does not know, and it knows no Herbalist herb (`AuditEconomy.md` §4).
+  materials it does not know, and it knows no Herbalist herb (`AuditEconomy.md` §4). Native check
+  2026-10-05 (`~/lembitu-native-tests/20261005T151436Z-callings/`): two `BH_LargeHealthTonic` drinks
+  without a personal Mistlands key were refused with the exact rule message and consumed nothing; the
+  permitted-drink and key-removal legs are unproven — the console refused `setprivatekey` to the
+  native-admin client ("Unauthorized", `devcommands` stayed False), listed for the Shakedown with a
+  server-side key grant.
 - **Five additions for the Shakedown** (owner, 2026-10-05): Ab5oluteZer0/CraftingSearch 1.0.2,
   Marins/CompactStatusEffects 1.1.2, Bagr/DamageMeter 3.7.0 with Bagr/CrewStats 1.4.1,
   Crystal/BetterChat 1.6.4 and Goldenrevolver/Quick_Stack_Store_Sort_Trash_Restock 1.4.15; pinned,
@@ -108,7 +120,11 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
 - **The Calling gets a window; stars become markers** (owner, 2026-10-05; ADR-0021, ADR-0022): a
   Calling button in the skills window opens a window grouped Land / Craft / Road with the 2-1-1 quota,
   levels and what a focus changes; readable anywhere, changeable only within about 10 m of the
-  Oathstone; the row stars stay as read-only markers; to be implemented in `Lembitu.Callings`.
+  Oathstone; the row stars stay as read-only markers; implemented 2026-10-05 in `Lembitu.Callings`.
+  Native check 2026-10-05 (`~/lembitu-native-tests/20261005T151436Z-callings/`): the button opens the
+  window and the first open sets `lembitu.callings.window-seen=1`; add/drop at the Oathstone works with
+  the named confirmation (No reopens unchanged, Yes lands the skill on its shadow, 40 → 0); star hover
+  shows a tooltip and star clicks change no Calling.
 - **An in-game guide window in a new plugin, `Lembitu.Guide`** (owner, 2026-10-05; ADR-0027):
   chapters of short pages, a hotkey and an inventory button, shown on a character's first join, text in
   a server-synced file the admin edits; to be implemented. Signs were rejected for a real interface;

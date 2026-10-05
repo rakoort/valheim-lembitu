@@ -100,8 +100,8 @@ How it is built, decided from the code rather than asked:
 
 ## Lembitu.Callings
 
-**The Calling is chosen in a window, only at the Oathstone** (owner, 2026-10-05 premium review; not
-yet implemented). A Calling button in the skills window opens a window listing the eleven professions
+**The Calling is chosen in a window, only at the Oathstone** (owner, 2026-10-05 premium review;
+implemented 2026-10-05 in `Lembitu.Callings`). A Calling button in the skills window opens a window listing the eleven professions
 under Land, Craft and Road with the 2-1-1 quota, each skill's level, and what a focus changes. It can
 be read anywhere. Within about 10 m of the Oathstone (the `WarriorOathstone` object Oathbound places
 beside the start temple) a change takes effect at once; elsewhere the controls say to go to the
@@ -137,24 +137,25 @@ localization key (`[skill_1208107160]`), so the first overlay aimed at `[Blacksm
 and a native death on 2026-10-04 drained Blacksmithing twice (20 → 19 → 18.05) before this was
 changed.
 
-**A seed bed is a planter that follows soil's rules** (owner, 2026-10-05 premium review; not yet
-implemented). SeedBed 1.2.9 checks only ward access, the seed and the seed count before a bed accepts
-seeds (`Germination.UseItem`), so a bed grew any crop in any biome and bypassed Farming's level-60
+**A seed bed is a planter that follows soil's rules** (owner, 2026-10-05 premium review; implemented
+2026-10-05 in `Lembitu.Callings`). SeedBed 1.2.9 checks only ward access, the seed and the seed count before a bed accepts
+seeds (`Germination.UseItem` or the E interaction's `AddItem`), so a bed grew any crop in any biome and bypassed Farming's level-60
 reward. `Lembitu.Callings` refuses seeds whose plant cannot grow in the bed's biome unless the planter
 has Farming 60, the level at which ImpactfulSkills lifts the biome rule for soil
 (`FarmingBiomeUnrestrictedLevel`). The plant's biomes are read from the vanilla `Plant` of the
-cultivator piece that takes that seed. SeedBed's synced conversions are set to soil's yields in place
-of its five-for-fifteen.
+cultivator piece that takes that seed; a seed with no such piece stays allowed. SeedBed's synced
+conversions for cultivator crops are set to soil's yields in place of its five-for-fifteen; the
+mod's other conversions are retained.
 
-**BlacksmithingExpanded's settings are locked by us** (owner, 2026-10-05 premium review; not yet
-implemented). Its main `ConfigSync` sends settings from the server but registers no locking entry and
+**BlacksmithingExpanded's settings are locked by us** (owner, 2026-10-05 premium review; implemented
+2026-10-05 in `Lembitu.Callings`). Its main `ConfigSync` sends settings from the server but registers no locking entry and
 never sets `IsLocked`; only its bundled skill manager is locked (BlacksmithingExpanded 1.2.4 decompile,
 `local/premium-review-2026-10-04/AuditCombat.md` §2). A client could change the smith's gear
 bonuses, against the Pack rule. `Lembitu.Callings` sets that sync to locked at startup and logs the
 feature like its others.
 
-**Tonics follow the food rule for boss keys** (owner, 2026-10-05 premium review; not yet
-implemented). World Advancement Progression locks eating by the biome of an item's materials but lets
+**Tonics follow the food rule for boss keys** (owner, 2026-10-05 premium review; implemented
+2026-10-05 in `Lembitu.Callings`). World Advancement Progression locks eating by the biome of an item's materials but lets
 materials it does not know through (`KeyManager.cs:1422-1432`, `local/premium-review-2026-10-04/
 AuditEconomy.md` §4), and it knows none of Herbalist's herbs. So a tonic or elixir bought on the
 Market could be drunk without its biome's boss key. `Lembitu.Callings` maps each Herbalist herb to

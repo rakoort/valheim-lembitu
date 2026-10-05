@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.callings</PluginGuid>
-    <Version>0.1.0</Version>
-    <Description>Callings (ADR-0021, ADR-0022): four focus professions chosen at the Oathstone, the steep curve for every other profession, shadow levels, focus protection on death, and the Herbalist and Fishing bonus output.</Description>
+    <Version>0.2.0</Version>
+    <Description>Callings (ADR-0021, ADR-0022): four focus professions chosen in the Calling window at the Oathstone, the steep curve for every other profession, shadow levels, focus protection on death, and the Herbalist and Fishing bonus output. Also follows soil's rules for SeedBed's beds, refuses Herbalist tonics whose biome's boss key the drinker lacks, and locks BlacksmithingExpanded's settings.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,11 +12,16 @@
 
   <!-- Compiled against the pinned packages scripts/stage-stack.sh puts in dist/plugins/. World
        Advancement Progression is publicized because its skill floor, drain and gain rules are
-       protected members; the death drain and the shadow level reuse them rather than copy them. -->
+       protected members; the death drain and the shadow level reuse them rather than copy them.
+       SeedBed is referenced because the bed rule hooks Germination.UseItem and AddItem; Herbalist, the smith and
+       ImpactfulSkills are reached by reflection and ObjectDB recipes alone. -->
   <ItemGroup>
     <Reference Include="VentureValheim.Progression" Private="false" StagedMod="World_Advancement_Progression">
       <HintPath>$(PluginDistDir)World_Advancement_Progression/Plugins/VentureValheim.Progression.dll</HintPath>
       <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="SeedBed" Private="false" StagedMod="SeedBed">
+      <HintPath>$(PluginDistDir)SeedBed/SeedBed.dll</HintPath>
     </Reference>
     <Reference Include="Jotunn" Private="false" StagedMod="Jotunn">
       <HintPath>$(PluginDistDir)Jotunn/Jotunn.dll</HintPath>
@@ -26,6 +31,9 @@
     </Reference>
     <Reference Include="UnityEngine.UI" Private="false">
       <HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
   </ItemGroup>
 

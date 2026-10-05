@@ -125,6 +125,7 @@ elixirs and the smith's mastery bonus are combat power sold as goods.
   even after its switches change (`BlacksmithingExpanded.cs:3758-3805`), so its overlay must be in
   force before the Shakedown crafts anything.
 - BlacksmithingExpanded's main settings are server-synced but have no lock entry
-  (`BlacksmithingExpanded.cs:4338-4344`). Whether a player can change them while connected is a
-  Shakedown check.
+  (`BlacksmithingExpanded.cs:4338-4344`). Since 2026-10-05 `Lembitu.Callings` locks that sync at
+  startup (ADR-0022, #89); a connected non-admin's local edit and reload left the server's values in
+  force in the native check of that day.
 - The numbers are a starting point for the Shakedown, not measurements.
