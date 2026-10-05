@@ -32,6 +32,12 @@ specialisation layer here.
 | Land | Mining, Wood Cutting, Farming, Fishing, Animal Handling | Yes |
 | Road | Exploration, Sailing, Hauling | Yes |
 
+Amended 2026-10-05: Road Exploration is blacks7ar/Explorer 1.1.7, replacing
+ExpertExplorer. Its bundled-manager skill is named Explorer; it follows the same
+Calling, shadow curve and single profession death drain as the other professions.
+Its rewards are skill-gated live resource/dungeon markers and wider personal map reveal
+(ADR-0019, ADR-0024), with no P pin prompt; P belongs to SocialSystem Party.
+
 Profession mods add nothing to Combat or Body skills: ImpactfulSkills' weapon, blocking, blood
 magic, sneak, run, jump and swim perks are switched off.
 
@@ -74,9 +80,9 @@ recipes and withdrew premium items authored in DataForge).
   character. It is separate from `Lembitu.Oathbound` (ADR-0022).
 - The skill floor from World Advancement Progression is a death-drain threshold only; it raises no
   skill (corrected in ADR-0019). It does not interact with the steep curve.
-- BlacksmithingExpanded and Herbalist drain their skills with their own bundled managers, outside the
-  boss-key floor. `Lembitu.Callings` undoes that drain and applies World Advancement Progression's
-  rule instead (ADR-0022).
+- BlacksmithingExpanded, Herbalist and Explorer handle death through bundled managers outside
+  the boss-key floor. `Lembitu.Callings` restores them and applies World Advancement
+  Progression's rule once instead (ADR-0022); Explorer's own loss is pinned to 0.
 - ImpactfulSkills' Crafting perks are off as well as Forging, because they duplicate
   BlacksmithingExpanded.
 - Perk thresholds are settled in ADR-0024; boss trophies were considered as ingredients and left

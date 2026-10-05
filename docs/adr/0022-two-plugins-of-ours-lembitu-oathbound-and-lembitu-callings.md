@@ -163,23 +163,22 @@ its biome, as the ladder generator already does (ADR-0023), and refuses a tonic 
 highest-biome herb needs a boss key the drinker lacks, with the same message World Advancement
 Progression gives for food.
 
-**A new character survives ExpertExplorer's first save.** ExpertExplorer 1.7.0, the Exploration
-profession's mod, aborts the first save of every new character: its old-format check passes a missing
-version tag to `Regex.IsMatch`, which throws (`docs/modstack.md`, "Known interactions"). A
-Thunderstore search on 2026-10-04 found no better-built replacement. Advize/CartographySkill 3.2.0
-sets the reveal radius back to base each time a world loads and raises it again only at the next
-level-up (`Minimap.Awake` postfix; `UpdateExploreRadius` called from `OnSkillLevelup`).
-blacks7ar/Explorer 1.1.7 tracks resources, dungeons and caves, the radar ADR-0019 rules out.
-Smoothbrain/Exploration is deprecated. ExpertExplorer has no newer release and no upstream issue for
-this. `Lembitu.Callings` therefore answers a missing tag the way the check answers any non-version
-tag, "old format"; the old-format readers find nothing to read on a character without data. The same
-answer covers a character made before ExpertExplorer was installed, which meets the check on load.
+**ExpertExplorer first-save fix retired 2026-10-05.** Callings previously answered a
+missing exploration version tag as old format to prevent ExpertExplorer 1.7.0
+aborting fresh-character saves. The owner adopted Explorer 1.1.7's skill-gated
+radar (amending ADR-0019); ExpertExplorer and the obsolete `ExplorationSave`
+feature leave together. Explorer's bundled-manager skill takes the Road slot.
+
+**Explorer markers reach further as the skill grows.** A verified prefix on
+`Explorer.Patches.Tracker.Update` replaces its captured creation-time range with
+`lerp(RangeAtLevel1, RangeAt100, clamp((level - 1) / 99))`. Server-locked defaults
+are 20 m and 64 m. Upstream tier checks and unsaved-marker lifetime remain intact.
 
 How it is built, decided from the code rather than asked:
 
 - **Gain.** A lowest-priority prefix on `Skills.RaiseSkill(SkillType, float)` scales `factor` for the
   eleven profession skills. Every one of them reaches that method: vanilla skills directly, the
-  Jotunn skills of ImpactfulSkills and ExpertExplorer and the bundled-manager skills of
+  Jotunn skills of ImpactfulSkills and the bundled-manager skills of Explorer,
   BlacksmithingExpanded and Herbalist through `Player.RaiseSkill`. Running last means ImpactfulSkills'
   per-skill rates and any learning bonus are already in `factor`. World Advancement Progression's
   `Skill.Raise` replacement then applies its ceiling as before.

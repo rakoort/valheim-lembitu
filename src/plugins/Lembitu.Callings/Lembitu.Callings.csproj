@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.callings</PluginGuid>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Description>Callings (ADR-0021, ADR-0022): four focus professions chosen in the Calling window at the Oathstone, the steep curve for every other profession, shadow levels, focus protection on death, and the Herbalist and Fishing bonus output. Also follows soil's rules for SeedBed's beds, refuses Herbalist tonics whose biome's boss key the drinker lacks, and locks BlacksmithingExpanded's settings.</Description>
   </PropertyGroup>
 

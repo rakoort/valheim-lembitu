@@ -11,9 +11,9 @@ namespace Lembitu.Callings;
 /// protection on death, one death drain for every profession skill, and the Herbalist and Fishing
 /// bonus output. Beyond its own skills it follows soil's rules for SeedBed's beds, refuses Herbalist
 /// tonics whose biome's boss key the drinker lacks, and locks BlacksmithingExpanded's settings. It
-/// also keeps ExpertExplorer, the Exploration profession's mod, from aborting a new character's
-/// first save. Hooks vanilla, World Advancement Progression, SeedBed, ExpertExplorer and the bundled
-/// skill managers, never Oathbound, so an Oathbound release cannot break it.
+/// grows Explorer's live marker range with its skill. Hooks vanilla, World Advancement Progression,
+/// SeedBed, Explorer and the bundled skill managers, never Oathbound, so an Oathbound release
+/// cannot break it.
 /// </summary>
 [BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]
 [BepInDependency(Jotunn.Main.ModGuid)]
@@ -21,8 +21,7 @@ namespace Lembitu.Callings;
 [BepInDependency(SmithLock.BlacksmithingExpandedGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency("blacks7ar.SeedBed", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency("blacks7ar.Herbalist", BepInDependency.DependencyFlags.SoftDependency)]
-// Loaded first so its types resolve when the save fix is verified in Awake.
-[BepInDependency(ExplorationSave.ExpertExplorerGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(ExplorerRange.Guid, BepInDependency.DependencyFlags.SoftDependency)]
 [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
 public sealed class CallingsPlugin : BaseUnityPlugin
 {
@@ -47,13 +46,13 @@ public sealed class CallingsPlugin : BaseUnityPlugin
         SmithLock.Enable(log);
         Hooks.Enable(_harmony, log, "Herbalist bonus output", BonusOutput.HerbalistPlan);
         Hooks.Enable(_harmony, log, "Fishing bonus output", BonusOutput.FishingPlan);
-        Hooks.Enable(_harmony, log, "New characters survive ExpertExplorer's first save", ExplorationSave.Plan);
+        Hooks.Enable(_harmony, log, "Explorer markers reach further as the skill grows", ExplorerRange.Plan);
     }
 
     /// <summary>After every plugin's Awake, so the profession mods have registered their skills.</summary>
     private void Start()
     {
-        Professions.VerifyJotunnSkills(Logger);
+        Professions.VerifySkills(Logger);
         Logger.LogInfo($"Shadow levels and profession drains follow {SkillRules.RuleSource}.");
     }
 

@@ -253,8 +253,9 @@ if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
   # scrapping Seasonality, then to 65 by dropping BetterStations, then to 64 by dropping
   # BetterArchery, then to 63 by dropping Njord so the Sailing profession owns ship speed (ADR-0024);
   # 2026-10-05 took it to 70 with the five Shakedown mods, CrewStats and ConditionalConfigSync
-  # (#87, ADR-0026); the Hexium re-pins and Guilds 1.2.3 change versions, not the count.
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 70 ]] \
+  # (#87, ADR-0026), then to 68 when the owner removed CrewStats and DamageMeter that evening.
+  # The Hexium re-pins, Guilds 1.2.3 and Explorer replacement change versions, not the count.
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 68 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then

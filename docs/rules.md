@@ -39,6 +39,9 @@ are carried in game by the guide window: press **F1** or the Guide button in the
 It opens on a character's first join, its text is the server's (`config/enforced/lembitu.guide.md`),
 and a refusal names the rule it hit and the guide page that explains it.
 
+**Keys:** F1 Guide; F7 Market; F9 Guilds; O social; P party; Left Alt+E hides or shows
+Explorer markers (`config/enforced/lembitu.guide.md` and the Pack key bindings).
+
 ## Admission
 
 **Admission is by password alone.** The server is public and password-protected; there is no
@@ -62,6 +65,9 @@ donations buy guild XP at 10 coins a point, so trade feeds the guild.
 the Oathstone, for as long as they belong to no guild holding a region: meet, take an oath, choose a
 Calling, found or join a guild (ADR-0028). Separately from that first evening, a character with no
 guild never takes over a start region, and a bed or logout point respawns them as in vanilla.
+Press **F9** to open the guild window: **FOUND A GUILD** starts your own guild for free,
+**INVITATIONS** lets you accept an invitation, and **GUILD LIST** lets you apply to a guild
+and wait for approval.
 
 **A guild claims a region at its portal stone.** Each region keeps one portal in the ring around the
 sacrificial stones, 28 m out. A guild leader whose guild holds no region who uses an unclaimed
@@ -71,6 +77,10 @@ how far out; confirming claims it. First come, first served; the claim is stored
 claim, a guild already holding a region cannot claim a second one, and the region-side portal still
 costs its 2 surtling cores to open initially (SeparateSpawns). Disbanding does not reset activation:
 a freed region can be claimed again even if its portal pair remains open.
+Hovering a free stones-side portal shows eligible leaders **[E] Claim <Region> for your guild**;
+everyone else gets a free-region explanation and the F9 guild-window hint. A claimed portal names
+its guild, while SeparateSpawns retains its own activation and travel text
+(`src/plugins/Lembitu.Guilds/ClaimPortal.cs`).
 
 **The region follows the guild, not the character.** A member of a guild with a region is assigned
 to it: that is their bedless respawn point and its portal answers to them, while every other guild's
@@ -248,12 +258,15 @@ Heavy Lifter 60 s, Slow Fall as shipped. Durations grow with the drinker's own H
 Perks grow with every level: more wood and ore per swing, faster taming and more from each animal,
 more carry weight, a wider map reveal, longer-lasting tools and faster smelting. At 100, for
 example, chopping and digging hit 1.5 times as hard and yield 1.67 times the wood or ore, taming runs
-2.5 times as fast, a hauler carries 100 more and an explorer reveals 250 m around them. Herbalist and
+2.5 times as fast, a hauler carries 100 more and an explorer reveals 300 m around them. Herbalist and
 Fishing get extra output instead: about 1.5 extra items per craft and 1.25 extra fish per catch at
 100, from `Lembitu.Callings`, because their mods give the maker nothing. A master sailor's ship takes
 up to 2.5 times the sail force and rows faster.
 
-**Perks that switch on at a level sit on the ladder's rungs**, never below 30:
+**Power perks that switch on at a level sit on the ladder's rungs**, never below 30. Explorer's
+information unlocks instead follow the biomes: Meadows 1, Black Forest 10, Swamp 20,
+Mountain 30, Plains 40, Mistlands 50, Ashlands 60; dungeons and caves 10. Live marker
+range grows linearly from 20 m at Explorer 1 to 64 m at 100.
 
 | Level | Perks |
 | --- | --- |
@@ -263,7 +276,7 @@ up to 2.5 times the sail force and rows faster.
 | 70 | Whole-vein mining, an extra star on tamed animals, no ram damage to your ship |
 
 - Register: rungs and magnitudes *Intended* (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`,
-  `config/enforced/com.milkwyzard.ExpertExplorer.cfg`); the Herbalist and Fishing bonus *Intended*
+  `config/enforced/blacks7ar.Explorer.cfg`); the Herbalist and Fishing bonus *Intended*
   (`Lembitu.Callings`). The Shakedown judges the balance by playing each focus.
 
 ## Personal keys, and what earns one
@@ -331,10 +344,12 @@ carries everything, metal included, and that late reward is kept. XPortal only l
 destination.
 
 **Maps are personal.** You share what you have explored at a cartography table, and guilds share
-pins. Party members see each other on the map. There is no creature radar, no automatic pins for
-distant resources or dungeons, and everyone's public position is off (`config/enforced/xtav1m.BetterMap.cfg`,
-`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`). Readouts are welcome: hover stats,
-skill progress, a clock and the weather forecast.
+pins. Party members see each other on the map. There is no creature radar. Explorer
+shows temporary resource and dungeon markers near you as its skill unlocks them;
+BetterMap makes no automatic resource pins. Everyone's public position is off
+(`config/enforced/xtav1m.BetterMap.cfg`, `config/enforced/blacks7ar.Explorer.cfg`,
+`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`). Readouts are welcome:
+hover stats, skill progress, a clock and the weather forecast.
 
 **There is no PvP.** It is held off for everyone (`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`).
 

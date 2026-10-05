@@ -37,12 +37,12 @@ internal static class SkillHooks
     }
 
     /// <summary>
-    /// A first prefix records every focus's level and progress, and Blacksmithing's and Herbalist's
+    /// A first prefix records every focus's level and progress, and every bundled-manager profession
     /// whether focus or not; a last finalizer puts them back after everything else on Skills.OnDeath
     /// has run, World Advancement Progression's drain and the bundled skill managers' own death
     /// handling included (those take their skill out of the list for the death, apply their own loss
     /// and put it back in their finalizers). In the same step the shadows drain, and so does a
-    /// non-focus Blacksmithing or Herbalist, by World Advancement Progression's rule. Their own loss
+    /// non-focus bundled-manager profession, by World Advancement Progression's rule. Their own loss
     /// setting therefore never counts: BlacksmithingExpanded files it under a section named after a
     /// localization key that is not resolved when the file is written (`[skill_1208107160]`), so no
     /// overlay can reliably pin it.
@@ -103,7 +103,7 @@ internal static class SkillHooks
         }
         __state = new List<Kept>();
         Calling calling = CallingStore.Of(player);
-        foreach (Skills.SkillType type in calling.Focuses.Select(f => f.Key).Union(new[] { Professions.Blacksmithing, Professions.Herbalist }))
+        foreach (Skills.SkillType type in calling.Focuses.Select(f => f.Key).Union(new[] { Professions.Blacksmithing, Professions.Herbalist, Professions.Explorer }))
         {
             if (__instance.m_skillData.TryGetValue(type, out Skills.Skill skill))
             {
@@ -136,7 +136,7 @@ internal static class SkillHooks
             focus.Value.Accumulator = 0f;
         }
         var drained = new List<string>();
-        foreach (Skills.SkillType bundled in new[] { Professions.Blacksmithing, Professions.Herbalist })
+        foreach (Skills.SkillType bundled in new[] { Professions.Blacksmithing, Professions.Herbalist, Professions.Explorer })
         {
             if (!calling.IsFocus(bundled) && __instance.m_skillData.TryGetValue(bundled, out Skills.Skill skill))
             {

@@ -71,8 +71,10 @@ anyone in the party, whatever their guild.
 **World.** Vanilla portal rules: ore and metal travel by ship or cart, until the Ashlands' stone
 portal, which carries everything as vanilla intends (kept deliberately the same day). Maps are
 personal, shared by choice at a cartography table or through guild pins. Interfaces may show
-readouts (hover stats, skill progress, clock, forecast) but no creature radar and no automatic
-distant resource or dungeon pins. Raids from early on, with permanent base safety earned later
+readouts (hover stats, skill progress, clock, forecast) but no creature radar. Amended 2026-10-05:
+Explorer 1.1.7 grants skill-gated live resource and dungeon markers, not saved automatic pins.
+Biome unlocks are 1/10/20/30/40/50/60 and dungeons 10; marker range grows from 20 m at
+level 1 to 64 m at 100. BetterMap auto-pins are off. Raids from early on, with permanent base safety earned later
 through guild progress. Raids are Oathbound's sieges, which replace vanilla's random raids (revised
 the same day, ADR-0020). Creature modifiers, hunt events and regional pressure are in. (Seasons that
 change spawns, farming and cold were scrapped the same day, with the Seasonality mod.)

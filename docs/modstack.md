@@ -19,9 +19,9 @@ The stack was reduced from thirty packages to twenty-three on **2026-09-15**, an
 plugin of ours except the test harness was cancelled, because upstream mods now cover the
 load-bearing behaviour (ADR-0010). What was removed and why is in [Considered and cut](#considered-and-cut).
 
-**This table is the repository state.** It carries seventy pins: the sixty-three of the
-2026-10-04 review, plus the 2026-10-05 additions (#87) — six Azumatt mods re-pinned from Hexium,
-Guilds to 1.2.3, and five Shakedown mods with their CrewStats companion and ConditionalConfigSync.
+**This table is the repository state.** It carries sixty-eight pins: the sixty-three of the
+2026-10-04 review plus four retained Shakedown additions and ConditionalConfigSync.
+CrewStats and DamageMeter were removed by the owner on 2026-10-05 after CrewStats covered inventory.
 On the review day the owner added thirty-five packages and removed Clan, settled the server concept
 (ADR-0019), and then judged every mod against it; Oathbound replaced the level and magic mods
 (ADR-0020). Each removal is a row in [Considered and cut](#considered-and-cut). The lock records
@@ -55,8 +55,6 @@ belongs in server-locked config rather than a player's file.
 | turbero/DetailedLevels | 2.1.3 | Skill progress readout | — Client preference; the Pack seeds its readout key to F8 |
 | Ab5oluteZer0/CraftingSearch | 1.0.2 | Search box and sort button in the crafting window | — Client-side UI with no settings at all; added for the Shakedown (2026-10-05) |
 | Marins/CompactStatusEffects | 1.1.2 | Compact vertical status-effect HUD under the minimap | — Client-side HUD: position and scale are each player's; the Pack seeds its settings key to Quote (2026-10-05) |
-| Bagr/DamageMeter | 3.7.0 | Boss-fight damage meter: a live panel, a table after each kill and party expeditions | Server behaviour pinned: death recaps on in the boss summary, joke awards off, expeditions started by admins only (2026-10-05). Pack key seed: menu F6, panel End, mode Backslash, expedition Pause |
-| Bagr/CrewStats | 1.4.1 | Server-gathered statistics — kills, gathered resources, awards, death log — read in a client window | — Added for the Shakedown; the Pack seeds its statistics window key to Semicolon (2026-10-05) |
 | Crystal/BetterChat | 1.6.4 | Chat window that appears on new messages; talk, whisper and shout handling | Talk and whisper distances pinned at the vanilla 15 m and 4 m through the mod's server-enforced sync policy, so it adds convenience without changing who hears what (2026-10-05) |
 | shudnal/ConditionalConfigSync | 1.0.6 | Library | Declared by BetterChat |
 | Goldenrevolver/Quick_Stack_Store_Sort_Trash_Restock | 1.4.15 | Quick stack, restock, sort, trash and favourite buttons for containers | Area quick stack and restock server-locked: the host's settings apply to everyone (`ToggleAreaStackRestockConfigServerSync` true), area stacking without MultiUserChest stays false, and both nearby ranges are 0, so stacking and restocking reach only the open container. Pack seed: Ctrl+U quick stack, Shift+U restock, LeftAlt+U sort, RightAlt+U trash (2026-10-05) |
@@ -85,8 +83,8 @@ belongs in server-locked config rather than a player's file.
 | MSchmoecker/DynamicStoragePiles | 0.8.1 | Stack and pile containers that show their fill level | — Added 2026-10-04 (owner's instruction). One-way: its pieces live in the world save |
 | Searica/DodgeShortcut | 1.4.0 | A single dodge key | — Added 2026-10-04 (owner's instruction) |
 | OdinPlus/BlacksmithingExpanded | 1.2.4 | Blacksmithing skill that improves crafting, smelting and kiln output | The smithing profession; ImpactfulSkills' Forging and Crafting are off so the two never stack. Gear bonuses follow the smith's level only: +1% damage, +0.5 armour and +1 block per 10 levels, no per-upgrade extra, no elemental rider (2026-10-04, ADR-0024). Its own 5% death loss cannot be pinned, because it lives under a section named after an unresolved localization key (`[skill_1208107160]`); `Lembitu.Callings` puts the skill back after it and drains a non-focus Blacksmithing once, by World Advancement Progression's floor (ADR-0022). Its main settings carry no lock entry of their own; `Lembitu.Callings` locks the sync at startup (#89, 2026-10-05) |
-| xtavim/BetterMap | 1.1.0 | Boats, carts and resources on the map; automatic pins for what a player walks past | Creature radar and trader reveal off, automatic pins within 15 m only, exploration radius at the vanilla 100 m, config locked (2026-10-04, ADR-0019: readouts but no radar) |
-| MilkMediaProductions/ExpertExplorer | 1.7.0 | Exploration skill that grows as points of interest are found | On-foot reveal radius 250 m at skill 100, from BetterMap's 100 m (2026-10-04, ADR-0024). It overwrites ImpactfulSkills' larger reveal while sailing, an open interaction |
+| xtavim/BetterMap | 1.1.0 | Map interface: boats, carts, death markers and zoom | Auto Pins Enable false; creature radar and trader reveal off. Alone writes the 100 m baseline explore-radius field; Explorer scales the reveal call (2026-10-05, ADR-0019, ADR-0024) |
+| blacks7ar/Explorer | 1.1.7 | Exploration skill with skill-gated live resource and dungeon markers | Biome unlocks follow the profession ladder; Callings grows marker range from 20 m at level 1 to 64 m at 100. Explorer owns map reveal; BetterMap is the map interface only (2026-10-05, ADR-0019, ADR-0024) |
 | Northarun/Guilds | 1.2.3 | Guilds: ranks, guild chat, shared vault, guild-bound wards, a banner territory, guild levels, upgrades and achievements | Five members at most and the Members upgrade neutralised; founding a guild is free (`CreateCost` 0, package 1,000 coins, 2026-10-05); no waiting period after leaving or a kick (`RejoinCooldownHours` 0, package 12 h, 2026-10-05); guild levels grow 1.15× per level and coin donations buy guild XP at 10 coins per point, so trade feeds the guild (2026-10-05); boss keys never shared with absent members; Comfort upgrade at guild level 12 and 20, monster ward at level 10 (2026-10-04, ADR-0019). The membership and ward authority since Clan left; 1.2.3 restores banner territory lost after reconnect or restart |
 | Northarun/Marketplace | 1.4.0 | Server-wide marketplace and order board: coin sales, buy orders, bounties, a bank | The one remote trade system; a 5% fee on every payout keeps coins scarce (2026-10-04, ADR-0019) |
 | M2Valheim/SocialSystem | 1.0.4 | Invite-only parties of up to eight across guilds, party positions on the map, friends and party chat | Defaults pinned: parties of eight at most, positions shared within the party. Party kill-XP sharing is `Lembitu.Oathbound`'s, which reads party membership from SocialSystem's server-side party service rather than the party ID clients publish (2026-10-04, ADR-0020, ADR-0022) |
@@ -177,9 +175,9 @@ ProximityVoiceChat, where the failure is benign and deliberate.
 | VentureValheim/World_Advancement_Progression | Server-side alone it only blocks the world's global key list. Private keys, every lock, and the skill floor are client features (upstream README, "Server-Side Only?") |
 | ValheimModding/JsonDotNET, ValheimModding/YamlDotNet | Libraries the above load on whichever side they run |
 | Azumatt/ProximityVoiceChat | Voice is captured, encoded and played on the client; the server holds the ranges and the codec through `ConfigSync("Azumatt.ProximityVoiceChat")`. `ModRequired` is false and there is no hand-rolled check, so a friend without the mod joins and plays with no voice rather than being refused (read from `ProximityVoiceChat.dll` 1.0.2) |
-| Bagr/DamageMeter, Bagr/CrewStats | The meters and windows render on the client while the server gathers the fights and the statistics; neither ships a ServerSync or a version check, so a client without them plays with no meter and is not refused (read from the 3.7.0 and 1.4.1 assemblies, 2026-10-05) |
 | Crystal/BetterChat | The chat window and its settings panel are client UI. The server holds the enforced talk and whisper distances through ConditionalConfigSync (`ModRequired` false), so a client without the mod keeps vanilla chat — the same distances the overlay pins — and is not refused |
 | Goldenrevolver/Quick_Stack_Store_Sort_Trash_Restock | The buttons, hotkeys and sorting run on the client; the server holds the area-stacking ranges through its `goldenrevolver.quick_stack_store` ConfigSync (`ModRequired` false). A client without the mod sees vanilla stacking and is not refused |
+| blacks7ar/Explorer | Both sides: the server locks tier/reveal settings and the client runs live trackers. Bundled ServerSync ModRequired is false; installing it alone does not require clients to have it (read from Explorer 1.1.7, 2026-10-05) |
 
 **Server-only.** Installing these on a client changes nothing a player can see.
 
@@ -247,7 +245,7 @@ host, and a client is told the server's capacity by the server. Its config defau
 | Plugin | What it owns | Ticket |
 | --- | --- | --- |
 | Lembitu.Oathbound | Adapts Oathbound 0.21.14 where it has no setting (ADR-0022, ADR-0025): respec and class switch reset to level 1, with a confirmation before a switch and the tree's labels saying so; kill XP split within the killer's SocialSystem party near the kill, reaching its 150% total at four members; the fishing rod for every class and Mining and Wood Cutting from a Monk's bare hands; class power capped at ten per personal boss key (World Advancement Progression's private keys), spell growth and companion damage server-locked, and every equipment refusal naming the guide page. Patches Oathbound and reads World Advancement Progression, so a bump of either re-checks it; each feature verifies its own hooks at startup and switches off alone on a mismatch. Settings in `config/enforced/lembitu.oathbound.cfg` | ADR-0022, ADR-0025 |
-| Lembitu.Callings | Professions and the Calling (ADR-0021, ADR-0022): the Calling window opened from the skills dialog (the row stars are read-only markers), the steep curve, shadow levels, focus protection and one death drain for every profession skill, and the Herbalist and Fishing bonus output. SeedBed's beds follow soil's biome rule with soil's yields (`config/enforced/blacks7ar.SeedBed.yml`), a Herbalist tonic or elixir needs its strongest herb's boss key to drink, and BlacksmithingExpanded's main config sync is locked at startup. Also keeps ExpertExplorer from aborting a new character's first save. Hooks vanilla, World Advancement Progression, SeedBed, ExpertExplorer and the bundled skill managers, never Oathbound. Settings in `config/enforced/lembitu.callings.cfg` | ADR-0022 |
+| Lembitu.Callings | Professions and the Calling (ADR-0021, ADR-0022): the Calling window, read-only stars, steep curve, shadow levels, focus protection and one death drain for every profession skill, Herbalist/Fishing bonus output, SeedBed soil rules, tonic boss-key checks and BlacksmithingExpanded config lock. Explorer marker range grows linearly from 20 m at level 1 to 64 m at 100. Hooks vanilla, World Advancement Progression, SeedBed, Explorer and bundled skill managers, never Oathbound. Settings in `config/enforced/lembitu.callings.cfg` | ADR-0022 |
 | Lembitu.Guide | The in-game guide window (ADR-0027): chapters of short pages with the fixed page ids, opened by F1 and an inventory button and shown once on a character's first join; its text is the server's `config/enforced/lembitu.guide.md`, sent at join and on reload. Reads Oathbound's class record, Lembitu.Callings' window key and SocialSystem's client party state to open the matching page on each character's firsts. Patches nothing, so an Oathbound, SocialSystem or profession-mod bump does not re-check it. Settings in `config/enforced/lembitu.guide.cfg` | ADR-0027 |
 | Lembitu.Guilds | Guilds form in game and claim SeparateSpawns' start regions (ADR-0028): every new player wakes at the sacrificial stones while their guild holds no region (SeparateSpawns' random assignment held back), a guild leader claims one of the three regions at its portal stone in the ring after a confirmation window naming the region and where it lies, and the region then follows membership — bedless respawn and portal — until the member leaves or the guild disbands; a bed overrides, as in vanilla. Membership is read from Guilds' server store only; the claim lives in the server's `config/bepinex/Lembitu.Guilds/<world>.claims.json`. Patches SeparateSpawns and reads Guilds, so a bump of either re-checks it; each feature verifies its own hooks at startup and switches off alone on a mismatch. Settings in `config/enforced/lembitu.guilds.cfg` | ADR-0028, #91 |
 | Lembitu.Harness | Client-side test harness: joins the test server from a real client and drives a character through code | #10 |
@@ -257,7 +255,7 @@ These plugins run on the server and every client: they declare Jotunn's
 from the server through Jotunn. `scripts/build-client-pack.sh` takes them from the build output, not
 the pin table. Each is pinned to the packages it was read from: an Oathbound bump re-checks
 `Lembitu.Oathbound`, a World Advancement Progression bump re-checks `Lembitu.Oathbound` (its boss-key
-counts) and `Lembitu.Callings`, a SeedBed, BlacksmithingExpanded, Herbalist or ExpertExplorer bump
+counts) and `Lembitu.Callings`, a SeedBed, BlacksmithingExpanded, Herbalist or Explorer bump
 re-checks `Lembitu.Callings`, and a SeparateSpawns or Northarun/Guilds bump re-checks
 `Lembitu.Guilds`; all log `<feature>: on` or the reason a feature switched off.
 
@@ -391,20 +389,9 @@ Recorded so they are not rediscovered:
   clear its jobs when a world unloads, and defer the zone loading while `WorldGenerator.instance` is
   null.
 - **EpicLoot 0.14.13 can grow the skills list after vanilla builds its rows, crashing DetailedLevels 2.1.3 — fixed in `Lembitu.Callings` (2026-10-05).** Rebuild once if the local skill count grew during `SkillsDialog.Setup`; clear the original exception only after that rebuild succeeds, without creating skills in the fix. A fresh-character native first open now shows the Calling button and profession stars without a DetailedLevels exception (`~/lembitu-native-tests/20261005T181625Z-skills-rebuild/` on astral-tricep).
-- **ExpertExplorer 1.7.0 stopped every new character from being created — fixed in
-  `Lembitu.Callings` (ADR-0022).** Its `Player.Save` prefix loads exploration data the first time it
-  meets a character, and `PlayerExplorationData.IsLegacySave` passes the missing
-  `PlayerExplorationData` entry straight to `Regex.IsMatch`, which throws `ArgumentNullException`
-  (`PlayerExplorationData.cs:136-184`). `FejdStartup.OnNewCharacterDone` saves the fresh preview
-  character that `OnCharacterNew` builds, so the exception escaped and nothing was written. Confirmed
-  2026-10-04 through the real menu on astral-tricep (client build 25527674, the full pack): pointer
-  clicks on Start, New and Done left the new-character panel open, saved no character and logged the
-  throw; the same clicks without ExpertExplorer saved the character. Evidence, with screenshots, is
-  under `~/lembitu-menu-evidence/` on astral-tricep. `Lembitu.Callings` now answers a missing tag as
-  "old format", which reads nothing from a character without data; the full-pack acceptance of the
-  same day created three characters with no throw (`docs/build.md`). A character made before
-  ExpertExplorer was installed meets the same check on load and gets the same answer; that path is
-  read from the code, not exercised.
+- **ExpertExplorer retired 2026-10-05.** Its new-character save failure was previously
+  guarded by Callings. Explorer 1.1.7 replaces it and the obsolete save hook is removed;
+  P belongs to SocialSystem Party, with no ExpertExplorer pin prompt.
 - **Guilds clamps `[5 - Territory] MembersPerUpgrade` to 1..100 on boot, and the cap holds anyway.**
   Observed 2026-10-04: an enforced 0 came back as 1 on every boot. Established from `Guilds.dll`
   1.2.2, sha256 `c9303d4f…89ef40`, decompiled with ilspycmd 11: the member cap is
@@ -502,6 +489,8 @@ PvPBiomeDominions. On 2026-10-04 Oathbound replaced WackyEpicMMOSystem (ADR-0020
 | Smoothbrain/CreatureLevelAndLootControl | **Tried and rejected 2026-09-17, on the live server.** It was the obvious replacement for CreatureManager — plain percentages for creature and boss health, its own affix tables, and the same three multiplayer-scaling keys — but 4.6.4 is from May 2025 and cannot run on Valheim 1.0: its bundled ServerSync reads `ZRoutedRpc.Everybody`, a field the game turned into a const, so its type initializer throws `TypeInitializationException` at boot and the mod does nothing. `scripts/screen-bundled-libs.sh` reports five stale references, and it was not run before the swap — which is the whole reason that script exists (ADR-0002, #84) |
 | WackyMole/WackyItemRequiresSkillLevel | **Removed 2026-09-17 and not restored**, unlike the level mod it accompanied (2026-09-17, owner's instruction). Its curated rules gated iron, wolf, padded and carapace armour at character levels 20, 35, 50 and 65, and nothing reads those thresholds once there are no levels. World Advancement Progression's material-biome locks are the whole gear gate now (#80) |
 | seneaL/SeneaL_UI | **Considered and dropped 2026-10-04** (owner's decision). It replaces the whole UI and by default takes over the inventory from AzuExtendedPlayerInventory, crafts from nearby chests beside AzuCraftyBoxes, and auto-feeds smelters beside BetterStations |
+| Bagr/CrewStats, Bagr/DamageMeter | **Removed from Pack and server 2026-10-05** (owner). CrewStats' statistics window covered inventory; the owner chose to remove both statistics/meter mods instead of repairing the overlay. Their configs and key seeds leave too. |
+| MilkMediaProductions/ExpertExplorer | **Replaced 2026-10-05 by blacks7ar/Explorer 1.1.7** (owner, ADR-0019/0024). Exploration becomes skill-gated live resource/dungeon radar; the obsolete Callings first-save guard and P pin prompt leave with ExpertExplorer. |
 | sighsorry/Clan | **Removed 2026-10-04** (owner's instruction). Guilds of three to five are the membership, with parties for shared hunts (ADR-0019, superseding ADR-0008) |
 | WackyMole/WackyEpicMMOSystem | **Replaced 2026-10-04 by Oathbound** (ADR-0020). Level and attributes only, with no talent tree; its party XP reads the deprecated Smoothbrain/Groups API, and its death penalty subtracts the retained XP from the total rather than the lost XP |
 | blacks7ar/MagicPlugin | **Replaced 2026-10-04 by Oathbound's Mage and Warlock** (ADR-0020). One magic system, owned by the class pillar |

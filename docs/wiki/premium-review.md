@@ -122,7 +122,9 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   dependency); the in-play trial is the Shakedown's. Evidence and suggested settings: `ScoutUI.md` §§1-2, 6-7 and `ScoutMeta.md` §§2-3.
   BetterChat's 2026-09 cut reason (Clan owned chat) has expired, but Guilds' `/g` prefix shares
   `Chat.InputText`; Quick Stack works on the open container only, with both area ranges server-locked
-  at 0; DamageMeter's F-key defaults go through the keybind seed.
+  at 0. The owner removed CrewStats and DamageMeter from both Pack and server later
+  on 2026-10-05 after CrewStats' window covered the inventory. Their overlays and
+  keyboard seeds were removed too; the other four additions remain.
 - **The Calling gets a window; stars become markers** (owner, 2026-10-05; ADR-0021, ADR-0022): a
   Calling button in the skills window opens a window grouped Land / Craft / Road with the 2-1-1 quota,
   levels and what a focus changes; readable anywhere, changeable only within about 10 m of the
@@ -154,15 +156,13 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   (territory lost after reconnect or restart; 1.2.4 exists but is a feature release — name
   over-heads, corner posts — so it was not taken); client seeds for the accepted key layout: voice
   Mouse3, AzuHoverStats Delete, Extra Snaps brackets, DetailedLevels F8, PlanBuild Insert/Minus/Equals
-  with RightAlt, DamageMeter menu F6/live panel End/mode Backslash/expedition Pause, CrewStats Semicolon
-  and CompactStatusEffects Quote. Quick Stack uses Ctrl+U, restock Shift+U, sort LeftAlt+U and trash
+  with RightAlt, and CompactStatusEffects Quote. Quick Stack uses Ctrl+U, restock Shift+U, sort LeftAlt+U and trash
   RightAlt+U, moving off SocialSystem's P, Oathbound's L, CraftyBoxes' Alt+O and HoverStats' Delete.
   Decompile audit covered all 77 staged managed plugin assemblies, vanilla's keyboard defaults in
-  `assembly_utils` `ZInput.ResetKBMButtons`, and the full `assembly_valheim` code: End is freed by
-  PlanBuild; Backslash/Semicolon/Quote/Pause/U have no action bindings elsewhere. PageUp/PageDown
-  were rejected because vanilla uses them for chat scroll; F10 also serves SaunaMod's optional
-  editor. DamageMeter and CrewStats read only `KeyboardShortcut.MainKey`, while Quick Stack
-  checks its modifiers, so only Quick Stack receives chords. F1 stays the Guide's. ServerQuickConnect
+  `assembly_utils` `ZInput.ResetKBMButtons`, and the full `assembly_valheim` code.
+  Quote/U have no action bindings elsewhere. PageUp/PageDown were rejected because
+  vanilla uses them for chat scroll; F10 also serves SaunaMod's optional editor.
+  Quick Stack checks its modifiers and receives chords. F1 stays the Guide's. ServerQuickConnect
   points at the server with a blank password (`AuditUX.md` §§1, 3); SaunaMod pins
   `nekitker.saunamod.cfg` `[Mead] DurationMultiplier = 1`; EpicLoot aliases hostile SeaAnimals
   by biome (`AuditCombat.md` §5) through a server-synced patch file.
@@ -227,10 +227,10 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
 
 ## Lessons
 
-- **The corrected Pack keys are bound in the real client** (native, 2026-10-05; #87): a client
-  installed from the built 70-pin Pack joined the disposable server and retained every corrected
-  seed. F6 opened DamageMeter, Semicolon opened CrewStats (its footer names Semicolon), and Quote
-  opened CompactStatusEffects. The latter still paints the upstream hard-coded `Close (F8 / ESC)`
+- **Earlier 70-pin Pack key proof, partly retired** (native, 2026-10-05; #87): the
+  client retained the corrected seeds and opened CompactStatusEffects with Quote.
+  The same evidence also exercised CrewStats/DamageMeter, both removed later that
+  day; their bindings are no longer part of the Pack. CompactStatusEffects still paints `Close (F8 / ESC)`
   caption; it is not the active binding. Use Quote or Escape. Evidence on astral-tricep:
   `~/lembitu-native-tests/20261005T131116Z-pack87-seeds-ui/` (generated config values, key events and
   the three screenshots). Full-Pack demo `20261005T123002Z-demo` verified all 337 enforced entries

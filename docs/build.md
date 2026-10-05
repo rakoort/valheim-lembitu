@@ -206,6 +206,11 @@ EpicMMOSystem fork learned its bundled PieceManager was as broken as its bundled
 same screening applies to adopted packages: a mod that ships prebuilt libraries can pass staging and
 still throw the first time that code runs.
 
+Explorer 1.1.7 was screened 2026-10-05 with `--dir dist/plugins/Explorer`: clean, no
+stale game-member reference in its one DLL. Its bundled ServerSync broadcasts are
+reachable (configuration entries and locking entry are registered), but its
+`sendZPackage` uses target 0 rather than reading `ZRoutedRpc.Everybody`; no patcher is needed.
+
 **A finding is a reference, not a failure.** ValheimRAFT 4.3.2 bundles a `ServerSync.dll` whose
 `<AddConfigEntry>b__0`, `<AddCustomValue>b__1` and `sendZPackage` all read `ZRoutedRpc::Everybody`
 through the stale `ldsfld`. It is inert in this pack, and the reason is worth stating rather than
@@ -483,7 +488,7 @@ Commands use observed IDs, not guessed object names:
 
 | Action | Fields / behavior |
 | --- | --- |
-| `snapshot` | Player position, health, stamina, swimming state, biome, water level and generated terrain height; inventory, nearby entities, progression and custom data, skills, recent HUD messages and chat with times, visible windows with texts and button IDs, admin and Steam IDs, UI and connection state |
+| `snapshot` | Player position, health, stamina, swimming state, biome, water level and generated terrain height; inventory, nearby entities, progression and custom data, skills, recent HUD messages and chat with times, visible windows with texts and button IDs, admin and Steam IDs, UI and connection state; read-only `mapPins` (name/save/type/position) and `explorerTrackers` (resource/range/requiredLevel/position; empty if absent or unavailable) |
 | `move` | World `x`/`z` direction in [-1,1], `seconds` in (0,10]; native player controls |
 | `attack` | Entity `target`, optional `secondary`, `seconds` in (0,10]; native attacks, never direct damage/XP |
 | `interact` | Nearby entity `target`; native interaction/pickup |

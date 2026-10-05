@@ -31,10 +31,10 @@ internal sealed class Profession(string key, ProfessionGroup group, Skills.Skill
 /// </summary>
 internal static class Professions
 {
-    /// <summary>ImpactfulSkills' and ExpertExplorer's Jotunn identifiers.</summary>
+    /// <summary>ImpactfulSkills' Jotunn identifiers; Explorer uses its bundled skill manager.</summary>
     private static readonly string[] JotunnIdentifiers =
     {
-        "midnightsfx.animalwhisper", "midnightsfx.voyager", "midnightsfx.hauling", "com.milkwyzard.ExpertExplorer.Exploration",
+        "midnightsfx.animalwhisper", "midnightsfx.voyager", "midnightsfx.hauling",
     };
 
     public static readonly IReadOnlyList<Profession> All = new[]
@@ -47,13 +47,14 @@ internal static class Professions
         Hashed("Blacksmithing", ProfessionGroup.Craft),
         Hashed("Herbalist", ProfessionGroup.Craft),
         Vanilla(Skills.SkillType.Cooking, ProfessionGroup.Craft),
-        Hashed("com.milkwyzard.ExpertExplorer.Exploration", ProfessionGroup.Road),
+        Hashed("Explorer", ProfessionGroup.Road),
         Hashed("midnightsfx.voyager", ProfessionGroup.Road),
         Hashed("midnightsfx.hauling", ProfessionGroup.Road),
     };
 
     public static readonly Skills.SkillType Blacksmithing = Hash("Blacksmithing");
     public static readonly Skills.SkillType Herbalist = Hash("Herbalist");
+    public static readonly Skills.SkillType Explorer = Hash("Explorer");
 
     private static readonly Dictionary<Skills.SkillType, Profession> ByType = All.ToDictionary(p => p.Type);
     private static readonly Dictionary<string, Profession> ByKey = All.ToDictionary(p => p.Key, StringComparer.Ordinal);
@@ -73,11 +74,11 @@ internal static class Professions
 
     /// <summary>
     /// Jotunn and the bundled skill managers both derive a skill's type as |GetStableHashCode| of its
-    /// identifier (Jotunn SkillConfig.Identifier; SkillManager.Skill.fromName). Logs any Jotunn skill
-    /// that resolves differently or is missing, so a renamed identifier is seen at startup rather than
-    /// as a profession that silently stopped counting.
+    /// identifier (Jotunn SkillConfig.Identifier; SkillManager.Skill.fromName). Checks ImpactfulSkills
+    /// with Jotunn and Explorer with its own assembly's bundled registry, so a missing or renamed
+    /// profession is seen at startup rather than silently ceasing to count.
     /// </summary>
-    public static void VerifyJotunnSkills(ManualLogSource log)
+    public static void VerifySkills(ManualLogSource log)
     {
         foreach (string identifier in JotunnIdentifiers)
         {
@@ -91,6 +92,16 @@ internal static class Professions
                 log.LogError($"Profession skill {identifier} resolves to {(int)def.m_skill}, not {(int)Hash(identifier)}.");
             }
         }
+        if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExplorerRange.Guid, out var explorer))
+        {
+            Type? manager = explorer.Instance.GetType().Assembly.GetType("SkillManager.Skill");
+            var registry = manager == null ? null : HarmonyLib.AccessTools.Field(manager, "skills")?.GetValue(null) as System.Collections.IDictionary;
+            if (registry == null || !registry.Contains(Explorer))
+                log.LogError("Profession skill Explorer is not registered with its bundled skill manager; it will not count.");
+            else
+                log.LogInfo($"Profession skill Explorer registered as {(int)Explorer} with its bundled skill manager.");
+        }
+        else log.LogWarning("Explorer is not loaded; the Exploration profession will not count.");
     }
 
     private static Profession Vanilla(Skills.SkillType type, ProfessionGroup group) => new(type.ToString(), group, type);

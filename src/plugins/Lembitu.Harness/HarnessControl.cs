@@ -693,6 +693,9 @@ internal sealed class HarnessControl
             recentMessages = recentMessages.ToArray(),
             chat = chatLines.ToArray(),
             windows = Windows().ToArray(),
+            mapPins = Minimap.instance == null ? Array.Empty<MapPinState>() : Minimap.instance.m_pins.Select(p =>
+                new MapPinState { name = p.m_name, save = p.m_save, type = p.m_type.ToString(), x = p.m_pos.x, y = p.m_pos.y, z = p.m_pos.z }).ToArray(),
+            explorerTrackers = ExplorerTrackers(),
             ui = new UiState { inventory = InventoryGui.IsVisible(), map = Minimap.IsOpen(), crafting = gui != null && gui.m_craftTimer >= 0,
                 buttons = buttonStates.ToArray(), craftEnabled = gui != null && gui.m_craftButton.IsInteractable(),
                 recipes = gui == null ? Array.Empty<string>() : gui.m_availableRecipes.Select(r => r.Recipe.name).ToArray() },
@@ -707,6 +710,23 @@ internal sealed class HarnessControl
             fixtureSpawned = fixtureSpawned,
             fixturePrivateKeys = fixturePrivateKeys
         };
+    }
+
+    private static ExplorerTrackerState[] ExplorerTrackers()
+    {
+        try
+        {
+            Type? type = AccessTools.TypeByName("Explorer.Patches.Tracker");
+            if (type == null) return Array.Empty<ExplorerTrackerState>();
+            var name = AccessTools.Field(type, "m_resourceName");
+            var range = AccessTools.Field(type, "m_trackRange");
+            var level = AccessTools.Field(type, "m_requiredLevel");
+            if (name == null || range == null || level == null) return Array.Empty<ExplorerTrackerState>();
+            return UnityEngine.Object.FindObjectsByType(type, FindObjectsSortMode.None).OfType<Component>().Select(t =>
+                new ExplorerTrackerState { resourceName = (string)name.GetValue(t), range = (float)range.GetValue(t),
+                    requiredLevel = (int)level.GetValue(t), x = t.transform.position.x, y = t.transform.position.y, z = t.transform.position.z }).ToArray();
+        }
+        catch { return Array.Empty<ExplorerTrackerState>(); }
     }
 
     /// <summary>The local platform user ID, "steam_7656…" on the test client; empty before platform sign-in.</summary>
@@ -807,6 +827,8 @@ internal sealed class HarnessControl
         public MessageState messages = null!;
         public RecentLine[] recentMessages = Array.Empty<RecentLine>(), chat = Array.Empty<RecentLine>();
         public WindowState[] windows = Array.Empty<WindowState>();
+        public MapPinState[] mapPins = Array.Empty<MapPinState>();
+        public ExplorerTrackerState[] explorerTrackers = Array.Empty<ExplorerTrackerState>();
         public UiState ui = null!;
         public bool admin;
         public string platformUserId = "", steamId = "";
@@ -817,6 +839,8 @@ internal sealed class HarnessControl
         public string connection = "", fixtureSpawned = "";
         public string[]? fixturePrivateKeys;
     }
+    private sealed class MapPinState { public string name = "", type = ""; public bool save; public float x, y, z; }
+    private sealed class ExplorerTrackerState { public string resourceName = ""; public float range, x, y, z; public int requiredLevel; }
     private sealed class PlayerState
     {
         public string id = "", name = "", biome = "";

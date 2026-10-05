@@ -54,8 +54,9 @@ per-upgrade extra, no added elemental damage
 Market, as with the alchemist, without a second large combat curve on EpicLoot and Oathbound. Its
 efficiency perks (durability, smelting and kiln speed, ore saving, extra item) stay as shipped.
 
-**Perks that switch on at a level sit on the ladder's rungs.** No perk unlocks below 30, where every
-profession levels at full speed (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`):
+**Power perks that switch on at a level sit on the ladder's rungs.** No power perk unlocks
+below 30, where every profession levels at full speed (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`).
+Explorer's information unlocks instead follow each biome from level 1, as amended below:
 
 | Rung | Perks |
 | --- | --- |
@@ -85,7 +86,7 @@ what the mods add on top of vanilla:
 | Mining | dig ×2.2, ore ×2 | dig ×1.5, ore ×1.67; its unlocks stay |
 | Animal Handling | taming 7×, slaughter yield 3×, honey 2× | each 2.5× |
 | Hauling | +50 carry | +100 carry; carts unchanged |
-| Exploration | 200 m reveal | 250 m (`config/enforced/com.milkwyzard.ExpertExplorer.cfg`) |
+| Exploration | 200 m reveal (ExpertExplorer, retired 2026-10-05) | Explorer: 100..300 m reveal; live markers 20 m at level 1 to 64 m at 100, biome unlocks 1/10/20/30/40/50/60, dungeons 10 |
 | Herbalist | nothing for the maker | about 1.5 extra items per craft (`Lembitu.Callings`) |
 | Fishing | nothing for the maker | about 1.25 extra fish per catch (`Lembitu.Callings`) |
 | Sailing | sail force ×2.5, rowing ×3, better wind angles from 50 | as shipped |
@@ -105,10 +106,17 @@ passenger adds up to 25% sail force from their own Sailing skill. It is kept as 
 a ship together. ADR-0019's ban on headcount scaling is about difficulty (creature health, damage,
 raid odds), not about rewards for playing together.
 
-**Exploration owns the map reveal, aboard as on foot.** Voyager multiplies the reveal radius aboard a
-ship, but ExpertExplorer registers after it and replaces the radius with its own, so the Sailing
-bonus was silently erased (`ExpertExplorer.cs:1100-1114`, `ImpactfulSkills.cs:7835-7844`). Voyager's
-multiplier is set to 0 so no dead perk claims otherwise. The explorer maps; the sailor moves fast.
+**Exploration owns the map reveal, aboard as on foot (amended 2026-10-05).** Explorer
+1.1.7 replaces ExpertExplorer. BetterMap alone sets `Minimap.m_exploreRadius` to the
+100 m baseline before each `UpdateExplore`; Explorer never writes that field, instead multiplying the
+`Minimap.Explore(Vector3,float)` argument by `1 + skillFactor * 2` (100..300 m).
+Voyager's reveal multiplier remains 0: the explorer maps; the sailor moves fast.
+Explorer's live-marker unlocks follow ADR-0023 (Meadows 1 because 0 disables it, then
+10/20/30/40/50/60; dungeons/caves 10). Callings' server-locked `RangeAtLevel1 = 20`
+and `RangeAt100 = 64` replace each tracker's creation-time Detection Radius on every
+update, interpolating linearly over levels 1..100. `Max Pin = 20` is a shared cap
+across resource and dungeon types, chosen to leave room for mixed markers without
+using the maximum 50. BetterMap auto-pins are off; Explorer markers are not saved.
 
 **This amends ADR-0021.** Profession mods still add no combat perk to a skill. The alchemist's
 elixirs and the smith's mastery bonus are combat power sold as goods.

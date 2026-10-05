@@ -12,6 +12,10 @@ internal static class Settings
     private static ConfigEntry<float> s_oathstoneRange = null!;
     private static ConfigEntry<float> s_herbalistExtra = null!;
     private static ConfigEntry<float> s_fishingExtra = null!;
+    private static ConfigEntry<float> s_explorerRangeAtLevel1 = null!, s_explorerRangeAt100 = null!;
+
+    public static float ExplorerRangeAtLevel1 => s_explorerRangeAtLevel1.Value;
+    public static float ExplorerRangeAt100 => s_explorerRangeAt100.Value;
 
     public static float OathstoneRange => s_oathstoneRange.Value;
 
@@ -34,6 +38,8 @@ internal static class Settings
         s_oathstoneRange = Bind(config, "Calling", "OathstoneRange", 10f, "Metres from the Oathstone within which the Calling can be changed in the skills window.", 1f, 100f);
         s_herbalistExtra = Bind(config, "Perks", "HerbalistExtraAt100", 1.5f, "Expected extra items per successful tonic, elixir or mead-base craft at Herbalist 100.", 0f, 10f);
         s_fishingExtra = Bind(config, "Perks", "FishingExtraAt100", 1.25f, "Expected extra fish per landed catch at Fishing 100.", 0f, 10f);
+        s_explorerRangeAtLevel1 = Bind(config, "Explorer markers", "RangeAtLevel1", 20f, "Live marker range in metres at Explorer level 1; replaces Explorer Detection Radius on each tracker update.", 0f, 100f);
+        s_explorerRangeAt100 = Bind(config, "Explorer markers", "RangeAt100", 64f, "Live marker range in metres at Explorer level 100; interpolated linearly from level 1.", 0f, 100f);
     }
 
     /// <summary>The steep curve: how fast a non-focus profession at this level gains.</summary>

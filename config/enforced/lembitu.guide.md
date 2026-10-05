@@ -16,9 +16,13 @@ This server is built for keyboard and mouse. Controllers are not supported.
 
 Every new player wakes at the sacrificial stones, where the Oathstone stands. The first evening is shared there: meet the other guilds, take an oath, choose a Calling, found a guild and claim a start region.
 
-No oath, no class XP: kills pay nothing toward a class until you have sworn one at the Oathstone.
+F9 opens the guild window. Use FOUND A GUILD to found one for free, INVITATIONS to accept an invitation, or GUILD LIST to apply to a guild. A guild leader whose guild holds no region claims a free start region at its portal stone beside the sacrificial stones; use it and confirm.
 
 Open this guide any time with F1 or the Guide button in your inventory.
+
+No oath, no class XP: kills pay nothing toward a class until you have sworn one at the Oathstone.
+
+Keys: F1 Guide; F7 Market; F9 Guilds; O social; P party; Left Alt+E hides or shows Explorer markers.
 
 page oath-and-class | Oath and class
 Your class comes from Oathbound, chosen at the Oathstone. Thirteen classes exist; four unlock after a first deed - equip paired axes, a two-handed sword or a two-handed axe, or carry a dragon tear.
@@ -41,6 +45,8 @@ A focus levels at full speed to 100. Every other profession levels at full speed
 Until you choose, every profession follows the slow curve, which changes nothing below 30.
 
 A focus keeps its XP when you die. Dropping a focus costs what it gave: the skill falls to its hidden, slower level.
+
+Road is Explorer (Exploration), Sailing and Hauling. Explorer reveals more of your personal map as it grows, from 100 m to 300 m at 100. Its temporary resource markers unlock at Meadows 1, Black Forest 10, Swamp 20, Mountains 30, Plains 40, Mistlands 50 and Ashlands 60; dungeons and caves at 10. Marker reach grows from 20 m at level 1 to 64 m at 100. BetterMap does not add automatic resource pins.
 
 page ladder | Profession ladder
 What a profession makes climbs ten levels per biome: Black Forest 10, Swamp 20, Mountains 30, Plains 40, Mistlands 50, Ashlands 60, Deep North 70. Meadows asks nothing.
@@ -67,7 +73,9 @@ Boss powers are passive and grow with every boss kill you attend.
 page groups | Guilds, parties and the Market
 A guild is who you belong to: ranks, guild chat, a shared vault, wards, a banner territory and guild levels. At most five members, at most three guilds. Founding one is free.
 
-Guilds claim their start regions in game. Everyone starts at the sacrificial stones. A guild leader claims an unclaimed start region by using that region's portal stone in the ring around the stones, after a confirmation window names the region and shows where it lies. First come, first served.
+Press F9 to open the guild window. FOUND A GUILD starts your own guild; INVITATIONS lets you accept an invitation; GUILD LIST lets you apply to a guild and wait for approval.
+
+Guilds claim their start regions in game. Everyone starts at the sacrificial stones. A guild leader whose guild holds no region claims an unclaimed start region by using that region's portal stone in the ring around the stones, after a confirmation window names the region and shows where it lies. The hover text explains who can claim it; a claimed portal names its guild. One region per guild, first come, first served.
 
 The region follows membership: joining a guild makes its region your respawn point and gives you its portal; leaving a guild sends you back to the stones; a disbanded guild frees its region. A bed you place overrides the respawn, as usual.
 
