@@ -35,10 +35,16 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   wakes at the sacrificial stones; a founded guild's leader claims an unclaimed region at its portal
   stone in the ring, after a confirmation window; the region follows membership (join gives its
   respawn and portal, leave returns to the stones, disband frees it); beds override as in vanilla.
-  A new plugin, `Lembitu.Guilds`, owns the bridge; to be implemented (#91). Fact: SeparateSpawns assigns
-  unrostered players to a random region with no setting to stop it (`GroupSpawnResolver.cs:158-177`).
+  A new plugin, `Lembitu.Guilds`, owns the bridge; implemented 2026-10-05 in `src/plugins/Lembitu.Guilds`
+  (#91). Fact: SeparateSpawns assigns unrostered players to a random region with no setting to stop it
+  (`GroupSpawnResolver.cs:158-177`). Native proof on 2026-10-05: a fresh guildless character woke at
+  the stones (`~/lembitu-native-tests/20261005T164425Z-guilds91-final/guildless-stones.png`). The
+  respawn screenshot was requested during the respawn transition and ended the scenario; completed respawn,
+  claim UI, regional travel, leaving/disbanding, restart and missing-plugin refusal remain unproven.
+  Two-guild races, non-leader claims and non-member travel require owner checks with two accounts.
 - **Party XP reaches its 150% total at four members** (owner, 2026-10-04): `lembitu.oathbound.cfg`
-  `[Party] FullPartySize = 4`, bonus 0.5 unchanged; to be applied. Two members earn about 58% of a
+  `[Party] FullPartySize = 4`, bonus 0.5 unchanged; applied 2026-10-05 in `Lembitu.Oathbound`. Two
+  members earn about 58% of a
   kill each, three 44%, four 37.5%, eight 18.75%. Fact: under the linear curve to eight a three-player
   member earned 38%, so a party needed 2.6× a soloist's kill rate to match XP per hour
   (`src/plugins/Lembitu.Oathbound/PartyExperience.cs:157-159`; `AuditPace.md` §3). ADR-0019, ADR-0020

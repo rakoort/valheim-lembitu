@@ -51,13 +51,39 @@ An eleventh simultaneous connection has not yet been observed (#9).
 ## Guilds and parties
 
 **A guild is who you belong to.** Northarun/Guilds supplies ranks, guild chat, a shared vault,
-guild-bound wards, a banner territory, guild levels, upgrades and achievements. A guild has at most
-five members, and there are at most three guilds, each agreed before launch with its own start
-region (`config/enforced/adrian.valheim.guilds.cfg`, ADR-0019). Guild progress buys base safety later in the
-Run: the monster ward at guild level 10 and comfort upgrades at 12 and 20. Coin donations buy guild
-XP at 50 coins a point, so trade feeds the guild.
+guild-bound wards, a banner territory, guild levels, upgrades and achievements. Founding is free,
+a guild has at most five members, and at most three guilds exist because there are three start
+regions to claim (ADR-0019, ADR-0028). Guild progress buys base safety later in the Run: the monster
+ward at guild level 10 and comfort upgrades at 12 and 20. Coin donations buy guild XP at 10 coins a
+point, so trade feeds the guild.
 
-- Register: *Intended*.
+**Guilds form in game, at the stones.** Every new character wakes at the sacrificial stones, beside
+the Oathstone, for as long as they belong to no guild holding a region: meet, take an oath, choose a
+Calling, found or join a guild (ADR-0028). Separately from that first evening, a character with no
+guild never takes over a start region, and a bed or logout point respawns them as in vanilla.
+
+**A guild claims a region at its portal stone.** Each region keeps one portal in the ring around the
+sacrificial stones, 28 m out. A guild leader whose guild holds no region who uses an unclaimed
+region's stone gets a confirmation window naming the region and where it lies — north or south,
+how far out; confirming claims it. First come, first served; the claim is stored on the server
+(`<BepInEx ConfigPath>/Lembitu.Guilds/<world>.claims.json`) and survives a restart. A non-leader cannot
+claim, a guild already holding a region cannot claim a second one, and the region-side portal still
+costs its 2 surtling cores to open initially (SeparateSpawns). Disbanding does not reset activation:
+a freed region can be claimed again even if its portal pair remains open.
+
+**The region follows the guild, not the character.** A member of a guild with a region is assigned
+to it: that is their bedless respawn point and its portal answers to them, while every other guild's
+portals refuse them (`Lembitu.Guilds`, ADR-0028). Leaving the guild or being kicked returns that
+player to the stones; disbanding the guild also frees its region for the next guild. Membership is
+read from Guilds' server state, never from what a client reports, and belongs to each character
+separately: another character on the same Steam account inherits neither membership nor region.
+The assignment settles within seconds of a change or once a joining character's body identifies
+them to the server. An initial join keeps vanilla beds and logout points; without either, it starts
+at the stones rather than trusting another character's old assignment. Later bedless deaths retain
+the identified character's region; a bed always overrides it, as in vanilla.
+
+- Register: guild, claim and move rules *Intended* (`Lembitu.Guilds`,
+  `config/enforced/lembitu.guilds.cfg`).
 
 **A party is who you hunt with.** M2Valheim/SocialSystem parties are invite-only, hold up to eight
 players and may mix guilds (`config/enforced/M2Valheim.SocialSystem.cfg`). A party shares exactly two
@@ -291,10 +317,12 @@ Deaths are meant to cost something (ADR-0019):
 the terrain when the world is created and cannot change afterwards. Every player needs the Pack,
 because your client generates the ground itself.
 
-**Each guild starts in its own place.** One scored start region per guild, 0.5 to 1.2 km from the
-sacrificial stones and at least a kilometre from the next (SeparateSpawns, ADR-0018,
-`config/dedicated/abortipus.separatespawns.cfg`). Meeting another guild is meant to be an event
-rather than the first thing that happens.
+**Each region is its own place, and a guild claims one.** Three scored start regions, 0.5 to 1.2 km
+from the sacrificial stones and at least a kilometre apart (SeparateSpawns, ADR-0018,
+`config/dedicated/abortipus.separatespawns.cfg`). A guild claims one at that region's portal stone
+in the ring around the sacrificial stones, after the confirmation window (ADR-0028, *Guilds and
+parties*); nobody lives out there until one does, and every new character wakes at the stones.
+Meeting another guild is meant to be an event rather than the first thing that happens.
 
 **Ore does not teleport, until the Ashlands.** Ordinary portals refuse ore and metal, so they travel
 by ship or cart (`config/launch/launch.env.example`, `Portals hard`). Vanilla's Ashlands stone portal

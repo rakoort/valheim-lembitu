@@ -1,7 +1,7 @@
 # ADR-0028: Guilds form in game and claim start regions
 
 Date: 2026-10-05
-Status: Accepted; not yet implemented
+Status: Accepted; implemented 2026-10-05 in `src/plugins/Lembitu.Guilds`
 Amends: ADR-0018 (separate starts), ADR-0019 (guilds agreed before launch), ADR-0022 (our plugins)
 
 ADR-0019 had guilds agreed before launch and each guild's members rostered by Steam ID into one of

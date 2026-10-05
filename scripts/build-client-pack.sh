@@ -18,7 +18,8 @@
 #                    them: a player who extracts only mods gets a vanilla client, which this
 #                    server rejects outright at the handshake.
 #   plugins/         the adopted pin list, plus every package's assets and config seeds, plus our own
-#                    Lembitu.Oathbound and Lembitu.Callings from the build output.
+#                    Lembitu.Oathbound, Lembitu.Callings, Lembitu.Guide and Lembitu.Guilds from the
+#                    build output.
 #   config/          the package-supplied config seeds, and the client-relevant locked settings.
 #
 # It is NOT the server's dist/: five things differ, and all of them matter.
@@ -78,9 +79,10 @@ EXCLUDED=("${NEVER_STAGED[@]}" "${SERVER_ONLY[@]}")
 # "Where each mod runs"; #78). This assertion used to name BoneMod, which the 2026-09-16 review
 # dropped along with every other client-only mod (#70).
 REQUIRED=(Jotunn AzuCraftyBoxes)
-# Our own plugins every player needs, taken from the build output rather than the pin table. Both
-# declare Jotunn's EveryoneMustHaveMod, so the server refuses a client without them (ADR-0022).
-PLAYER_PLUGINS=(Lembitu.Oathbound Lembitu.Callings)
+# Our own plugins every player needs, taken from the build output rather than the pin table. All
+# four declare Jotunn's EveryoneMustHaveMod, so the server refuses a client without them (ADR-0022,
+# ADR-0027, ADR-0028).
+PLAYER_PLUGINS=(Lembitu.Oathbound Lembitu.Callings Lembitu.Guide Lembitu.Guilds)
 # Overridable for the same reason as BEPINEX_PACK: the tests supply fixtures.
 OWN_PLUGINS="${OWN_PLUGINS:-$REPO_ROOT/dist/plugins}"
 

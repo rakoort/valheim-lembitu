@@ -104,6 +104,8 @@ mkdir -p "$BEPINEX_PACK/BepInEx/config"
 OWN_PLUGINS="$WORK/own-plugins"; mkdir -p "$OWN_PLUGINS"
 printf 'oathbound\n' > "$OWN_PLUGINS/Lembitu.Oathbound.dll"
 printf 'callings\n'  > "$OWN_PLUGINS/Lembitu.Callings.dll"
+printf 'guide\n'     > "$OWN_PLUGINS/Lembitu.Guide.dll"
+printf 'guilds\n'    > "$OWN_PLUGINS/Lembitu.Guilds.dll"
 export OWN_PLUGINS
 
 make_zip() {  # make_zip <zip> <entry:content>...
@@ -166,21 +168,23 @@ else
 fi
 
 # --- 1a. our own plugins ship, and a build without them refuses -------------------------------
-# Both are mandatory on both sides, so a Pack that lost one is refused at every join.
+# All four are mandatory on both sides, so a Pack that lost one is refused at every join.
 
 if [[ -n "${listing:-}" ]] \
    && grep -qx 'BepInEx/plugins/Lembitu.Oathbound.dll' <<<"$listing" \
-   && grep -qx 'BepInEx/plugins/Lembitu.Callings.dll' <<<"$listing"; then
+   && grep -qx 'BepInEx/plugins/Lembitu.Callings.dll' <<<"$listing" \
+   && grep -qx 'BepInEx/plugins/Lembitu.Guide.dll' <<<"$listing" \
+   && grep -qx 'BepInEx/plugins/Lembitu.Guilds.dll' <<<"$listing"; then
   report ok "ships our own plugins from the build output"
 else
   report fail "ships our own plugins from the build output"
 fi
 
 UNBUILT="$WORK/unbuilt"; mkdir -p "$UNBUILT"
-cp "$OWN_PLUGINS/Lembitu.Oathbound.dll" "$UNBUILT/"
+cp "$OWN_PLUGINS/Lembitu.Oathbound.dll" "$OWN_PLUGINS/Lembitu.Callings.dll" "$OWN_PLUGINS/Lembitu.Guide.dll" "$UNBUILT/"
 if OWN_PLUGINS="$UNBUILT" build "$WORK/out-unbuilt"; then
   report fail "refuses a pack missing one of our plugins"
-elif grep -q 'Lembitu.Callings.dll' "$WORK/out"; then
+elif grep -q 'Lembitu.Guilds.dll' "$WORK/out"; then
   report ok "refuses a pack missing one of our plugins"
 else
   report fail "refuses a pack missing one of our plugins"
