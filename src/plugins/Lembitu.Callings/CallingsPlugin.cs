@@ -39,6 +39,7 @@ public sealed class CallingsPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "The Calling record follows the character", SkillHooks.RecordPlan);
         Hooks.Enable(_harmony, log, "Steep curve and shadow levels", SkillHooks.GainPlan);
         Hooks.Enable(_harmony, log, "Focus protection and profession drain on death", SkillHooks.DeathPlan);
+        Hooks.Enable(_harmony, log, "The skills window survives skills created while it opens", SkillsWindowRebuild.Plan);
         Hooks.Enable(_harmony, log, "Calling stars in the skills window", CallingStars.Plan);
         Hooks.Enable(_harmony, log, "Calling window in the skills dialog", CallingWindow.Plan);
         Hooks.Enable(_harmony, log, $"Seed beds follow the soil's rules ({Pinned.Loaded("blacks7ar.SeedBed", "SeedBed")})", SeedBedBiomeRule.Plan);

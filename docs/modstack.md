@@ -379,6 +379,7 @@ Read off the generated files in that boot, so the enforced overlays name real ke
 
 Recorded so they are not rediscovered:
 
+- **EpicLoot 0.14.13 can grow the skills list after vanilla builds its rows, crashing DetailedLevels 2.1.3 — fixed in `Lembitu.Callings` (2026-10-05).** Rebuild once if the local skill count grew during `SkillsDialog.Setup`; clear the original exception only after that rebuild succeeds, without creating skills in the fix. A fresh-character native first open now shows the Calling button and profession stars without a DetailedLevels exception (`~/lembitu-native-tests/20261005T181625Z-skills-rebuild/` on astral-tricep).
 - **ExpertExplorer 1.7.0 stopped every new character from being created — fixed in
   `Lembitu.Callings` (ADR-0022).** Its `Player.Save` prefix loads exploration data the first time it
   meets a character, and `PlayerExplorationData.IsLegacySave` passes the missing
