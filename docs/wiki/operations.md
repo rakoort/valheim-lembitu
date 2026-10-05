@@ -254,6 +254,34 @@ Seven steps stand between the Shakedown Pack and players (owner answers 2026-10-
    then the overlay and `scripts/apply-dedicated-config.sh`, then the Shakedown world's first boot,
    the same order `scripts/test-native.py` uses.
 
+**Applied state, 2026-10-05 — the Shakedown is live.** All seven steps were done in that order on
+astral-bicep with the owner's go-ahead for each stage:
+- **Backup first.** All worlds were backed up first (`lembitu-all-worlds-20261005T185312Z.tar.gz`,
+  with a copy on astral-tricep).
+- **A fresh clone in place.** The old bicep checkout, with its uncommitted work and the untracked
+  `Lembitu.LevelUpSound` source, was renamed to `~/code/valheim-lembitu-2026-10-03`, not deleted.
+  A fresh clone of `master` took its path, so the backup units' `%h/code/valheim-lembitu` paths
+  still resolve.
+- **The tested build was installed.** The tested `dist/` from the Mac was copied over and
+  installed; that pruned LevelUpSound and the cut mods.
+- **The container's plugin copy was cleaned.** `prune-mirror` cleaned the container's copy, and
+  BetterArchery, which no manifest owned, was removed from it by hand.
+- **The old roster was kept aside.** The 2026-10-03 roster sits beside the new one as
+  `SeparateSpawns.groups.json.world-Lembitu-2026-10-03`.
+- **Configs came from a throwaway world.** A disposable `LembituConfigGen` boot wrote every mod's
+  configuration; it was not public, and its world was deleted afterwards.
+- **Then the overlays.** The applied overlays verified `337 entries match`, with World radius 13250,
+  stretch 1.325, InnerRadius 1200 and MinStonesDistance 500.
+- **Then the world.** `scripts/launch-server.sh run` created `LembituShakedown`: Valheim 1.0.16
+  (network 40), the five world modifiers, `70 plugins to load` (69 loaded, 1 skipped, 0 failed),
+  every Lembitu feature `on`, three empty regions, `Opened Steam server`, and no exception in the
+  log.
+
+Region claims live in `/config/bepinex/Lembitu.Guilds/LembituShakedown.claims.json`, inside the
+BepInEx config the backups deliberately skip. A world restored from a backup therefore keeps the
+claims as they are now, not as they were then. Reconciliation frees claims whose guild no longer
+exists, but a claim made after the backup survives the restore.
+
 ## Backups — #20
 
 **The container's own backup must stay off on this server, and that is a measured finding, not a
