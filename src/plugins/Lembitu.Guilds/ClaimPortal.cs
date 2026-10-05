@@ -61,6 +61,64 @@ internal static class ClaimPortal
         // First, ahead of SeparateSpawns' own Interact prefix (priority 400): an eligible leader claims
         // a free region even if an earlier guild activated its portal. Ownership and activation differ.
         yield return new PatchPlan(interact) { Prefix = Hooks.Patch(typeof(ClaimPortal), nameof(InteractPrefix), Priority.First) };
+        var hover = Hooks.Method(typeof(TeleportWorld), nameof(TeleportWorld.GetHoverText), Type.EmptyTypes, typeof(string));
+        yield return new PatchPlan(hover) { Postfix = Hooks.Patch(typeof(ClaimPortal), nameof(HoverPostfix), Priority.Last) };
+    }
+
+    private static readonly Dictionary<string, string> RegionOwners = new();
+    private static float s_nextOwnersRequest;
+
+    public static void ResetHoverOwners()
+    {
+        RegionOwners.Clear();
+        s_nextOwnersRequest = 0f;
+    }
+
+    private static void HoverPostfix(TeleportWorld __instance, ref string __result)
+    {
+        if (!Settings.Enabled || !ClaimOn || Player.m_localPlayer == null) return;
+        var marker = Spawns.GroupPortalMarker.AttachFromZdoIfNeeded(__instance.gameObject);
+        if (marker == null || marker.IsSpawnEnd) return;
+        var roster = Spawns.Plugin.Roster;
+        if (roster == null || !roster.Groups.TryGetValue(marker.GroupName, out var group)) return;
+        if (Time.unscaledTime >= s_nextOwnersRequest && ZNet.instance != null && ZRoutedRpc.instance != null)
+        {
+            s_nextOwnersRequest = Time.unscaledTime + 2f;
+            long server = ZNet.instance.IsServer() ? ZDOMan.GetSessionID() : ZNet.instance.GetServerPeer()?.m_uid ?? 0;
+            if (server != 0) ZRoutedRpc.instance.InvokeRoutedRPC(server, "lembitu.guilds RegionOwners", "");
+        }
+        string hint;
+        if (RegionOwners.TryGetValue(marker.GroupName, out string owner) && owner.Length != 0)
+            hint = $"{marker.GroupName}: claimed by {owner}.";
+        else if (group.Players.Count != 0) return; // Wait for the server-owned label, never guess.
+        else if (LeaderWindowEligible() && Spawns.GroupSpawnResolver.GetGroupForLocalPlayer() == null)
+            hint = $"[E] Claim {marker.GroupName} for your guild";
+        else
+            hint = $"{marker.GroupName}: a free start region. A guild leader claims it here (F9 opens the guild window).";
+        __result += "\n" + hint; // SeparateSpawns retains its activation and travel instructions.
+    }
+
+    public static void RPC_RegionOwners(long sender, string unused)
+    {
+        if (ZNet.instance == null || !ZNet.instance.IsServer() || ZRoutedRpc.instance == null) return;
+        Claims.EnsureLoaded();
+        var data = new ZPackage();
+        var groups = Spawns.Plugin.Roster?.Groups;
+        data.Write(groups?.Count ?? 0);
+        if (groups != null) foreach (string region in groups.Keys)
+        {
+            data.Write(region);
+            data.Write(Claims.ClaimOfRegion(region)?.Label ?? "");
+        }
+        ZRoutedRpc.instance.InvokeRoutedRPC(sender, "lembitu.guilds RegionOwnersResult", data);
+    }
+
+    public static void RPC_RegionOwnersResult(long sender, ZPackage data)
+    {
+        if (ZNet.instance == null || sender != (ZNet.instance.GetServerPeer()?.m_uid ?? ZDOMan.GetSessionID())) return;
+        RegionOwners.Clear();
+        int count = data.ReadInt();
+        for (int i = 0; i < count; ++i) RegionOwners[data.ReadString()] = data.ReadString();
     }
 
     // ----- the interaction, client side

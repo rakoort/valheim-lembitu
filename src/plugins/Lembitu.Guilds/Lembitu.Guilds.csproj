@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.guilds</PluginGuid>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Description>Guilds form in game and claim SeparateSpawns' start regions (ADR-0028): guildless players hold the sacrificial stones, a guild leader claims one of the three regions at its portal stone after a confirmation window, and the region follows guild membership.</Description>
   </PropertyGroup>
 

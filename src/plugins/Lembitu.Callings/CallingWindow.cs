@@ -34,12 +34,40 @@ internal static class CallingWindow
     /// <summary>The Calling button in the skills window. Created once; the dialog survives reopening.</summary>
     private static void AfterSetup(SkillsDialog __instance, Player player)
     {
-        if (player != Player.m_localPlayer || __instance.transform.Find(ButtonName) != null)
+        if (player != Player.m_localPlayer || __instance.transform.Find("SkillsFrame/" + ButtonName) != null)
         {
             return;
         }
-        GameObject button = GUIManager.Instance.CreateButton("Calling", __instance.transform,
-            new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(95f, 17f), 150f, 32f);
+        var close = __instance.transform.Find("SkillsFrame/Closebutton") as RectTransform;
+        if (close == null)
+        {
+            Debug.LogWarning("Calling button: skills close button is missing.");
+            return;
+        }
+        GameObject button = GUIManager.Instance.CreateButton("Calling", close.parent,
+            close.anchorMin, close.anchorMax, close.anchoredPosition, close.rect.width, close.rect.height);
+        var rect = (RectTransform)button.transform;
+        rect.pivot = close.pivot;
+        var options = close.parent.Find("DLOptionsButton") as RectTransform;
+        var stats = close.parent.Find("DLStatsButton") as RectTransform;
+        if (options != null && stats != null)
+        {
+            // Fit four controls into the existing footer, preserving its edges and vanilla row.
+            float left = options.anchoredPosition.x - options.rect.width * options.pivot.x;
+            float right = close.anchoredPosition.x + close.rect.width * (1f - close.pivot.x);
+            const float gap = 6f;
+            float width = (right - left - 3f * gap) / 4f;
+            RectTransform[] footer = { options, stats, rect, close };
+            for (int i = 0; i < footer.Length; ++i)
+            {
+                footer[i].SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+                footer[i].anchoredPosition = new Vector2(left + i * (width + gap) + width * footer[i].pivot.x, close.anchoredPosition.y);
+            }
+        }
+        else
+        {
+            rect.anchoredPosition = close.anchoredPosition - new Vector2(close.rect.width + 8f, 0f);
+        }
         button.name = ButtonName;
         button.transform.SetAsLastSibling();
         button.GetComponent<Button>().onClick.AddListener(Toggle);

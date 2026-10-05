@@ -66,9 +66,12 @@ public sealed class GuildsPlugin : BaseUnityPlugin
         {
             return;
         }
+        ClaimPortal.ResetHoverOwners();
         rpc.Register<string>("lembitu.guilds ClaimRegion", ClaimPortal.RPC_ClaimRegion);
         rpc.Register<ZPackage>("lembitu.guilds ClaimResult", ClaimPortal.RPC_ClaimResult);
         rpc.Register<string>("lembitu.guilds Claimed", ClaimPortal.RPC_Claimed);
+        rpc.Register<string>("lembitu.guilds RegionOwners", ClaimPortal.RPC_RegionOwners);
+        rpc.Register<ZPackage>("lembitu.guilds RegionOwnersResult", ClaimPortal.RPC_RegionOwnersResult);
         s_registeredRpc = rpc;
     }
 

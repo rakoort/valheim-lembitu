@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.guide</PluginGuid>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Description>Guide (ADR-0027): an in-game rulebook window - chapters of short pages, opened by a hotkey and an inventory button, shown once on a character's first join, with its text in a server-synced file the admin edits. Reads the first-oath, first-Calling and first-party state to open matching pages; patches nothing.</Description>
   </PropertyGroup>
 
