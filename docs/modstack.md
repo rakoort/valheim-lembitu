@@ -379,6 +379,17 @@ Read off the generated files in that boot, so the enforced overlays name real ke
 
 Recorded so they are not rediscovered:
 
+- **Separate Spawns 0.1.1 can leave a client stuck on the loading screen when it joins after leaving
+  another world in the same game session — not fixed (2026-10-05).** Its portal-terrain leveller
+  (`PortalTerrainLeveler.ProcessQueue`) keeps its pending jobs and its coroutine running when a world
+  unloads. On the next join it asks the zone system for terrain before the client's
+  `WorldGenerator` exists, so `HeightmapBuilder.Build` throws `NullReferenceException` on the game's
+  single terrain thread. That thread never restarts, so the game waits forever. Seen on the owner's
+  first Shakedown join, after a local world had been opened in the same process. Workaround: quit
+  the game completely and join without opening another world first; the owner's next join worked.
+  The fix belongs in `Lembitu.Guilds`, which owns the Separate Spawns bridge: stop that coroutine and
+  clear its jobs when a world unloads, and defer the zone loading while `WorldGenerator.instance` is
+  null.
 - **EpicLoot 0.14.13 can grow the skills list after vanilla builds its rows, crashing DetailedLevels 2.1.3 — fixed in `Lembitu.Callings` (2026-10-05).** Rebuild once if the local skill count grew during `SkillsDialog.Setup`; clear the original exception only after that rebuild succeeds, without creating skills in the fix. A fresh-character native first open now shows the Calling button and profession stars without a DetailedLevels exception (`~/lembitu-native-tests/20261005T181625Z-skills-rebuild/` on astral-tricep).
 - **ExpertExplorer 1.7.0 stopped every new character from being created — fixed in
   `Lembitu.Callings` (ADR-0022).** Its `Player.Save` prefix loads exploration data the first time it
