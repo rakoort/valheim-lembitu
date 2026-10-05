@@ -107,8 +107,14 @@ of the way to 100.
   own lock does not.
 - A rung follows the materials, not the name. The Deep North bait uses a Mountains trophy and sits on
   rung 30; the Plains feast uses a spice World Advancement Progression places after the Plains boss,
-  so it sits on rung 50. Items whose materials are all Meadows stay open: SeaAnimals' saddle, the
-  Meadows backpack, the Runner elixir, and the strength and swimmer mead bases.
+  so it sits on rung 50. Items whose materials are all Meadows stay open: the Meadows backpack and the
+  strength and swimmer mead bases.
+- **Three named exceptions sit above their materials** (owner, 2026-10-05 premium review; not yet in
+  the rule file): Herbalist's Runner (Swift) elixir at Herbalist 40, so every elixir is an alchemist's;
+  SeaAnimals' saddle at Animal Handling 40, so riding at sea is a specialty; and OdinShip's caulked
+  wood at Sailing 40, which gives Sailing a shipwright product for the larger OdinShip hulls while small
+  ships and vanilla boats stay open. They enter through the generator's policy, not by hand-editing
+  the generated file, and only gate crafting.
 - An item and its upgrades share one rule, so the rule takes the highest rung any quality needs. The
   1.0.16 Deep North gear is made from `*Uncooked` intermediates converted at the Frost Foundry; those
   intermediates carry the Blacksmithing rule, so the foundry is no way around the smith.

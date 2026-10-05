@@ -10,10 +10,11 @@ was never implemented.
 The rest of this page is the historical 2026-09-16 decision and binary-research record for
 #67, ADR-0012 and ADR-0013. It does not describe the current stack or promise these mechanics.
 
-## Historical decisions — 2026-09-16
+## Decisions
 
-Settled with the owner on 2026-09-16, in one interview. Each entry names the alternative that lost,
-because the alternatives are what a future reader will wonder about.
+Historical: settled with the owner on 2026-09-16, in one interview, and void since 2026-10-04. Each
+entry names the alternative that lost, because the alternatives are what a future reader will wonder
+about.
 
 - **The permitted places are the sacrificial stones and your own clan's ward.** Not boss summoning
   altars, which were the first proposal: the owner chose the spawn stones instead, so re-arming is a
@@ -57,7 +58,9 @@ because the alternatives are what a future reader will wonder about.
   turns the rule into a courtesy; and constants in the plugin, where retuning a radius costs a
   rebuild, a Pack reissue and a client re-extract.
 
-## Historical exclusions — 2026-09-16
+## Exclusions
+
+Historical, 2026-09-16.
 
 - **Boss summoning altars and `Vegvisir` runestones are not permitted places.** The altar was the
   first proposal and the owner replaced it with the spawn stones; Vegvisir number in the hundreds,
@@ -79,9 +82,9 @@ because the alternatives are what a future reader will wonder about.
   Recorded because the earlier plan called for a simultaneous two-client native session, which both
   test hosts sharing one Steam account made a licence problem rather than a test.
 
-## Historical lessons — 2026-09-16
+## Lessons
 
-These are read from binaries and a catalogue, not decided. Full attribution in
+Historical, 2026-09-16. These are read from binaries and a catalogue, not decided. Full attribution in
 [Research provenance](../research.md).
 
 - **Nothing published does this.** The Thunderstore Valheim index, 11,269 packages fetched

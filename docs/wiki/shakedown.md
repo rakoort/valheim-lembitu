@@ -28,7 +28,7 @@ version, and change the decision's ADR or overlay when a number moves.
 | Focus death protection | A focus keeps its level and progress through a death; a non-focus Blacksmithing or Herbalist drains 5% only above the skill floor; dropping a focus lands on the shadow level the confirmation named. | ADR-0022 (*plugin*). |
 | Elixirs | Whether Berserker (×1.25), Swift (×1.2), Fast Learner (×1.5) and the others are bought for hard fights without being mandatory. | ADR-0024; `config/enforced/blacks7ar.Herbalist.cfg`. |
 | Smith's mastery bonus | Damage and armour on gear from a high-level smith against a fresh one; whether players notice and ask for a particular smith. | ADR-0024; `config/enforced/org.bepinex.plugins.blacksmithingexpanded.cfg`. |
-| BlacksmithingExpanded lock | With the server running, a non-admin player changes one of its settings locally; record whether the change takes effect. Its main settings carry no lock entry. | ADR-0024; whether a lock patch is needed. |
+| BlacksmithingExpanded lock | With the server running, a non-admin player changes one of its settings locally; record that the change has no effect once `Lembitu.Callings` locks the sync (#89). | ADR-0022; the lock patch. |
 
 ## Classes and parties (*plugin*)
 
@@ -59,6 +59,39 @@ CreatureManager and EpicLoot were reviewed against the 2026-10-04 decisions and 
 | Check | Do and record | Feeds |
 | --- | --- | --- |
 | EpicLoot profession effects | Which profession-touching magic effects players roll and wear: +Pickaxes, +Fishing, +Axes (which also counts for Wood Cutting), +Cooking and Crafting, more ore, bountiful harvest, harvest XP, sailing speed, carry weight, fishing luck (`EpicLoot.cs:30242-30268`). They raise the level the perks read, not the level the ladder reads. Record whether enchanted gear lets a non-specialist feel like a specialist. | ADR-0024's "no obvious best pick"; an EpicLoot effect patch if it does. |
-| `Combat hard` on top of CreatureManager | Whether creature damage feels doubled-up: the launch's world modifier stacks with CreatureManager's 1.2× and 1.5× damage. | ADR-0019's tuning targets; the launch modifier or `levels.yml`. |
+| `Combat hard` on top of CreatureManager | Whether creature damage feels doubled-up: the launch's world modifier stacks with CreatureManager's creature damage (1.0× from #87, was 1.2×) and boss damage (1.5×). | ADR-0019's tuning targets; the launch modifier or `levels.yml`. |
 | Class XP pace from creature health | Oathbound pays XP by a creature's maximum health, so CreatureManager's health multipliers also set class-level pace. Read alongside "Class level pace" above. | ADR-0022's no-cap decision. |
 | Sieges and CreatureManager | Whether siege troops carry CreatureManager's health and modifiers, and whether defending a base raises Karma and Enforcers around it. | ADR-0020; `config/enforced/CreatureManager/karma.yml`. |
+
+## From the premium review (2026-10-05)
+
+The decisions in `docs/wiki/premium-review.md` and ADR-0025 set starting values; these checks decide
+whether they stand. Tickets #87 to #90 carry the changes.
+
+| Check | Do and record | Feeds |
+| --- | --- | --- |
+| Class band | At each biome, one player per class (same gear tier and boss keys) kills the same three creatures and one Enforcer; record time, deaths, and Eitr or potions spent. | ADR-0025's ±25% band; the spell-growth and companion-damage settings of `Lembitu.Oathbound`. |
+| Boss margin | Every boss: attempts to the first kill, group size, average gear tier. Eight average players should win on a first or second try; six or seven skilled players should be able to. | The tuning target in `CONTEXT.md`; `levels.yml` boss values. |
+| Guild pace | Per guild: guild XP per member-hour by source, and guild level when each boss falls. | Guilds `LevelXpGrowth = 1.15` (#87). |
+| Solo against party XP | Class XP per hour over a session solo and in parties of two, three and four in the same biome. | `FullPartySize = 4` (#87). |
+| Smith and herbalist pace | Raw skill XP per play-hour for a focus smith and a focus herbalist, against the rung budget (rung 60 needs about 5,700 XP). Boost their gain only if a rung arrives after its biome opens. | ADR-0023's ladder; `AuditPace.md` candidate gains. |
+| Karma on early biomes | Highest Karma level reached during Meadows and Black Forest gathering sessions. | Karma thresholds `[90, 180]` (#87). |
+| Boss drops per player | One Bonemass and one Elder kill with two players present and one connected elsewhere: count Wishbones and swamp keys. | EpicLoot `Boss Trophy Drop Mode`; the open check in `docs/wiki/premium-review.md`. |
+| Pets, tames and ships at bosses | At each boss: companions, tames and warship ballistas present, and their share of damage (DamageMeter). | Tuning target; companion damage setting. |
+| World edge | On the exact launch-size world, swim past the old world edge and rejoin while standing in the extended area. | Expand_World_Size open issues #28 and #29 upstream; the size freeze. |
+
+## Decisions
+
+This page decides nothing on its own. Each check feeds the decision named in its row; a measured
+number that moves changes that ADR, overlay or plugin setting, and the result is recorded here, dated,
+with the pack version.
+
+## Exclusions
+
+Per-feature single-client scenario coverage is not part of the Shakedown; it was cancelled with the
+plugins it was written for (`docs/modstack.md`, "Acceptance gate"). Checks that code alone settles
+(the boss-power counts, the party share formula) are not repeated here.
+
+## Lessons
+
+No Shakedown session has been played yet. Results land here as they are measured.

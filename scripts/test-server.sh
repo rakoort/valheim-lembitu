@@ -3,8 +3,9 @@
 # be proven to chainload before it goes near the live server.
 #
 #   scripts/test-server.sh install                     game files, reference assemblies, BepInEx, plugins
-#   scripts/test-server.sh run                         start in the foreground (Ctrl-C to stop)
-#   scripts/test-server.sh run -world "My World"       replace the server arguments
+#   scripts/test-server.sh run                         start in the foreground (Ctrl-C to stop), with
+#                                                      the launch world rules (Combat hard and the rest)
+#   scripts/test-server.sh run -world "My World"       replace every argument, world rules included
 #
 # Requires an x86_64 Linux host (astral-bicep): the dedicated server is linux/amd64 only, and its
 # Mono runtime dies on Apple Silicon under both Rosetta and QEMU. See docs/build.md.
@@ -89,6 +90,22 @@ do_install() {
   echo "test server ready in $SERVER_DIR"
 }
 
+# The launch world rules, read from the line the real server starts with
+# (config/launch/launch.env.example, SERVER_ARGS), so a default test world plays at launch difficulty.
+# Only the `-modifier <Name> <value>` triples are taken: `-savedir` there is the container's path.
+launch_modifiers() {
+  local line words i
+  line="$(sed -n 's/^SERVER_ARGS=//p' "$REPO_ROOT/config/launch/launch.env.example")"
+  read -r -a words <<<"$line"
+  for ((i = 0; i < ${#words[@]}; i++)); do
+    if [[ "${words[i]}" == -modifier ]]; then
+      [[ $((i + 2)) -lt ${#words[@]} ]] || die "SERVER_ARGS ends inside a -modifier"
+      printf '%s\n' -modifier "${words[i + 1]}" "${words[i + 2]}"
+      i=$((i + 2))
+    fi
+  done
+}
+
 do_run() {
   [[ -x "$SERVER_DIR/valheim_server.x86_64" ]] || die "no server in $SERVER_DIR; run: scripts/test-server.sh install"
   [[ "$(uname -s)-$(uname -m)" == "Linux-x86_64" ]] \
@@ -98,6 +115,10 @@ do_run() {
   if [[ ${#args[@]} -eq 0 ]]; then
     # 2466, not the usual 2456: bicep already runs the barebones server on the default ports.
     args=(-name "Lembitu test" -port 2466 -world LembituTest -password lembitutest -public 0)
+    local modifiers
+    mapfile -t modifiers < <(launch_modifiers)
+    [[ ${#modifiers[@]} -gt 0 ]] || die "no -modifier in SERVER_ARGS of config/launch/launch.env.example"
+    args+=("${modifiers[@]}")
   fi
 
   cd "$SERVER_DIR"

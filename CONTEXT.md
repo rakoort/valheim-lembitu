@@ -35,8 +35,8 @@ _Avoid_: modpack, profile, loadout
 
 **Guild**:
 A named group of three to five players with ranks, a shared vault, guild chat, its own start region
-and land it claims. The membership that owns things: land, vault, wards and guild progress. Guilds
-are rivals and cooperators at once (ADR-0019).
+and land it claims. At most three exist, each agreed before launch. The membership that owns things:
+land, vault, wards and guild progress. Guilds are rivals and cooperators at once (ADR-0019).
 _Avoid_: clan, tribe, team, faction
 
 **Guild rank**:
@@ -83,7 +83,7 @@ _Avoid_: job, profession, build
 
 **Oathstone**:
 The stone near the starting sacrificial stones where a character chooses a class, buys talents and
-changes their Calling. Reaching it from a guild's start is the first journey of the Run.
+changes their Calling. Reaching it from a guild's start, 0.5 to 1.2 km away, is the first trip of the Run.
 
 **Class level**:
 The active class's XP ladder, earned from kills, which grants one talent point per level. Death
@@ -95,6 +95,16 @@ _Avoid_: character level, MMO level, rank, XP level
 A perk bought with a talent point from the active class's tree. Changing talents means a respec,
 which costs the class level.
 _Avoid_: skill (that word is Valheim's own skills)
+
+**Class band**:
+The allowed spread in strength between classes: at the same biome, gear tier and boss keys, every
+class kills a standard enemy within 25% of the others' time. Each class still keeps its own strength.
+_Avoid_: class parity, class balance
+
+**Power level**:
+The level a class's level-scaled power reads: its class level, capped at ten per personal boss key
+(ADR-0025).
+_Avoid_: effective level, scaling level
 
 **Profession**:
 One of eleven non-combat skills in three categories: Craft (Blacksmithing, Herbalist, Cooking),
@@ -182,8 +192,10 @@ An extra trait a creature can spawn with, such as armoured, enraged or an elemen
 main knob for fine-tuning difficulty.
 
 **Tuning target**:
-The number of players a fight is balanced for: eight for bosses, two for ordinary creatures. Fixed,
-never scaled by how many players are nearby (ADR-0019).
+The number of players a fight is balanced for: eight for bosses, two for ordinary creatures. At the
+target, average players with gear of that biome win with margin, so class mix never decides who is
+invited; a smaller skilled group can still win a boss. Fixed, never scaled by how many players are
+online or nearby, so grouping up is what makes a fight easier (ADR-0019).
 _Avoid_: player scaling, headcount
 
 **Enforced config**:

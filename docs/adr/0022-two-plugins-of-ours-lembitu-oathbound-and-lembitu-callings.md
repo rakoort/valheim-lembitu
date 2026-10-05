@@ -43,12 +43,15 @@ strangers on one Troll would earn 200% and out-earn any party. Guilds that fight
 party up first; boss keys stay presence-based and are unaffected. A party never waives proximity:
 a member who is not near the kill earns nothing from it and does not count in the split.
 
-**The party bonus rises from 100% for one to 150% for eight.** With n party members in range of the
-kill (the killer included), the party shares the kill's XP × (1 + 0.5 × (n − 1) / 7), split equally:
-one member alone earns 100%, two share about 107%, four about 121%, eight share 150%, which is
-18.75% of the kill each. The curve is linear in n and its top is the party cap of eight. Shares are
-rounded at random so each member's average is exact. This replaces the 110-125% band of ADR-0019
-and ADR-0020 (owner's decision, 2026-10-04).
+**The party bonus rises from 100% for one to 150% for four, and stays there.** With n party members
+in range of the kill (the killer included), the party shares the kill's XP ×
+(1 + 0.5 × min(1, (n − 1) / 3)), split equally: one member alone earns 100%, two share about 117%
+(58% each), three about 133% (44% each), four or more share 150%, so eight earn 18.75% each. Shares
+are rounded at random so each member's average is exact. The first curve rose linearly to 150% at
+eight; the 2026-10-04 premium review moved the full bonus to four (`FullPartySize = 4`, not yet
+applied), because hunting parties are usually two to four and a three-player member earned only 38%
+of a kill. That curve itself replaced the 110-125% band of ADR-0019 and ADR-0020 (owner's
+decisions, 2026-10-04).
 
 **"Near the kill" is 100 m**, measured on the server from the dead creature to each member's
 reported position, among connected members. It is the same radius World Advancement Progression uses
@@ -97,12 +100,15 @@ How it is built, decided from the code rather than asked:
 
 ## Lembitu.Callings
 
-**The star is clickable only at the Oathstone.** Each profession row of the skills window carries a
-star showing the Calling. Within about 10 m of the Oathstone (the `WarriorOathstone` object Oathbound
-places beside the start temple) a click takes effect at once; elsewhere the star does nothing and its
-tooltip says to change the Calling at the Oathstone. There is no pending state. Dropping a focus asks
-for confirmation and names the level the skill falls to. The star has its own click target, because
-DetailedLevels already uses a click on the row to show skill buffs.
+**The Calling is chosen in a window, only at the Oathstone** (owner, 2026-10-05 premium review; not
+yet implemented). A Calling button in the skills window opens a window listing the eleven professions
+under Land, Craft and Road with the 2-1-1 quota, each skill's level, and what a focus changes. It can
+be read anywhere. Within about 10 m of the Oathstone (the `WarriorOathstone` object Oathbound places
+beside the start temple) a change takes effect at once; elsewhere the controls say to go to the
+Oathstone. There is no pending state. Dropping a focus asks for confirmation and names the level the
+skill falls to. The stars on each profession row of the skills window stay as read-only markers with
+their tooltip; first built as the clickable control, they keep their own target because DetailedLevels
+uses a click on the row to show skill buffs.
 
 **A focus keeps its XP on death; its shadow does not.** Dying leaves a focus skill's level and its
 progress into the next level untouched. Its shadow, being what the skill would be without the focus,
@@ -130,6 +136,31 @@ could not be pinned anyway: BlacksmithingExpanded files it under a section named
 localization key (`[skill_1208107160]`), so the first overlay aimed at `[Blacksmithing]` did nothing,
 and a native death on 2026-10-04 drained Blacksmithing twice (20 → 19 → 18.05) before this was
 changed.
+
+**A seed bed is a planter that follows soil's rules** (owner, 2026-10-05 premium review; not yet
+implemented). SeedBed 1.2.9 checks only ward access, the seed and the seed count before a bed accepts
+seeds (`Germination.UseItem`), so a bed grew any crop in any biome and bypassed Farming's level-60
+reward. `Lembitu.Callings` refuses seeds whose plant cannot grow in the bed's biome unless the planter
+has Farming 60, the level at which ImpactfulSkills lifts the biome rule for soil
+(`FarmingBiomeUnrestrictedLevel`). The plant's biomes are read from the vanilla `Plant` of the
+cultivator piece that takes that seed. SeedBed's synced conversions are set to soil's yields in place
+of its five-for-fifteen.
+
+**BlacksmithingExpanded's settings are locked by us** (owner, 2026-10-05 premium review; not yet
+implemented). Its main `ConfigSync` sends settings from the server but registers no locking entry and
+never sets `IsLocked`; only its bundled skill manager is locked (BlacksmithingExpanded 1.2.4 decompile,
+`local/premium-review-2026-10-04/AuditCombat.md` §2). A client could change the smith's gear
+bonuses, against the Pack rule. `Lembitu.Callings` sets that sync to locked at startup and logs the
+feature like its others.
+
+**Tonics follow the food rule for boss keys** (owner, 2026-10-05 premium review; not yet
+implemented). World Advancement Progression locks eating by the biome of an item's materials but lets
+materials it does not know through (`KeyManager.cs:1422-1432`, `local/premium-review-2026-10-04/
+AuditEconomy.md` §4), and it knows none of Herbalist's herbs. So a tonic or elixir bought on the
+Market could be drunk without its biome's boss key. `Lembitu.Callings` maps each Herbalist herb to
+its biome, as the ladder generator already does (ADR-0023), and refuses a tonic or elixir whose
+highest-biome herb needs a boss key the drinker lacks, with the same message World Advancement
+Progression gives for food.
 
 **A new character survives ExpertExplorer's first save.** ExpertExplorer 1.7.0, the Exploration
 profession's mod, aborts the first save of every new character: its old-format check passes a missing

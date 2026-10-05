@@ -23,11 +23,18 @@ and group play. It is not meant to run forever.
 incentives for both rather than hope for them.
 
 **Scale.** Content is balanced around eight active players. A guild has three to five members; the
-server caps a guild at five and does not cap how many guilds exist. Each guild is agreed before
-launch and starts in its own scored region.
+server caps a guild at five. There are at most three guilds, one per scored start region, each
+agreed before launch; the limit is the roster's, not a mod setting (owner, 2026-10-04 premium
+review; first written as "does not cap how many guilds exist").
 
 **Difficulty.** Harder than vanilla. Bosses are tuned for eight players and ordinary creatures for
-two, with no dynamic scaling of any kind: no headcount health, damage or raid-chance bonus.
+two: at that size, average players with gear of the biome win with margin, and six or seven skilled
+players can still win a boss, so the class mix never decides who is invited (owner, 2026-10-05).
+Combat difficulty never changes with how many players are online or present: no headcount
+health, damage or raid-chance bonus. Grouping up is therefore the clear way to make a fight easier.
+Difficulty may still move with other mechanics: biome, rolled level, Karma, modifiers, sieges by
+outpost biome. Rewards for playing together, such as the party XP bonus and the crew sailing bonus,
+are allowed (owner, 2026-10-05; first written as "no dynamic scaling of any kind").
 CreatureManager's modifiers and tables are the fine-tuning knob. Tuning bosses for eight means a
 single guild needs another guild for a boss, which is the cooperation incentive built into the
 numbers. Deaths are costly: class-level XP loss, skill drain down to the boss-key floor (focus
@@ -55,7 +62,8 @@ reaches outside its axis has those parts switched off. To be revisited once the 
 **Parties.** An intentional, invite-only group of up to eight that may mix guilds, separate from
 guild membership. Party members share kill XP and see each other's map positions, nothing else. The
 party's total XP lands above what one member would earn alone, rising from 100% for one member near
-the kill to 150% for eight (revised the same day from 110-125%, ADR-0022). Group-only bonuses count
+the kill to 150% for four or more (revised the same day from 110-125%, then from "150% for eight",
+ADR-0022). Group-only bonuses count
 anyone in the party, whatever their guild.
 
 **World.** Vanilla portal rules: ore and metal travel by ship or cart, until the Ashlands' stone

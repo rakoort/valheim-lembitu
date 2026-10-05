@@ -28,7 +28,7 @@
 # went with it, so every character lost the health, stamina and damage it had bought; halving
 # ordinary creature health is what keeps the fight where it was rather than making the removal a
 # difficulty increase nobody chose. Bosses are untouched: a boss fight is a group's whole evening
-# and twelve players pool damage into one target.
+# and a group pools damage into one target (bosses are tuned for eight, ADR-0019).
 #
 # Modifier chances are ours (2026-10-04, owner's decisions). The mod rolls **one modifier per
 # group**, four groups of eight, so an entry is not a per-creature rate: stock 5 each meant a 40%

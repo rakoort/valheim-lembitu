@@ -26,9 +26,10 @@ actively playing group to kill Fader in about one month. Before it comes the **S
 a world that will be discarded, where the rules below are tried and corrected.
 
 The concept is **MMORPG-lite for rival guilds that must cooperate**. There is no PvP. Guilds compete
-through progress, territory and the Market, and the numbers are set so that they need each other: a
-boss is tuned for eight players, and a guild of five cannot make everything it needs at the level it
-needs. Anyone can do anything given time; specialising is how you do it well.
+through progress, territory and the Market. A boss is tuned for eight players, so guilds need each
+other to kill one. Trade between guilds is an advantage rather than a necessity: a guild of three can
+cover every profession, but not every hour of the day. Anyone can do anything given time;
+specialising is how you do it well.
 
 Seven things make a character or a guild stronger: class level, talents, professions, gear tiers,
 boss powers, guild progression and magic schools (ADR-0019, ADR-0020).
@@ -46,8 +47,8 @@ An eleventh simultaneous connection has not yet been observed (#9).
 
 **A guild is who you belong to.** Northarun/Guilds supplies ranks, guild chat, a shared vault,
 guild-bound wards, a banner territory, guild levels, upgrades and achievements. A guild has at most
-five members, and the server does not limit how many guilds exist
-(`config/enforced/adrian.valheim.guilds.cfg`, ADR-0019). Guild progress buys base safety later in the
+five members, and there are at most three guilds, each agreed before launch with its own start
+region (`config/enforced/adrian.valheim.guilds.cfg`, ADR-0019). Guild progress buys base safety later in the
 Run: the monster ward at guild level 10 and comfort upgrades at 12 and 20. Coin donations buy guild
 XP at 50 coins a point, so trade feeds the guild.
 
@@ -80,7 +81,7 @@ a two-handed axe (Breaker), or carry a dragon tear (Dragonsworn). Mage and Warlo
 schools. Hunter and Dragonsworn fight beside a companion (ADR-0020).
 
 **Go to the Oathstone first.** It stands 17-21 m from the start temple near the centre of the world.
-Guilds start far from there, so reaching it is the first journey of the Run. A character with no
+Guilds start 0.5 to 1.2 km from there, so reaching it is the first short trip of the Run. A character with no
 class earns no class XP at all (`Warrior.Core.Progression.GrantExperience`). Class, talents and your
 Calling change only at the Oathstone (`config/enforced/local.warrior.rpg.cfg`, `AccessMode =
 Oathstone`).
@@ -260,9 +261,10 @@ Deaths are meant to cost something (ADR-0019):
 the terrain when the world is created and cannot change afterwards. Every player needs the Pack,
 because your client generates the ground itself.
 
-**Each guild starts in its own place.** One scored start region per guild, at least a kilometre from
-the next (SeparateSpawns, ADR-0018). Meeting another guild is meant to be an event rather than the
-first thing that happens.
+**Each guild starts in its own place.** One scored start region per guild, 0.5 to 1.2 km from the
+sacrificial stones and at least a kilometre from the next (SeparateSpawns, ADR-0018,
+`config/dedicated/abortipus.separatespawns.cfg`). Meeting another guild is meant to be an event
+rather than the first thing that happens.
 
 **Ore does not teleport, until the Ashlands.** Ordinary portals refuse ore and metal, so they travel
 by ship or cart (`config/launch/launch.env.example`, `Portals hard`). Vanilla's Ashlands stone portal
@@ -356,11 +358,10 @@ another is locked by the server or not in the Pack (ADR-0019).
 
 These are stated to players rather than discovered by them (#23).
 
-**Our two plugins do not exist yet.** Respec and class-switch resets, party XP, the open gathering
-tools, Callings, focus protection, the Herbalist and Fishing bonus and the profession drain rule are
-decisions waiting on `Lembitu.Oathbound` and `Lembitu.Callings` (ADR-0022). Until they exist,
-Oathbound's own behaviour applies: free respec, kept progress across class switches, and XP for the
-killer only.
+**Our two plugins are new.** `Lembitu.Oathbound` and `Lembitu.Callings` exist and were checked in a
+real client on 2026-10-04 (`docs/build.md`, "Plugin native checks" and "Full-pack native
+acceptance"). The kill XP split within a party of two or more has not yet been seen in play; the
+Shakedown measures it and the rest of their numbers.
 
 **Progression is client-owned and not tamper-resistant.** Personal keys, Oathbound's class progress
 and the Calling all live in your own character file. A determined player can edit it. That is

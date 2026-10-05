@@ -55,7 +55,7 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
 | nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
 | JereKuusela/Expand_World_Size | 1.43.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 13250, `Stretch world` 1.325, `Stretch biomes` 1.25, `Locations` 1.75: about 1.76x vanilla area with points of interest at vanilla density, chosen 2026-10-04 for rival-but-cooperating guilds (ADR-0019); before that 12500/1.25/1.25, and ADR-0018's 15000/1.5/1.25 |
-| Mushroom_Vikings/SeparateSpawns | 0.1.1 | One scored start region per guild | `InnerRadius` 2400, starts 1 km apart. From 2026-10-04 one group per guild, rostered by Steam ID before launch (ADR-0019); the committed roster still holds the three empty, randomly filled groups of the collaborative 2026-10-03 setup until the guilds are known. Its config lives in the game tree rather than BepInEx's, so `config/dedicated/` and `scripts/apply-dedicated-config.sh` own it, not the enforced overlay |
+| Mushroom_Vikings/SeparateSpawns | 0.1.1 | One scored start region per guild | `InnerRadius` 1200 and `MinStonesDistance` 500, so starts lie 0.5-1.2 km from the sacrificial stones, at least 1 km apart (halved on 2026-10-04 at the owner's request, from 2400 and 1000). From 2026-10-04 one group per guild, rostered by Steam ID before launch (ADR-0019); the committed roster still holds the three empty, randomly filled groups of the collaborative 2026-10-03 setup until the guilds are known. Its config lives in the game tree rather than BepInEx's, so `config/dedicated/` and `scripts/apply-dedicated-config.sh` own it, not the enforced overlay |
 | MidnightMods/ProgressivePowers | 0.3.4 | Forsaken power mastery: powers grow with use | The boss-power pillar (ADR-0019): mastery credit within 100 m of the dead boss (package 200 m), the same radius as boss keys and party XP; one attuned power; active use blocked, so powers are passive bonuses over seven mastery levels (2026-10-04) |
 | Vapok/AdventureBackpacks | 2.2.5 | Backpacks with their own storage | One-way: the packs are registered items, so removing the mod deletes them and their contents. Its automation settings (craft from backpack, auto-store) are each player's own; accepted 2026-10-04 as preference under the Pack rule (ADR-0019) |
 | OdinPlus/OdinArchitect | 1.7.9 | Larger and new building pieces | — Added 2026-10-03 (owner's instruction). One-way: its pieces live in the world save |
@@ -100,7 +100,7 @@ belongs in server-locked config rather than a player's file.
 | Radamanto/ServerQuickConnect | 1.0.4 | Main-menu button that joins a preset server | — Kept 2026-10-04. Client-only and unsynced; the server address goes into a Pack seed when the Pack is built, never the password, which stays with each player |
 | ValheimModding/Jotunn | 2.30.2 | Library | Overrides the 2.29.2 pin declared by EpicLoot and the 2.29.0 declared by Guilds and Marketplace |
 | ValheimModding/JsonDotNET | 13.0.4 | Library | — |
-| ValheimModding/YamlDotNet | 16.3.1 | Library | Declared by ServersideQoL, and its own detector plugin loads it either way (#66 boot) |
+| ValheimModding/YamlDotNet | 16.3.1 | Library | Its own detector plugin loads it (#66 boot); it was first declared by ServersideQoL, which left on 2026-09-17 |
 
 ## Where each mod runs
 
@@ -262,10 +262,10 @@ and ours only where the pack combines them.
 
 One question belongs to that boot rather than to argument:
 
-- **One gate refuses crafting and equipping, and it has never been observed doing it.** World
-  Advancement Progression refuses on personal keys, by the biome of an item's materials. Until #80
-  there were two such gates and the boot had to separate them; character level is gone, so a single
-  observed refusal is what the gate needs.
+- **Two gates refuse crafting, and one of them also equipping.** World Advancement Progression
+  refuses crafting and equipping on personal keys, by the biome of an item's materials. Since
+  2026-10-04 Item_Requirement also refuses crafting below a profession's ladder rung (ADR-0023). The
+  boot must observe each refusal on its own, so a refusal can be told apart from the other.
 
 Package hashes are recorded in [modstack.lock.json](modstack.lock.json); `scripts/stage-stack.sh`
 verifies every download against it and refuses a re-published zip under the same version number.

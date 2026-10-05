@@ -36,8 +36,10 @@ magic, sneak, run, jump and swim perks are switched off.
 
 **A Calling is four focus professions**: two from Land, one from Craft, one from Road. Each Calling
 is a complete supply chain the player builds themselves, such as Mining, Wood Cutting,
-Blacksmithing and Hauling. A guild of three to five covers most professions between its members;
-a guild that lacks one buys from another guild on the Market.
+Blacksmithing and Hauling. Three players already cover all eleven professions (six Land slots for
+five, three Craft, three Road), so trade between guilds is an optional advantage, not a dependency:
+guilds trade for speed, surplus and specialists who are offline (owner, 2026-10-04 premium review;
+first written as "a guild that lacks one buys from another guild").
 
 **Focus professions level at full speed to 100. Every other profession skill levels on a steep
 curve**: full speed to 30, half speed to 60, a quarter to 80, a tenth beyond. Nothing is capped,
@@ -51,8 +53,10 @@ Dropping a focus sets the real level to the shadow level. Below 30 the two diffe
 the focus absorbed, so early switching is nearly free; a master who switches gives up exactly the
 advantage the focus gave, in gain and in death protection.
 
-**Choosing.** A player marks their focus professions with a star in the normal skills window, but a
-change only takes effect while standing at the Oathstone, where the class is chosen too. Until a
+**Choosing.** A player chooses focus professions in a Calling window opened from a button in the
+skills window; it can be read anywhere, but a change only takes effect while standing at the
+Oathstone, where the class is chosen too (owner, 2026-10-05; first built as clickable stars on the
+skills rows, which remain as read-only markers). Until a
 Calling is chosen, every profession follows the steep curve; below 30 that changes nothing.
 
 **What makes the top of a skill worth having.** Each mod's best perks are retuned to sit above the

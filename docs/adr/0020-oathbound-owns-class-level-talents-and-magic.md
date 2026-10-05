@@ -39,7 +39,8 @@ so the boss-key skill floor and the professions keep working.
   1. Respec resets the active class to level 1. Cheap early, expensive late.
   2. Switching class also starts over at level 1: one levelled class at a time.
   3. Kill XP goes to the killer's party members near the kill, split so the party's total rises
-     from 100% of the kill for one member to 150% for eight (ADR-0022; first written as 110-125%),
+     from 100% of the kill for one member to 150% for four or more (ADR-0022; first written as
+     110-125%, then 150% for eight),
      using SocialSystem's server-side party membership. Oathbound's server-side kill routing is the
      one place this happens.
   4. ~~A cap on talent points~~ Dropped the same day (ADR-0022): no cap and Oathbound's stock XP

@@ -78,10 +78,11 @@ safety (#28), a new native gameplay run, or Milestone acceptance.
 **A mod's own data file is changed with a patch, not a fork.** EpicLoot's `loottables.json` is a
 99 KB table the mod owns and regenerates, so committing an edited copy would go stale on the
 next release. The mod reads `BepInEx/config/EpicLoot/patches/*.json` recursively and applies them
-over its embedded default, which is the seam to use: `config/enforced/EpicLoot/patches/loottables.json`
-holds six `Overwrite` patches against `$.MagicEffectsCount.<Rarity>`, and the overlay applier
-copies it wholesale into exactly the directory `FilePatching.GetPatchesDirectoryPath` computes
-(#73; provenance in `docs/research.md`).
+over its embedded default, which is the seam to use. From #73 until the 2026-10-04 stack (commit
+a041740) the enforced overlay carried a `loottables.json` patch with six `Overwrite` entries against
+`$.MagicEffectsCount.<Rarity>`, copied wholesale into exactly the directory
+`FilePatching.GetPatchesDirectoryPath` computes (provenance in `docs/research.md`). The rebuilt
+EpicLoot overlay dropped it: the staged 0.14.13 table is used as shipped.
 
 Three properties of that mechanism are worth keeping in mind. `RequireAll: true` turns a path
 that matches nothing from a silent no-op into a logged error, which is the only reason a renamed

@@ -363,8 +363,12 @@ scripts/test-server.sh run       # foreground; Ctrl-C to stop
 ```
 
 Game files land in `~/.cache/valheim-lembitu/server` (override with `VALHEIM_TEST_DIR`). It listens
-on port 2466, because bicep already runs the barebones server on 2456; anything after `run` replaces
-the whole argument list, e.g. `scripts/test-server.sh run -world "My World" -port 2466 -public 0`.
+on port 2466, because bicep already runs the barebones server on 2456. By default it also starts
+with the launch world rules, the `-modifier` set from `SERVER_ARGS` in
+`config/launch/launch.env.example` (Combat hard, Raids less, Portals hard and the two defaults), so a
+test world plays at launch difficulty; before 2026-10-04 it ran without them. Anything after `run`
+replaces the whole argument list, rules included, e.g.
+`scripts/test-server.sh run -world "My World" -port 2466 -public 0`.
 DepotDownloader is used instead of SteamCMD: anonymous login, no 32-bit dependencies, one
 self-contained binary pinned by hash.
 

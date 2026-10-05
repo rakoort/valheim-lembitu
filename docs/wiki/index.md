@@ -12,3 +12,4 @@ Durable knowledge for [rakoort/valheim-lembitu](https://github.com/rakoort/valhe
 - [Native testing](native-testing.md) — the dedicated test server, the headless client, and the native gameplay harness
 - [Server operations](operations.md) — enforced configuration, deployment, backups and launch prerequisites
 - [Shakedown: what to measure](shakedown.md) — the checks the Shakedown runs and the 2026-10-04 decisions each one feeds
+- [Premium review](premium-review.md) — the 2026-10-04 balance and polish review and the decisions the owner took on it
