@@ -9,6 +9,13 @@
 #
 # The flags exist for the tests; day to day the defaults below are what you want.
 #
+# A pin downloads from Thunderstore unless docs/modstack.md's "### Download sources" table names
+# another URL for it. The first such table carries Azumatt's six mods, which the author moved to
+# Hexium while their Thunderstore lines stand deprecated (ADR-0026). A source URL must end in the
+# pin's own `/<version>.zip`, so a version bump with a stale URL dies instead of quietly
+# re-downloading the old release; the downloaded bytes are lock-verified exactly like a
+# Thunderstore fetch, so per-pin sources change where a zip comes from, never what proves it.
+#
 # A Thunderstore package becomes one self-contained directory in dist/, because BepInEx loads DLLs
 # from subdirectories and a mod's assets (Jotunn localization .yml, bundle manifests) resolve
 # relative to the DLL. The shapes packages ship in all normalize to the same layout:
@@ -99,6 +106,32 @@ parse_pins() {  # parse_pins <modstack.md>; prints "team<TAB>mod<TAB>version" pe
         print id[1] "\t" id[2] "\t" f[2]
     }
   ' "$1"
+}
+
+# Download-source overrides from the "### Download sources" table: "team/mod | URL" rows. The
+# URL column is rejected unless it is an https URL ending in .zip, so prose and broken rows are
+# ignored the same way parse_pins ignores non-pin rows. A source row cannot be mistaken for a
+# pin: a URL never passes parse_pins' digit-first version check.
+parse_sources() {  # parse_sources <modstack.md>; prints "team/mod<TAB>url" per row
+  awk '
+    /^## / { sources = 0; next }
+    /^### / { sources = ($0 == "### Download sources"); next }
+    !sources { next }
+    {
+      if (sub(/^\|/, "") == 0) next
+      split($0, f, "|")
+      if (length(f) < 3) next
+      gsub(/^ +| +$/, "", f[1]); gsub(/^ +| +$/, "", f[2])
+      split(f[1], id, "/")
+      if (id[1] ~ /^[A-Za-z0-9_-]+$/ && id[2] ~ /^[A-Za-z0-9_.-]+$/ && f[2] ~ /^https:\/\// && f[2] ~ /\.zip$/)
+        print id[1] "/" id[2] "\t" f[2]
+    }
+  ' "$1"
+}
+
+# The override URL for one pin, or nothing when the pin downloads from Thunderstore.
+source_url() {  # source_url <team/mod> <sources-tsv>
+  awk -F'\t' -v key="$1" '$1 == key { print $2; exit }' "$2"
 }
 
 # Dependency strings out of a package manifest.json, one per line. Hand-rolled rather than jq
@@ -202,7 +235,7 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not a lock on growth: the pack is 49 pins today, and a smaller count means the table
+  # A tripwire, not a lock on growth: the pack is 70 pins today, and a smaller count means the table
   # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
   # purpose means editing this number in the same commit — which the 2026-09-16 review did, taking
   # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), #78 raised it with five Azumatt mods,
@@ -212,14 +245,16 @@ if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
   # PortalRules; 2026-10-04 took it to 35 by dropping Almanac, then to 49 by adding fourteen farming,
   # magic, storage, map, station and skill mods, then to 83 by adding thirty-five packages around
   # Guilds and dropping Clan, then to 78 by swapping EpicMMO, MagicPlugin and five rejected
-  # progression packages for Oathbound and SocialSystem (ADR-0020), then to 75 by dropping the
-  # three map-sharing mods, then to 74 by dropping STU_Ward for Guilds' wards, then to 70 by
+  # progression packages for Oathbound and SocialSystem (ADR-0020), then to 75 by dropping
+  # the three map-sharing mods, then to 74 by dropping STU_Ward for Guilds' wards, then to 70 by
   # dropping OCDheim and the client-side Infinity Hammer tools, then to 68 by dropping the two
   # chest sorters, then to 67 by dropping ComfyAutoRepair, then to 66 by dropping ZenBossStone,
   # then back to 67 by adding Item_Requirement as the master-recipe gate (ADR-0021), then to 66 by
   # scrapping Seasonality, then to 65 by dropping BetterStations, then to 64 by dropping
-  # BetterArchery, then to 63 by dropping Njord so the Sailing profession owns ship speed (ADR-0024).
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 63 ]] \
+  # BetterArchery, then to 63 by dropping Njord so the Sailing profession owns ship speed (ADR-0024);
+  # 2026-10-05 took it to 70 with the five Shakedown mods, CrewStats and ConditionalConfigSync
+  # (#87, ADR-0026); the Hexium re-pins and Guilds 1.2.3 change versions, not the count.
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 70 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then
@@ -233,11 +268,21 @@ mkdir -p "$CACHE_DIR" "$DIST_DIR"
 HASHES="$WORK/hashes"
 : > "$HASHES"
 VERIFIED=0 RECORDED=0
+SOURCES="$WORK/sources"
+parse_sources "$MODSTACK" > "$SOURCES"
 while IFS=$'\t' read -r team mod version; do
   zip="$CACHE_DIR/$team-$mod-$version.zip"
   if [[ ! -f "$zip" || $REFRESH == 1 ]]; then
-    echo "fetching $team/$mod $version"
-    curl -fsSL --retry 3 -o "$zip.download" "https://thunderstore.io/package/download/$team/$mod/$version/" \
+    url="$(source_url "$team/$mod" "$SOURCES")"
+    if [[ -n "$url" ]]; then
+      [[ "$url" == */"$version.zip" ]] \
+        || die "download source for $team/$mod does not name $version: $url - update the Download sources row in $MODSTACK"
+      echo "fetching $team/$mod $version from $url"
+    else
+      url="https://thunderstore.io/package/download/$team/$mod/$version/"
+      echo "fetching $team/$mod $version"
+    fi
+    curl -fsSL --retry 3 -o "$zip.download" "$url" \
       || die "download failed: $team/$mod $version"
     mv "$zip.download" "$zip"
   fi

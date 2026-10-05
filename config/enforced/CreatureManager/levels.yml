@@ -4,8 +4,8 @@
 #
 # Ours: the health and damage numbers below, and every modifier chance (explained further down).
 #
-#   Global health 2, damage 1.2   ordinary creatures, and Enforcers, carry twice vanilla health
-#                                 and hit 20% harder.
+#   Global health 2, damage 1.0   ordinary creatures, and Enforcers, carry twice vanilla health
+#                                 and hit vanilla damage.
 #   Boss health 8, damage 1.5     regular bosses carry eight times vanilla health and hit 50% harder.
 #
 # They exist because headcount scaling is off (`sighsorry.CreatureManager.cfg`,
@@ -14,11 +14,13 @@
 # difficulty instead (ADR-0019): every value here is fixed, whoever turns up, and the group decides
 # how many to bring rather than being punished or rewarded for bringing them.
 #
-# Damage was held at 1 until 2026-10-04, on the reasoning that health lengthens a fight without
-# making it one-shot a player. With Oathbound's talents adding player power, the owner raised it
-# (2026-10-04) so fights are dangerous rather than merely long: deaths come from mistakes, not
-# attrition. The Shakedown measures both against the tuning targets: bosses for eight players,
-# creatures for two.
+# Damage ran at vanilla until 2026-10-04, when the owner raised it to 1.2 so Oathbound's talented
+# characters would face danger rather than attrition. The review that followed measured the raise
+# against the tuning targets - bosses for eight players, ordinary creatures for two - and found
+# deaths coming from one heavy hit rather than from mistakes, so the owner trimmed damage growth
+# instead of health (2026-10-05): ordinary damage back to 1.0 with slower growth per level, boss
+# damage kept at 1.5 with its growth slowed. Health keeps a fight long; damage growth was what
+# turned one creature into a one-shot.
 #
 # The per-level growth below still compounds on top, so these are floors rather than ceilings: an
 # Ashlands creature at level 3 is 2 * (1 + 2 * 1) = 6x vanilla health, and a level-2 boss is
@@ -31,15 +33,19 @@
 # and a group pools damage into one target (bosses are tuned for eight, ADR-0019).
 #
 # Modifier chances are ours (2026-10-04, owner's decisions). The mod rolls **one modifier per
-# group**, four groups of eight, so an entry is not a per-creature rate: stock 5 each meant a 40%
-# roll per group and 76 ordinary creatures in 100 carrying one, which twelve players on 2026-09-16
-# found unkillable.
+# group**, four groups of eight, so an entry is not a per-creature rate: the package's stock 5 per
+# entry meant a 40% roll per group and 76 ordinary creatures in 100 carrying one, which the
+# twelve-player session of 2026-09-16 - more than this server's eight are ever sized for - found
+# unkillable.
 #
 # - deathward, regenerating, omen and blamer are excluded (chance 0) for every target: the first
 #   two stretch fights already lengthened by the health floor, the last two feed Karma.
 # - Global (ordinary creatures): each group fires about 2.6% of the time, 0.33 per entry in the
 #   eight-entry groups and 0.44 in the six-entry ones, so about **10 creatures in 100** carry one.
-# - Boss: each group fires about 25%, 3.12 or 4.17 per entry, so a boss carries **about one**.
+# - Boss: each group fires about 25%, 3.12 or 4.17 per entry - except Defense, where the owner
+#   zeroed vortex, adaptive and chameleon (2026-10-05: they counter exactly the classes the talent
+#   trees reward - arrows and spells), leaving three entries at about **12.5%**. A boss still
+#   carries about one modifier, but never one that punishes a class mix.
 # - Enforcers use `karma.yml`'s own table, about two each; it inherits from this file only for a
 #   modifier it does not name.
 # Targets: Global, Boss, biome, group, or prefab; omitted fields inherit independently.
@@ -50,8 +56,8 @@
 Global:
   level: [80, 20]                       # Weights by level: level 1 = 80, level 2 = 20.
   scalePerLevel: 0.1                    # Visual scale per level above 1; skipped in dungeons.
-  damage: 1.2                          # Level-1 damage multiplier.
-  damagePerLevel: 0.25                 # Replaces vanilla growth: damage * (1 + (level - 1) * value).
+  damage: 1.0                          # Level-1 damage multiplier.
+  damagePerLevel: 0.15                 # Replaces vanilla growth: damage * (1 + (level - 1) * value).
   health: 2                            # Level-1 max-health multiplier.
   healthPerLevel: 1                    # Health = base * health * (1 + (level - 1) * value).
 #   distanceScaling: [0.03, 0.08, 1000, 5] # damageStep, healthStep, stepMeters, maxSteps (0 = unlimited).
@@ -98,7 +104,7 @@ Boss:                                  # Regular bosses only; Enforcers use non-
   # level: [100]                       # Boss fallback: level 1; omit to allow the enabled built-in biome preset ([] is invalid).
   scalePerLevel: 0.1
   damage: 1.5
-  damagePerLevel: 0.1
+  damagePerLevel: 0.05
   health: 8
   healthPerLevel: 0.5
   modifiers:                           # One per group; totals below 100 allow none, above 100 are weights.
@@ -116,10 +122,10 @@ Boss:                                  # Regular bosses only; Enforcers use non-
     deathward: 0, 0.2, 10, 3         # chance%, restoredHealth, cooldownSeconds, maxActivations
     regenerating: 0, 0.002, 20      # chance%, maxHealthRatioPerSecond, healthPerSecondCap (0 = unlimited)
     reflection: 4.17, 0.1, 0.5         # chance%, actualMeleeDamageReflected, procChance
-    vortex: 4.17, 0.5                  # chance%, projectileIgnoreProc
-    adaptive: 4.17, 0.5                # chance%, rememberedTypeDamageReduction
+    vortex: 0, 0.5                  # chance%, projectileIgnoreProc (0 since 2026-10-05: counters ranged classes)
+    adaptive: 0, 0.5                # chance%, rememberedTypeDamageReduction (0 since 2026-10-05: counters ranged classes)
     unflinching: 4.17                    # chance%
-    chameleon: 4.17, 10                  # chance%, immunitySwitchSeconds
+    chameleon: 0, 10                  # chance%, immunitySwitchSeconds (0 since 2026-10-05: counters caster classes)
     # Affliction: Exposed to ToxicDeath
     exposed: 3.12, 0.2, 0.5, 5          # chance%, damageTaken, proc, duration
     weakened: 3.12, 0.2, 0.5, 5         # chance%, outgoingDamageReduction, proc, duration

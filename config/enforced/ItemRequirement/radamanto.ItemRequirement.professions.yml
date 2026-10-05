@@ -164,6 +164,8 @@
   Requirements: [{Skill: Herbalist, Level: 10, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: BH_MinorStaminaTonic
   Requirements: [{Skill: Herbalist, Level: 10, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
+- PrefabName: BH_RunnerElixer
+  Requirements: [{Skill: Herbalist, Level: 40, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: BH_SlowFallElixer
   Requirements: [{Skill: Herbalist, Level: 40, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: BackpackBlackForest
@@ -248,6 +250,8 @@
   Requirements: [{Skill: Blacksmithing, Level: 30, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: CarrotSoup
   Requirements: [{Skill: Cooking, Level: 10, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
+- PrefabName: CaulkedWood
+  Requirements: [{Skill: midnightsfx.voyager, Level: 40, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: CookedEgg
   Requirements: [{Skill: Cooking, Level: 40, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: CrossbowArbalest
@@ -512,6 +516,8 @@
   Requirements: [{Skill: Cooking, Level: 10, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: RoastedCrustPieUncooked
   Requirements: [{Skill: Cooking, Level: 60, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
+- PrefabName: SA_Sadle
+  Requirements: [{Skill: midnightsfx.animalwhisper, Level: 40, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: SaddleAsksvin
   Requirements: [{Skill: midnightsfx.animalwhisper, Level: 60, BlockCraft: true, BlockEquip: false, EpicMMO: false}]
 - PrefabName: SaddleLox

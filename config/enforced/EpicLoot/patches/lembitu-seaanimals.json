@@ -1,0 +1,19 @@
+{
+  "TargetFile": "loottables.json",
+  "Author": "Lembitu (#87, owner decision 2026-10-05)",
+  "Priority": 500,
+  "Patches": [
+    {
+      "Action": "AppendAll",
+      "Path": "$.LootTables",
+      "Value": [
+        { "Object": "SA_BlueShark", "RefObject": "Tier0Mob" },
+        { "Object": "SA_Crocodile", "RefObject": "Tier3Mob" },
+        { "Object": "SA_HammerHeadShark", "RefObject": "Tier5Mob" },
+        { "Object": "SA_TigerShark", "RefObject": "Tier7Mob" },
+        { "Object": "SA_HumboldtSquid", "RefObject": "Tier5Mob" },
+        { "Object": "SA_WhiteShark", "RefObject": "Tier5Mob" }
+      ]
+    }
+  ]
+}

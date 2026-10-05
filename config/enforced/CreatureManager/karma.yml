@@ -1,16 +1,21 @@
 # Enforced Karma table for CreatureManager (2026-10-04, owner's decisions). Pinned wholesale like
 # levels.yml, so an upstream retune of Enforcers is a review rather than a silent rebalance.
 #
-# Everything is the package's 1.2.4 file except Enforcer modifier chances. Enforcers carry about
-# two modifiers: each of the four groups fires about 50% of the time (6.25 per entry in the
-# eight-entry groups, 8.33 in the six-entry ones). deathward, regenerating, omen and blamer are
-# excluded everywhere (chance 0), including the two themed Black Forest Enforcers, whose other
-# upstream signature chances stay.
+# Everything is the package's 1.2.4 file except the Karma thresholds and Enforcer modifier chances.
+# The thresholds are ours (2026-10-05): a karma area climbs at 90 and caps at +2 (180), in place of
+# the package-shaped [60, 120, 180] that reached +3.
+#
+# Enforcers carry about two modifiers: each of the four groups fires about 50% of the time
+# (6.25 per entry in the eight-entry groups, 8.33 in the six-entry ones) - except Defense, where
+# vortex, adaptive and chameleon are 0 since 2026-10-05, the same three counters the boss table
+# loses, leaving that group at about 25%. deathward, regenerating, omen and blamer are excluded
+# everywhere (chance 0), including the two themed Black Forest Enforcers, whose other upstream
+# signature chances stay.
 
 # Outdoor and dungeon Karma are stored separately; the rules below apply to both.
 
 karma:
-  thresholds: [60, 120, 180]             # +1, +2, ... level at each value; the last value caps gain. [] disables bonuses and the cap.
+  thresholds: [90, 180]             # +1, +2, ... level at each value; the last value caps gain. [] disables bonuses and the cap.
   decay: [15, 30, 100]                   # [delayMinutes, karmaPerMinute, karmaRemovedOnPlayerDeath].
   gain: [1, 25, 0.3, 0.15, 4]            # [kill, bossKill, killScalingPerExtraLevel, bossScalingPerExtraLevel, dungeonMultiplier].
   prefabs:                               # Base gain overrides; level and dungeon scaling still apply.
@@ -43,10 +48,10 @@ Enforcer:
     deathward: 0, 0.2, 10, 3            # chance%, restoredMaxHealthRatio, cooldownSeconds, maxActivations.
     regenerating: 0, 0.005, 20          # chance%, maxHealthRatioPerSecond, healthPerSecondCap (0 = unlimited).
     reflection: 8.33, 0.1, 0.5             # chance%, actualMeleeDamageReflected, procChance.
-    vortex: 8.33, 0.5                      # chance%, projectileIgnoreProc.
-    adaptive: 8.33, 0.5                    # chance%, rememberedTypeDamageReduction.
+    vortex: 0, 0.5                      # chance%, projectileIgnoreProc (0 since 2026-10-05, like the boss table).
+    adaptive: 0, 0.5                    # chance%, rememberedTypeDamageReduction (0 since 2026-10-05, like the boss table).
     unflinching: 8.33                      # chance%.
-    chameleon: 8.33, 10                    # chance%, immunitySwitchSeconds.
+    chameleon: 0, 10                    # chance%, immunitySwitchSeconds (0 since 2026-10-05, like the boss table).
     # Affliction: Exposed to ToxicDeath
     exposed: 6.25, 0.2, 0.5, 5             # chance%, damageTaken, proc, duration.
     weakened: 6.25, 0.2, 0.5, 5            # chance%, outgoingDamageReduction, proc, duration.

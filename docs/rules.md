@@ -166,10 +166,14 @@ needs 1.5 times the skill XP at 40, rising to 2.5 times at 70.
 | Animal Handling | Saddles |
 | Hauling | Backpacks |
 | Farming | The Scythe |
-| Mining, Wood Cutting, Exploration, Sailing | Nothing to craft; their perks are their reward |
+| Sailing | OdinShip's caulked wood at 40, the one named material exception |
+| Mining, Wood Cutting, Exploration | Nothing to craft; their perks are their reward |
 
 **Only crafting is gated, never use.** Anyone may wear, wield, drink or buy what a specialist made.
 Repairs, ammunition, the hammer, hoe and cultivator, and utility items stay open to everyone.
+Three Meadows-material items climb early by name, all crafting-only: the Herbalist's Swift elixir
+at Herbalist 40, SeaAnimals' saddle at Animal Handling 40 and OdinShip's caulked wood at Sailing 40
+(2026-10-05, ADR-0023) — a taste of each speciality before its biome rung.
 
 **The smith is the guild's armourer and the alchemist its apothecary** (ADR-0024). From the Plains
 on, every new piece of gear comes from a smith at the right rung, and every vanilla mead (healing,
@@ -284,16 +288,21 @@ skill progress, a clock and the weather forecast.
 **Harder than vanilla, and the same fight whoever turns up** (ADR-0019). Nothing scales with the
 number of players nearby. Bosses are tuned for eight players and ordinary creatures for two:
 
-- Ordinary creatures carry twice vanilla health and 1.2 times its damage; bosses eight times its
-  health and 1.5 times its damage (`config/enforced/CreatureManager/levels.yml`).
+- Ordinary creatures carry twice vanilla health and vanilla damage (the 2026-10-04 raise to 1.2
+  was trimmed back on 2026-10-05 — health keeps a fight long, damage growth was what one-shot);
+  bosses eight times its health and 1.5 times its damage. Level growth is slower than vanilla on
+  both (`config/enforced/CreatureManager/levels.yml`).
 - Creature levels follow CreatureManager's `Hard` biome preset, so a late biome spawns stronger
   creatures and bosses follow suit (`config/enforced/sighsorry.CreatureManager.cfg`).
 - The game's own `Combat hard` world modifier is also set (`config/launch/launch.env.example`).
 - About 10 in 100 ordinary creatures carry a **creature modifier** (armoured, enraged, an elemental
   infusion and others), a boss about one, and an Enforcer two. Deathward, regenerating, omen and
-  blamer are off (`config/enforced/CreatureManager/levels.yml`, `karma.yml`).
-- **Karma:** an area where players kill heavily grows more dangerous, and eventually an
-  **Enforcer**, an elite hunt target worth a group's effort, appears.
+  blamer are off, and bosses and Enforcers never roll the three counters that punish ranged and
+  caster classes — vortex, adaptive and chameleon (`config/enforced/CreatureManager/levels.yml`,
+  `karma.yml`, 2026-10-05).
+- **Karma:** an area where players kill heavily grows more dangerous — two steps, at 90 and 180,
+  capped at +2 — and eventually an **Enforcer**, an elite hunt target worth a group's effort,
+  appears.
 - **Additive resistances:** resistances stack additively, and a player always takes at least 25%
   of each damage type, so stacked resistances never reach immunity
   (`config/enforced/sighsorry.AdditiveDamageModifier.cfg`).
@@ -318,10 +327,14 @@ siege of places to spawn. There are no blood moons (`config/enforced/local.warri
 
 **Magic gear comes from EpicLoot.** Magic items, rarities, effects, enchanting and Haldor's adventure
 trade: treasure maps, bounties (at most five in progress per player), gambling and the secret stash.
-Drops run at 0.6 of stock and shardstones at 0.1; a failed tempering can destroy the item. A drop is
+Drops run at 0.6 of stock — a creature drop's odds of coming out magic are 0.36 times the
+package's — and shardstones at 0.1; a failed tempering can destroy the item. A drop is
 gated on recipes the player knows rather than on world progress (`Item Drop Limits =
 PlayerMustKnowRecipe`). A boss drops one trophy, one Wishbone and one swamp key per kill, not one per
-player present, so killing it again pays (`config/enforced/randyknapp.mods.epicloot.cfg`).
+player present, so killing it again pays (`config/enforced/randyknapp.mods.epicloot.cfg`). The sea
+hunts the oceans gained — sharks, the Humboldt squid and the crocodile — drop magic gear like the
+land creature of their biome's tier, and the peaceful turtles and whales drop none
+(`config/enforced/EpicLoot/patches/lembitu-seaanimals.json`).
 
 ## The Market
 
@@ -342,9 +355,12 @@ are off for players, so a plan is finished with real materials (`config/enforced
 Free-building tools are for admins only.
 
 **Carrying.** The inventory stays at vanilla rows, with equipment, quick and special slots
-(`config/enforced/Azumatt.AzuExtendedPlayerInventory.cfg`). AdventureBackpacks' packs carry the extra
-weight; they are one-way, so if the mod ever left, the packs and their contents would go. Its
-automation settings are yours.
+(`config/enforced/Azumatt.AzuExtendedPlayerInventory.cfg`). AdventureBackpacks' packs carry the
+extra weight — contents at 85% weight and a small carry bonus per quality: stock bonuses halved
+and rounded down to **2/5/7/10/12/15**, Meadows through Mistlands (owner, 2026-10-05). A backpack
+helps but stays below what the Hauling profession grants
+(`config/enforced/vapok.mods.adventurebackpacks.cfg`); they are one-way, so if the mod ever left,
+the packs and their contents would go. Its automation settings are yours.
 
 **Voice carries as far as your voice would.** Full volume within 4 m, fading to nothing by 45 m
 (ProximityVoiceChat, `config/enforced/Azumatt.ProximityVoiceChat.cfg`). Your microphone, volume and

@@ -1,7 +1,7 @@
 # ADR-0026: Pins may come from Hexium as well as Thunderstore
 
 Date: 2026-10-05
-Status: Accepted; not yet implemented
+Status: Accepted; implemented 2026-10-05 (#87)
 Amends: ADR-0007 (pinned pack)
 
 Azumatt's six mods in the Pack (AzuCraftyBoxes, AzuExtendedPlayerInventory, AzuHoverStats, AzuClock,

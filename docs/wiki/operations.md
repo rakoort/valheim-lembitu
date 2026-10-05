@@ -221,22 +221,26 @@ once, by a controlled installation, and do not re-create the host from scratch m
 
 ### Pre-launch checklist
 
-Two steps remain before the Pack is built:
+Five steps stand between the Shakedown Pack and players (owner answers 2026-10-05):
 
 1. **No roster.** Guilds form in game and claim start regions at their portals (ADR-0028), so
    `config/dedicated/SeparateSpawns.groups.json` keeps its three empty regions (Skadi, Fenrir,
    Muninn), and `Lembitu.Guilds` assigns players to them by guild. Superseded: the 2026-10-04 plan to
    roster each guild's Steam IDs before the Run world.
-2. **Seed ServerQuickConnect in the Pack.** Its main-menu button joins a preset server; the Run
-   server's address goes into a Pack config seed under `config/client/` when the Pack is built.
-   Never the password: it stays with each player (`docs/modstack.md`, ServerQuickConnect row).
-   Needed: the public address and port.
+2. **ServerQuickConnect is seeded.** `config/client/radamanto.ServerQuickConnect.cfg` points the
+   main-menu button "Join Lembitu" at `85.253.16.237:2456`, astral-bicep's public IPv4 on
+   2026-10-05, with a blank password, which stays with each player. The address is not stable: it was
+   145.14.28.153 on 2026-09-15. When it changes, the seed and the Pack change with it.
 3. **Drop `Lembitu.LevelUpSound` from the live server.** The current server loads
    `Lembitu.LevelUpSound.dll`, deployed 2026-10-03 from untracked source in the bicep checkout; the
    owner retired it on 2026-10-04. The live install manifest owns it (the server's
    `/config/bepinex/.lembitu-installed`), so installing from a `dist/` without it prunes it, and
    `prune-mirror` then clears the container's copy. Install from a clean build: the bicep checkout's
    `dist/plugins/` still holds the DLL and would put it back.
+4. **No Discord webhook for the Shakedown.** DiscordConnector stays installed and posts nothing until
+   a webhook URL is set in the server's DiscordConnector config; the owner deferred it.
+5. **The server password is kept.** `SERVER_PASS` in bicep's `launch.secret.env` is set (eight
+   characters, from 2026-10-03), and the owner kept it for the Shakedown.
 
 ## Backups — #20
 

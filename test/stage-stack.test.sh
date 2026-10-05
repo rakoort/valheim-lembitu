@@ -77,6 +77,14 @@ Between the table and the next section a bare `| acme/Ghost | 9.9.9 |` line is n
 
 | acme/Rejected | 3.0.0 | a version-looking row outside the adopted section |
 
+### Download sources
+
+| Mod | Download URL |
+| --- | --- |
+| acme/Alpha | https://cdn.example.test/upload/1/1.0.0.zip |
+
+A source row must not become a pin: its second cell is a URL, not a version.
+
 ## Forks
 
 | Fork | Forked from | Why |
@@ -301,7 +309,46 @@ else
   report fail "a dependency version that is only a prefix of a pin is refused"
 fi
 
-# --- 8. unexpected package shapes abort before anything is staged ------------------------------
+# --- 8. per-pin download sources: chosen, version-checked, and never mistaken for pins -------
+
+# The pins download from the URL the Download sources table names, not Thunderstore. Both pins
+# carry source rows pointing at a closed local port, so the choice of URL is printed before the
+# fetch fails in milliseconds and the run stays offline.
+cat > "$WORK/modstack.md" <<'MD'
+## Adopted upstream
+
+| Mod | Pin |
+| --- | --- |
+| acme/Root | 2.0.0 |
+| acme/BepInExTree | 1.1.0 |
+
+### Download sources
+
+| Mod | Download URL |
+| --- | --- |
+| acme/Root | https://127.0.0.1:1/upload/48/2.0.0.zip |
+| acme/BepInExTree | https://127.0.0.1:1/upload/11/1.1.0.zip |
+MD
+
+rm -f "$CACHE"/acme-*.zip
+if ! run_stage && grep -q 'fetching acme/Root 2.0.0 from https://127.0.0.1:1/upload/48/2.0.0.zip' "$WORK/out" \
+   && grep -q 'download failed: acme/Root 2.0.0' "$WORK/out"; then
+  report ok "a source row decides the download URL"
+else
+  report fail "a source row decides the download URL"
+fi
+
+# A source URL that does not name the pin's own version is refused before any download, so a
+# version bump with a stale URL cannot quietly re-fetch the old release.
+replace "$WORK/modstack.md" 'upload/48/2.0.0.zip' 'upload/48/1.0.0.zip'
+if ! run_stage && grep -q 'download source for acme/Root does not name 2.0.0' "$WORK/out" \
+   && ! grep -q 'download failed' "$WORK/out"; then
+  report ok "a stale source URL is refused before fetching"
+else
+  report fail "a stale source URL is refused before fetching"
+fi
+
+# --- 9. unexpected package shapes abort before anything is staged ------------------------------
 
 cat > "$WORK/modstack.md" <<'MD'
 ## Adopted upstream

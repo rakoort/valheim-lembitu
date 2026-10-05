@@ -62,6 +62,17 @@ OVERRIDES = {
     "SpiceDeepNorth": (70, "dump traders[BogWitch].items[SpiceDeepNorth].key=defeated_frozenking_p3 (Deep North boss)"),
 }
 
+# Named item floors (owner, 2026-10-05; ADR-0023): three Meadows-material items climb
+# early by decision, crafting only, so each speciality has one Plains-rung taste before
+# its biome. A floor sets the profession too, which rescues items the classifier
+# excludes (CaulkedWood is an intermediate material) or whose materials map no rung
+# (BH_RunnerElixer, SA_Sadle). A mismatch with the classifier raises.
+ITEM_FLOORS = {
+    "BH_RunnerElixer": ("Herbalist", 40, "owner 2026-10-05 (#87): the Runner (Swift) elixir is the Herbalist taste of the Plains rung"),
+    "SA_Sadle": ("midnightsfx.animalwhisper", 40, "owner 2026-10-05 (#87): SeaAnimals' saddle is the Animal Handling taste of the Plains rung"),
+    "CaulkedWood": ("midnightsfx.voyager", 40, "owner 2026-10-05 (#87): OdinShip's caulked wood is the Sailing (voyager) taste of the Plains rung"),
+}
+
 def profession(recipe):
     name = recipe["prefab"]
     if recipe["itemType"] == "OneHandedWeapon" and recipe["skill"] == "None":
@@ -123,10 +134,18 @@ def generate(data):
         skill = profession(recipe)
         if name in gear_inputs:
             skill = "Blacksmithing"
+        floor = ITEM_FLOORS.get(name)
+        if floor is not None:
+            if skill is not None and skill != floor[0]:
+                raise ValueError("item floor profession mismatch for " + name + ": "
+                                 + skill + " vs " + floor[0])
+            skill = floor[0]
         if skill is None:
             excluded[name] = "outside profession goods (" + recipe["itemType"] + ")"
             continue
         rung = recipe_rung(recipe, raised)
+        if floor is not None:
+            rung = max(rung, floor[1])
         if rung == 0:
             excluded[name] = "no positive biome-mapped material: " + ", ".join(q["prefab"] for q in recipe["resources"])
             continue
@@ -136,6 +155,8 @@ def generate(data):
         if rung > recipe_rung(recipe, base):
             overrides[name] = {q["prefab"]: OVERRIDES[q["prefab"]][1]
                 for q in recipe["resources"] if q["prefab"] in OVERRIDES and any(n > 0 for n in q["amounts"])}
+        if floor is not None:
+            overrides.setdefault(name, {})["item_floor"] = floor[2]
     for name in rules:
         excluded.pop(name, None)
     return rules, excluded, overrides
