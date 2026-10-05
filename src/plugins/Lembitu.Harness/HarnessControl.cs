@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BepInEx.Logging;
+using HarmonyLib;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -28,6 +29,20 @@ internal sealed class HarnessControl
     private bool controllerEnabled;
     private InventoryGui? crafting;
     private string fixtureSpawned = "";
+    private string[]? fixturePrivateKeys;
+    private ConsoleState? consoleLines;
+    private static Terminal? capturingConsole;
+    private static readonly List<string> capturedConsoleLines = new();
+
+    private static void CaptureConsole(Terminal __instance, string text)
+    {
+        if (__instance == capturingConsole) capturedConsoleLines.Add(text);
+    }
+    private HarnessKeys.KeyResult? keyResult;
+    private readonly List<RecentLine> recentMessages = new();
+    private readonly List<RecentLine> chatLines = new();
+    private int messageLogIndex, chatBufferIndex;
+    private string lastCenter = "", lastTopLeft = "";
 
     public HarnessControl(string directory, bool fixtures, ManualLogSource log)
     {
@@ -61,6 +76,7 @@ internal sealed class HarnessControl
 
     public void Tick()
     {
+        Observe();
         if (ready && (ZNet.instance == null || ZNet.GetConnectionStatus() != ZNet.ConnectionStatus.Connected))
             Fail("connection lost");
         try
@@ -89,8 +105,11 @@ internal sealed class HarnessControl
                 request = parsed;
                 File.Delete(path);
                 fixtureSpawned = "";
+                fixturePrivateKeys = null;
+                consoleLines = null;
+                keyResult = null;
                 if (parsed.action != "quit" && !ready) throw new InvalidOperationException("harness is not ready");
-                operation = Execute(parsed);
+                operation = AdvanceNested(Execute(parsed));
                 if (!operation.MoveNext()) Complete("");
                 break;
             }
@@ -101,6 +120,71 @@ internal sealed class HarnessControl
             if (request != null) Complete(error.ToString());
             else Fail(error.ToString());
         }
+    }
+
+    private static IEnumerator AdvanceNested(IEnumerator root)
+    {
+        var stack = new Stack<IEnumerator>();
+        stack.Push(root);
+        try
+        {
+            while (stack.Count > 0)
+            {
+                IEnumerator current = stack.Peek();
+                if (!current.MoveNext())
+                {
+                    stack.Pop();
+                    (current as IDisposable)?.Dispose();
+                }
+                else if (current.Current is IEnumerator child) stack.Push(child);
+                else yield return current.Current;
+            }
+        }
+        finally
+        {
+            while (stack.Count > 0) (stack.Pop() as IDisposable)?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// One observation per frame: the HUD message log and the chat buffer carry no times, so new
+    /// entries are recorded as they appear. Indexes reset when the game's own caps trim the lists.
+    /// Observation must never break the session, so unexpected shapes are skipped.
+    /// </summary>
+    private void Observe()
+    {
+        try
+        {
+            if (MessageHud.instance != null)
+            {
+                List<string> log = MessageHud.instance.m_messageLog;
+                if (messageLogIndex > log.Count) messageLogIndex = 0;
+                for (; messageLogIndex < log.Count; messageLogIndex++) Record(recentMessages, "hud", log[messageLogIndex]);
+                TrackText(recentMessages, "center", MessageHud.instance.m_messageCenterText != null ? MessageHud.instance.m_messageCenterText.text : "", ref lastCenter);
+                TrackText(recentMessages, "topleft", MessageHud.instance.m_messageText != null ? MessageHud.instance.m_messageText.text : "", ref lastTopLeft);
+            }
+            if (Chat.instance != null)
+            {
+                List<string> buffer = Chat.instance.m_chatBuffer;
+                if (chatBufferIndex > buffer.Count) chatBufferIndex = 0;
+                for (; chatBufferIndex < buffer.Count; chatBufferIndex++) Record(chatLines, "chat", buffer[chatBufferIndex]);
+            }
+        }
+        catch (Exception) { /* a broken read is skipped; the next frame retries */ }
+    }
+
+    private void TrackText(List<RecentLine> list, string where, string text, ref string last)
+    {
+        if (text == last) return;
+        last = text;
+        if (text.Length == 0) return;
+        Record(list, where, text);
+    }
+
+    private void Record(List<RecentLine> list, string where, string text)
+    {
+        list.Add(new RecentLine { where = where, text = text, unscaled = Time.unscaledTime, time = DateTime.UtcNow.ToString("o") });
+        if (list.Count > 100) list.RemoveRange(0, list.Count - 100);
     }
 
     private void Complete(string error)
@@ -188,6 +272,31 @@ internal sealed class HarnessControl
                 ItemDrop.ItemData? item = player.GetInventory().GetAllItems().Find(i => ItemId(i) == command.item);
                 if (item == null) throw new ArgumentException("inventory item ID not found");
                 if (!player.EquipItem(item)) throw new InvalidOperationException("engine rejected equip");
+                yield return null;
+                break;
+            }
+            case "use":
+            {
+                // Two paths, both vanilla. Without a target: the inventory's right-click (consume,
+                // drink). With an observed target: item-on-object, the path seed beds and similar
+                // Interactable.UseItem hooks take. Mod refusals surface as HUD messages and an
+                // unchanged inventory, which the scenario asserts on; neither call reports a result.
+                ItemDrop.ItemData? used = player.GetInventory().GetAllItems().Find(i => ItemId(i) == command.item);
+                if (used == null) throw new ArgumentException("inventory item ID not found");
+                if (command.target.Length > 0)
+                {
+                    GameObject hover = Target(command.target);
+                    if (hover.GetComponentInParent<Hoverable>() == null)
+                        throw new ArgumentException("use target is not hoverable");
+                    if (Vector3.Distance(player.transform.position, hover.transform.position) > player.m_maxInteractDistance)
+                        throw new InvalidOperationException("target outside interaction range");
+                    player.TryUseItemOnInteractable(used, hover, fromInventoryGui: false);
+                }
+                else
+                {
+                    player.UseItem(player.GetInventory(), used, fromInventoryGui: true);
+                }
+                yield return null;
                 yield return null;
                 break;
             }
@@ -283,6 +392,51 @@ internal sealed class HarnessControl
                 yield return null;
                 break;
             }
+            case "fixture.privatekeys":
+            {
+                RequireFixtures();
+                Type type = Type.GetType("VentureValheim.Progression.KeyManager, VentureValheim.Progression", throwOnError: false)
+                    ?? throw new InvalidOperationException("WAP KeyManager is unavailable");
+                object manager = AccessTools.Property(type, "Instance")?.GetValue(null)
+                    ?? throw new InvalidOperationException("WAP KeyManager.Instance is unavailable");
+                var reset = AccessTools.Method(type, "ResetPrivateKeys", Type.EmptyTypes)
+                    ?? throw new MissingMethodException(type.FullName, "ResetPrivateKeys()");
+                var add = AccessTools.Method(type, "AddPrivateKey", new[] { typeof(string) })
+                    ?? throw new MissingMethodException(type.FullName, "AddPrivateKey(string)");
+                var keys = AccessTools.Property(type, "PrivateKeysList")
+                    ?? throw new MissingMemberException(type.FullName, "PrivateKeysList");
+                // Use WAP's own mutations so its live list, server state and skill config agree.
+                reset.Invoke(manager, Array.Empty<object>());
+                object[] argument = new object[1];
+                foreach (string key in command.text.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    argument[0] = key.Trim();
+                    add.Invoke(manager, argument);
+                }
+                fixturePrivateKeys = ((HashSet<string>)keys.GetValue(manager)).ToArray();
+                yield return null;
+                break;
+            }
+            case "fixture.freeze":
+            {
+                RequireFixtures();
+                Character npc = Target(command.target).GetComponent<Character>() ?? throw new ArgumentException("freeze target is not a character");
+                if (npc is Player) throw new ArgumentException("freeze target must be an NPC");
+                BaseAI ai = npc.GetBaseAI() ?? throw new ArgumentException("freeze target has no AI");
+                ZNetView view = npc.GetComponent<ZNetView>();
+                if (view == null || !view.IsValid() || !view.IsOwner())
+                    throw new InvalidOperationException("freeze target must be locally owned");
+                Rigidbody body = npc.GetComponent<Rigidbody>() ?? throw new ArgumentException("freeze target has no rigidbody");
+                // Keep the enemy lookup registry intact, so companion AI can still target it.
+                BaseAI.Instances.Remove(ai);
+                npc.SetMoveDir(Vector3.zero);
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                body.constraints = RigidbodyConstraints.FreezeAll;
+                npc.m_regenAllHPTime = float.MaxValue;
+                yield return null;
+                break;
+            }
             case "fixture.skill":
             {
                 RequireFixtures();
@@ -359,6 +513,69 @@ internal sealed class HarnessControl
                 }
                 break;
             }
+            case "fixture.console":
+            {
+                RequireFixtures();
+                Console console = Console.instance ?? throw new InvalidOperationException("console unavailable");
+                if (command.target.Length == 0) throw new ArgumentException("console command line must not be empty");
+                var harmony = new Harmony("lembitu.harness.console-capture");
+                var addString = AccessTools.Method(typeof(Terminal), "AddString", new[] { typeof(string) });
+                var capture = AccessTools.Method(typeof(HarnessControl), nameof(CaptureConsole));
+                capturedConsoleLines.Clear();
+                capturingConsole = console;
+                harmony.Patch(addString, prefix: new HarmonyMethod(capture));
+                try
+                {
+                    int before = 0;
+                    console.TryRunCommand(command.target);
+                    float deadline = Time.realtimeSinceStartup + 8f, lastNew = Time.realtimeSinceStartup;
+                    while (Time.realtimeSinceStartup < deadline)
+                    {
+                        CheckPlayer(player);
+                        int count = capturedConsoleLines.Count;
+                        if (count != before) { before = count; lastNew = Time.realtimeSinceStartup; }
+                        else if (Time.realtimeSinceStartup - lastNew >= 0.75f) break;
+                        yield return null;
+                    }
+                    consoleLines = new ConsoleState { command = command.target, lines = capturedConsoleLines.ToArray() };
+                    log.LogInfo($"console '{command.target}' -> {capturedConsoleLines.Count} line(s)");
+                }
+                finally
+                {
+                    capturingConsole = null;
+                    harmony.Unpatch(addString, capture);
+                    capturedConsoleLines.Clear();
+                }
+                break;
+            }
+            case "fixture.customdata":
+            {
+                RequireFixtures();
+                if (command.target.Length == 0) throw new ArgumentException("customdata key must not be empty");
+                if (command.value) player.m_customData[command.target] = command.text;
+                else player.m_customData.Remove(command.target);
+                yield return null;
+                break;
+            }
+            case "key":
+            {
+                if (command.seconds > 0) Duration(command.seconds);
+                keyResult = null;
+                yield return HarnessKeys.Press(command.target, command.method,
+                    command.seconds > 0 ? command.seconds : 0.15f, log, result => keyResult = result);
+                if (keyResult == null) throw new InvalidOperationException("key press produced no result");
+                log.LogInfo($"key {keyResult.key} via {keyResult.method}: pressed={keyResult.pressed}");
+                break;
+            }
+            case "text":
+            {
+                // Real OS typing into the focused input field; there is no synthetic fallback
+                // because a string is a layout question, not a key-state one.
+                keyResult = null;
+                yield return HarnessKeys.Type(command.target, log, result => keyResult = result);
+                log.LogInfo($"typed {command.target.Length} chars via {keyResult?.method}");
+                break;
+            }
             default: throw new ArgumentException("unknown action: " + command.action);
         }
     }
@@ -417,6 +634,13 @@ internal sealed class HarnessControl
         return id;
     }
 
+    private static readonly HashSet<string> VanillaPanels = new()
+    {
+        "hud", "inventorygui", "minimap", "chat", "console", "storegui", "textinput", "menu",
+        "settings", "fejdstartup", "player", "loading", "tutorial", "keyhints", "deathscreen",
+        "versionlabel", "socialpanel", "passwordpanel", "connectionfailedpanel", "fade"
+    };
+
     private State Snapshot()
     {
         Player player = Player.m_localPlayer;
@@ -452,7 +676,11 @@ internal sealed class HarnessControl
         return new State
         {
             player = new PlayerState { id = player.gameObject.GetInstanceID().ToString(), name = player.GetPlayerName(), x = position.x, y = position.y, z = position.z,
-                health = player.GetHealth(), dead = player.IsDead(), pvp = player.IsPVPEnabled() },
+                health = player.GetHealth(), dead = player.IsDead(), pvp = player.IsPVPEnabled(),
+                swimming = player.IsSwimming(), stamina = player.GetStamina(),
+                eitr = player.GetEitr(), maxEitr = player.GetMaxEitr(),
+                waterLevel = player.GetLiquidLevel(), biome = player.GetCurrentBiome().ToString(),
+                terrainHeight = WorldGenerator.instance.GetHeight(position) },
             inventory = player.GetInventory().GetAllItems().Select(i => new ItemState { id = ItemId(i), prefab = i.m_dropPrefab != null ? i.m_dropPrefab.name : "",
                 name = i.m_shared.m_name, stack = i.m_stack, equipped = i.m_equipped, x = i.m_gridPos.x, y = i.m_gridPos.y }).ToArray(),
             entities = nearby.ToArray(),
@@ -462,12 +690,94 @@ internal sealed class HarnessControl
                 { type = (int)s.m_info.m_skill, name = s.m_info.m_skill.ToString(), level = s.m_level, accumulator = s.m_accumulator }).ToArray(),
             messages = MessageHud.instance == null ? new MessageState() : new MessageState
                 { center = MessageHud.instance.m_messageCenterText.text, topLeft = MessageHud.instance.m_messageText.text },
+            recentMessages = recentMessages.ToArray(),
+            chat = chatLines.ToArray(),
+            windows = Windows().ToArray(),
             ui = new UiState { inventory = InventoryGui.IsVisible(), map = Minimap.IsOpen(), crafting = gui != null && gui.m_craftTimer >= 0,
                 buttons = buttonStates.ToArray(), craftEnabled = gui != null && gui.m_craftButton.IsInteractable(),
                 recipes = gui == null ? Array.Empty<string>() : gui.m_availableRecipes.Select(r => r.Recipe.name).ToArray() },
+            admin = ObservedAdmin(),
+            adminList = ZNet.instance == null ? Array.Empty<string>() : ZNet.instance.GetAdminList().ToArray(),
+            localUserId = UserInfo.GetLocalUser().UserId.ToString(),
+            platformUserId = PlatformUserId(),
+            steamId = SteamId(),
+            console = consoleLines,
+            keyPress = keyResult,
             connection = ZNet.instance == null ? "absent" : ZNet.GetConnectionStatus().ToString(),
-            fixtureSpawned = fixtureSpawned
+            fixtureSpawned = fixtureSpawned,
+            fixturePrivateKeys = fixturePrivateKeys
         };
+    }
+
+    /// <summary>The local platform user ID, "steam_7656…" on the test client; empty before platform sign-in.</summary>
+    private static string PlatformUserId()
+    {
+        try { return Splatform.PlatformManager.DistributionPlatform?.LocalUser?.PlatformUserID.ToString() ?? ""; }
+        catch { return ""; }
+    }
+
+    /// <summary>The numeric Steam ID for adminlist.txt, parsed from the platform user ID.</summary>
+    private static string SteamId() =>
+        Splatform.PlatformUserID.TryParse(PlatformUserId(), out Splatform.PlatformUserID parsed) && parsed.TryParseAsUInt64(out ulong id)
+            ? id.ToString() : "";
+
+    private static bool ObservedAdmin()
+    {
+        if (ZNet.instance == null) return false;
+        // Jotunn sends the server-authoritative admin status separately; full-Pack mods may
+        // leave vanilla's client AdminList empty. Minimal installs have no Jotunn assembly.
+        Type? type = Type.GetType("Jotunn.Managers.SynchronizationManager, Jotunn", throwOnError: false);
+        if (type == null) return ZNet.instance.LocalPlayerIsAdminOrHost();
+        object instance = AccessTools.Property(type, "Instance").GetValue(null);
+        return (bool)AccessTools.Property(type, "PlayerIsAdmin").GetValue(instance);
+    }
+
+    /// <summary>
+    /// Visible UI: every active direct child of every enabled root canvas, as one window each, with
+    /// its texts and its buttons under the same observed IDs the <c>ui</c> action clicks. Valheim's
+    /// own panels are marked <c>custom:false</c> so scenarios can pick plugin windows without
+    /// naming mods.
+    /// </summary>
+    private List<WindowState> Windows()
+    {
+        List<WindowState> windows = new();
+        foreach (Canvas canvas in UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (!canvas.isRootCanvas || !canvas.isActiveAndEnabled || canvas.renderMode == RenderMode.WorldSpace) continue;
+            foreach (Transform child in canvas.transform)
+            {
+                if (!child.gameObject.activeInHierarchy) continue;
+                List<string> texts = new();
+                foreach (TMPro.TMP_Text text in child.GetComponentsInChildren<TMPro.TMP_Text>(false))
+                {
+                    if (text.text.Length == 0 || texts.Contains(text.text)) continue;
+                    texts.Add(text.text.Length > 200 ? text.text.Substring(0, 200) : text.text);
+                    if (texts.Count >= 24) break;
+                }
+                foreach (UnityEngine.UI.Text text in child.GetComponentsInChildren<UnityEngine.UI.Text>(false))
+                {
+                    if (text.text.Length == 0 || texts.Contains(text.text)) continue;
+                    texts.Add(text.text.Length > 200 ? text.text.Substring(0, 200) : text.text);
+                    if (texts.Count >= 48) break;
+                }
+                List<ButtonState> windowButtons = new();
+                foreach (UnityEngine.UI.Button button in child.GetComponentsInChildren<UnityEngine.UI.Button>(false))
+                {
+                    string id = button.GetInstanceID().ToString();
+                    buttons[id] = button;
+                    TMPro.TMP_Text label = button.GetComponentInChildren<TMPro.TMP_Text>(true);
+                    UnityEngine.UI.Text legacyLabel = button.GetComponentInChildren<UnityEngine.UI.Text>(true);
+                    windowButtons.Add(new ButtonState { id = id,
+                        text = label != null ? label.text : legacyLabel != null ? legacyLabel.text : button.name,
+                        active = true, interactable = button.IsInteractable() });
+                }
+                if (texts.Count == 0 && windowButtons.Count == 0) continue;
+                string name = child.gameObject.name;
+                windows.Add(new WindowState { canvas = canvas.gameObject.name, name = name, order = canvas.sortingOrder,
+                    custom = !VanillaPanels.Contains(name.ToLowerInvariant()), texts = texts.ToArray(), buttons = windowButtons.ToArray() });
+            }
+        }
+        return windows;
     }
 
     private void Publish(string name, object value)
@@ -481,7 +791,7 @@ internal sealed class HarnessControl
 
     private sealed class Request
     {
-        public string id = "", action = "", target = "", item = "", recipe = "";
+        public string id = "", action = "", target = "", item = "", recipe = "", method = "", text = "";
         public float x = 0, y = 0, z = 0, seconds = 0, yaw = 0;
         public bool secondary = false, value = false;
     }
@@ -495,15 +805,32 @@ internal sealed class HarnessControl
         public TextState[] progression = null!, customData = null!;
         public SkillState[] skills = null!;
         public MessageState messages = null!;
+        public RecentLine[] recentMessages = Array.Empty<RecentLine>(), chat = Array.Empty<RecentLine>();
+        public WindowState[] windows = Array.Empty<WindowState>();
         public UiState ui = null!;
+        public bool admin;
+        public string platformUserId = "", steamId = "";
+        public string[] adminList = Array.Empty<string>();
+        public string localUserId = "";
+        public ConsoleState? console;
+        public HarnessKeys.KeyResult? keyPress;
         public string connection = "", fixtureSpawned = "";
+        public string[]? fixturePrivateKeys;
     }
-    private sealed class PlayerState { public string id = "", name = ""; public float x, y, z, health; public bool dead, pvp; }
+    private sealed class PlayerState
+    {
+        public string id = "", name = "", biome = "";
+        public float x, y, z, health, stamina, eitr, maxEitr, waterLevel, terrainHeight;
+        public bool dead, pvp, swimming;
+    }
     private sealed class ItemState { public string id = "", prefab = "", name = ""; public int stack, x, y; public bool equipped; }
     private sealed class EntityState { public string id = "", prefab = "", name = ""; public float x, y, z, health, maxHealth; public bool isPlayer, interactable; }
     private sealed class TextState { public string key = "", value = ""; }
     private sealed class SkillState { public int type; public string name = ""; public float level, accumulator; }
     private sealed class MessageState { public string center = "", topLeft = ""; }
+    private sealed class RecentLine { public string where = "", text = ""; public float unscaled; public string time = ""; }
+    private sealed class WindowState { public string canvas = "", name = ""; public int order; public bool custom; public string[] texts = null!; public ButtonState[] buttons = null!; }
+    private sealed class ConsoleState { public string command = ""; public string[] lines = null!; }
     private sealed class UiState { public bool inventory, map, crafting, craftEnabled; public string[] recipes = null!; public ButtonState[] buttons = null!; }
     private sealed class ButtonState { public string id = "", text = ""; public bool active, interactable; }
 }

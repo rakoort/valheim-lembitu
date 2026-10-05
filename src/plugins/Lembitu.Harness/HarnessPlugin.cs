@@ -138,6 +138,9 @@ public sealed class HarnessPlugin : BaseUnityPlugin
         }
         else
         {
+            // The New button replaces the selected profile preview with a genuinely new Player.
+            FejdStartup.instance.OnCharacterNew();
+            yield return null;
             FejdStartup.instance.m_csNewCharacterName.text = character;
             FejdStartup.instance.OnNewCharacterDone(forceLocal: true);
             if (!PlayerProfile.HaveProfile(character))
@@ -165,7 +168,8 @@ public sealed class HarnessPlugin : BaseUnityPlugin
         }
 
         FejdStartup.ServerPassword = password;
-        FejdStartup.instance.SelectCharacter(character, global::FileHelpers.FileSource.Local);
+        // The native Done handler lowercases the filename, preserving display-name case.
+        FejdStartup.instance.SelectCharacter(character.ToLowerInvariant(), global::FileHelpers.FileSource.Local);
         ZNet.SetServer(server: false, openServer: false, publicServer: false, "", "", null);
         ZNet.ResetServerHost();
         ZNet.SetServerHost(host, port, OnlineBackendType.Steamworks);

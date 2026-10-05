@@ -19,6 +19,7 @@ sys.path.insert(0, str(repo / 'scripts'))
 spec = importlib.util.spec_from_file_location('native', repo / 'scripts/test-native.py')
 native = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(native)
+import native_session
 
 class ServerReadiness(unittest.TestCase):
     def test_registration_does_not_release_waiting_client(self):
@@ -83,6 +84,18 @@ class PreferenceProfile(unittest.TestCase):
             self.assertFalse(native.preferences_initialized(profile), 'profile without a language accepted')
             unity.write_text(header + '\t<pref name="language" type="string">RW5nbGlzaA==</pref>\n</unity_prefs>\n')
             self.assertTrue(native.preferences_initialized(profile), 'initialized profile refused')
+
+class SingleClientOwnership(unittest.TestCase):
+    def test_second_client_is_refused_before_install_or_launch(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            session = native_session.Session("ownership", 2486, root=root, directory=root)
+            session.server = object()
+            session.clients["a"] = SimpleNamespace(process=object())
+            with self.assertRaisesRegex(RuntimeError, "only one native client may run"):
+                session.boot_client("b")
+            self.assertEqual(set(session.clients), {"a"})
+            self.assertFalse((root / "work").exists())
 
 unittest.main()
 PY

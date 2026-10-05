@@ -16,7 +16,20 @@
       <HintPath>$(ValheimRefDir)Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath></Reference>
-    <PackageReference Include="Newtonsoft.Json" Version="[13.0.4]" ExcludeAssets="runtime" PrivateAssets="all" />
     <Reference Include="UnityEngine.ScreenCaptureModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.ScreenCaptureModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.PhysicsModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.PhysicsModule.dll</HintPath></Reference>
+    <!-- The key action queues InputSystem state events; ZInput reads Keyboard.current itself. -->
+    <Reference Include="Unity.InputSystem" Private="false">
+      <HintPath>$(ValheimRefDir)Unity.InputSystem.dll</HintPath>
+    </Reference>
+    <!-- Canvas/RenderMode live here on 1.0. -->
+    <Reference Include="UnityEngine.UIModule" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <!-- The Steam ID for adminlist.txt comes from the platform user, not Steamworks directly. -->
+    <Reference Include="Splatform" Private="false">
+      <HintPath>$(ValheimRefDir)Splatform.dll</HintPath>
+    </Reference>
+    <PackageReference Include="Newtonsoft.Json" Version="[13.0.4]" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 </Project>

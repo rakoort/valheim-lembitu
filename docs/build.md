@@ -443,8 +443,11 @@ to stay on that archived client rather than rebuild against the newer game is su
 
 ### Native gameplay control
 
-`Lembitu.Harness` calls native Unity/Valheim methods on the main thread. Python only exchanges
-JSON and checks observations; it does not emulate mouse or keyboard input. Control requires
+`Lembitu.Harness` calls native Unity/Valheim methods on the main thread; Python exchanges JSON and
+checks observations. The `key` and `text` actions do feed real input into the client — xdotool
+XTEST events on the client's X display where available, otherwise Unity InputSystem state events
+— because keybind-driven GUI must be triggered the way a player's press reaches it. There is no
+synthetic mouse; GUI is driven through observed button IDs. Control requires
 both `-lembitu-harness` and an explicit absolute control directory. Dedicated servers stay inert.
 The harness uses the stack’s existing JsonDotNET 13.0.4 (`Newtonsoft.Json.dll`); an isolated
 harness-only installation must include that library too. Unity’s runtime `JsonUtility` omitted
@@ -480,16 +483,21 @@ Commands use observed IDs, not guessed object names:
 
 | Action | Fields / behavior |
 | --- | --- |
-| `snapshot` | Player, inventory, nearby entities, progression texts, UI and connection state |
+| `snapshot` | Player position, health, stamina, swimming state, biome, water level and generated terrain height; inventory, nearby entities, progression and custom data, skills, recent HUD messages and chat with times, visible windows with texts and button IDs, admin and Steam IDs, UI and connection state |
 | `move` | World `x`/`z` direction in [-1,1], `seconds` in (0,10]; native player controls |
 | `attack` | Entity `target`, optional `secondary`, `seconds` in (0,10]; native attacks, never direct damage/XP |
 | `interact` | Nearby entity `target`; native interaction/pickup |
 | `equip` | Inventory `item` ID; native equipment requirements apply |
+| `use` | Inventory `item` ID, optional entity `target`: without it the inventory right-click path (consume/drink), with it the item-on-object path `Interactable.UseItem` hooks take; refusals surface as HUD messages and unchanged inventory |
 | `craft` | `recipe` asset name from `state.ui.recipes`; native crafting UI/timer and requirements apply |
 | `pvp` | Boolean `value` |
 | `ui` | `target` = `inventory`/`map`, boolean `value`; or observed button ID with `value:true` |
+| `key` | `target` = InputSystem key name (`F7`, `e`, `tab`); optional `seconds` hold, `method` = `auto` (default: xdotool XTEST first, InputSystem state events as fallback)/`xdotool`/`synthetic`; result in `state.keyPress` |
+| `text` | `target` = string typed into the focused input field via xdotool; no synthetic fallback |
 | `screenshot` | `target` = new absolute image path; native screen capture |
 | `fixture.spawn` | Prefab `target` and absolute `x`/`y`/`z` within 20 m; requires launcher `--fixtures` |
+| `fixture.console` | `target` = console command line, run natively with privilege rules intact; returns `state.console.lines`; requires `--fixtures` |
+| `fixture.customdata` | `target`/`text`/`value` set or remove a `Player.m_customData` key; requires `--fixtures` |
 | `quit` | Exit this client; `state` is null; available before readiness and after startup failure, without a local player |
 
 Fixtures arrange disposable-world objects; they do not prove gameplay. Assert movement, pickup,
@@ -505,6 +513,80 @@ Protocol: `status.json` holds `{ready,error}`. Atomic `inbox/<UUID>.json` reques
 directory. Responses remain as evidence. A timeout does **not** cancel a published command;
 inspect that UUID’s response before retrying. Exit codes: 0 success, 2 input, 3 native/startup
 rejection, 4 IPC failure, 5 timeout, 6 assertion failure, 130 interruption.
+
+### Persistent sessions for scenario scripts
+
+Tickets that need more than the fixed acceptance scenario import the engine directly
+(`scripts/native_session.py`; `scripts/test-native.py` is a thin coordinator over it):
+
+```python
+import sys; from pathlib import Path
+sys.path.insert(0, "<repo>/scripts")
+import native_session
+
+with native_session.Session("mylabel", 2488, keep_work=True) as s:
+    s.boot_server(admin=True)          # full Pack, generate-configs + enforced overlay, adminlist from cache
+    s.boot_client("a", fixtures=True)
+    s.snapshot("a")                    # windows, HUD messages, customData, steamId, admin
+    s.command("a", "fixture.console", target="help")
+    s.relaunch_client("a")             # native quit, same character, kept saves
+    s.restart_server(keep_world=True)
+    s.quit_client("a")
+    s.boot_client("b")                 # sequential client, own install/saves
+```
+
+A session owns one evidence directory, `~/lembitu-native-tests/<stamp>-<label>/`: events,
+commands/responses, logs, installed-file manifests, screenshots, and (unless `keep_work=False`)
+the disposable installs and saves under `work/`. `boot_client(install=...)` installs a client from
+`dist/` or from a client Pack zip; `exclude=("Lembitu.Guide",)` removes named plugins from one
+client so the server's refusal at join is observable. `make_admin("a")` writes the client's own
+`Steam_<ID>` into the server's `adminlist.txt`; rejoin after its ten-second reload. Snapshot
+`admin` reads Jotunn's server-authoritative status in the Pack, or native ZNet in minimal mode;
+`adminList` and `localUserId` retain the underlying vanilla identity evidence. Restart quits and
+rejoins the same character and archives the old boot log as `server-before-restart-N.log`.
+Full-Pack setup also applies `config/dedicated/` through `apply-dedicated-config.sh` to the
+server game's actual `config/bepinex` tree after generation. A brand-new measured world gets
+the launch roster seed after the setup client is gone; same-world restarts retain assignments
+and claims. Evidence includes `dedicated-server.log`, `dedicated-server.json`, the
+`dedicated-config-applied` event, and `server-dedicated-config/`.
+
+Only one native session may run at a time on a host. `scripts/native-run.sh` makes that a property
+of the host: it holds `flock ~/lembitu-native.lock`, syncs `~/lembitu-stage` into `~/lembitu-work`
+under the lock, discovers the display (including a real desktop session's Xauthority) or starts
+one headless Weston, provisions `xdotool`, and runs the scenario:
+
+```sh
+rsync -a --delete --exclude dist-client --exclude '**/bin/' --exclude '**/obj/' \
+      --exclude .git ./ astral-tricep:lembitu-stage/
+ssh astral-tricep bash -s <<'EOF'
+nohup setsid nix shell nixpkgs#python3 nixpkgs#xorg.xdpyinfo -c \
+    bash "$HOME/lembitu-stage/scripts/native-run.sh" lembitu-stage/scripts/native-smoke.py \
+    > "$HOME/lembitu-native-tests/smoke.launch.log" 2>&1 < /dev/null &
+EOF
+```
+
+Detach queued sessions rather than holding an SSH connection across the host lock queue:
+long foreground connections exited 255 while their remote waiters remained alive. Before
+retrying, check `pgrep -fa native-run.sh` through a short `ssh astral-tricep bash -s` call to
+avoid a duplicate. Inspect retained evidence/launch logs with short calls spaced minutes apart.
+
+`scripts/native-smoke.py` is the minimal pre-flight (server, one client, console, customData,
+key, admin, rejoin and restart); `scripts/native-demo.py` demonstrates the full-Pack lifecycle,
+Market key, mandatory Guide refusal and client Pack zip join. The runner defaults to tricep's
+licensed installation at `/games/SteamLibrary/steamapps/common/Valheim`.
+The complete demo passed on 2026-10-05 in `~/lembitu-native-tests/20261005T123002Z-demo/`.
+Its native server admin reply was `Banned users`, F7 used `xdotool` and opened
+`Marketplace_Panel` with eight observed buttons, and the inspected `marketplace.png`
+showed the rendered window. The retained server BepInEx log proves the exact Guide
+exclusion refusal; the actual shipped Pack ZIP client joined afterward. This result predates
+the dedicated-overlay correction above and is lifecycle/input proof, not launch-roster proof.
+
+The library permits only one client at a time. The 2026-10-05 two-process probe failed with
+`ErrorBanned`; the server logged `Peer 76561198021982339 has invalid session ticket` and
+disconnected both peers (`~/lembitu-native-tests/20261005T102206Z-smoke/server-unity.log:219-245`).
+Two-player checks are **owner, end of build**: use two separately licensed Steam accounts, join
+different characters to the same server, stand together and verify each sees the other. No
+authentication workaround is part of the tooling.
 
 ### Repeatable native acceptance
 

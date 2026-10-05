@@ -10,16 +10,18 @@ source games. Copies use Linux reflinks when available (otherwise normal copies)
 Each repetition owns private games, saves, characters, world, IPC and process groups.
 Proof survives cleanup under --output; minimal success is NOT full-pack acceptance.
 Screenshots require human visual inspection; their existence is not rendering proof.
+
+This file is the acceptance coordinator. The engine — installs, config generation and the
+enforced overlay, server/client lifecycles, IPC, evidence retention — lives in
+scripts/native_session.py, which scenario scripts import directly (see its docstring).
 """
 
 import argparse
-import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import platform
-import shutil
 import signal
 import socket
 import subprocess
@@ -29,208 +31,90 @@ import uuid
 from datetime import datetime, timezone
 
 import harness
+import native_session
 
 ROOT = Path(__file__).resolve().parent.parent
 
-
-def require(condition, message):
-    if not condition:
-        raise RuntimeError(message)
-
-
-def save_json(path, value):
-    temporary = path.with_suffix('.tmp')
-    temporary.write_text(json.dumps(value, indent=2, allow_nan=False) + '\n')
-    temporary.replace(path)
+require = native_session.require
+save_json = native_session.save_json
+preferences_initialized = native_session.preferences_initialized
 
 
 def inventory_count(state, prefab):
     return sum(item['stack'] for item in state['inventory'] if item['prefab'] == prefab)
 
 
-def preferences_initialized(profile):
-    # Valheim's first-run Settings stores the chosen language here. Without it, the first
-    # Localization access migrates platform keys through Steamworks before Steam starts; the
-    # throw lands in Herbalist's and AdditiveDamageModifier's Awake, so they never write config.
-    prefs = profile / 'unity3d/unknown/unknown/prefs'
-    return prefs.is_file() and 'name="language"' in prefs.read_text(errors='replace')
-
-
 class Run:
+    """One acceptance repetition on the persistent-session engine.
+
+    The surface is the historical one: private installs and saves under the run directory, a
+    single server, one active client at a time, commands against it, retained evidence.
+    """
+
     def __init__(self, args, directory):
         self.args = args
         self.directory = directory
         self.work = directory / 'work'
-        self.work.mkdir()
-        self.processes = []
-        self.streams = []
-        self.control = None
-        self.client = None
-        self.server = None
-        self.report = {'mode': args.mode, 'ok': False, 'checks': [],
-                       'visual_review_required': ['skills.png', 'combat.png'],
-                       'events_file': 'events.jsonl'}
+        self.work.mkdir(parents=True, exist_ok=True)
+        self.session = native_session.Session(
+            label=directory.name, port=args.port, mode=args.mode, directory=directory,
+            keep_work=getattr(args, 'keep_work', False),
+            display=getattr(args, 'display', None), preferences=getattr(args, 'preferences', None),
+            client_dir=getattr(args, 'client_dir', None), server_dir=getattr(args, 'server_dir', None),
+            startup_timeout=getattr(args, 'startup_timeout', 1500.0),
+            command_timeout=getattr(args, 'command_timeout', 60.0),
+            lifecycle_timeout=getattr(args, 'lifecycle_timeout', 240.0),
+            root=ROOT)
+        self.session.report.update({'visual_review_required': ['skills.png', 'combat.png']})
+        self.current = None
+
+    # ---- historical surface over the engine ---------------------------------------------------
 
     def event(self, name, **fields):
-        entry = {'time': datetime.now(timezone.utc).isoformat(), 'name': name, **fields}
-        with (self.directory / 'events.jsonl').open('a') as stream:
-            stream.write(json.dumps(entry, allow_nan=False) + '\n')
-        save_json(self.directory / 'proof.json', self.report)
+        self.session.event(name, **fields)
+        save_json(self.directory / 'proof.json', self.session.report)
 
     def checked(self, name):
-        self.report['checks'].append(name)
-        self.event('passed', check=name)
-        print(f'pass: {self.directory.name}: {name}', flush=True)
+        self.session.checked(name)
+        save_json(self.directory / 'proof.json', self.session.report)
 
-    def command(self, action, expect_ok=True, error_contains=None, **fields):
-        self.alive()
-        response = harness.request(self.control, dict(action=action, **fields), self.args.command_timeout)
-        self.event('command', command=dict(action=action, **fields), response=response)
-        require(response['ok'] == expect_ok,
-                f'{action}: expected ok={expect_ok}: {response["error"]}')
-        if not expect_ok:
-            require(bool(response['error']), f'{action}: refusal has no error')
-        if error_contains is not None:
-            require(error_contains in response['error'], f'{action}: unexpected refusal: {response["error"]}')
-        return response['state']
+    @property
+    def report(self):
+        return self.session.report
 
     def alive(self):
-        for label, process in [('server', self.server), ('client', self.client)]:
-            if process is not None:
-                require(process.poll() is None, f'{label} exited early: {process.returncode}')
+        self.session.alive()
 
-    def launch(self, name, command, cwd, env):
-        stream = (self.directory / (name + '.log')).open('wb')
-        self.streams.append(stream)
-        process = subprocess.Popen(command, cwd=cwd, env=env, stdout=stream,
-                                   stderr=subprocess.STDOUT, start_new_session=True)
-        self.processes.append(process)
-        self.event('launch', process=name, pid=process.pid)
-        return process
-
-    def stop(self, process):
-        # Only groups created by launch(); never search for or kill other game PIDs.
-        if process is None or process not in self.processes:
-            return
-        for sig, timeout in [(signal.SIGINT, 20), (signal.SIGTERM, 10), (signal.SIGKILL, 5)]:
-            try:
-                os.killpg(process.pid, sig)
-            except ProcessLookupError:
-                break
-            try:
-                process.wait(timeout=timeout)
-                # A runtime wrapper may exit before its child. Escalate only
-                # inside this process group, even after its leader was reaped.
-                for child_signal in [signal.SIGTERM, signal.SIGKILL]:
-                    try:
-                        os.killpg(process.pid, child_signal)
-                    except ProcessLookupError:
-                        break
-                    time.sleep(0.2)
-                break
-            except subprocess.TimeoutExpired:
-                continue
-        self.processes.remove(process)
-        self.event('stopped', pid=process.pid, returncode=process.poll())
-
-    def quit_client(self):
-        client = self.client
-        require(client is not None, 'no owned client to quit')
-        try:
-            response = harness.request(self.control, {'action': 'quit'}, self.args.command_timeout)
-            self.event('command', command={'action': 'quit'}, response=response)
-            require(response['ok'] and response['state'] is None, 'native quit failed: ' + response['error'])
-            # A quit acknowledgement is not process exit. Unity must finish its
-            # save/unmount/Steam shutdown before another client starts.
-            code = client.wait(timeout=self.args.command_timeout)
-            require(code == 0, f'native client shutdown exited {code}')
-            self.event('client-exited', returncode=code)
-        finally:
-            self.stop(client)
-            self.client = None
+    def command(self, action, expect_ok=True, error_contains=None, **fields):
+        return self.session.command(self.current, action, expect_ok=expect_ok,
+                                    error_contains=error_contains, **fields)
 
     def prepare(self, source, name):
-        target = self.work / name
-        target.mkdir()
-        # Do not bring existing plugins, generated configs, saves or logs into a run.
-        excluded = {'BepInEx', 'doorstop_libs', 'doorstop_config.ini', '.doorstop_version',
-                    'start_game_bepinex.sh', 'start_server_bepinex.sh', 'worlds',
-                    'worlds_local', 'characters', 'characters_local'}
-        for entry in source.iterdir():
-            if entry.name in excluded or entry.suffix == '.log':
-                continue
-            subprocess.run(['cp', '-aL', '--reflink=auto', str(entry), str(target / entry.name)], check=True)
-        pack = ROOT / 'lib/bepinex/pack/BepInExPack_Valheim'
-        for name in ['BepInEx', 'doorstop_libs']:
-            shutil.copytree(pack / name, target / name)
-        for name in ['doorstop_config.ini', '.doorstop_version', 'start_game_bepinex.sh']:
-            shutil.copy2(pack / name, target / name)
-        launcher = target / 'start_game_bepinex.sh'
-        launcher.chmod(launcher.stat().st_mode | 0o111)
-        # The pristine loader pack may include sample plugins/config. Own these trees fully.
-        for name in ['plugins', 'patchers', 'config']:
-            tree = target / 'BepInEx' / name
-            if tree.exists():
-                shutil.rmtree(tree)
-            tree.mkdir()
-        dist = ROOT / 'dist'
-        if self.args.mode == 'minimal':
-            dist = self.work / 'minimal-dist'
-            if not dist.exists():
-                (dist / 'plugins').mkdir(parents=True)
-                for filename in ['Lembitu.Harness.dll', 'Newtonsoft.Json.dll']:
-                    found = list((ROOT / 'dist/plugins').rglob(filename))
-                    require(len(found) == 1, f'expected one staged {filename}, found {len(found)}')
-                    shutil.copy2(found[0], dist / 'plugins' / filename)
-        with (self.directory / ('install-' + target.name + '.log')).open('wb') as log:
-            subprocess.run([str(ROOT / 'scripts/install-plugins.sh'), '--dist', str(dist),
-                            str(target / 'BepInEx')], stdout=log, stderr=subprocess.STDOUT, check=True)
-        files = {}
-        for folder in ['plugins', 'patchers', 'config']:
-            for file in sorted((target / 'BepInEx' / folder).rglob('*')):
-                if file.is_file():
-                    with file.open('rb') as stream:
-                        digest = hashlib.sha256()
-                        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
-                            digest.update(chunk)
-                    files[str(file.relative_to(target / 'BepInEx'))] = digest.hexdigest()
-        save_json(self.directory / ('installed-' + target.name + '.json'), files)
-        require(any(path.endswith('Lembitu.Harness.dll') for path in files), 'harness not installed')
-        return target
+        return self.session._prepare(source, name)
 
     def start_client(self, game, name, password, fixtures):
-        self.control = self.directory / (name + '-control')
-        self.control.mkdir()
-        saves = self.work / (name + '-saves')
-        saves.mkdir()
-        env = dict(os.environ, VALHEIM_CLIENT_DIR=str(game), LEMBITU_DISPLAY=self.args.display,
-                   LEMBITU_CHARACTER='N' + uuid.uuid4().hex[:12],
-                   XDG_CONFIG_HOME=str(self.args.preferences))
+        client = native_session.Client(
+            name=name, character='N' + uuid.uuid4().hex[:12], install=game,
+            saves=self.work / (name + '-saves'), control=self.directory / (name + '-control'),
+            fixtures=fixtures)
+        (client.saves).mkdir(parents=True, exist_ok=True)
+        self.session.clients[name] = client
+        client.process = self.session._launch(
+            name, self._client_command(client, password), game, self.session._client_env(client))
+        self.current = name
+
+    def _client_command(self, client, password):
         command = [str(ROOT / 'scripts/test-client.sh'), 'run',
-                   '--control-dir', str(self.control), '--save-dir', str(saves),
-                   '--log-file', str(self.directory / (name + '-unity.log'))]
-        if fixtures:
+                   '--control-dir', str(client.control), '--save-dir', str(client.saves),
+                   '--log-file', str(self.directory / (client.name + '-unity.log'))]
+        if client.fixtures:
             command.append('--fixtures')
         command += [f'127.0.0.1:{self.args.port}', password]
-        self.client = self.launch(name, command, game, env)
+        return command
 
     def wait_ready(self, wrong_password=False):
-        deadline = time.monotonic() + self.args.startup_timeout
-        while time.monotonic() < deadline:
-            status = harness.read_json(self.control / 'status.json')
-            if status:
-                if status.get('error'):
-                    self.event('startup-status', status=status)
-                    require(wrong_password and 'ErrorPassword' in status['error'],
-                            f'client startup failed: {status["error"]}')
-                    return
-                if status.get('ready'):
-                    require(not wrong_password, 'wrong password unexpectedly joined')
-                    self.event('startup-status', status=status)
-                    return
-            self.alive()
-            time.sleep(1)
-        raise RuntimeError('client readiness timed out')
+        self.session._wait_ready(self.session.clients[self.current],
+                                 refuse_contains='ErrorPassword' if wrong_password else None)
 
     def screenshot(self, name):
         path = self.directory / name
@@ -248,6 +132,20 @@ class Run:
         player = self.command('snapshot')['player']
         return self.command('fixture.spawn', target=prefab,
                             x=player['x'] + dx, y=player['y'] + dy, z=player['z'])
+
+    def start_server(self, server_game, password, name):
+        # The regression test drives this directly: one server on a caller-chosen game copy.
+        self.session.server_password = password
+        self.session.server_world = self.session.server_world or 'N' + uuid.uuid4().hex
+        self.session.server_saves = self.work / (name + '-saves')
+        self.session.server_saves.mkdir(parents=True, exist_ok=True)
+        self.session._start_server(server_game, name)
+
+    def quit_client(self):
+        client = self.session.clients[self.current]
+        self.session.quit_client(client)
+        self.session.clients.pop(self.current, None)
+        self.current = None
 
     def gameplay(self):
         state = self.command('snapshot')
@@ -323,7 +221,8 @@ class Run:
         deadline = time.monotonic() + self.args.lifecycle_timeout
         while time.monotonic() < deadline:
             self.alive()
-            response = harness.request(self.control, {'action': 'snapshot'}, self.args.command_timeout)
+            response = harness.request(self.session.clients[self.current].control,
+                                       {'action': 'snapshot'}, self.args.command_timeout)
             self.event('lifecycle-snapshot', response=response)
             if response['ok']:
                 player = response['state']['player']
@@ -340,7 +239,9 @@ class Run:
         deadline = time.monotonic() + 60
         while True:
             before = self.command('snapshot')['player']
-            response = harness.request(self.control, {'action': 'move', 'x': 1, 'z': 0, 'seconds': 1}, self.args.command_timeout)
+            response = harness.request(self.session.clients[self.current].control,
+                                       {'action': 'move', 'x': 1, 'z': 0, 'seconds': 1},
+                                       self.args.command_timeout)
             self.event('respawn-move', response=response)
             if response['ok']:
                 after = response['state']['player']
@@ -352,60 +253,24 @@ class Run:
             time.sleep(1)
         self.checked('natural death, respawn on same endpoint and movement afterward')
 
-    def start_server(self, server_game, password, name):
-        saves = self.work / (name + '-saves')
-        saves.mkdir()
-        env = dict(os.environ, VALHEIM_TEST_DIR=str(server_game))
-        self.server = self.launch(name, [str(ROOT / 'scripts/test-server.sh'), 'run',
-            '-name', 'Native acceptance', '-port', str(self.args.port), '-world', 'N' + uuid.uuid4().hex,
-            '-password', password, '-public', '0', '-savedir', str(saves),
-            '-logFile', str(self.directory / (name + '-unity.log'))], ROOT, env)
-        deadline = time.monotonic() + self.args.startup_timeout
-        while time.monotonic() < deadline:
-            self.alive()
-            log = self.directory / (name + '-unity.log')
-            text = log.read_text(errors='replace') if log.exists() else ''
-            # Steam registration precedes world generation; hosting opens only afterward.
-            if 'Opened Steam server' in text:
-                self.event('server-ready', marker='Opened Steam server')
-                return
-            time.sleep(1)
-        raise RuntimeError('server did not open its Steam listener after world generation')
-
-    def wait_generated_configs(self, games):
-        targets = list((ROOT / 'config/enforced').rglob('*.cfg'))
-        deadline = time.monotonic() + self.args.startup_timeout
-        while time.monotonic() < deadline:
-            self.alive()
-            missing = [str(target.relative_to(ROOT / 'config/enforced'))
-                       for game in games for target in targets
-                       if not (game / 'BepInEx/config' / target.relative_to(ROOT / 'config/enforced')).is_file()]
-            log = self.directory / 'config-client-unity.log'
-            loaded = log.exists() and 'Chainloader startup complete' in log.read_text(errors='replace')
-            if loaded and not missing:
-                self.event('configuration-generated')
-                return
-            time.sleep(1)
-        raise RuntimeError(f'configuration generation timed out; missing: {missing}')
-
     def execute(self):
+        self.session.__enter__()
         server_game = self.prepare(self.args.server_dir, 'server')
         client_game = self.prepare(self.args.client_dir, 'client')
         password = 'N' + uuid.uuid4().hex[:16]
         if self.args.mode == 'full-pack':
-            self.start_server(server_game, password, 'config-server')
-            self.start_client(client_game, 'config-client', password, False)
-            # Configuration generation is setup, not an unconfigured gameplay gate.
-            self.wait_generated_configs([server_game, client_game])
-            self.quit_client()
-            self.stop(self.server)
-            self.server = None
+            self.session.server_password = password
+            self.session.server_world = 'N' + uuid.uuid4().hex
+            self.session.server_saves = self.work / 'config-server-saves'
+            self.session._generate_configs([server_game, client_game])
             for game in [server_game, client_game]:
-                with (self.directory / ('enforce-' + game.name + '.log')).open('wb') as log:
-                    subprocess.run([str(ROOT / 'scripts/apply-enforced-config.sh'),
-                                    str(game / 'BepInEx/config')], stdout=log,
-                                   stderr=subprocess.STDOUT, check=True)
+                self.session._apply_enforced([game])
             self.checked('generated configs and applied enforced settings before measured boot')
+            self.session._apply_dedicated(server_game)
+        self.session.server_password = password
+        self.session.server_world = self.session.server_world or 'N' + uuid.uuid4().hex
+        self.session.server_saves = self.work / 'server-saves'
+        self.session.server_saves.mkdir(parents=True, exist_ok=True)
         self.start_server(server_game, password, 'server')
         # Permission checks precede hostile fixtures so a dead player cannot cause
         # a misleading refusal, and a later fresh character cannot inherit combat.
@@ -418,9 +283,7 @@ class Run:
         self.quit_client()
         # AutoServerPassword saves the password of a good join and enters it itself next time, which
         # turns this check into a join. The refusal under test is the server's, so the client forgets it.
-        saved = client_game / 'BepInEx/config/AutoServerPassword/passwords.json'
-        saved.unlink(missing_ok=True)
-        self.event('saved-password-forgotten', path=str(saved))
+        self.session.forget_saved_password(client_game, label='client')
         self.start_client(client_game, 'wrong-password', password + 'wrong', False)
         self.wait_ready(wrong_password=True)
         self.checked('wrong password rejected with ErrorPassword')
@@ -431,30 +294,11 @@ class Run:
         self.gameplay()
         self.quit_client()
         self.checked('native quit after gameplay and respawn')
-        self.report['ok'] = True
+        self.session.report['ok'] = True
 
     def cleanup(self):
-        if self.client is not None and self.client.poll() is None:
-            try:
-                self.quit_client()
-            except Exception as error:
-                self.event('cleanup-quit-failed', error=str(error))
-        for process in reversed(self.processes[:]):
-            self.stop(process)
-        for stream in self.streams:
-            stream.close()
-        # Preserve generated mod logs/config as well as IPC, screenshots and Unity logs.
-        for game in ['client', 'server']:
-            bepinex = self.work / game / 'BepInEx'
-            if bepinex.exists():
-                for source in list(bepinex.glob('*.log')) + [bepinex / 'config']:
-                    if source.is_dir():
-                        shutil.copytree(source, self.directory / (game + '-config'), dirs_exist_ok=True)
-                    elif source.is_file():
-                        shutil.copy2(source, self.directory / (game + '-' + source.name))
-        if not self.args.keep_work:
-            shutil.rmtree(self.work)
-        self.event('cleanup-complete', work_preserved=self.args.keep_work)
+        self.session.cleanup()
+        save_json(self.directory / 'proof.json', self.session.report)
 
 
 def main():
