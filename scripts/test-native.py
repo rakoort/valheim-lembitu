@@ -160,6 +160,14 @@ class Run:
             require(state['player']['pvp'] == (enabled and pvp_allowed),
                     'PvP toggle did not apply' if pvp_allowed else 'PvP turned on despite the pack holding it off')
         self.checked('native PvP toggles' if pvp_allowed else 'PvP held off by the pack')
+        if self.args.mode == 'full-pack':
+            # Lembitu.Guide opens on a fresh character's first join (ADR-0027) and holds Jotunn's
+            # input block, which also keeps the inventory from closing; a player closes it first.
+            if any(w['name'] == 'LembituGuide' for w in state.get('windows', [])):
+                state = self.command('key', target='F1')
+                require(not any(w['name'] == 'LembituGuide' for w in state.get('windows', [])),
+                        'F1 did not close the first-join guide')
+            self.checked('first-join guide closed with F1')
         for target in ['inventory', 'map']:
             for value in [True, False]:
                 state = self.command('ui', target=target, value=value)
