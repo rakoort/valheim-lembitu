@@ -1,0 +1,12 @@
+# Pack seed for Item_Requirement's ladder refusal line (#87 seeds, wording owned by #90).
+#
+# Item_Requirement has no refusal-message config key: an unmet rung disables the craft button and
+# its tooltip is all it says, formatted from the localization key below (Item_Requirement.dll 1.1.3,
+# `string.Format` over `ir_requires_fmt`; {0} colour, {1} skill, {2} level). The server holds the
+# same override as `config/enforced/ItemRequirement/ItemRequirement.English.yml`; a client needs its
+# own copy, because localization loads before the join and the mod's LocalizationManager scans all
+# of BepInEx for `ItemRequirement.*` (.json/.yml) to override the embedded English strings.
+#
+# The literal `\n` is the shipped convention; TMP renders it as the line break.
+
+ir_requires_fmt: "\\nRequires {1} {2} to make. Making is gated, using is not. Guide: Profession ladder (ladder)."

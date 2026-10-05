@@ -127,11 +127,20 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   shows a tooltip and star clicks change no Calling.
 - **An in-game guide window in a new plugin, `Lembitu.Guide`** (owner, 2026-10-05; ADR-0027):
   chapters of short pages, a hotkey and an inventory button, shown on a character's first join, text in
-  a server-synced file the admin edits; to be implemented. Signs were rejected for a real interface;
-  Almanac was rejected as too broad.
+  a server-synced file the admin edits; implemented 2026-10-05 (#90). Native proof in
+  `~/lembitu-native-tests/20261005T161006Z-guide90d/`: a genuinely fresh character sees First steps
+  once on this join, all seven chapter titles are legible, real F1 closes/opens/closes only the Guide,
+  and normal W movement after close covers 5.781 m. Missing-Guide join refusal was observed in
+  `~/lembitu-native-tests/20261005T123002Z-demo/` (server log lines 1529 and 1531). The final permitted script stopped when
+  its Tab press left the inventory closed; inventory controls, live edits/client non-override and
+  same-character rejoin remain unproven and are listed in the Shakedown. Signs were rejected for a
+  real interface; Almanac was rejected as too broad.
 - **Refusals name their cause and the guide page; firsts open their page once** (owner, 2026-10-05;
   ADR-0027): boss key, profession rung, class equipment rule or tonic key, each message written where
   the refusal is decided; first oath, first Calling window and first party open the matching page.
+  Implemented in Guide's per-character firsts and the WAP/Item_Requirement refusal configuration;
+  native refusal wording and first-oath/first-Calling auto-opening were not reached before the
+  final script stopped. First party is the owner's end-of-build check with two Steam accounts.
 - **Keyboard and mouse only** (owner, 2026-10-05): the Calling and Guide windows are built for
   keyboard and mouse, and the Pack states that controllers are not supported; Oathbound's own actions
   are keyboard-only already (`AuditUX.md` summary item 8).

@@ -34,6 +34,11 @@ specialising is how you do it well.
 Seven things make a character or a guild stronger: class level, talents, professions, gear tiers,
 boss powers, guild progression and magic schools (ADR-0019, ADR-0020).
 
+**The Pack is built for keyboard and mouse; controllers are not supported.** The rules of this page
+are carried in game by the guide window: press **F1** or the Guide button in the inventory (ADR-0027).
+It opens on a character's first join, its text is the server's (`config/enforced/lembitu.guide.md`),
+and a refusal names the rule it hit and the guide page that explains it.
+
 ## Admission
 
 **Admission is by password alone.** The server is public and password-protected; there is no

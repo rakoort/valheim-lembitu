@@ -163,7 +163,7 @@ cancelling connection`.
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | `BlastedSwimmingTarredBugFix` |
 | turbero/DetailedLevels | `Detailed Levels` |
 | LionAndOtter/Oathbound | Not yet read from a join. Jotunn-registered; whether it refuses a client without it is unverified |
-| Lembitu.Oathbound, Lembitu.Callings | Jotunn's module check: both declare `NetworkCompatibility(EveryoneMustHaveMod, Minor)` (`src/plugins/*/…Plugin.cs`). Loaded on both sides and joined together on 2026-10-04; Jotunn logs nothing for a matching set, and the refusal of a client without them is not yet read from a join |
+| Lembitu.Oathbound, Lembitu.Callings, Lembitu.Guide, Lembitu.Guilds | Jotunn's module check: all four declare `NetworkCompatibility(EveryoneMustHaveMod, Minor)` (`src/plugins/*/…Plugin.cs`). Loaded on both sides; Oathbound and Callings joined together on 2026-10-04. Jotunn logs nothing for a matching set, and the refusal of a client without them is not yet read from a join |
 | Azumatt/AzuCraftyBoxes | `AzuCraftyBoxes`. **Read from `AzuCraftyBoxes.dll` 1.8.19, and loaded on the live server 2026-09-16** (`Loading [AzuCraftyBoxes 1.8.19]`, then `Registered 'Azumatt.AzuCraftyBoxes ConfigSync' RPC`), but not yet read from a join: ServerSync announces the version whenever `IsServer()`, and the hand-rolled `AzuCraftyBoxes_VersionCheck` refuses a client that never answers. The refusal itself is what the group's first v8 session confirms (#78) |
 | ValheimModding/Jotunn | mandatory-mod check, not a version line |
 

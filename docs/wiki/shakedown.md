@@ -68,6 +68,11 @@ CreatureManager and EpicLoot were reviewed against the 2026-10-04 decisions and 
 The decisions in `docs/wiki/premium-review.md` and ADR-0025 set starting values; these checks decide
 whether they stand. Tickets #87 to #90 carry the changes.
 
+Guide's final permitted native script (2026-10-05) proved fresh First steps, legible chapter titles,
+real F1 opening/closing and normal movement after close, then stopped because its Tab press did
+not open the inventory. The Guide checks below remain **unproven**, not failed plugin checks;
+evidence: `~/lembitu-native-tests/20261005T161006Z-guide90d/`.
+
 | Check | Do and record | Feeds |
 | --- | --- | --- |
 | Class band | At each biome, one player per class (same gear tier and boss keys) kills the same three creatures and one Enforcer; record time, deaths, and Eitr or potions spent. | ADR-0025's ±25% band; the spell-growth and companion-damage settings of `Lembitu.Oathbound`. |
@@ -78,7 +83,29 @@ whether they stand. Tickets #87 to #90 carry the changes.
 | Karma on early biomes | Highest Karma level reached during Meadows and Black Forest gathering sessions. | Karma thresholds `[90, 180]` (#87). |
 | Boss drops per player | One Bonemass and one Elder kill with two players present and one connected elsewhere: count Wishbones and swamp keys. | EpicLoot `Boss Trophy Drop Mode`; the open check in `docs/wiki/premium-review.md`. |
 | Pets, tames and ships at bosses | At each boss: companions, tames and warship ballistas present, and their share of damage (DamageMeter). | Tuning target; companion damage setting. |
-| World edge | On the exact launch-size world, swim past the old world edge and rejoin while standing in the extended area. | Expand_World_Size open issues #28 and #29 upstream; the size freeze. |
+| Guide inventory controls | Open inventory using the player's actual inventory binding; click Guide to open and again to close; close inventory and walk. Record the placement, open/close states and restored normal input. The native script's Tab press left inventory closed. | ADR-0027; unproven #90. |
+| Guide live content authority | While connected with Guide open, edit the server's guide content file (deployed from `config/enforced/lembitu.guide.md`); observe the new text without relogging. Write conflicting client text and confirm it cannot replace the server's; restore the server file. | ADR-0027; unproven #90, script did not reach this step. |
+| Guide same-character rejoin | Close Guide, log out and rejoin the same character. First steps must not auto-open; use F1 to open/close the rebuilt Guide and then walk normally. | ADR-0027; unproven #90, script did not reach this step. |
+| Guide first oath | A character without the Oath and class seen marker takes its first oath through the Oathstone UI. Its matching Guide page opens once; close, reopen the oath UI and relog without another automatic opening. | ADR-0027; unproven #90, script did not reach this step. |
+| Guide first Calling window | A character without the Calling seen marker opens skills, then Calling. Its matching Guide page opens once; close, reopen Calling and relog without another automatic opening. | ADR-0027; unproven #90, script did not reach this step. |
+| Refusal guide pointers | Without a personal biome boss key, attempt a WAP-gated craft and capture its cause plus `Guide: Boss keys (boss-keys).` With keys but below the profession rung, capture the Item_Requirement recipe tooltip naming skill/level plus `Guide: Profession ladder (ladder).` | ADR-0027; unproven #90, script did not reach these steps. |
+| World edge | On the exact launch-size world, swim past the old world edge and rejoin while standing in the extended area. **2026-10-05 native result: PASS for the tested launch settings** (full Pack, Expand World Size 1.43, radius 13250, stretch 1.325). Meadows food and fixture Swim 100, no god mode; separate 3-second native swims crossed radii 9995→10003.126, 10415→10423.100 and 10495→10503.115, remaining swimming and alive, with stamina above 98 and no observed push-back. Fixtures positioned each crossing start, not the crossings. Same character `Ncf04fd32e45d` quit standing on Mistlands land at (11499.979, 67.997, 0.204), then rejoined at (11499.966, 67.965, 0.256), displacement 0.063 m, alive and not swimming; health was 76.131 before quit and 25 on rejoin. Evidence on astral-tricep: `~/lembitu-native-tests/20261005T150209Z-world-edge-survival/` (`summary.json`, `events.jsonl`, `old-*-before.png`, `old-*-after-0.png`, `extended-standing.png`, `extended-rejoined.png`, retained configs and logs). Logs contain CreatureManager Deathward checkpoint errors, OdinEye bind failure, microphone and CloudShadows initialization errors, and server `libParty.so` load failure; no Expand World Size error was found. This does not establish fish swimming, every sector, Ashlands or 2× radius behavior. | Upstream [#28](https://github.com/JereKuusela/valheim-expand_world_size/issues/28) (ghost water) and [#29](https://github.com/JereKuusela/valheim-expand_world_size/issues/29) (endless loading after extended-area disconnect) were not reproduced for this player at launch size; the size freeze. |
+| Food after rejoin | Eat, quit, rejoin: whether food buffs and health survive. The 2026-10-05 world-edge run rejoined a fed character at 25 health (from 76), the no-food value; vanilla or a Pack interaction is not yet known (Venture_Logout_Tweaks restores status effects). | `docs/modstack.md`, Known interactions. |
+
+## Before the first session: the owner's two-player checks
+
+The test host has one Steam account, and the server refuses a second connection from it
+(`ErrorBanned`, 2026-10-05), so every check that needs two players at once is the owner's, run on
+the Shakedown server or a test server before players are invited (owner, 2026-10-05). Use two
+characters on two Steam accounts, both installed from the published Pack.
+
+| Check | Steps | Pass when |
+| --- | --- | --- |
+| Join button | Start a Pack-installed client and press "Join Lembitu" on the main menu. | It connects to `85.253.16.237:2456` and asks for the password. |
+| Acceptance gate | Two players: kill Eikthyr together; both log out and back in; build and use a ward, a portal pair and a raft. | Both hold the Eikthyr key after the reconnect; the ward refuses the other player until permitted; the portal and the raft work for both (`docs/modstack.md`, Acceptance gate). |
+| Guild flow | Both new characters wake at the stones. A founds a guild and claims a region at its portal stone. B founds a second guild, tries A's stone, claims another region, then disbands. B joins A's guild and uses a free region's stone. B dies with no bed, uses A's region portal, leaves the guild, dies again with no bed. Restart the server. | B's claim on A's stone is refused; disbanding frees B's region; as a non-leader B gets no claim window; as A's member B respawns in A's region and passes its portal; after leaving B respawns at the stones; A's claim survives the restart (`Lembitu.Guilds`, ADR-0028). |
+| Party page — owner, end of build | Use two separately licensed clients. On a character without `groups` recorded in `lembitu.guide.seen`, form a SocialSystem party through its UI. Close Guide, leave/rejoin the party, then relog. | Guilds, parties and the Market opens once on the first party; leaving/rejoining and relogging do not auto-open it again (`Lembitu.Guide`). |
+| Wishbone and swamp key | With both connected and one of them away from the fight, kill Bonemass and the Elder. | Count Wishbones and swamp keys: one per kill matches the decision; one per connected player means EpicLoot's mode does not reach these two drops (`docs/wiki/premium-review.md`, open check). |
 
 ## Decisions
 

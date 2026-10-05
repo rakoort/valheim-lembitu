@@ -1,7 +1,7 @@
 # ADR-0027: An in-game guide window, in a third plugin of ours
 
 Date: 2026-10-05
-Status: Accepted; not yet implemented
+Status: Accepted; implemented 2026-10-05 in `src/plugins/Lembitu.Guide`
 Amends: ADR-0022 (two plugins of ours)
 
 The Run's rules (an oath before class XP, the Calling, the profession ladder, personal boss keys,

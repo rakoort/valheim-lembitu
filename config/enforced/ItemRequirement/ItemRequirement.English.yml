@@ -1,0 +1,10 @@
+# ItemRequirement's tooltip text, overridden on the server (2026-10-05, ADR-0027): the refused
+# craft names its cause - the profession rung - and the guide page that explains the ladder, in the
+# contract's refusal format. This file deploys beside the mod's own YAML rules in
+# BepInEx/config/ItemRequirement/, where LocalizationManager picks up any ItemRequirement.*.yml
+# under BepInEx and overrides the English strings embedded in the DLL (decompiled 2026-10-05:
+# string.Format("{0}"=colour, "{1}"=skill, "{2}"=level); the literal \n is TextMeshPro's line break,
+# same as the shipped default). The mod itself has no refusal-message setting: an unmet rung
+# disables the craft button and cancels silently, so this tooltip line is its refusal text.
+# PackConfig: clients need the same file as a Pack seed (config/client/ItemRequirement.English.yml).
+ir_requires_fmt: "\\nRequires {1} {2} to make. Making is gated, using is not. Guide: Profession ladder (ladder)."

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.guide</PluginGuid>
+    <Version>0.1.0</Version>
+    <Description>Guide (ADR-0027): an in-game rulebook window - chapters of short pages, opened by a hotkey and an inventory button, shown once on a character's first join, with its text in a server-synced file the admin edits. Reads the first-oath, first-Calling and first-party state to open matching pages; patches nothing.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <!-- Compiled against the pinned packages scripts/stage-stack.sh puts in dist/plugins/. Oathbound's
+       Warrior.Core is read for the class record, SocialSystem for the client party state; both are
+       publicized so the private and internal members we read are visible (the build adds an
+       IgnoresAccessChecksTo attribute, which the game's Mono honours). We never patch either. -->
+  <ItemGroup>
+    <Reference Include="Warrior.Core" Private="false" StagedMod="Oathbound">
+      <HintPath>$(PluginDistDir)Oathbound/WarriorRpg/Warrior.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="SocialSystem" Private="false" StagedMod="SocialSystem">
+      <HintPath>$(PluginDistDir)SocialSystem/SocialSystem.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="Jotunn" Private="false" StagedMod="Jotunn">
+      <HintPath>$(PluginDistDir)Jotunn/Jotunn.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
