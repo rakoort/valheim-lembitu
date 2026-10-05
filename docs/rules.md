@@ -53,9 +53,10 @@ An eleventh simultaneous connection has not yet been observed (#9).
 **A guild is who you belong to.** Northarun/Guilds supplies ranks, guild chat, a shared vault,
 guild-bound wards, a banner territory, guild levels, upgrades and achievements. Founding is free,
 a guild has at most five members, and at most three guilds exist because there are three start
-regions to claim (ADR-0019, ADR-0028). Guild progress buys base safety later in the Run: the monster
-ward at guild level 10 and comfort upgrades at 12 and 20. Coin donations buy guild XP at 10 coins a
-point, so trade feeds the guild.
+regions to claim (ADR-0019, ADR-0028). A player who leaves or is kicked may join or found another
+guild at once; there is no waiting period (`RejoinCooldownHours = 0`). Guild progress buys base
+safety later in the Run: the monster ward at guild level 10 and comfort upgrades at 12 and 20. Coin
+donations buy guild XP at 10 coins a point, so trade feeds the guild.
 
 **Guilds form in game, at the stones.** Every new character wakes at the sacrificial stones, beside
 the Oathstone, for as long as they belong to no guild holding a region: meet, take an oath, choose a
