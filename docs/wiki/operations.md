@@ -221,12 +221,14 @@ once, by a controlled installation, and do not re-create the host from scratch m
 
 ### Pre-launch checklist
 
-Five steps stand between the Shakedown Pack and players (owner answers 2026-10-05):
+Seven steps stand between the Shakedown Pack and players (owner answers 2026-10-05):
 
 1. **No roster.** Guilds form in game and claim start regions at their portals (ADR-0028), so
    `config/dedicated/SeparateSpawns.groups.json` keeps its three empty regions (Skadi, Fenrir,
    Muninn), and `Lembitu.Guilds` assigns players to them by guild. Superseded: the 2026-10-04 plan to
-   roster each guild's Steam IDs before the Run world.
+   roster each guild's Steam IDs before the Run world. The live roster still lists three Steam IDs
+   in Skadi from the 2026-10-03 world; it is moved aside, not deleted, before the Shakedown world's
+   first boot, so the committed empty roster seeds it.
 2. **ServerQuickConnect is seeded.** `config/client/radamanto.ServerQuickConnect.cfg` points the
    main-menu button "Join Lembitu" at `85.253.16.237:2456`, astral-bicep's public IPv4 on
    2026-10-05, with a blank password, which stays with each player. The address is not stable: it was
@@ -241,6 +243,16 @@ Five steps stand between the Shakedown Pack and players (owner answers 2026-10-0
    a webhook URL is set in the server's DiscordConnector config; the owner deferred it.
 5. **The server password is kept.** `SERVER_PASS` in bicep's `launch.secret.env` is set (eight
    characters, from 2026-10-03), and the owner kept it for the Shakedown.
+6. **The Shakedown gets its own world, `LembituShakedown`** (owner, 2026-10-05):
+   `config/launch/launch.env.example` names it, and the 2026-10-03 world `Lembitu` stays on disk.
+   A new world name means re-creating the container, since its environment is fixed at
+   `docker run`.
+7. **The enforced overlay and the dedicated config are in force before the world is generated.**
+   Expand_World_Size bakes its radius and stretch into terrain at generation (ADR-0018), and the live
+   file still reads 12500 / 1.25. The new mods have never written their configs on this host either,
+   and the applier refuses a missing target. So a disposable config-generation boot comes first,
+   then the overlay and `scripts/apply-dedicated-config.sh`, then the Shakedown world's first boot,
+   the same order `scripts/test-native.py` uses.
 
 ## Backups — #20
 
