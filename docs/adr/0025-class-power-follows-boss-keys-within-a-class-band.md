@@ -1,7 +1,7 @@
 # ADR-0025: Class power follows boss keys, within a class band
 
 Date: 2026-10-05
-Status: Accepted; not yet implemented
+Status: Accepted; implemented 2026-10-05 in `src/plugins/Lembitu.Oathbound`
 Amends: ADR-0020 and ADR-0022 (scope of `Lembitu.Oathbound`)
 
 ## Context

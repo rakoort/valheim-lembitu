@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.oathbound</PluginGuid>
-    <Version>0.1.0</Version>
-    <Description>Adapts Oathbound (ADR-0022): respec and class switch reset to level 1, kill XP shared within the killer's party, and the gathering tools open to every class.</Description>
+    <Version>0.2.0</Version>
+    <Description>Adapts Oathbound (ADR-0022, ADR-0025): respec and class switch reset to level 1, kill XP shared within the killer's party, the gathering tools open to every class, class power capped by personal boss keys, and server-locked spell growth and companion damage.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,10 @@
     </Reference>
     <Reference Include="SocialSystem" Private="false" StagedMod="SocialSystem">
       <HintPath>$(PluginDistDir)SocialSystem/SocialSystem.dll</HintPath>
+      <Publicize>true</Publicize>
+    </Reference>
+    <Reference Include="VentureValheim.Progression" Private="false" StagedMod="World_Advancement_Progression">
+      <HintPath>$(PluginDistDir)World_Advancement_Progression/Plugins/VentureValheim.Progression.dll</HintPath>
       <Publicize>true</Publicize>
     </Reference>
     <Reference Include="Jotunn" Private="false" StagedMod="Jotunn">

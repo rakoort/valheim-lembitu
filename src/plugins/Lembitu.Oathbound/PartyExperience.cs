@@ -43,8 +43,8 @@ internal static class PartyExperience
         s_fullPartyBonus = config.Bind("Party", "FullPartyBonus", 0.5f, new ConfigDescription(
             "Extra XP a full party shares on top of the kill's own, as a fraction of it. The bonus grows linearly from 0 for one member in range to this for FullPartySize members.",
             new AcceptableValueRange<float>(0f, 2f), OathboundPlugin.AdminOnly()));
-        s_fullPartySize = config.Bind("Party", "FullPartySize", 8, new ConfigDescription(
-            "Members in range at which the party bonus is complete: SocialSystem's party cap.",
+        s_fullPartySize = config.Bind("Party", "FullPartySize", 4, new ConfigDescription(
+            "Members in range at which the party bonus is complete: hunting parties are usually two to four (2026-10-04 premium review).",
             new AcceptableValueRange<int>(2, 16), OathboundPlugin.AdminOnly()));
     }
 

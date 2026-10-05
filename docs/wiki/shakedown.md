@@ -75,6 +75,7 @@ evidence: `~/lembitu-native-tests/20261005T161006Z-guide90d/`.
 
 | Check | Do and record | Feeds |
 | --- | --- | --- |
+| Power level in play | Not yet seen in game (the 2026-10-05 native run, `20261005T161527Z-oathbound88-final`, stopped in its own setup). A class-level-30 Mage with no boss keys hits a target as hard as a level-10 Mage; after Eikthyr and the Elder it hits 2.16/1.36 as hard. A Hunter's wolf and a Dragonsworn whelp follow the same cap. With `[Power] SpellGrowth` lowered on the server, spell damage falls on a connected client and a client's own edit does nothing. Wolf, whelp and skeleton hits are 0.75 of Oathbound's. Proven on 2026-10-05: talent points at level 30 are untouched by the cap, the bow refusal names its rule and page, every feature logs `on`. | ADR-0025; `Lembitu.Oathbound` (#88). |
 | Class band | At each biome, one player per class (same gear tier and boss keys) kills the same three creatures and one Enforcer; record time, deaths, and Eitr or potions spent. | ADR-0025's ±25% band; the spell-growth and companion-damage settings of `Lembitu.Oathbound`. |
 | Boss margin | Every boss: attempts to the first kill, group size, average gear tier. Eight average players should win on a first or second try; six or seven skilled players should be able to. | The tuning target in `CONTEXT.md`; `levels.yml` boss values. |
 | Guild pace | Per guild: guild XP per member-hour by source, and guild level when each boss falls. | Guilds `LevelXpGrowth = 1.15` (#87). |

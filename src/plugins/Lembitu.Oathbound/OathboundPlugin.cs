@@ -16,14 +16,19 @@ namespace Lembitu.Oathbound;
 [BepInDependency(Jotunn.Main.ModGuid)]
 [BepInDependency(OathboundGuid)]
 [BepInDependency(SocialSystemGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(WorldAdvancementGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
 public sealed class OathboundPlugin : BaseUnityPlugin
 {
     private const string OathboundGuid = "local.warrior.rpg";
     internal const string SocialSystemGuid = "M2Valheim.SocialSystem";
+    internal const string WorldAdvancementGuid = "com.orianaventure.mod.WorldAdvancementProgression";
 
     /// <summary>The Oathbound release every hook below was read from (docs/modstack.md).</summary>
     private const string VerifiedOathbound = "0.21.14";
+
+    /// <summary>The World Advancement Progression release the boss-key counts were read from.</summary>
+    private const string VerifiedWorldAdvancement = "1.0.0";
 
     private Harmony? _harmony;
 
@@ -33,6 +38,8 @@ public sealed class OathboundPlugin : BaseUnityPlugin
     {
         ManualLogSource log = Logger;
         PartyExperience.Configure(Config, log);
+        ClassPower.Configure(Config);
+        CompanionDamage.Configure(Config);
 
         BaseUnityPlugin oathbound = Chainloader.PluginInfos[OathboundGuid].Instance;
         if (!oathbound.enabled)
@@ -45,6 +52,10 @@ public sealed class OathboundPlugin : BaseUnityPlugin
         {
             log.LogWarning($"Oathbound {running} is running; these hooks were read from {VerifiedOathbound}. Each feature re-verifies its own.");
         }
+        if (Chainloader.PluginInfos.TryGetValue(WorldAdvancementGuid, out BepInEx.PluginInfo? wap) && wap.Metadata.Version.ToString() != VerifiedWorldAdvancement)
+        {
+            log.LogWarning($"World Advancement Progression {wap.Metadata.Version} is running; the boss-key counts were read from {VerifiedWorldAdvancement}.");
+        }
 
         _harmony = new Harmony(PluginInfo.Guid);
         Hooks.Enable(_harmony, log, "Respec resets the class to level 1", ClassReset.RespecPlan);
@@ -54,6 +65,9 @@ public sealed class OathboundPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "Kill XP is split within the killer's party", PartyExperience.Plan);
         Hooks.Enable(_harmony, log, "Every class may equip the fishing rod", GatheringTools.FishingRodPlan);
         Hooks.Enable(_harmony, log, "A Monk's bare hands raise Mining and Wood Cutting", GatheringTools.MonkGatheringPlan);
+        Hooks.Enable(_harmony, log, "Class power follows boss keys", ClassPower.Plan);
+        Hooks.Enable(_harmony, log, "Companion damage follows the server multiplier", CompanionDamage.Plan);
+        Hooks.Enable(_harmony, log, "An equipment refusal names the guide page", EquipmentGuide.Plan);
     }
 
     private void OnDestroy() => _harmony?.UnpatchSelf();

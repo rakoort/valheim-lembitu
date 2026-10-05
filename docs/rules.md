@@ -71,8 +71,9 @@ things: map positions, and kill XP. It never answers "who owns this".
   distance that earns a boss key. A member further away, disconnected or dead earns nothing and does
   not count. Being in a party never waives proximity. The killer always counts, wherever they stand,
   so partying never costs the killer a kill.
-- The party's total rises with the members in range: 100% of the kill for one, about 107% for two,
-  about 121% for four, **150% for eight**, which is 18.75% of the kill each.
+- The party's total rises with the members in range: 100% of the kill for one, about 117% for two,
+  about 133% for three, **150% for four and every larger party** (ADR-0022): 58% of the kill each in
+  a pair, 44% each in a trio, 37.5% each at four and 18.75% each at eight.
 
 - Register: *Intended* (`Lembitu.Oathbound`, `config/enforced/lembitu.oathbound.cfg`).
 
@@ -97,6 +98,14 @@ that hit hard. Each level gives one talent point. There is no cap on points and 
 Oathbound's XP pace, so a level-80 character owns all 79 nodes; level 80 needs about 2,500 to 3,000
 kills (ADR-0022).
 
+**Class power follows boss keys.** Everything that grows with class level — spells, Warlock summons,
+wards and Wither, Monk fists, class abilities, the Hunter's wolf and the Dragonsworn whelp, and the
+defense tree's pool — reads the **power level** instead: your class level capped at ten per personal
+boss key, so 10 before Eikthyr and 80 after Fader (ADR-0025). Grinding kills without bosses no longer
+outgrows the gear gate. Talent points, class XP and the class level itself are untouched. Spell
+growth stays 4% per power level behind a server-locked setting (`lembitu.oathbound.cfg`, `[Power]
+SpellGrowth`), and companions start the Shakedown at 0.75× damage (`[Companions] DamageMultiplier`).
+
 **Respec and class switch cost the class level.** Resetting your talents puts the class back to
 level 1, and so does switching to another class: both the class you leave and the class you take
 start over. You level one class at a time. This is cheap early and expensive late (ADR-0020,
@@ -107,6 +116,7 @@ either class has progress asks once more.
 and bow rules: Mages, Warlocks, Rangers, Monks and Rogues wear no metal armour, Shieldbearers and
 Valkyries carry no bow, and so on. Every class may use the fishing rod, and a Monk's bare-handed blows
 on rocks and trees train Mining and Wood Cutting, so no class is shut out of a profession (ADR-0022).
+A refused item names the rule and points at the guide: "Guide: Oath and class (oath-and-class)".
 
 - Register: *Intended* (`Lembitu.Oathbound`).
 

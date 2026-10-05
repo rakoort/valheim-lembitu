@@ -182,12 +182,14 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   Shakedown measures it.
 - **Class power follows boss keys** (owner, 2026-10-05; ADR-0025). Oathbound's level-scaled power
   reads a power level: the class level capped at ten per personal boss key. Talent points, XP and the
-  class level are untouched; to be implemented in `Lembitu.Oathbound`.
+  class level are untouched; implemented 2026-10-05 in `Lembitu.Oathbound`.
 - **Spell growth is measured before it is trimmed** (owner, 2026-10-05; ADR-0025). Mage and Warlock
-  spells keep 4% per power level, behind a server-locked setting in `Lembitu.Oathbound`; the
+  spells keep 4% per power level, behind a server-locked setting in `Lembitu.Oathbound` (`[Power]
+  SpellGrowth`, implemented 2026-10-05); the
   Shakedown lowers it only if casters fall outside the class band.
 - **Companions start the Shakedown at 0.75× damage** (owner, 2026-10-05; ADR-0025): wolf, whelp
-  and Warlock skeletons, through a server-locked multiplier in `Lembitu.Oathbound`, on top of the
+  and Warlock skeletons, through a server-locked multiplier in `Lembitu.Oathbound`
+  (`[Companions] DamageMultiplier`, implemented 2026-10-05), on top of the
   power-level cap. Fact: a level-35 wolf has about 216 health and bites for 44 before talents
   (`HunterTree.cs:112-117`); companion kills earn the owner class XP (ADR-0022).
 - **Combat difficulty is fixed whoever is online or present; rewards for grouping stay** (owner,
@@ -241,6 +243,14 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   use any weapon; only metal armour is barred (`Equipment.cs:63-67`). The Hunter's wolf has
   80 + 4 × (level − 1) health and 10 + (level − 1) bite damage before talents (`HunterTree.cs:112-117`).
   Not measured in play: Eitr sustain, bolt hit rates and pet uptime.
+- **The #88 native boundary is explicit** (native, 2026-10-05): all three new features logged `on`,
+  and Shieldbearer/Valkyrie bow refusals named their melee rule and the Oath and class page in
+  `/home/ra/lembitu-native-tests/20261005T161527Z-oathbound88-final/acceptance88.json`; the
+  Shieldbearer screenshot visibly shows the full message. A retained level-30 Mage with no keys
+  had 29 available talent points in `20261005T135909Z-oathbound88` (`step-0012.json`). Class-power
+  and companion ratios, and spell-growth/client-override behaviour remain **unproven**: the final
+  scene teleport was refused before taking Mage, and the Hunter picker did not expose its button.
+  These are Shakedown checks, not claims that startup or one spell hit proved the balance formulas.
 - **What other games established about balance** (research, 2026-10-05; five handbacks in
   `local/premium-review-2026-10-04/Research-*.md`, each with full citations). Facts only; the
   decisions above are the owner's.
