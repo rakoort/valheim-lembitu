@@ -51,8 +51,11 @@ CONTAINER_PLUGINS_DIR="/opt/valheim/bepinex/BepInEx/plugins"
 # ZNet.OnNewConnection prefix and disconnects a client that never answers, so installing it
 # server-side would refuse exactly the players it was shipped to please, while synchronising
 # nothing (#78). The rest are interface only and sync nothing: AzuClock, MouseTweaks, and from the
-# 2026-10-05 premium review CraftingSearch and CompactStatusEffects (#87).
-CLIENT_ONLY=(AzuHoverStats AzuClock MouseTweaks CraftingSearch CompactStatusEffects)
+# 2026-10-05 premium review CraftingSearch and CompactStatusEffects (#87). From 2026-10-06,
+# LiveExperienceTracker (a skill-XP HUD) and oathbound_addon (Oathbound Addon: Hunter wolf orders
+# that drive the owner's own wolf AI on the client); neither has anything to run or sync on a server.
+CLIENT_ONLY=(AzuHoverStats AzuClock MouseTweaks CraftingSearch CompactStatusEffects
+  LiveExperienceTracker oathbound_addon)
 
 # shellcheck source=lib/ledger.sh
 . "$REPO_ROOT/scripts/lib/ledger.sh"

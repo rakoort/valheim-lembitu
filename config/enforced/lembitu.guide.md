@@ -35,16 +35,22 @@ Respec and switching class cost the class level: the class you leave and the cla
 
 Classes keep their equipment rules - mages wear no metal armour, shieldbearers carry no bow - except that every class may use the fishing rod, and a Monk's bare hands train Mining and Wood Cutting.
 
+A Hunter orders the wolf with Y: free hunt, stay, heel or recall. Stay and heel keep it out of fights it would otherwise start; recall breaks off a fight at once.
+
 page calling | Calling
 Your Calling is four focus professions: two Land, one Craft, one Road.
 
 Open the Calling window from the Calling button in the skills window. Read it anywhere; choose or change focuses only at the Oathstone. The stars on the profession rows are read-only markers. Dropping a focus asks first and names the level the skill falls to.
 
-A focus levels at full speed to 100. Every other profession levels at full speed to 30, at half speed to 60, a quarter to 80 and a tenth beyond. Nothing is capped: a non-focus skill needs about 1.8 times the work to reach 60 and nearly six times to reach 100.
+A focus levels at full speed to 100. Every other profession levels at full speed to 10, at half speed to 60, a quarter to 80 and a tenth beyond. Nothing is capped: a non-focus skill needs about twice the work to reach 20 to 60 and six times to reach 100.
 
-Until you choose, every profession follows the slow curve, which changes nothing below 30.
+Until you choose, every profession follows the slow curve, which changes nothing below 10.
 
 A focus keeps its XP when you die. Dropping a focus costs what it gave: the skill falls to its hidden, slower level.
+
+Every skill gain shows for a moment above your health bar, with the progress to the next level, so you can watch a focus outpace a non-focus skill.
+
+Wood Cutting, Fishing and Hauling each gain a milestone at 50. Wood Cutting: a chop can split a whole fallen log into wood. Fishing: fish come to your float sooner. Hauling: walking over your carry limit costs no stamina, up to one and a half times the limit. Mining, Farming, Animal Handling and Sailing have theirs between 40 and 70; Exploration's markers unlock biome by biome.
 
 Road is Explorer (Exploration), Sailing and Hauling. Explorer reveals more of your personal map as it grows, from 100 m to 300 m at 100. Its temporary resource markers unlock at Meadows 1, Black Forest 10, Swamp 20, Mountains 30, Plains 40, Mistlands 50 and Ashlands 60; dungeons and caves at 10. Marker reach grows from 20 m at level 1 to 64 m at 100. BetterMap does not add automatic resource pins.
 
@@ -93,3 +99,12 @@ Class XP: you lose half your progress into the current class level, never a leve
 Skills: each non-focus skill loses 5% of its level, but only above your skill floor. The floor rises by 10 for every personal boss key you hold and never raises a skill. Focus professions lose nothing.
 
 Your tombstone holds what vanilla death rules take; you go back for it. Carried items and durability are otherwise untouched.
+
+page food | Food and the cook
+Food spoils. Most dishes keep two to four days of server time, and the time left shows on the dish. Fresh food gives 10% more than usual; stale food gives about 17% less. Eat it fresh.
+
+Jerky, sausages, smoked fish, smoked moose meat and honey never spoil: take them on trips. Nothing spoils in the Mountains or the Deep North, and an Icebox, built from Mountains materials, stops the clock at home.
+
+A dish carries its cook's grade: grade 1 below Cooking 25, then one more per 25 levels, 5 at 100. Each grade above 1 adds 2.5% to everything the dish gives and 12.5% to how long it keeps. A graded dough or uncooked pie keeps its grade in the oven. The grade shows on the dish.
+
+Work meals: while one of these is among your foods, a profession counts as 10 levels higher for its perks, never for recipes. Boar jerky: Exploration. Deer stew: Wood Cutting. Sausages: Mining. Carrot soup: Farming. Serpent stew: Sailing. Wolf jerky: Hauling. Blood pudding: Animal Handling. Fish wraps: Fishing.

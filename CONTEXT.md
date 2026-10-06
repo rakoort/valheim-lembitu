@@ -107,6 +107,12 @@ The allowed spread in strength between classes: at the same biome, gear tier and
 class kills a standard enemy within 25% of the others' time. Each class still keeps its own strength.
 _Avoid_: class parity, class balance
 
+**Profession band**:
+The allowed spread between the professions a Calling chooses from: within Land, Craft or Road, the
+best pick saves at most 1.25 times the time of the worst, per hour of play for a player alone. Craft
+is judged by how much its goods are wanted rather than by speed (ADR-0030).
+_Avoid_: profession balance, profession parity
+
 **Power level**:
 The level a class's level-scaled power reads: its class level, capped at ten per personal boss key
 (ADR-0025).
@@ -139,6 +145,22 @@ The level a profession needs to craft what it makes, ten per biome of the item's
 none in the Meadows to 70 in the Deep North. Each step is a **rung**. Only crafting is gated; anyone
 may use what a specialist made (ADR-0023).
 _Avoid_: master recipe, recipe tier, gate level
+
+**Cook's grade**:
+The grade a dish carries from the Cooking level of the cook who made it, 1 below 25 and one more per
+25 levels, 5 at 100. Each grade above 1 makes the dish give more and keep longer; it travels through
+a cooking station and the Market (ADR-0029).
+_Avoid_: food quality, stars, tier
+
+**Work meal**:
+A dish that, while it is one of the eater's foods, makes one Land or Road profession count as ten
+levels higher for its perks, never for a rung (ADR-0029).
+_Avoid_: buff food, profession food
+
+**Freshness**:
+How much of its shelf life a food has left. A fresh dish gives 110% of vanilla, a stale one 82.5%,
+and a spoilt one rots. Preserved dishes, cold land and the Icebox stop the clock (ADR-0029).
+_Avoid_: decay (that is vanilla's fading of an eaten food), quality
 
 **Gear tier**:
 A magic item's rarity and the effects rolled on it.

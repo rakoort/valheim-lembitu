@@ -42,9 +42,9 @@
 #
 # Client-only mods were cut by the 2026-09-16 review, because a mod the server cannot enforce
 # behaves differently for every player: AdminQoL proved it and BoneMod fell to the same argument
-# (#70). #78 narrowed that to gameplay-bearing mods, so the Pack carries three presentation-only
-# client mods again - AzuHoverStats, AzuClock and MouseTweaks. They enforce nothing, and a player
-# who removes them sees vanilla.
+# (#70). #78 narrowed that to gameplay-bearing mods whose settings the server cannot hold, so the
+# Pack carries client-only mods again; scripts/install-plugins.sh's CLIENT_ONLY list names them.
+# None enforces anything, and a player who removes one loses only that convenience.
 #
 # Staging is delegated to scripts/stage-stack.sh, which owns pin parsing, hash verification,
 # dependency closure and the package-layout normalisation. This script adds what is specific to a

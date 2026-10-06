@@ -2,7 +2,10 @@
 
 Date: 2026-10-04
 Status: Accepted; implemented in `Lembitu.Callings` (ADR-0022, 2026-10-04); the Calling window and
-the read-only stars of the 2026-10-05 amendment implemented 2026-10-05 (#89)
+the read-only stars of the 2026-10-05 amendment implemented 2026-10-05 (#89); amended by
+[ADR-0029](0029-the-cook-grades-dishes-feeds-the-trades-and-food-spoils.md) (what a Cooking focus earns)
+and [ADR-0030](0030-the-calling-choice-is-balanced-by-time-saved-within-a-band.md) (the steep curve
+starts at 10)
 Amends: ADR-0019 (professions), ADR-0020 (scope of our own plugin code)
 
 ## Context
@@ -49,14 +52,14 @@ guilds trade for speed, surplus and specialists who are offline (owner, 2026-10-
 first written as "a guild that lacks one buys from another guild").
 
 **Focus professions level at full speed to 100. Every other profession skill levels on a steep
-curve**: full speed to 30, half speed to 60, a quarter to 80, a tenth beyond. Nothing is capped,
-so anyone can master anything given enough time; a focus gets there several times faster. Combat
-and Body skills are not affected. The numbers are tuned in the Shakedown.
+curve**: full speed to 10, half speed to 60, a quarter to 80, a tenth beyond (full speed to 30 until
+ADR-0030). Nothing is capped, so anyone can master anything given enough time; a focus gets there
+several times faster. Combat and Body skills are not affected. The numbers are tuned from play.
 
 **Changing a focus knocks the dropped skill down to what it would have been without the focus.**
 Every profession skill carries a shadow level that earns the same XP at the non-focus rate and
 drains on death as a non-focus skill would. A focus skill itself keeps its XP on death (ADR-0022).
-Dropping a focus sets the real level to the shadow level. Below 30 the two differ only by the deaths
+Dropping a focus sets the real level to the shadow level. Below 10 the two differ only by the deaths
 the focus absorbed, so early switching is nearly free; a master who switches gives up exactly the
 advantage the focus gave, in gain and in death protection.
 

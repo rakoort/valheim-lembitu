@@ -28,7 +28,7 @@ internal sealed class HarnessControl
     private PlayerController? controller;
     private bool controllerEnabled;
     private InventoryGui? crafting;
-    private string fixtureSpawned = "";
+    private string fixtureSpawned = "", fixtureZdo = "";
     private string[]? fixturePrivateKeys;
     private ConsoleState? consoleLines;
     private static Terminal? capturingConsole;
@@ -105,6 +105,7 @@ internal sealed class HarnessControl
                 request = parsed;
                 File.Delete(path);
                 fixtureSpawned = "";
+                fixtureZdo = "";
                 fixturePrivateKeys = null;
                 consoleLines = null;
                 keyResult = null;
@@ -285,7 +286,7 @@ internal sealed class HarnessControl
                 if (used == null) throw new ArgumentException("inventory item ID not found");
                 if (command.target.Length > 0)
                 {
-                    GameObject hover = Target(command.target);
+                    GameObject hover = Part(Target(command.target), command.text);
                     if (hover.GetComponentInParent<Hoverable>() == null)
                         throw new ArgumentException("use target is not hoverable");
                     if (Vector3.Distance(player.transform.position, hover.transform.position) > player.m_maxInteractDistance)
@@ -326,7 +327,7 @@ internal sealed class HarnessControl
             }
             case "interact":
             {
-                GameObject target = Target(command.target);
+                GameObject target = Part(Target(command.target), command.text);
                 if (target.GetComponentInParent<Interactable>() == null) throw new ArgumentException("target is not interactable");
                 if (Vector3.Distance(player.transform.position, target.transform.position) > player.m_maxInteractDistance)
                     throw new InvalidOperationException("target outside interaction range");
@@ -437,6 +438,78 @@ internal sealed class HarnessControl
                 yield return null;
                 break;
             }
+            case "fixture.hit":
+            {
+                // The player's hit, sent the way a weapon's is: vanilla Character.Damage RPCs it to the
+                // target's owner, whose RPC_Damage applies it and starts any poison there.
+                RequireFixtures();
+                Character victim = Target(command.target).GetComponent<Character>() ?? throw new ArgumentException("hit target is not a character");
+                if (victim is Player) throw new ArgumentException("hit target must be an NPC");
+                if (!Finite(command.x) || !Finite(command.y) || command.x < 0 || command.y < 0 || command.x + command.y <= 0)
+                    throw new ArgumentException("hit needs non-negative poison (x) and blunt (y) damage, not both zero");
+                var hit = new HitData { m_point = victim.GetCenterPoint(), m_dir = (victim.transform.position - player.transform.position).normalized };
+                hit.m_damage.m_poison = command.x;
+                hit.m_damage.m_blunt = command.y;
+                hit.SetAttacker(player);
+                victim.Damage(hit);
+                yield return null;
+                break;
+            }
+            case "fixture.chop":
+            {
+                // The player's chop on a fallen log, sent through TreeLog.Damage as an axe's hit is.
+                RequireFixtures();
+                TreeLog log = Target(command.target).GetComponent<TreeLog>() ?? throw new ArgumentException("chop target is not a fallen log");
+                if (!Finite(command.x) || command.x <= 0 || !Finite(command.y) || command.y < 0)
+                    throw new ArgumentException("chop needs positive damage (x) and a non-negative tool tier (y)");
+                var hit = new HitData { m_point = log.transform.position, m_dir = (log.transform.position - player.transform.position).normalized,
+                    m_toolTier = (short)Mathf.Min(command.y, 100f) };
+                hit.m_damage.m_chop = command.x;
+                hit.SetAttacker(player);
+                log.Damage(hit);
+                yield return null;
+                break;
+            }
+            case "fixture.cast":
+            {
+                // A float cast by the equipped rod with its bait, set up the way Attack sets up a
+                // projectile. The float prefab is the bait's or rod's projectile when it carries a
+                // FishingFloat, otherwise the registered prefab that does.
+                RequireFixtures();
+                ItemDrop.ItemData rod = player.GetCurrentWeapon() ?? throw new InvalidOperationException("equip a fishing rod first");
+                ItemDrop.ItemData bait = player.GetInventory().GetAllItems().Find(i => i != rod && i.m_shared.m_ammoType.Length > 0 && i.m_shared.m_ammoType == rod.m_shared.m_ammoType)
+                    ?? throw new InvalidOperationException("no bait for the equipped item");
+                GameObject? projectile = new[] { bait.m_shared.m_attack.m_attackProjectile, rod.m_shared.m_attack.m_attackProjectile }
+                    .FirstOrDefault(p => p != null && p.GetComponentInChildren<FishingFloat>(true) != null);
+                if (projectile == null) projectile = ZNetScene.instance.m_prefabs.Find(p => p != null && p.GetComponent<FishingFloat>() != null);
+                if (projectile == null) throw new InvalidOperationException("no fishing float prefab is registered");
+                Vector3 forward = player.transform.forward;
+                GameObject cast = UnityEngine.Object.Instantiate(projectile, player.transform.position + Vector3.up * 1.5f + forward, Quaternion.LookRotation(forward));
+                FishingFloat castFloat = cast.GetComponentInChildren<FishingFloat>(true);
+                castFloat.Setup(player, forward * 12f + Vector3.up * 4f, -1f, new HitData(), rod, bait);
+                fixtureSpawned = castFloat.gameObject.GetInstanceID().ToString();
+                yield return null;
+                break;
+            }
+            case "fixture.raise":
+            {
+                // One skill gain through Character.RaiseSkill, the path every activity's XP takes.
+                RequireFixtures();
+                if (!Finite(command.x) || command.x <= 0) throw new ArgumentException("raise needs a positive factor (x)");
+                player.RaiseSkill(SkillType(command.target), command.x);
+                yield return null;
+                break;
+            }
+            case "fixture.zdo":
+            {
+                RequireFixtures();
+                ZNetView view = Target(command.target).GetComponent<ZNetView>() ?? throw new ArgumentException("target has no network view");
+                if (!view.IsValid() || command.text.Length == 0) throw new ArgumentException("zdo needs a valid target and a key (text)");
+                ZDO zdo = view.GetZDO();
+                fixtureZdo = $"bool={zdo.GetBool(command.text)} int={zdo.GetInt(command.text)} float={zdo.GetFloat(command.text)} string={zdo.GetString(command.text)}";
+                yield return null;
+                break;
+            }
             case "fixture.skill":
             {
                 RequireFixtures();
@@ -456,10 +529,33 @@ internal sealed class HarnessControl
                 GameObject prefab = ObjectDB.instance.GetItemPrefab(command.target);
                 int amount = (int)command.x;
                 if (prefab == null || amount < 1 || amount > 999) throw new ArgumentException("item prefab not found or amount outside [1,999]");
+                // Optional quality (y) and custom data (text, "key=value;key=value"), for items the
+                // game only makes elsewhere, such as a graded dish to put into a cooking station.
+                int quality = command.y >= 1 ? (int)command.y : 1;
                 for (int given = 0; given < amount;)
                 {
                     int stack = Mathf.Min(amount - given, prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_maxStackSize);
-                    if (!player.GetInventory().AddItem(prefab, stack)) throw new InvalidOperationException("inventory full");
+                    bool added;
+                    if (quality == 1 && command.text.Length == 0)
+                    {
+                        added = player.GetInventory().AddItem(prefab, stack);
+                    }
+                    else
+                    {
+                        ItemDrop.ItemData item = prefab.GetComponent<ItemDrop>().m_itemData.Clone();
+                        item.m_dropPrefab = prefab;
+                        item.m_stack = stack;
+                        item.m_quality = quality;
+                        item.m_customData = new Dictionary<string, string>();
+                        foreach (string pair in command.text.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            string[] kv = pair.Split(new[] { '=' }, 2);
+                            if (kv.Length != 2) throw new ArgumentException("custom data must be key=value pairs separated by ';'");
+                            item.m_customData[kv[0]] = kv[1];
+                        }
+                        added = player.GetInventory().AddItem(item);
+                    }
+                    if (!added) throw new InvalidOperationException("inventory full");
                     given += stack;
                 }
                 yield return null;
@@ -628,6 +724,23 @@ internal sealed class HarnessControl
             throw new ArgumentException("entity ID unavailable; take a fresh snapshot");
         return target;
     }
+    /// <summary>
+    /// A part of a target that takes the interaction instead of its root: "station.food" and
+    /// "station.fuel" are a cooking station's add-food and add-fuel switches (an oven's), any other
+    /// name is a child by name. Empty names the target itself.
+    /// </summary>
+    private static GameObject Part(GameObject target, string part)
+    {
+        if (part.Length == 0) return target;
+        CookingStation? station = target.GetComponent<CookingStation>();
+        if (station != null && part == "station.food" && station.m_addFoodSwitch != null) return station.m_addFoodSwitch.gameObject;
+        if (station != null && part == "station.fuel" && station.m_addFuelSwitch != null) return station.m_addFuelSwitch.gameObject;
+        foreach (Transform child in target.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == part) return child.gameObject;
+        }
+        throw new ArgumentException($"target has no part named {part}");
+    }
     private string ItemId(ItemDrop.ItemData item)
     {
         if (!itemIds.TryGetValue(item, out string id)) itemIds.Add(item, id = (++nextItem).ToString());
@@ -679,15 +792,21 @@ internal sealed class HarnessControl
                 health = player.GetHealth(), dead = player.IsDead(), pvp = player.IsPVPEnabled(),
                 swimming = player.IsSwimming(), stamina = player.GetStamina(),
                 eitr = player.GetEitr(), maxEitr = player.GetMaxEitr(),
+                maxHealth = player.GetMaxHealth(), maxStamina = player.GetMaxStamina(),
+                weight = player.GetInventory().GetTotalWeight(), maxCarry = player.GetMaxCarryWeight(),
                 waterLevel = player.GetLiquidLevel(), biome = player.GetCurrentBiome().ToString(),
                 terrainHeight = WorldGenerator.instance.GetHeight(position) },
             inventory = player.GetInventory().GetAllItems().Select(i => new ItemState { id = ItemId(i), prefab = i.m_dropPrefab != null ? i.m_dropPrefab.name : "",
-                name = i.m_shared.m_name, stack = i.m_stack, equipped = i.m_equipped, x = i.m_gridPos.x, y = i.m_gridPos.y }).ToArray(),
+                name = i.m_shared.m_name, stack = i.m_stack, quality = i.m_quality, equipped = i.m_equipped, x = i.m_gridPos.x, y = i.m_gridPos.y,
+                customData = i.m_customData.Select(k => new TextState { key = k.Key, value = k.Value }).ToArray(), tooltip = i.GetTooltip() }).ToArray(),
+            foods = player.GetFoods().Select(f => new FoodState { name = f.m_name, time = f.m_time, health = f.m_health, stamina = f.m_stamina, eitr = f.m_eitr }).ToArray(),
+            statusEffects = player.GetSEMan().GetStatusEffects().Select(s => new EffectState { name = s.name, label = s.m_name, remaining = s.GetRemaningTime() }).ToArray(),
             entities = nearby.ToArray(),
             progression = player.m_knownTexts.Select(k => new TextState { key = k.Key, value = k.Value }).ToArray(),
             customData = player.m_customData.Select(k => new TextState { key = k.Key, value = k.Value }).ToArray(),
             skills = player.GetSkills().m_skillData.Values.Where(s => s.m_info != null).Select(s => new SkillState
-                { type = (int)s.m_info.m_skill, name = s.m_info.m_skill.ToString(), level = s.m_level, accumulator = s.m_accumulator }).ToArray(),
+                { type = (int)s.m_info.m_skill, name = s.m_info.m_skill.ToString(), level = s.m_level, accumulator = s.m_accumulator,
+                  effective = player.GetSkills().GetSkillLevel(s.m_info.m_skill) }).ToArray(),
             messages = MessageHud.instance == null ? new MessageState() : new MessageState
                 { center = MessageHud.instance.m_messageCenterText.text, topLeft = MessageHud.instance.m_messageText.text },
             recentMessages = recentMessages.ToArray(),
@@ -708,6 +827,7 @@ internal sealed class HarnessControl
             keyPress = keyResult,
             connection = ZNet.instance == null ? "absent" : ZNet.GetConnectionStatus().ToString(),
             fixtureSpawned = fixtureSpawned,
+            fixtureZdo = fixtureZdo,
             fixturePrivateKeys = fixturePrivateKeys
         };
     }
@@ -836,21 +956,25 @@ internal sealed class HarnessControl
         public string localUserId = "";
         public ConsoleState? console;
         public HarnessKeys.KeyResult? keyPress;
-        public string connection = "", fixtureSpawned = "";
+        public string connection = "", fixtureSpawned = "", fixtureZdo = "";
         public string[]? fixturePrivateKeys;
+        public FoodState[] foods = Array.Empty<FoodState>();
+        public EffectState[] statusEffects = Array.Empty<EffectState>();
     }
     private sealed class MapPinState { public string name = "", type = ""; public bool save; public float x, y, z; }
     private sealed class ExplorerTrackerState { public string resourceName = ""; public float range, x, y, z; public int requiredLevel; }
     private sealed class PlayerState
     {
         public string id = "", name = "", biome = "";
-        public float x, y, z, health, stamina, eitr, maxEitr, waterLevel, terrainHeight;
+        public float x, y, z, health, maxHealth, stamina, maxStamina, eitr, maxEitr, waterLevel, terrainHeight, weight, maxCarry;
         public bool dead, pvp, swimming;
     }
-    private sealed class ItemState { public string id = "", prefab = "", name = ""; public int stack, x, y; public bool equipped; }
+    private sealed class ItemState { public string id = "", prefab = "", name = "", tooltip = ""; public int stack, quality, x, y; public bool equipped; public TextState[] customData = null!; }
+    private sealed class FoodState { public string name = ""; public float time, health, stamina, eitr; }
+    private sealed class EffectState { public string name = "", label = ""; public float remaining; }
     private sealed class EntityState { public string id = "", prefab = "", name = ""; public float x, y, z, health, maxHealth; public bool isPlayer, interactable; }
     private sealed class TextState { public string key = "", value = ""; }
-    private sealed class SkillState { public int type; public string name = ""; public float level, accumulator; }
+    private sealed class SkillState { public int type; public string name = ""; public float level, accumulator, effective; }
     private sealed class MessageState { public string center = "", topLeft = ""; }
     private sealed class RecentLine { public string where = "", text = ""; public float unscaled; public string time = ""; }
     private sealed class WindowState { public string canvas = "", name = ""; public int order; public bool custom; public string[] texts = null!; public ButtonState[] buttons = null!; }

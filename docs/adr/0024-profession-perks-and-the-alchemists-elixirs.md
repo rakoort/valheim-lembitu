@@ -1,7 +1,10 @@
 # ADR-0024: Profession perks, the alchemist's elixirs and the smith's mastery
 
 Date: 2026-10-04
-Status: Accepted; the perk settings below grow as the 2026-10-04 grilling settles them
+Status: Accepted; the perk settings below grow as the 2026-10-04 grilling settles them; Cooking
+amended by [ADR-0029](0029-the-cook-grades-dishes-feeds-the-trades-and-food-spoils.md); milestones
+for Wood Cutting, Fishing and Hauling and the smith's and herbalist's XP amended by
+[ADR-0030](0030-the-calling-choice-is-balanced-by-time-saved-within-a-band.md)
 Amends: ADR-0021 (profession mods add no combat power)
 
 ## Context
@@ -61,7 +64,7 @@ Explorer's information unlocks instead follow each biome from level 1, as amende
 | Rung | Perks |
 | --- | --- |
 | 40 | Cooking bonus servings, honey bonus, mining critical hits, area harvesting, planting several at once, faster paddling |
-| 50 | Hives in any biome, boat damage reduction, area mining, better wind angles |
+| 50 | Hives in any biome, boat damage reduction, area mining, better wind angles; log splitter, quick bite and steady overload (`Lembitu.Callings`, ADR-0030) |
 | 60 | Crops in any biome |
 | 70 | Whole-vein mining, extra star on tamed animals, no ram damage to your ship |
 
@@ -82,15 +85,16 @@ what the mods add on top of vanilla:
 
 | Profession | Package at 100 | Run at 100 |
 | --- | --- | --- |
-| Wood Cutting | chop ×2.2, wood ×3 | chop ×1.5, wood ×1.67 |
+| Wood Cutting | chop ×2.2, wood ×3 | chop ×1.5, wood ×1.67; log splitter at 50 (ADR-0030) |
 | Mining | dig ×2.2, ore ×2 | dig ×1.5, ore ×1.67; its unlocks stay |
 | Animal Handling | taming 7×, slaughter yield 3×, honey 2× | each 2.5× |
-| Hauling | +50 carry | +100 carry; carts unchanged |
+| Hauling | +50 carry | +100 carry; carts unchanged; steady overload at 50 (ADR-0030) |
 | Exploration | 200 m reveal (ExpertExplorer, retired 2026-10-05) | Explorer: 100..300 m reveal; live markers 20 m at level 1 to 64 m at 100, biome unlocks 1/10/20/30/40/50/60, dungeons 10 |
 | Herbalist | nothing for the maker | about 1.5 extra items per craft (`Lembitu.Callings`) |
-| Fishing | nothing for the maker | about 1.25 extra fish per catch (`Lembitu.Callings`) |
+| Fishing | nothing for the maker | about 1.25 extra fish per catch (`Lembitu.Callings`); quick bite at 50 (ADR-0030) |
 | Sailing | sail force ×2.5, rowing ×3, better wind angles from 50 | as shipped |
-| Cooking, Farming, Blacksmithing | — | as shipped |
+| Farming, Blacksmithing | — | as shipped |
+| Cooking | bonus servings at 40 | bonus servings at 40, plus the cook's grade and work meals (ADR-0029); Cooking XP for eating and the eater's decay reduction off |
 
 **Njord leaves the stack so that Sailing owns ship speed.** Njord replaced vanilla propulsion with its
 own force and zeroed vanilla sail and rowing force, with no setting that restores them

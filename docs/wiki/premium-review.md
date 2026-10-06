@@ -125,6 +125,39 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   at 0. The owner removed CrewStats and DamageMeter from both Pack and server later
   on 2026-10-05 after CrewStats' window covered the inventory. Their overlays and
   keyboard seeds were removed too; the other four additions remain.
+- **Two Pack additions from the progression sweep** (owner, 2026-10-06): dsoltyka/LiveExperienceTracker
+  1.0.3, live skill-XP rows above the health bar, and Somedudethattrytomakemodwork/oathbound_addon
+  1.0.1, stay/heel/recall orders for the Hunter's wolf. Both client-only; the addon's window key is
+  seeded from G (vanilla 1.0's radial menu) to Y, free in vanilla and every staged plugin except
+  AdventureBackpacks' Outward-Mode quick-drop. The rest of the 2026-10-06 sweep (all 12,684 Valheim
+  packages, 251 post-1.0 progression candidates) found no new progression owner worth adopting.
+  Native check 2026-10-06 (`~/lembitu-native-tests/20261006T072318Z-pack-additions/`): the full-Pack
+  server install withheld both; a client installed from a freshly built Pack loaded both, the addon
+  applied all seven patches and hooked Oathbound 0.21.14's `LateUpdate`, the Y seed survived first
+  run, and the tracker painted an Explorer row. Wolf orders themselves need a Hunter with a wolf and
+  are a Shakedown check.
+- **The cook grades dishes, feeds the trades, and food spoils** (owner, 2026-10-06; ADR-0029): the
+  cook's grade yes, at +2.5% food and +12.5% shelf life per grade above 1 (grade 5 at Cooking 100);
+  feast fellowship dropped as a party reward rather than a cooking one; work meals yes, +10 to one
+  Land or Road profession's perks while the meal lasts; FineDining's spoilage yes, with preserved
+  dishes, cold land and the Icebox as storage, fresh food at 110%, a master's dish keeping longer
+  and the package lifetimes kept. Implemented 2026-10-06 in `Lembitu.Callings` 0.4.0 and the
+  FineDining overlay.
+- **Two stack bugs fixed** (owner, 2026-10-06): a poison kill now pays Oathbound class XP to the
+  player who poisoned (`Lembitu.Oathbound` 0.3.0), and Herbalist's mead scaling applies once per
+  drink instead of compounding (`Lembitu.Callings` 0.4.0). Herbalist's own formula is kept as
+  shipped, including its one-hour floor for resist, Tasty and Lingering meads, which leaves the
+  drinker's skill no effect on meads shorter than 30 minutes; a cap or vanilla durations are the
+  open alternatives.
+- **The Calling choice is balanced by time saved, within a band** (owner, 2026-10-06; ADR-0030): a
+  focus is judged by time saved per hour of play for a player alone, within each group, and the best
+  pick may save at most 1.25 times the worst; Craft by how much its goods are wanted. Professions keep
+  their own levelling; outliers are corrected perks first, both ends toward the middle, nothing
+  trimmed before data. Work meals and EpicLoot keep counting for perks; EpicLoot is watched. The
+  steep curve starts at 10 (was 30). Wood Cutting, Fishing and Hauling get milestones at 50 (log
+  splitter, quick bite, steady overload). Smith and herbalist XP take half of the audit's step. An XP
+  log and timed tasks measure it. The Run starts on 2026-10-06 without a separate Shakedown; this
+  world is the Run's world.
 - **The Calling gets a window; stars become markers** (owner, 2026-10-05; ADR-0021, ADR-0022): a
   Calling button in the skills window opens a window grouped Land / Craft / Road with the 2-1-1 quota,
   levels and what a focus changes; readable anywhere, changeable only within about 10 m of the

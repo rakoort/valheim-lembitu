@@ -69,7 +69,9 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #     EpicLoot declares, the 2.30.0 that World Advancement Progression, ProgressivePowers, XPortal and
 #     others declare, and PlanBuild's 2.30.1 (docs/modstack.md),
 #   - Zen_ModLib is pinned at its latest release, overriding the older minimum ZenRaids declares
-#     (2026-10-04).
+#     (2026-10-04),
+#   - Oathbound is pinned at 0.21.14, overriding the 0.21.6 minimum Oathbound Addon declares
+#     (2026-10-06); every Oathbound bump re-checks the addon as it does Lembitu.Oathbound.
 KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
 denikson-BepInExPack_Valheim-5.4.2333
 denikson-BepInExPack_Valheim-5.4.2350
@@ -78,7 +80,8 @@ ValheimModding-Jotunn-2.29.0
 ValheimModding-Jotunn-2.29.2
 ValheimModding-Jotunn-2.30.0
 ValheimModding-Jotunn-2.30.1
-ZenDragon-Zen_ModLib-1.14.14"
+ZenDragon-Zen_ModLib-1.14.14
+LionAndOtter-Oathbound-0.21.6"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
@@ -253,9 +256,11 @@ if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
   # scrapping Seasonality, then to 65 by dropping BetterStations, then to 64 by dropping
   # BetterArchery, then to 63 by dropping Njord so the Sailing profession owns ship speed (ADR-0024);
   # 2026-10-05 took it to 70 with the five Shakedown mods, CrewStats and ConditionalConfigSync
-  # (#87, ADR-0026), then to 68 when the owner removed CrewStats and DamageMeter that evening.
+  # (#87, ADR-0026), then to 68 when the owner removed CrewStats and DamageMeter that evening;
+  # 2026-10-06 took it back to 70 with LiveExperienceTracker and Oathbound Addon (owner), then to
+  # 71 with FineDining's spoilage (ADR-0029).
   # The Hexium re-pins, Guilds 1.2.3 and Explorer replacement change versions, not the count.
-  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 68 ]] \
+  [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 71 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi
 if [[ $LIST == 1 ]]; then

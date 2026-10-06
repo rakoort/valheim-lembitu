@@ -75,14 +75,18 @@ internal static class SkillHooks
             return;
         }
         Calling calling = CallingStore.Of(player);
+        float raw = skill.m_info.m_increseStep * factor;
         if (calling.TryGetShadow(skillType, out Shadow shadow))
         {
-            SkillRules.Raise(shadow, skill.m_info.m_increseStep * factor * Settings.Rate(shadow.Level));
+            SkillRules.Raise(shadow, raw * Settings.Rate(shadow.Level));
             CallingStore.Save(player);
+            XpLog.Record(skillType, raw, raw);
         }
         else
         {
-            factor *= Settings.Rate(skill.m_level);
+            float rate = Settings.Rate(skill.m_level);
+            factor *= rate;
+            XpLog.Record(skillType, raw, raw * rate);
         }
     }
 

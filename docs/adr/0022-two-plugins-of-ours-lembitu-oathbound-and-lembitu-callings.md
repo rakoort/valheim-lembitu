@@ -1,7 +1,7 @@
 # ADR-0022: Two plugins of ours — Lembitu.Oathbound and Lembitu.Callings
 
 Date: 2026-10-04
-Status: Accepted; implemented 2026-10-04 in `src/plugins/Lembitu.Oathbound` and `src/plugins/Lembitu.Callings`
+Status: Accepted; implemented 2026-10-04 in `src/plugins/Lembitu.Oathbound` and `src/plugins/Lembitu.Callings`; `Lembitu.Callings` widened by [ADR-0029](0029-the-cook-grades-dishes-feeds-the-trades-and-food-spoils.md) (the cook's grade and work meals, hooking FineDining)
 Amends: ADR-0020 (scope of `Lembitu.Oathbound`), ADR-0021 (owner of the Callings code)
 
 ## Context

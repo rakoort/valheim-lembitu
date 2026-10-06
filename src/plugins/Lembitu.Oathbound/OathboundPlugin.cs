@@ -8,9 +8,9 @@ namespace Lembitu.Oathbound;
 
 /// <summary>
 /// Adapts LionAndOtter/Oathbound where it has no setting (ADR-0020, ADR-0022): respec and class switch
-/// start over at level 1, kill XP is split within the killer's party, and every class may use the
-/// gathering tools. Patches Oathbound at runtime; each feature verifies its own hooks first and
-/// switches off alone if an Oathbound release moved them.
+/// start over at level 1, kill XP is split within the killer's party, a poison kill pays the poisoner,
+/// and every class may use the gathering tools. Patches Oathbound at runtime; each feature verifies
+/// its own hooks first and switches off alone if an Oathbound release moved them.
 /// </summary>
 [BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]
 [BepInDependency(Jotunn.Main.ModGuid)]
@@ -63,6 +63,7 @@ public sealed class OathboundPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "Class switch asks for confirmation", ClassReset.SwitchConfirmationPlan);
         Hooks.Enable(_harmony, log, "Oathstone labels describe the reset", ClassReset.LabelPlan);
         Hooks.Enable(_harmony, log, "Kill XP is split within the killer's party", PartyExperience.Plan);
+        Hooks.Enable(_harmony, log, "A poison kill pays the player who poisoned", PoisonCredit.Plan);
         Hooks.Enable(_harmony, log, "Every class may equip the fishing rod", GatheringTools.FishingRodPlan);
         Hooks.Enable(_harmony, log, "A Monk's bare hands raise Mining and Wood Cutting", GatheringTools.MonkGatheringPlan);
         Hooks.Enable(_harmony, log, "Class power follows boss keys", ClassPower.Plan);
