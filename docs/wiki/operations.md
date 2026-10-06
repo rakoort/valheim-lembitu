@@ -294,6 +294,36 @@ exists, but a claim made after the backup survives the restore.
    then `68 plugins to load` (67 loaded, 1 skipped, 0 failed), every Lembitu feature `on`, and
    `Opened Steam server`. v14 clients are refused from then on.
 
+**The Run on its own world, `LembituRun`, with Pack v16, 2026-10-06** (owner; ADR-0030). Nobody was
+connected. The deploy went in this order:
+1. Backups of both old worlds (`lembitu-LembituShakedown-20261006T145515Z.tar.gz`,
+   `lembitu-Lembitu-20261006T145515Z.tar.gz`) and of the per-world BepInEx state, the Guilds and
+   Marketplace files, region claims, the old Almanac data and the Separate Spawns roster and layouts
+   (`lembitu-bepinex-state-20261006-pre-run.tar.gz`), each with a copy on astral-tricep.
+2. With the server stopped, the tested `dist/` from the Mac was copied over and installed;
+   FineDining was new.
+3. A plain `docker start` on the old world so FineDining wrote its config. It booted with
+   `0 plugins to load`: the updater had re-extracted BepInEx, which also emptied the Separate Spawns
+   tree in the game folder, roster included. A second start loaded 69 plugins (68 loaded, 1 skipped,
+   0 failed) with every Lembitu feature `on`.
+4. `prune-mirror` (nothing pending), then the container was removed, because the world name is fixed
+   at `docker run`, and `scripts/apply-dedicated-config.sh` seeded the committed empty roster.
+5. `scripts/launch-server.sh run` created `LembituRun` with the five world modifiers, `Opened Steam
+   server`, 43 Lembitu features `on` and none off, and Separate Spawns chose its layout on the first
+   try (score 28.67). Its verify reported 10 of 387 entries absent, all AdventureBackpacks backpack
+   sections the mod had not yet written; a re-run a minute later reported `enforced config verified:
+   387 entries match`.
+6. Client Pack v16 published as
+   [client-pack-2026-10-06-v16](https://github.com/rakoort/valheim-lembitu/releases/tag/client-pack-2026-10-06-v16);
+   v15 clients are refused. Players start new characters for the Run (owner).
+7. The old worlds `Lembitu` and `LembituShakedown`, their auto-backups, their Guilds, Marketplace and
+   claim files, the stale `lembitu.levelupsound.cfg` and the unused `Almanac` tree were removed from
+   the server after the backups.
+
+**A first verify can race AdventureBackpacks.** It writes its per-backpack sections some time after
+the chainloader completes, so a verify straight after a fresh container's boot can report those keys
+absent. Re-run `scripts/verify-enforced-config.sh` before treating it as drift.
+
 ## Backups — #20
 
 **The container's own backup must stay off on this server, and that is a measured finding, not a
