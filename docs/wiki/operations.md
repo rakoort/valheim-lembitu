@@ -282,6 +282,18 @@ BepInEx config the backups deliberately skip. A world restored from a backup the
 claims as they are now, not as they were then. Reconciliation frees claims whose guild no longer
 exists, but a claim made after the backup survives the restore.
 
+**Pack v15 on the same world, 2026-10-06.** The deploy went in this order:
+1. A backup (`lembitu-all-worlds-20261006T063339Z.tar.gz`, with a copy on astral-tricep).
+2. With the server stopped, the install added Explorer and removed ExpertExplorer, CrewStats and
+   DamageMeter.
+3. One plain `docker start` so Explorer wrote its config. The applier refuses a missing target, so
+   a new mod always needs this boot before the overlay.
+4. `prune-mirror`. ExpertExplorer's `Assets` directory survived it, because the container user may
+   not delete that directory, and was removed by hand.
+5. `scripts/launch-server.sh restart`. It reported `enforced config verified: 349 entries match`,
+   then `68 plugins to load` (67 loaded, 1 skipped, 0 failed), every Lembitu feature `on`, and
+   `Opened Steam server`. v14 clients are refused from then on.
+
 ## Backups — #20
 
 **The container's own backup must stay off on this server, and that is a measured finding, not a
