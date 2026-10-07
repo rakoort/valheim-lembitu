@@ -1,0 +1,8 @@
+[Unit]
+Description=Warn, save and confirm Lembitu before its daily maintenance restart
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/lembitu/discord-webhooks.env
+ExecStart=%h/code/valheim-lembitu/scripts/launch-server.sh restart
+TimeoutStartSec=30min

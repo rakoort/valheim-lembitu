@@ -1,0 +1,19 @@
+# Install with a Caddy build containing github.com/mholt/caddy-ratelimit.
+# Supply LEMBITU_MAP_DOMAIN outside the repo; automatic HTTPS obtains/renews TLS.
+https://{$LEMBITU_MAP_DOMAIN} {
+    route {
+        rate_limit {
+            zone map_clients {
+                key {remote_host}
+                events 120
+                window 1m
+            }
+            zone map_total {
+                key map
+                events 1200
+                window 1m
+            }
+        }
+        reverse_proxy 127.0.0.1:3000
+    }
+}

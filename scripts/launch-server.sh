@@ -24,16 +24,19 @@ IMAGE=${IMAGE:-ghcr.io/community-valheim-tools/valheim-server:latest}
 DATA_ROOT=${DATA_ROOT:-$HOME/lembitu}
 CONFIG_DIR="$DATA_ROOT/config"
 DATA_DIR="$DATA_ROOT/data"
+DEPLOY_ENV=${DEPLOY_ENV:-$HOME/.config/lembitu/deploy.env}
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() {
   cat >&2 <<'EOF'
-usage: scripts/launch-server.sh env | run | restart | world-rules
+usage: scripts/launch-server.sh env | run | start | restart | stop | world-rules
 
   env          print the container environment, secret file merged in
   run          create the data directories and start the container
-  restart      stop the container, re-apply the enforced overlay, start it and verify
+  start        apply the overlay, start an existing stopped container and verify
+  restart      warn, save, confirm, stop, apply the overlay, start and verify
+  stop         warn at 10/5/1 minutes, save and confirm before stopping
   world-rules  print the world-rule arguments alone
 
 Reads config/launch/launch.env.example (committed, non-secret) and, for the password,
@@ -100,13 +103,17 @@ do_run() {
   fi
 
   enforce_config "$CONFIG_DIR/bepinex"
+  enforce_servermanager
 
   docker run -d --name "$CONTAINER_NAME" \
     --restart unless-stopped \
+    --cpu-shares 4096 --memory-reservation 4g --stop-timeout 120 \
+    -v "$REPO_ROOT/scripts/frozen-valheim-start.sh:/usr/local/bin/valheim-updater:ro" \
     -v "$CONFIG_DIR:/config" \
     -v "$DATA_DIR:/opt/valheim" \
     -p "$port:$port/udp" \
     -p "$((port + 1)):$((port + 1))/udp" \
+    -p "127.0.0.1:3000:3000/tcp" \
     "${env_args[@]}" \
     "$IMAGE" >/dev/null
 
@@ -140,10 +147,22 @@ do_restart() {
   docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 \
     || die "no container named $CONTAINER_NAME; create it with: scripts/launch-server.sh run"
 
-  printf 'stopping %s\n' "$CONTAINER_NAME"
-  docker stop "$CONTAINER_NAME" >/dev/null
+  if [[ "$(docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME")" == true ]]; then
+    do_stop
+  fi
+  do_start
+}
+
+do_start() {
+  docker inspect "$CONTAINER_NAME" >/dev/null 2>&1 || die "no container named $CONTAINER_NAME"
+  [[ "$(docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME")" != true ]] \
+    || die "container is running; use restart for a maintenance restart"
+  local state="$HOME/.local/state/lembitu"
+  mkdir -p "$state"
+  printf '%s\n' "$(( $(date +%s) + 1800 ))" > "$state/maintenance-until"
 
   enforce_config "$CONFIG_DIR/bepinex"
+  enforce_servermanager
 
   # Everything after this second is this boot. The log carries every previous boot, and with
   # `AppendLog = true` so does the file, so an unscoped search would match a banner from last week.
@@ -157,6 +176,7 @@ do_restart() {
     || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
   "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
     || die "the server booted with a drifted config; the keys above are not in effect"
+  rm -f "$state/maintenance-until"
 }
 
 # The enforced overlay is re-applied on every start and proved afterwards (ADR-0011, #69).
@@ -182,6 +202,36 @@ enforce_config() {  # enforce_config <bepinex-config-dir>
   "$REPO_ROOT/scripts/apply-enforced-config.sh" "$bepinex"
 }
 
+# ServerManager's policy (ADR-0034, #102) is generated from the approved Pack and checked before
+# every start, for the same reason as the overlay above. Its YAML and reference DLLs live in the
+# save directory, where verify-enforced-config.sh never looks, so the check happens here instead.
+# The Pack, not the server's plugin tree, is the source: client-only mods such as Tally must be
+# required of players without being installed on the server.
+#
+# Two host settings drive it, from the environment or from DEPLOY_ENV (plain KEY=value lines,
+# never sourced): LEMBITU_PACK_ROOT, the unpacked approved Pack; and
+# LEMBITU_LOAD_SERVER_CHARACTER, false while existing characters enrol, true after.
+enforce_servermanager() {
+  if [[ -z "$(find "$CONFIG_DIR/bepinex/plugins" -name ServerManager.dll -print -quit 2>/dev/null)" ]]; then
+    printf 'ServerManager is not installed; no character-store policy to apply\n'
+    return 0
+  fi
+  local pack=${LEMBITU_PACK_ROOT:-$(deploy_value LEMBITU_PACK_ROOT)}
+  local load=${LEMBITU_LOAD_SERVER_CHARACTER:-$(deploy_value LEMBITU_LOAD_SERVER_CHARACTER)}
+  [[ -n "$pack" ]] || die "LEMBITU_PACK_ROOT is unset; set it in $DEPLOY_ENV to the unpacked approved Pack"
+  [[ "$load" == true || "$load" == false ]] \
+    || die "LEMBITU_LOAD_SERVER_CHARACTER must be true or false in $DEPLOY_ENV (false while characters enrol)"
+  local -a args=(--pack "$pack" --store "$CONFIG_DIR/save/ServerManager" --load-server-character "$load")
+  "$REPO_ROOT/scripts/servermanager-policy.sh" apply "${args[@]}"
+  "$REPO_ROOT/scripts/servermanager-policy.sh" check "${args[@]}" \
+    || die "ServerManager's policy does not match the Pack; the server was not started"
+}
+
+deploy_value() {  # deploy_value <key>
+  [[ -f "$DEPLOY_ENV" ]] || return 0
+  grep -E "^$1=" "$DEPLOY_ENV" | tail -n 1 | cut -d= -f2-
+}
+
 # Block until the chainloader reports it has finished, so the mods have written whatever they were
 # going to write. A boot that never gets there is its own failure and is named as one.
 #
@@ -204,10 +254,18 @@ wait_for_chainloader() {  # wait_for_chainloader <seconds> [since]
   return 1
 }
 
+do_stop() {
+  # shellcheck source=lib/python.sh
+  . "$REPO_ROOT/scripts/lib/python.sh"
+  run_python "$REPO_ROOT/scripts/maintenance-restart.py" "$CONTAINER_NAME" "$CONFIG_DIR"
+}
+
 case "${1:-}" in
   env) do_env ;;
   run) do_run ;;
   restart) do_restart ;;
+  start) do_start ;;
+  stop) do_stop ;;
   world-rules) world_rules ;;
   -h|--help) usage; exit 0 ;;
   *) usage; exit 1 ;;

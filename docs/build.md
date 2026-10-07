@@ -915,3 +915,83 @@ Calling stars, the hit's damage number and the Clubs skill-up render. Getting he
 changes for the pack's rules, recorded in `docs/wiki/native-testing.md`. Evidence:
 `/home/ra/lembitu-native-tests/20261004T165744Z-full-pack-a3d33296/` on astral-tricep. One repetition
 only, and not a two-client or party check.
+
+## Maintenance and public map provisioning — #103, #107, #108
+
+Provisioning is an owner-approved deployment, not something these commands have done to the live
+server. Install the accepted game and BepInEx runtime first: `launch-server.sh run` now mounts a
+start-only replacement over `/usr/local/bin/valheim-updater`. Empty image update/restart crons alone
+do not block the startup update pass. Existing containers without this read-only mount refuse
+maintenance; recreate them only in a controlled deployment, preserving both data mounts.
+
+`restart` and `stop` use ServerManager 1.1.7's documented six-field cron commands as the server
+console transport. The image has no documented dedicated-console input, and Server Devcommands
+does not supply a host command inbox. The host temporarily replaces an idle `cron.yml`, announces
+at ten/five/one minutes and schedules `save`. It derives exact job IDs as
+`ServerScheduleSettings.CreateId` does and requires their successful completion records, plus
+`WorldCharacterCheckpointCompleted ... pending=0` after the save time and before the save job's
+completion record. `ServerScheduleRuntime.cs:577-599` binds that job to its own save operation,
+refuses a replacing operation and requires a successful retained-character checkpoint; line 670
+logs completion afterwards. No confirmation means no stop. The idle schedule is restored and
+`cron_last.yml` untouched. Keep all other cron jobs disabled and do not edit during maintenance.
+The lock is outside the archive at `~/.local/state/lembitu/maintenance.lock`. A host crash or
+SIGKILL can leave it and the temporary schedule: inspect logs, restore the idle seed and remove
+the lock only after confirming no controller runs. Restore normalizes archived cron to the seed.
+
+`start` applies/verifies the overlay when starting an existing stopped container; `restart` skips
+maintenance when already stopped. A running container must use `restart`, never `start`. At
+maintenance/start, `~/.local/state/lembitu/maintenance-until` receives an epoch 1800 seconds ahead.
+The monitor suppresses availability faults during this window; successful boot verification removes
+the marker, while failures leave it to expire. The service timeout is thirty minutes.
+
+The sole daily scheduler is a user systemd timer: its 05:49:40 Europe/Oslo start reserves twenty
+seconds for cron reload and ten minutes for warnings, so `save` is scheduled at 06:00. There is no
+missed-job catch-up. On astral-bicep, after approval:
+
+```sh
+mkdir -p ~/.config/systemd/user
+install -m 0644 config/launch/lembitu-maintenance.{service,timer} ~/.config/systemd/user/
+# Seed an idle schedule after ServerManager has generated its savedir; keep cron_last.yml.
+install -m 0644 config/launch/servermanager-cron.yml ~/lembitu/config/save/ServerManager/cron.yml
+systemctl --user daemon-reload
+systemctl --user enable --now lembitu-maintenance.timer
+systemctl --user list-timers lembitu-maintenance.timer
+```
+
+Enable user lingering if the backup units have not already done so. A manual test-host trigger of
+the same service is `systemctl --user start lembitu-maintenance.service`; retain its journal,
+connected-client/store dump equality, game build IDs and loaded plugin counts before/after. No
+real-server scheduler, character equality, or version equality is established by the fake tests.
+Webhooks come only from `~/.config/lembitu/discord-webhooks.env` (0600): `DISCORD_WEBHOOK_STATUS`
+and `DISCORD_WEBHOOK_MONITOR`. Missing or failed webhooks warn and do not change the stop gate.
+ServerManager's announcement route can also post these game announcements, yielding duplicate
+status warnings if enabled alongside the controller's direct status posts.
+
+The game run flags reserve 4 GiB of memory and give it CPU shares 4096 (four times Docker's default);
+these are relative/soft reservations, not a hard CPU allocation or memory limit. Validate actual
+host cgroup support with `docker inspect lembitu` after an approved run and measure save/tick times
+under capped synthetic load before claiming contention protection.
+
+Port 3000 is published only at `127.0.0.1:3000`. For the public map install Caddy 2.11.4 with
+`github.com/mholt/caddy-ratelimit@v0.1.0` (stock Caddy lacks the module):
+
+```sh
+xcaddy build v2.11.4 --with github.com/mholt/caddy-ratelimit@v0.1.0
+# Install the resulting binary through the host's Caddy package/service mechanism.
+sudo install -m 0644 config/launch/Caddyfile /etc/caddy/lembitu-map.caddy
+# Add: import /etc/caddy/lembitu-map.caddy to the existing /etc/caddy/Caddyfile.
+# Set LEMBITU_MAP_DOMAIN in the Caddy service environment (outside this repo).
+sudo systemctl edit caddy
+# [Service]
+# EnvironmentFile=/etc/caddy/lembitu-map.env
+sudo systemctl daemon-reload
+# Export the same domain before validating; preserve all existing host sites.
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo systemctl restart caddy
+```
+
+The owner supplies the domain, DNS A/AAAA records and inbound TCP 80/443. Caddy obtains and renews
+TLS, proxies to loopback and limits each source IP to 120 requests/minute and all map traffic to
+1200/minute. Validate with a dummy domain before installation, then check the real certificate,
+external refusal of port 3000, a burst returning HTTP 429 and save/tick timings during that burst.
+Do not deploy while the domain/DNS prerequisite is missing.

@@ -1,0 +1,13 @@
+[Unit]
+Description=Begin Lembitu warnings before the 06:00 Europe/Oslo maintenance
+
+[Timer]
+# Controller reserves twenty seconds for ServerManager's cron reload, then warns for ten minutes.
+OnCalendar=*-*-* 05:49:40 Europe/Oslo
+AccuracySec=1s
+RandomizedDelaySec=0
+Persistent=false
+Unit=lembitu-maintenance.service
+
+[Install]
+WantedBy=timers.target
