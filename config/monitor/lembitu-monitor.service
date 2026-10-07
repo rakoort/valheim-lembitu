@@ -1,0 +1,13 @@
+[Unit]
+Description=Check Lembitu health and report fault transitions to admins
+
+[Service]
+Type=oneshot
+# Set LEMBITU_QUERY_TARGET to the public game address in an owner-installed unit drop-in.
+# Probe is sent over BatchMode SSH to astral-tricep; no remote installation required.
+# Copy units to ~/.config/systemd/user, daemon-reload, enable --now the timer; enable linger.
+# Secrets read directly from ~/.config/lembitu/discord-webhooks.env (0600), DISCORD_WEBHOOK_MONITOR.
+# Starting thresholds are config/monitor/settings.json; tune after a week of active-play baseline.
+ExecStart=%h/code/valheim-lembitu/scripts/monitor.sh
+TimeoutStartSec=5min
+UMask=0077

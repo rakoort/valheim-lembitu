@@ -1,0 +1,9 @@
+{
+  "CPU_PERCENT": "200",
+  "MEMORY_GIB": "8",
+  "HOST_CPU_PERCENT": "90",
+  "HOST_MEMORY_PERCENT": "90",
+  "DISK_PERCENT": "85",
+  "QUERY_PORT": "2457",
+  "QUERY_HOST": "astral-tricep"
+}
