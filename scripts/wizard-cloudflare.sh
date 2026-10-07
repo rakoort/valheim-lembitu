@@ -184,7 +184,7 @@ finish() {
 # Replace the example below. Set TOTAL_STAGES to match the stages you write.
 # ──────────────────────────────────────────────────────────────────────────
 
-# Points lembitu.astral.ee (the game) and map.astral.ee (the web map) at astral-bicep, and leaves
+# Points lembitu.astral.ee (the game) and map.lembitu.astral.ee (the web map) at astral-bicep, and leaves
 # a DNS-edit token where the address updater on astral-bicep can use it (docs/wiki/operations.md).
 # The token is typed into the macOS keychain's own hidden prompt and is copied to astral-bicep over
 # ssh standard input; it never passes through this script's arguments, the shell history or the
@@ -197,7 +197,7 @@ mkdir -p "$(dirname "$ENV_FILE")"
 chmod 700 "$(dirname "$ENV_FILE")"
 
 ZONE="astral.ee"
-RECORDS=(lembitu map)
+RECORDS=(lembitu map.lembitu)
 GAME_HOST="astral-bicep"
 TOKEN_SERVICE="lembitu.cloudflare.dns"
 API="https://api.cloudflare.com/client/v4"
@@ -283,7 +283,7 @@ fi
 stage "Open the web ports on your router"
 say "The map needs TCP 80 and 443 to reach astral-bicep; the game ports should already be open."
 step "On your router's admin page, add port forwards to 192.168.0.101:"
-step "  TCP 80 → 80, TCP 443 → 443 (for map.$ZONE)."
+step "  TCP 80 → 80, TCP 443 → 443 (for map.lembitu.$ZONE)."
 step "  Check UDP 2456–2458 → 2456–2458 is already there (the game)."
 note "This wizard cannot open your router's page: its address depends on your router."
 if confirm "Are the forwards in place?"; then write_env ROUTER_WEB_PORTS forwarded

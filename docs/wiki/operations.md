@@ -510,8 +510,10 @@ built with the `caddy-ratelimit` module, serves it with TLS at `{$LEMBITU_MAP_DO
 (`config/launch/Caddyfile`, validated; a local burst returned 119 × 200 and 6 × 429).
 
 **The server has names, not just an address (owner, 2026-10-07).** The owner registered `astral.ee`
-on Cloudflare: `lembitu.astral.ee` is the game's address and `map.astral.ee` the web map, both A
-records set to DNS only, because game traffic is UDP and Caddy holds the map's certificate.
+on Cloudflare: `lembitu.astral.ee` is the game's address and `map.lembitu.astral.ee` the web map,
+named under the game so it reads as Lembitu's, not the domain's. Both are A records set to DNS only,
+because game traffic is UDP and Caddy holds the map's certificate (Cloudflare's free certificate
+would not cover a second-level name anyway).
 astral-bicep sits behind the home router (`192.168.0.101`) on an address that changes: the Pack's
 join button still pointed at `85.253.16.237` while the host was at `85.253.100.163`. Valheim
 resolves a hostname at join (`DnsResolver.URLToIP`) and ServerQuickConnect accepts one, so the
