@@ -507,8 +507,17 @@ exploration cuts in the public fog, so the fork withholds a hidden player's expl
 log out; a server crash loses that pending part, which cartography tables can still share. The
 map listens on 3000 inside the container, published only on `127.0.0.1`; Caddy,
 built with the `caddy-ratelimit` module, serves it with TLS at `{$LEMBITU_MAP_DOMAIN}`
-(`config/launch/Caddyfile`, validated; a local burst returned 119 × 200 and 6 × 429). The domain
-is still the owner's input.
+(`config/launch/Caddyfile`, validated; a local burst returned 119 × 200 and 6 × 429).
+
+**The server has names, not just an address (owner, 2026-10-07).** The owner registered `astral.ee`
+on Cloudflare: `lembitu.astral.ee` is the game's address and `map.astral.ee` the web map, both A
+records set to DNS only, because game traffic is UDP and Caddy holds the map's certificate.
+astral-bicep sits behind the home router (`192.168.0.101`) on an address that changes: the Pack's
+join button still pointed at `85.253.16.237` while the host was at `85.253.100.163`. Valheim
+resolves a hostname at join (`DnsResolver.URLToIP`) and ServerQuickConnect accepts one, so the
+v17 seed uses the name. `scripts/wizard-cloudflare.sh` walks the owner through a token limited to
+the zone's DNS, creates or updates both records, copies the token to astral-bicep for the address
+updater, and lists the router forwards the map needs (TCP 80 and 443).
 
 ## Owner's two-account session before Pack v17
 
