@@ -1,9 +1,9 @@
 # Forks of third-party mods
 
-One directory per forked mod, named after the mod (`src/forks/MaxPlayerCount/`). Our own plugins
-live in `src/plugins/` instead; the split exists so it is always obvious whose code you are reading
-and whose licence applies. `MaxPlayerCount` is the only fork left (ADR-0010): the EpicMMOSystem fork
-and the shared-source `ServerSync` library were retired when upstream 1.9.67 replaced them.
+One directory per forked mod, named after the mod (`src/forks/ValheimWebMap/`). Our own plugins
+live in `src/plugins/` instead; the split makes code ownership and licensing visible.
+ValheimWebMap covers this world's expanded radius and edge (ADR-0003, 2026-10-07 amendment).
+It replaces the retired MaxPlayerCount fork; its retire condition is an upstream larger-world release.
 
 Prefer official working 1.0.7 builds (ADR-0003). Retain a fork when it carries project-specific
 behavior that upstream does not provide; import applicable official updates without losing that

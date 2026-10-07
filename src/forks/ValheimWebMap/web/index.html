@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Valheim Map</title>
+  <link rel="stylesheet" href="leaflet.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="status" class="status">
+    <span id="world-name">Connecting…</span>
+    <span id="clock" class="clock"></span>
+    <div id="render" class="render hidden">
+      <span id="render-text">Rendering world map…</span>
+      <div class="bar"><div id="render-bar"></div></div>
+    </div>
+  </div>
+
+  <button id="panel-toggle" class="panel-toggle" type="button" aria-label="Players">
+    <span id="panel-count">0</span>
+  </button>
+
+  <aside id="panel" class="panel">
+    <header>
+      <nav class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="online" role="tab">Online</button>
+        <button type="button" class="tab" data-tab="history" role="tab">History</button>
+        <button type="button" class="tab" data-tab="markers" role="tab">Markers</button>
+      </nav>
+      <span id="explored" class="muted"></span>
+    </header>
+    <section id="tab-online" class="tab-page active">
+      <ul id="players"></ul>
+      <p id="no-players" class="muted">Nobody online.</p>
+      <footer class="muted">Only players who enabled <em>Visible to other players</em> on their in-game map are shown.</footer>
+    </section>
+    <section id="tab-history" class="tab-page">
+      <ul id="history"></ul>
+      <p id="no-history" class="muted">No sessions recorded yet.</p>
+      <footer class="muted">Sessions, play time and deaths per player, recorded by the server.</footer>
+    </section>
+    <section id="tab-markers" class="tab-page">
+      <div class="marker-filters">
+        <label><input type="checkbox" id="f-pins" checked> Markers</label>
+        <label id="f-checked-wrap"><input type="checkbox" id="f-checked" checked> Crossed out</label>
+        <label id="f-traders-wrap"><input type="checkbox" id="f-traders" checked> Traders</label>
+        <label id="f-deaths-wrap"><input type="checkbox" id="f-deaths" checked> Deaths</label>
+      </div>
+      <ul id="pin-owners"></ul>
+      <p id="no-pins" class="muted">No markers shared on a cartography table yet.</p>
+      <footer class="muted">Markers come from cartography tables in the world. Deaths come from the server's own records.</footer>
+    </section>
+  </aside>
+
+  <div id="coords" class="coords"></div>
+
+  <script src="leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
