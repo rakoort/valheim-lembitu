@@ -1,0 +1,147 @@
+{
+  "roles": [
+    {
+      "name": "Player",
+      "permissions": "0"
+    }
+  ],
+  "categories": [
+    "Info",
+    "Server",
+    "Help",
+    "Guilds",
+    "Admin"
+  ],
+  "permissions": {
+    "readonly": [
+      {
+        "subject": "everyone",
+        "allow": "66560",
+        "deny": "2048"
+      }
+    ],
+    "player-readonly": [
+      {
+        "subject": "everyone",
+        "allow": "0",
+        "deny": "1024"
+      },
+      {
+        "subject": "Player",
+        "allow": "66560",
+        "deny": "2048"
+      }
+    ],
+    "player": [
+      {
+        "subject": "everyone",
+        "allow": "0",
+        "deny": "1024"
+      },
+      {
+        "subject": "Player",
+        "allow": "117760",
+        "deny": "0"
+      }
+    ],
+    "public": [
+      {
+        "subject": "everyone",
+        "allow": "117760",
+        "deny": "0"
+      }
+    ],
+    "admin": [
+      {
+        "subject": "everyone",
+        "allow": "0",
+        "deny": "1024"
+      }
+    ],
+    "guild": [
+      {
+        "subject": "everyone",
+        "allow": "0",
+        "deny": "1024"
+      },
+      {
+        "subject": "Guild",
+        "allow": "117760",
+        "deny": "0"
+      }
+    ]
+  },
+  "channels": [
+    {
+      "name": "announcements",
+      "category": "Info",
+      "access": "readonly"
+    },
+    {
+      "name": "rules",
+      "category": "Info",
+      "access": "readonly"
+    },
+    {
+      "name": "password",
+      "category": "Info",
+      "access": "player-readonly"
+    },
+    {
+      "name": "status",
+      "category": "Server",
+      "access": "readonly"
+    },
+    {
+      "name": "activity",
+      "category": "Server",
+      "access": "readonly"
+    },
+    {
+      "name": "chat",
+      "category": "Server",
+      "access": "player"
+    },
+    {
+      "name": "support",
+      "category": "Help",
+      "access": "public"
+    },
+    {
+      "name": "admin-alerts",
+      "category": "Admin",
+      "access": "admin"
+    },
+    {
+      "name": "admin-console",
+      "category": "Admin",
+      "access": "admin"
+    }
+  ],
+  "webhooks": [
+    {
+      "route": "STATUS",
+      "channel": "status"
+    },
+    {
+      "route": "ACTIVITY",
+      "channel": "activity"
+    },
+    {
+      "route": "CHAT",
+      "channel": "chat"
+    },
+    {
+      "route": "ADMIN_ALERTS",
+      "channel": "admin-alerts"
+    },
+    {
+      "route": "MONITOR",
+      "channel": "admin-alerts"
+    },
+    {
+      "route": "PACK_RELEASES",
+      "channel": "announcements"
+    }
+  ]
+}
