@@ -107,8 +107,18 @@ by hand:
   [channel](https://docs.discord.com/developers/resources/channel),
   [webhook](https://docs.discord.com/developers/resources/webhook),
   [message](https://docs.discord.com/developers/resources/message)).
-- **Idempotence.** Every run reads the server first and creates or edits only what differs from the
-  layout above, so it can be re-run safely.
+- **The script.** `scripts/discord-layout.sh` applies `config/discord/layout.json` (#106):
+  `--dry-run` prints the differences and writes nothing; `apply` creates or edits only what differs
+  and never deletes anything outside the layout; `guild 'Name' slug` adds a Guild's role and
+  private channel, and repeating it changes nothing. A slug that names a layout channel, or a
+  channel outside the Guilds category or belonging to another Guild, is refused before anything
+  changes. It reads the token from the keychain and hands
+  it to `curl` on standard input, never as an argument, and writes the six route URLs atomically to
+  `~/.config/lembitu/discord-webhooks.env` (0600) as `DISCORD_WEBHOOK_STATUS`, `_ACTIVITY`,
+  `_CHAT`, `_ADMIN_ALERTS`, `_MONITOR` and `_PACK_RELEASES`. The integrator copies that file to the
+  same path on astral-bicep. `test/discord-layout.test.sh` proves it against a fake API (31
+  checks): a second apply sends no writes, a `429` pauses every request, a `401` or `403` stops at
+  once, and neither token nor webhook secret is printed. It has not yet run against Discord.
 - **Rate limits.** On `429` it waits `Retry-After` seconds; a `global` limit pauses every call; it
   never retries `401` or `403`
   ([rate limits](https://docs.discord.com/developers/topics/rate-limits)).

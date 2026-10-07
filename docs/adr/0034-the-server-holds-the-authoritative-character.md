@@ -25,9 +25,12 @@ The Run began on `LembituRun` on 2026-10-06, so live characters exist only on pl
 - **The mechanism is sighsorry ServerManager**, after a trial on the test host with the full Pack.
   If the trial fails, we build our own plugin to the same contract from MIT-licensed sources
   (`docs/wiki/character-store.md`).
-- **A crash costs at most five minutes.** Full characters reach the server every five minutes and
-  inventory changes within about a second; the world saves every five minutes (`-saveinterval
-  300`) because ServerManager writes characters to disk at world saves.
+- **A player's crash costs at most five minutes, a server crash about ten, a planned restart
+  nothing.** Full characters reach the server every five minutes and inventory changes within about
+  a second; the world saves every five minutes (`-saveinterval 300`) because ServerManager writes
+  characters to disk at world saves. A running server keeps every accepted update, so a player's
+  crash loses at most one update interval. A hard server crash loses what has not reached disk: up
+  to about two save intervals, 385 s measured in the trial (amended 2026-10-07, below).
 - **The integrity goal is explicit.** One character per Steam account, the owner exempt. The server
   refuses a client whose mods differ from the Pack by DLL hash, except for leaving out its optional
   presentation mods. Cheat and stat detections are logged for review, never acted on
@@ -60,3 +63,14 @@ The Run began on `LembituRun` on 2026-10-06, so live characters exist only on pl
 - Every Pack change is a reinstall the server enforces: a client one DLL off is refused.
 - A player who edited a file before their enrollment keeps the edit. The window is short and
   accepted.
+
+## Amendment — 2026-10-07: ten minutes on a server crash
+
+The test-host trial (#101) on Valheim 1.0.17 killed the server process five minutes after a
+confirmed checkpoint and lost 385 s of a character's progress, against the five-minute target.
+ServerManager's source explains it: a full character update comes every 300 s (a fixed constant)
+or when a world save asks the client to save, and characters reach disk only at the next world
+save, so the worst case is about two save intervals. The owner chose to keep five-minute saves and
+accept about ten minutes on a server crash, which is rare, rather than save every two minutes (a
+short freeze for every player each time) or build the fallback plugin. A player's crash still
+costs at most five minutes, and a planned restart costs nothing.

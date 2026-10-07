@@ -15,9 +15,11 @@ operations](operations.md#decisions-of-2026-10-07). In short:
 - **ServerManager holds the characters**, after a trial on the test host with the full Pack (#101)
   and its adoption in Pack v17 (#102). If the trial fails, we build our own plugin to the same
   contract.
-- **At most five minutes of play is lost to a crash.** ServerManager sends a full character every
-  five minutes and inventory changes within about a second, but writes characters to disk only after
-  a world save, so the world saves every five minutes (`-saveinterval 300`).
+- **A player's crash loses at most five minutes, a server crash about ten.** ServerManager sends a
+  full character every five minutes and inventory changes within about a second, but writes
+  characters to disk only after a world save, so the world saves every five minutes
+  (`-saveinterval 300`). The trial measured 385 s lost to a hard server kill, and the owner accepted
+  about two save intervals for that rare case (ADR-0034, 2026-10-07 amendment).
 - **Settings this implies** (README of `sighsorry/ServerManager` 1.1.7, "Server settings"):
   `maxPlayers: 10`, `maxCharactersPerAccount: 1`, `startItems: []`, `cheatDetection.action: log`,
   `statCaps.action: log`, an empty logo URL so it fetches nothing from outside, and the Pack copied
@@ -92,6 +94,48 @@ checked.
 | `blaxxun-boop/ServerCharacters`, ServerManager | none | Ideas only, never code |
 
 The Pack's `.versions.txt` already lists a SHA-256 for every file, which is what a hash check needs.
+
+### The trial, 2026-10-07 (#101)
+
+ServerManager 1.1.7 ran with the full Pack on the test host, server and client both on Valheim
+1.0.17, one Steam account. Run directories are under `~/lembitu-native-tests/` on astral-tricep;
+the per-criterion disposition is `20261007T133035Z-ticket101-planned-orders/ticket101-final-disposition.json`.
+Kill tests used the native processes, not `docker kill`.
+
+| Criterion | Result | Run |
+| --- | --- | --- |
+| Pack client joins; missing optional AzuClock joins | Passed | `20261007T093543Z-ticket101-boot` |
+| Altered Tally DLL refused (`validation.hash_not_allowed`); missing Tally refused (`validation.required_plugin_missing`) | Passed | `…093543Z-ticket101-boot`, `20261007T135216Z-ticket109-missing-tally` |
+| Second character on one account refused | Passed | `…093543Z-ticket101-boot` |
+| Enrollment: `false` stored a used character; `true` replaced an edited local file; deleting every local copy restored identical custom data, inventory with item metadata, skills and known texts | Passed | `20261007T123308Z-ticket101-resumed-contract` |
+| Client killed: 83.6 s lost; coins picked up 2 s before the kill kept | Passed | `20261007T125851Z-ticket101-runtime-contract` |
+| Server killed five minutes after a checkpoint: 384.7 s lost | Failed the original 300 s; passes the amended bound | `20261007T100836Z-ticket101-crash-bound` |
+| Buffed fight with a real EpicLoot club, the Oathbound Huscarl record and a full backpack against Eikthyr: nobody kicked | Passed | `20261007T132207Z-ticket101-combat-maintenance` |
+| Planned restart: progress made just before `save` survived the stop | Passed | `20261007T133035Z-ticket101-planned-orders` |
+
+One client, five idle minutes: without ServerManager 41.1 CPU seconds, a 33.35 ms frame and
+`ZNet.Update` at 0.73 ms mean, 3.9 ms worst; with it 38.5 s, 33.35 ms, and 0.65 ms mean, 11.4 ms
+worst. The worst-case figure is one sample. Two-player load, the shared Tally meters and the
+owner's admin client joining are the owner's two-account session.
+
+Three differences in the first comparisons came from the game, not from ServerManager, and a plain
+reload without ServerManager shows them too: Explorer gains skill in the first seconds after
+spawn, AzuExtendedPlayerInventory rearranges equipped items in its hidden rows after load, and
+Venture Logout Tweaks empties its own `VV_LogoutData` key on load. The comparisons now read the
+character at native deserialization, before any of that runs; nothing was excluded.
+
+### Cutover runbook
+
+1. Take a full backup with `scripts/backup-world.sh` and keep its off-host copy.
+2. Unpack the approved Pack v17 on astral-bicep and write `~/.config/lembitu/deploy.env` (0600):
+   `LEMBITU_PACK_ROOT=<that directory>` and `LEMBITU_LOAD_SERVER_CHARACTER=false`.
+3. Deploy the server install and the Discord webhook file, then recreate the container with
+   `scripts/launch-server.sh run`, which applies and checks ServerManager's policy before it
+   starts. Never edit `required/` or `optional/` by hand.
+4. Announce the update. The three players who joined `LembituRun` on 2026-10-06 each join once.
+5. Check `sm:characterlist` lists all three, set `LEMBITU_LOAD_SERVER_CHARACTER=true`, and run
+   `scripts/launch-server.sh restart`. Confirm a rejoin plays the server's copy and the log shows
+   `WorldCharacterCheckpointCompleted ... pending=0`.
 
 ## Exclusions
 

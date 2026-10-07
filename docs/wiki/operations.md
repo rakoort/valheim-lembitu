@@ -172,7 +172,7 @@ amendment records the cap, the enforced Pack and admission. The research is in
 
 | Topic | Decision |
 | --- | --- |
-| Character store | ServerManager after a test-host trial; at most five minutes lost to a crash; one character per account; the server refuses a client whose mods differ from the Pack; detections logged, never acted on automatically; player logs disclosed and deleted after the Run (ADR-0034) |
+| Character store | ServerManager after a test-host trial; a player's crash loses at most five minutes, a server crash about ten, a planned restart nothing; one character per account; the server refuses a client whose mods differ from the Pack; detections logged, never acted on automatically; player logs disclosed and deleted after the Run (ADR-0034) |
 | Maintenance restart | Warn in game and on the Discord server at ten, five and one minutes, run `save`, wait for ServerManager's `WorldCharacterCheckpointCompleted ... pending=0`, then stop. Daily at 06:00 Europe/Oslo and for every deploy. A restart never runs the container's updater. Today `scripts/launch-server.sh:144` is a plain `docker stop` |
 | Player cap | Vanilla's ten; the MaxPlayerCount fork leaves |
 | Discord | The Run's own Discord server. ServerManager's webhooks post status and activity publicly and admin alerts privately, and its bot bridges chat; DiscordConnector leaves. Channels: status, activity, announcements and Pack releases, support, one per guild made by the admin when the guild forms, and a private admin channel |
@@ -396,6 +396,25 @@ Pack v17, restoring the world returns the world — not each player's character,
 Cloud or the player's own copy is what recovers those. From Pack v17 the archive also holds the
 character store (ADR-0034).
 
+**From Pack v17 the archive holds every server-held store (#104).** It captures `worlds_local`,
+`cache`, the admission lists, the whole `ServerManager/` directory beside them, and the Guilds,
+Marketplace and region-claim state under the sibling `bepinex/` directory (`--bepinex` overrides
+it). Guilds and Marketplace keep per-world `<World>.dat`, `.dat.bak` and `.log` files under
+`Guilds/` and `Marketplace/`; claims are `Lembitu.Guilds/<World>.claims.json`. ServerManager's
+characters are account-global, so an archive restores as one set and never with `--world`. An
+installed ServerManager without `characters/` is refused, and a restore refuses a partial set
+before writing anything. `MANIFEST.txt` records each store as present or absent, and a restore
+moves aside (or, with `--force`, removes) any target store the archive recorded as absent, so later
+state never survives a restore. `--dry-run` lists every store it would replace, including the
+account-global character store. ServerManager's `cron.yml` is the one deliberate exception to a
+byte-identical restore: it is reset to the idle seed `config/launch/servermanager-cron.yml`, so an
+archive taken during the 06:00 window cannot replay its one-off jobs. `INVENTORY.txt` records every
+file's SHA-256; archives are mode 0600 because they hold private player data. The capture does not
+request a checkpoint: it checks that files stay unchanged while it copies, and `STATE-TIMES.txt`
+records their disk times, so world and characters can differ by up to the five-minute character
+interval, longer if a client stalls. Proved by `test/backup-world.test.sh` (30 checks, no network);
+the test-host restore with a rejoining character is part of the v17 acceptance run.
+
 **The schedule, the retention and the off-host copy are now chosen and installed.** The decision is
 committed as two systemd user units in `config/backup/`, which is what makes it reviewable in a diff
 rather than host lore: `lembitu-backup.timer` runs `OnCalendar=hourly` with a five-minute randomised
@@ -428,6 +447,85 @@ load with clans and characters intact" is half-met: characters are client-owned 
 design, and Clan membership — which lives inside the world save — was not checked. That check belongs
 to the same two-client session as the rest of acceptance.
 
+## Maintenance restart, monitoring and the web map — #103, #105, #107, #108
+
+**The host owns the schedule; ServerManager's cron is only the console.** A systemd user timer
+(`config/launch/lembitu-maintenance.timer`) starts `scripts/maintenance-restart.py` at 05:49:40
+Europe/Oslo. It writes one-off jobs into ServerManager's `cron.yml` for the ten-, five- and
+one-minute warnings and the `save`. It stops the container only after the `save` job's own
+completion record, with a `WorldCharacterCheckpointCompleted ... pending=0` logged after the save
+began and before that completion. ServerManager binds a scheduled save to its own operation and
+logs the job complete only once that checkpoint has finished (decompiled
+`ServerScheduleRuntime.cs:577-599,670`), so an autosave or an older checkpoint cannot authorise a
+stop. Any refusal or missing confirmation aborts the restart and posts to
+`DISCORD_WEBHOOK_MONITOR`. Its lock and a `maintenance-until` marker live in
+`~/.local/state/lembitu/`, outside the backed-up save tree. `scripts/launch-server.sh restart` and
+`stop` use the same path when the container is running; on a stopped container `restart` and the
+new `start` go straight to applying the overlay, starting and verifying (ADR-0011). Proved with a
+fake Docker in `test/launch-server.test.sh` (18 checks). On the test host (#101,
+`20261007T133035Z-ticket101-planned-orders`), progress made just before the console `save` survived
+the stop: the save made ServerManager request a fresh copy from the connected client
+(`CharacterShadowAccepted`) before the checkpoint logged `captured=1, persisted=1, pending=0`. No
+disconnect step is needed before the save.
+
+**A restart can no longer update the game.** An empty `UPDATE_CRON` never stopped the image's
+updater on start (see "The image's updater can empty the plugin directory" above, and the 1.0.14
+drift in Launch provisioning). The container now mounts `scripts/frozen-valheim-start.sh`
+read-only in place of the updater, which starts the installed game without downloading or
+extracting anything. A container created without that mount is refused before any warning.
+
+**The game's resources are reserved, not capped (#107).** The container runs with CPU shares 4096,
+a 4 GiB memory reservation and a 120-second stop timeout, and no memory limit. Caps on the other
+stacks on astral-bicep are proposed, not applied, because they belong to other projects. A single
+read-only sample measured the spore preview `web` container at 20.27 GiB, which deserves a look
+before any cap.
+
+**Monitoring runs every minute and speaks only on change (#105).** `scripts/monitor.sh`, driven by
+`config/monitor/lembitu-monitor.timer`, keeps its state under `~/.local/state/lembitu` and posts
+one fault and one recovery per condition through `DISCORD_WEBHOOK_MONITOR`. Container down,
+OdinEye unanswered and the outside query failing must last 120 s; a world save must complete
+within 600 s. While a maintenance restart's `maintenance-until` marker is valid, those
+availability faults are held back, so planned restarts post nothing; a server still down when it
+expires alerts as usual, and resource, backup and off-host faults are watched throughout. OdinEye
+answers on `http://localhost:2469/` inside the container and is never published; the outside check
+is an A2S query sent from astral-tricep (`scripts/query-server.py`). The starting limits in
+`config/monitor/settings.json` come from one sample (the game at about 10% CPU and 1.8 GiB, the
+host at 38% memory and 55% disk) and must be tuned after a week of play. Proved by
+`test/monitor.test.sh` (26 scenarios) and a local UDP protocol smoke; the staged-fault drill on a
+disposable test container is part of the v17 acceptance run.
+
+**The web map draws the whole world (#108).** Expand_World_Size does not change
+`WorldGenerator.worldSize`, a constant 10000; it patches the game's literals and exposes its radius
+and edge in its configuration. The fork in `src/forks/ValheimWebMap/` reads those once per world:
+13,250 + 500 + one 64 m zone gives a 13,814 m half-size. Upstream also clipped terrain at the
+vanilla 10,500 m edge and assumed a 12,288 m cartography bitmap; both are corrected. At 4096 px a
+pixel is 6.7 m and the render arrays take about 160 MiB on two background workers.
+`test/webmap-coverage.test.sh` runs the real renderer and tile service on synthetic terrain and
+finds land, not fog or void, at 13,000 m on all four sides, and mask coverage at the 13,750 m edge.
+A player whose public position is off would still have been tracked by the clearing their live
+exploration cuts in the public fog, so the fork withholds a hidden player's exploration until they
+log out; a server crash loses that pending part, which cartography tables can still share. The
+map listens on 3000 inside the container, published only on `127.0.0.1`; Caddy,
+built with the `caddy-ratelimit` module, serves it with TLS at `{$LEMBITU_MAP_DOMAIN}`
+(`config/launch/Caddyfile`, validated; a local burst returned 119 × 200 and 6 × 429). The domain
+is still the owner's input.
+
+## Owner's two-account session before Pack v17
+
+The test host has one Steam account, so these checks wait for the owner: two separately licensed
+accounts, both with the exact Pack v17 build, on the test server, never the live one. Account A is
+the admin with Infinity Hammer, its addon and World Edit Commands on top of the Pack; account B has
+only the Pack.
+
+| # | Do | Expect | Ticket |
+| --- | --- | --- | --- |
+| 1 | A joins with the admin tools | A is admitted; ServerManager logs the admin exemption for the extra mods | #101 |
+| 2 | B joins, then tries a second character on the same account | The first is admitted, the second refused | #101 |
+| 3 | Both fight the same creatures for two minutes; one heals the other | Each Tally window (F10) shows both players' damage and healing and does not cover the inventory | #109 |
+| 4 | Both play ten minutes in one area | Server CPU and tick times are recorded beside the one-player figures in [Character store](character-store.md) | #101 |
+| 5 | Each writes in the Discord `#chat` and in game chat | Messages cross both ways through the Lembitu Server bot | #106 |
+| 6 | A runs `scripts/launch-server.sh restart` with B online | B sees the 10-, 5- and 1-minute warnings in game and in `#status`; after rejoining, B has the progress made just before the save | #103 |
+
 ## Exclusions
 
 - The overlay does not own every setting. PvP and death now follow vanilla rules. No biome-forced flag, flagged-player retention or special tombstone-looting rule replaces the removed mod.
@@ -435,6 +533,18 @@ to the same two-client session as the rest of acceptance.
 - There are no planned mid-Run content injections. A newer release is declined by default unless it fixes something actually broken and passes replacement acceptance. Development pins and historical server boots are not approval to create the launch world (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:27-48`).
 
 ## Lessons
+
+**The Run started on a game version nobody chose.** The 2026-10-06 deploy's container start ran the
+image's updater, which installed Valheim 1.0.17, published that day, so `LembituRun` was created on
+1.0.17 while the test host and reference assemblies were still 1.0.16 (`docker logs lembitu`:
+`Valheim Version: l-1.0.17`). 1.0.17 is network-compatible and fixes a rare world-save chunk bug
+that could erase objects. What it changed for our mods, all logged on the live server since then:
+Zen.ModLib 1.14.20 and ZenRaids 1.2.3 report a version mismatch but keep running (Zen_ModLib
+1.14.21 is the 1.0.17 build and ships in v17); CreatureManager 1.2.5 disables Deathward's lethal
+prevention (Deathward is banned by ADR-0033) and Swift's swimming bonus; FineDining's recovery of
+AzuExtendedPlayerInventory's hidden slots no longer matches, so recovered food does not keep its
+spoilage timer. `scripts/frozen-valheim-start.sh` now keeps a restart from updating the game; an
+update is a deliberate act.
 
 **Deleting the bind-mounted plugin is not enough.** The real-server container copies plugins from `/config/bepinex/plugins` into `/opt/valheim/bepinex/BepInEx/plugins` using rsync without deletion. Old DLLs and bundle trees can therefore keep loading; renamed DLLs can produce duplicate GUIDs. After installer pruning, use `scripts/install-plugins.sh prune-mirror <bepinex-dir> <docker-container>` to replay `.lembitu-removed` against that second copy (`docs/build.md:232-263`). Only plugin entries are replayed; configuration and patcher entries are consumed without a container deletion. A failed replay retains the ledger for retry. The tests exercise this through a fake Docker command, not a live container (`scripts/install-plugins.sh:188-220`; `test/install-plugins.test.sh:8-9,301-391`).
 

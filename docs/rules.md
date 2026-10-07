@@ -464,7 +464,8 @@ Shakedown measures it and the rest of their numbers.
 
 **Your character lives on the server, from Pack v17.** The server keeps the character of record;
 when you join, you play the server's copy and your own file is overwritten by it. One character per
-Steam account. A crash costs at most five minutes. Your existing Run character is copied from your PC
+Steam account. If your game crashes you lose at most five minutes; if the server crashes, at most
+about ten; a planned restart loses nothing. Your existing Run character is copied from your PC
 the first time you join on v17, so join once soon after the update (ADR-0034).
 
 **The server logs what characters do, from Pack v17.** It records each character's position every
