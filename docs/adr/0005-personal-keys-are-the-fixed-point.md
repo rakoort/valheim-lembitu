@@ -107,3 +107,9 @@ creature star levels and feeding EpicLoot's rarity roll. With the level mod gone
 level comes from CreatureManager's biome preset and Karma alone, and EpicLoot's rarity roll reads
 that level. Nothing about the fixed point changes: the roll still reads a creature level and a
 requesting player, never a world key.
+
+## Amendment — 2026-10-07
+
+The 2026-09-15 line "character-save storage is accepted as authoritative, with no tamper
+resistance" is superseded by ADR-0034. Personal keys still live in the character, but the character
+of record is the server's character store, not the player's file. The fixed point is unchanged.

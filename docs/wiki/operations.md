@@ -5,11 +5,11 @@ This page records how to deploy the server's configuration and plugins, and sepa
 ## Decisions
 
 **The Run has a defined window, not continuous upgrades.** Announce its start and end; an extension
-is optional while interest lasts. The server is public and password-protected, with a player cap of
-twenty, and membership is whoever holds the password (`CONTEXT.md:12-23`; `docs/adr/0007-frozen-game-version-and-pinned-pack.md:38-54`).
-MaxPlayerCount is an implemented server-only fork with a default of twenty. Historical server evidence
-shows the admission and matchmaking literals rewritten and the Steam capacity call executed; it
-explicitly does not prove an eleventh simultaneous connection (`docs/modstack.md:36,269-303`).
+is optional while interest lasts. The server is public and password-protected, and membership is
+whoever holds the password (`CONTEXT.md:12-28`; `docs/adr/0007-frozen-game-version-and-pinned-pack.md:56-100`).
+The player cap was twenty through Pack v16, held by the MaxPlayerCount fork, which never proved an
+eleventh simultaneous connection (`docs/modstack.md:245-248`). From Pack v17 it is vanilla's ten and
+the fork leaves (ADR-0007, 2026-10-07 amendment).
 
 **Enforced configuration is the server's deliberate deviation from mod defaults.** It belongs in server-locked configuration, not a player's file. The committed overlay is `config/enforced/`; it is applied to the files the mods generate on first boot. This is distinct from the package-supplied configuration seeds deployed by the installer (`docs/modstack.md:18-20`; `docs/build.md:201-230`). The current overlay owns these choices:
 
@@ -157,11 +157,39 @@ The installer records every deployed file in `.lembitu-installed` at that root. 
 
 **Launch and recovery remain acceptance requirements.** Freeze the game and Pack together only after the same candidate passes a clean full-pack boot and a manual two-client session. Check public releases again before that gate, then control installations and disable automatic updates (ADR-0007). Keep Expand_World_Size's generation settings fixed for the world's life (ADR-0018). World Advancement Progression clears global keys on startup and belongs in the Pack before world creation. The 2026-10-03 removals do not prove that an existing world can be migrated safely; see [Pack](pack.md).
 
-Recovery policy is rollback on the accepted versions, not an improvised mod upgrade. What a backup
-can hold changed with ADR-0010: the character store — and therefore personal
-keys — is client-owned, so a server archive must not be described as capturing it. The implemented
-capture, schedule, rotation, off-host copy and proven restore are in [Backups](#backups--20) below
-(`docs/adr/0007-frozen-game-version-and-pinned-pack.md:39-40`).
+Recovery policy is rollback on the accepted versions, not an improvised mod upgrade. Through Pack v16
+characters are client-owned (ADR-0010), so a server archive does not capture them. From Pack v17 the
+server holds the character store (ADR-0034) and the archive captures it with the world. The
+implemented capture, schedule, rotation, off-host copy and proven restore are in
+[Backups](#backups--20) below (`docs/adr/0007-frozen-game-version-and-pinned-pack.md:39-40`).
+
+### Decisions of 2026-10-07
+
+The owner asked for the server to run like a professional dedicated server and settled the following
+in a one-question-at-a-time interview. ADR-0034 records the character store; ADR-0007's 2026-10-07
+amendment records the cap, the enforced Pack and admission. The research is in
+[Character store](character-store.md); the Discord setup is in [Discord server](discord.md).
+
+| Topic | Decision |
+| --- | --- |
+| Character store | ServerManager after a test-host trial; at most five minutes lost to a crash; one character per account; the server refuses a client whose mods differ from the Pack; detections logged, never acted on automatically; player logs disclosed and deleted after the Run (ADR-0034) |
+| Maintenance restart | Warn in game and on the Discord server at ten, five and one minutes, run `save`, wait for ServerManager's `WorldCharacterCheckpointCompleted ... pending=0`, then stop. Daily at 06:00 Europe/Oslo and for every deploy. A restart never runs the container's updater. Today `scripts/launch-server.sh:144` is a plain `docker stop` |
+| Player cap | Vanilla's ten; the MaxPlayerCount fork leaves |
+| Discord | The Run's own Discord server. ServerManager's webhooks post status and activity publicly and admin alerts privately, and its bot bridges chat; DiscordConnector leaves. Channels: status, activity, announcements and Pack releases, support, one per guild made by the admin when the guild forms, and a private admin channel |
+| Monitoring | Built on OdinEye plus host statistics. Alerts go to the private admin channel when the server is down or unresponsive, unreachable from outside, misses a world save, fails a backup or its off-host copy, or runs short of memory, CPU or disk |
+| Backups | One hourly archive holds the world, cache, admission lists, the character store, and the Guilds, Marketplace and region-claim files, so a restore returns all of them to the same hour |
+| Admission | Public with a password, shared in a members-only Discord channel; the owner is the only admin |
+| Host | The game stays on astral-bicep with reserved CPU and memory; the development stacks there are capped; it moves only if monitoring shows contention |
+| Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's combined exploration, cartography-table pins, deaths and play sessions. Served through Caddy on astral-bicep with TLS and rate limiting at a subdomain the owner supplies; the game's own port 3000 stays private. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
+| Pack additions and refusals | Jumpingmushroom/Tally is required, with sharing on. nbusseneau/Better_Cartography_Table is not added: its guild pins need Smoothbrain's Guilds, not Northarun's, its settings cannot be locked, and pin privacy is checked only on the client. ValMedia/OdinOnDemand is already pinned at its latest release, 1.3.0 |
+
+Tickets: the ServerManager trial #101 and adoption #102, the maintenance restart #103, backups #104,
+monitoring #105, the Discord server #106, host resources #107, the web map #108 and Tally #109.
+The owner decided the next release waits for all nine: Pack v17 (#99) ships only once #101 to #109
+are done.
+Two-player checks in #101, #106 and #109 run in one owner session with two separately licensed
+Steam accounts before the release, from a checklist prepared at the end of the build. The Tickets
+are tracked on `master` without the `nt` readiness gate.
 
 ## Launch provisioning — #19
 
@@ -363,9 +391,10 @@ started against the restored directory logged `ZNet.LoadWorld: launch (launch), 
 followed by `Opened Steam server`, advancing the world to a new committed generation. The regression
 suite is `test/backup-world.test.sh` (15 checks, no network).
 
-**What a restore does not return.** Because characters are client-owned, restoring the world returns
-the world — not each player's character, level or keys. Steam Cloud or the player's own copy is what
-recovers those.
+**What a restore does not return, through Pack v16.** Because characters are client-owned until
+Pack v17, restoring the world returns the world — not each player's character, level or keys. Steam
+Cloud or the player's own copy is what recovers those. From Pack v17 the archive also holds the
+character store (ADR-0034).
 
 **The schedule, the retention and the off-host copy are now chosen and installed.** The decision is
 committed as two systemd user units in `config/backup/`, which is what makes it reviewable in a diff

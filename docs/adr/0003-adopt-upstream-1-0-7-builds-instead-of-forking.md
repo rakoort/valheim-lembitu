@@ -60,3 +60,15 @@ This sharpens the rule rather than changing it: **project-specific behaviour is 
 fork.** A fork needs a reason upstream cannot supply. MaxPlayerCount is the only case left, because
 its 1.2.5 release is binary-only — the public source stops at 1.2.4 — and no adopted package raises
 the ten-player admission limit.
+
+## Amendment — 2026-10-07
+
+MaxPlayerCount leaves with Pack v17 (ADR-0034). The owner set the player cap to vanilla's ten, and
+ServerManager, adopted for the character store, patches admission itself and refuses to load
+beside MaxPlayerCount.
+
+One fork arrives in its place: koenhendriks/ValheimWebMap. Its 1.3.0 release draws only ±10,240 m
+(`MapSession.HalfSize`), while Expand_World_Size gives this world a 13,250 m radius, so no official
+build covers the world we run. The owner chose to carry the fork from the start rather than wait
+for upstream. It is retired when an upstream release covers larger worlds. The ADR-0034 fallback
+would be a plugin of ours, not a fork.

@@ -11,5 +11,7 @@ Durable knowledge for [rakoort/valheim-lembitu](https://github.com/rakoort/valhe
 - [Building plugins and native forks](building.md) — reference assemblies, the build entry point, and why a fresh clone cannot compile
 - [Native testing](native-testing.md) — the dedicated test server, the headless client, and the native gameplay harness
 - [Server operations](operations.md) — enforced configuration, deployment, backups and launch prerequisites
+- [Character store](character-store.md) — server-held characters, the five-minute save, and the research behind ADR-0034
+- [Discord server](discord.md) — the Run's Discord layout, its two bots, and how the agent gets access
 - [Shakedown: what to measure](shakedown.md) — the checks the Shakedown runs and the 2026-10-04 decisions each one feeds
 - [Premium review](premium-review.md) — the 2026-10-04 balance and polish review and the decisions the owner took on it

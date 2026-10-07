@@ -1,7 +1,7 @@
 # ADR-0010: Adopt upstream progression instead of writing our own plugins
 
 Date: 2026-09-15
-Status: Accepted; amended by [ADR-0020](0020-oathbound-owns-class-level-talents-and-magic.md) for one patch plugin, `Lembitu.Oathbound`
+Status: Accepted; amended by [ADR-0020](0020-oathbound-owns-class-level-talents-and-magic.md) for one patch plugin, `Lembitu.Oathbound`; character storage superseded by [ADR-0034](0034-the-server-holds-the-authoritative-character.md)
 Issues: #11, #12, #13, #14, #15, #16, #17, #27, #44
 
 ## Context
@@ -66,3 +66,11 @@ diagnostic backlog describing warnings in code we were about to delete.
 - The diagnostic backlog closes with the code it described, and the warnings that survive are
   vanilla: the eight Jotunn ambiguous-name warnings are catalogue duplication, unchanged by removing
   content.
+
+## Amendment — 2026-10-07
+
+"Accept character saves as authoritative" and "progression is client-owned" are superseded by
+ADR-0034. The server's character store is the character of record, one character per account, and
+the server refuses a client whose mods differ from the Pack. The owner reopened #44's question for a
+professional dedicated server: a restore that returns no character, and a player who can edit their
+own file, no longer fit it.

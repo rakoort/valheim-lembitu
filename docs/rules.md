@@ -46,12 +46,20 @@ Explorer markers (`config/enforced/lembitu.guide.md` and the Pack key bindings).
 
 ## Admission
 
-**Admission is by password alone.** The server is public and password-protected; there is no
-whitelist and no moderation mod. That is the accepted shape for a known friend group
-(`docs/wiki/operations.md`).
+**Admission is by password.** The server is public and password-protected; there is no whitelist.
+From Pack v17 the password is shared in a members-only channel of the Run's Discord server, and the
+owner is the only admin (`docs/wiki/operations.md`, Decisions of 2026-10-07).
 
-**Cap twenty.** The MaxPlayerCount fork raises the admission limit above Valheim's ten (ADR-0007).
-An eleventh simultaneous connection has not yet been observed (#9).
+**Cap ten from Pack v17.** Through v16 the MaxPlayerCount fork raised the limit to twenty; v17 returns
+to Valheim's own ten (ADR-0007, 2026-10-07 amendment).
+
+**Your mods must match the Pack, from Pack v17.** The server compares every plugin you run with the
+Pack, file by file, and refuses a client that differs, except for leaving out its optional
+presentation mods. Reinstall the Pack whenever it changes (ADR-0034).
+
+**The server restarts every day at 06:00 Europe/Oslo, from Pack v17.** You are warned in game and on
+the Discord server ten, five and one minutes before; everyone's character is saved first, so a
+restart costs no progress.
 
 ## Guilds and parties
 
@@ -338,13 +346,19 @@ by ship or cart (`config/launch/launch.env.example`, `Portals hard`). Vanilla's 
 carries everything, metal included, and that late reward is kept. XPortal only lets you pick a
 destination.
 
-**Maps are personal.** You share what you have explored at a cartography table, and guilds share
-pins. Party members see each other on the map. There is no creature radar. Explorer
+**Maps are personal in game.** You share what you have explored at a cartography table, and guilds
+share pins. Party members see each other on the map. There is no creature radar. Explorer
 shows temporary resource and dungeon markers near you as its skill unlocks them;
 BetterMap makes no automatic resource pins. Everyone's public position is off
 (`config/enforced/xtav1m.BetterMap.cfg`, `config/enforced/blacks7ar.Explorer.cfg`,
 `config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`). Readouts are welcome:
 hover stats, skill progress, a clock and the weather forecast.
+
+**The web map is public, from Pack v17.** A web page shows the whole world as explored by every
+player together, with cartography-table pins, deaths and play sessions, to anyone with the link.
+Rival guilds can see where you have been and what you have pinned on a table; your own in-game map
+stays yours. Live positions still follow the off setting above (`docs/wiki/operations.md`,
+Decisions of 2026-10-07).
 
 **There is no PvP.** It is held off for everyone (`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`).
 
@@ -448,13 +462,23 @@ real client on 2026-10-04 (`docs/build.md`, "Plugin native checks" and "Full-pac
 acceptance"). The kill XP split within a party of two or more has not yet been seen in play; the
 Shakedown measures it and the rest of their numbers.
 
-**Progression is client-owned and not tamper-resistant.** Personal keys, Oathbound's class progress
-and the Calling all live in your own character file. A determined player can edit it. That is
-accepted on a friends' server (ADR-0010).
+**Your character lives on the server, from Pack v17.** The server keeps the character of record;
+when you join, you play the server's copy and your own file is overwritten by it. One character per
+Steam account. A crash costs at most five minutes. Your existing Run character is copied from your PC
+the first time you join on v17, so join once soon after the update (ADR-0034).
 
-**A server-only backup cannot restore progression.** The server's backup captures the world, not
-characters. Each character is restored by Steam Cloud or the player's own copy
-(`scripts/backup-world.sh`, `docs/wiki/operations.md`).
+**The server logs what characters do, from Pack v17.** It records each character's position every
+five minutes, inventories, skill changes, damage and deaths. The owner uses these records only to
+settle lost items, rollbacks and duplication, and they are deleted after the Run (ADR-0034).
+
+**Your fights are shared, from Pack v17.** Tally, the combat meter on F7, is required and shares
+every player's damage, healing and hits, with where they happened, with all other players, rivals
+included. Shared numbers come from other players' games and are not checked by the server; your
+all-time records stay on your own PC.
+
+**Through Pack v16, progression is client-owned.** Personal keys, Oathbound's class progress and the
+Calling live in your own character file, and the server's backup cannot restore them; Steam Cloud
+or your own copy does (ADR-0010).
 
 **Some settings are not proven locked.** BlacksmithingExpanded's main settings are synced from the
 server but carry no lock entry; whether a player can change them while connected is a Shakedown check

@@ -83,3 +83,18 @@ What the change costs, stated rather than discovered:
 
 The rest of ADR-0007 stands unchanged: the game and Pack are still frozen together after acceptance,
 recovery is still rollback from the proven backup, and the Run still has an announced end.
+
+## Amendment — 2026-10-07: cap ten, enforced Pack, password in the Discord server
+
+- **The player cap is vanilla's ten.** The owner judged twenty unnecessary for a Run balanced
+  around eight active players (ADR-0019). The MaxPlayerCount fork leaves with Pack v17; #9's
+  unproven eleventh connection is moot.
+- **The Pack is enforced, not just pinned.** ServerManager (ADR-0034) refuses a client whose mods
+  differ from the Pack by DLL hash, except for leaving out its optional presentation mods. The cost
+  recorded above, "this pack ships no moderation mod", no longer holds: ServerManager carries bans,
+  kicks and access lists.
+- **Admission stays public with a password**, now shared in a members-only channel of the Discord
+  server. The owner is the only admin.
+- **Every planned restart is a maintenance restart**, daily at 06:00 Europe/Oslo with warnings at
+  ten, five and one minutes. A restart never runs the container's updater: the freeze above still
+  requires that the accepted game version does not drift.

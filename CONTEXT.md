@@ -23,13 +23,14 @@ _Avoid_: beta, test run, pre-season, soft launch
 
 **Roster**:
 The invited players. Now an informal idea rather than an enforced one: the server is public and
-password-protected, so admission is whoever holds the password, not a list. A player cap of twenty
-bounds how many may be connected at once.
+password-protected, so admission is whoever holds the password, not a list. Valheim's own limit of
+ten bounds how many may be connected at once.
 _Avoid_: playerbase, community, whitelist
 
 **Pack**:
 The set of mods and versions a player installs. During development it is a candidate; after
-acceptance it is frozen for the run. A run client using anything else is a support problem, not a variant.
+acceptance it is frozen for the run. The server refuses a client whose mods differ from the Pack,
+except for leaving out its optional presentation mods.
 _Avoid_: modpack, profile, loadout
 
 ### Guilds and parties
@@ -260,9 +261,37 @@ _Avoid_: dependency, third-party install
 Upstream source maintained by this project because no official build works on the game we run, or
 because upstream does not publish the source of the release we need. Wanting different behaviour is
 not a reason: configuration and enforced config reach that without owning someone else's code
-(ADR-0003). One fork remains, MaxPlayerCount.
+(ADR-0003).
 _Avoid_: patch, vendored mod, port
 
 **Pin**:
 The exact upstream version selected for a mod. A development pin identifies a candidate for
 verification, not a freeze; run pins are the accepted versions fixed before the launch world exists.
+
+### Running the server
+
+**Character store**:
+The server's copy of every character, which is the character of record (ADR-0034). The file on a
+player's PC is only what the server last accepted; editing or restoring it changes nothing.
+_Avoid_: server characters, character vault, cloud save
+
+**Enrollment**:
+A character's first entry into the character store. A new character enrols at its first join;
+characters made before the store existed enrolled from their players' own files, once.
+_Avoid_: import, registration, migration
+
+**Maintenance restart**:
+A restart announced in game and on the Discord server beforehand, during which every character and
+the world are saved and confirmed before the server stops. Every planned restart is one, daily or
+for a deploy.
+_Avoid_: reboot, bounce, maintenance mode
+
+**Discord server**:
+The Run's own Discord: status, activity, announcements, support, a channel per guild and a private
+admin channel. Discord calls it a guild; in this project a Guild is only the in-game group.
+_Avoid_: guild (for the Discord), Discord guild, community
+
+**Web map**:
+The public web page showing the Run's world as explored by all players together, with
+cartography-table pins, deaths and play sessions. It is not the in-game map, which stays personal.
+_Avoid_: live map, online map, atlas
