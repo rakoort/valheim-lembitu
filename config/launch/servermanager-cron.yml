@@ -1,0 +1,5 @@
+# Seed only before the first maintenance run; never replace cron_last.yml.
+# Host systemd owns the daily restart. launch-server.sh temporarily schedules its commands here.
+timezone: UTC
+interval: 1
+jobs: []

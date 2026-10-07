@@ -63,19 +63,84 @@ else
   report fail "writes a manifest naming the captured generation marker set"
 fi
 
-# --- 3. client-owned stores are excluded -----------------------------------------------------
-# Character level and personal keys live in the player's own character file (ADR-0010), so a
-# server archive must not claim to hold them.
-
-mkdir -p "$SAVE/characters"
-printf 'a character\n' > "$SAVE/characters/Someone.fch"
-"$BACKUP" --savedir "$SAVE" --out "$OUT" > "$WORK/out" 2>&1
+# --- 3. authoritative characters and mod state travel together ------------------------------
+mkdir -p "$SAVE/ServerManager/characters/76561198000000000" "$WORK/state/Guilds" "$WORK/state/Marketplace" "$WORK/state/Lembitu.Guilds"
+printf 'character bytes\n' > "$SAVE/ServerManager/characters/76561198000000000/profile"
+cp "$REPO_ROOT/config/launch/servermanager-cron.yml" "$SAVE/ServerManager/cron.yml"
+printf 'executed checkpoint\n' > "$SAVE/ServerManager/cron_last.yml"
+printf 'guild vault\n' > "$WORK/state/Guilds/Midgard.dat"
+printf 'market orders\n' > "$WORK/state/Marketplace/Midgard.dat"
+printf 'claim owner\n' > "$WORK/state/Lembitu.Guilds/Midgard.claims.json"
+printf 'not state\n' > "$WORK/state/mod.cfg"
+"$BACKUP" --savedir "$SAVE" --bepinex "$WORK/state" --out "$OUT" > "$WORK/out" 2>&1
 newest="$(ls -t "$OUT"/lembitu-*.tar.gz | head -1)"
-if tar tzf "$newest" | grep -q 'characters/'; then
-  report fail "does not capture the client-owned character store"
+"$RESTORE" --archive "$newest" --savedir "$WORK/full/save" --bepinex "$WORK/full/state" > "$WORK/out" 2>&1
+if diff -r "$SAVE/ServerManager" "$WORK/full/save/ServerManager" && diff -r "$WORK/state/Guilds" "$WORK/full/state/Guilds" && diff -r "$WORK/state/Marketplace" "$WORK/full/state/Marketplace" && diff -r "$WORK/state/Lembitu.Guilds" "$WORK/full/state/Lembitu.Guilds" && diff -r "$SAVE/cache" "$WORK/full/save/cache" && cmp "$SAVE/adminlist.txt" "$WORK/full/save/adminlist.txt" && [[ ! -e "$WORK/full/state/mod.cfg" ]]; then
+  report ok "restores characters, guild vault, market, claims, cache and admission byte-identically without configuration"
 else
-  report ok "does not capture the client-owned character store"
+  report fail "restores the complete server state"
 fi
+mkdir -p "$WORK/partial"
+tar xzf "$newest" -C "$WORK/partial"
+rm -rf "$WORK/partial/bepinex-state/Marketplace"
+(cd "$WORK/partial" && tar czf "$WORK/partial.tar.gz" .)
+if ! "$RESTORE" --archive "$WORK/partial.tar.gz" --savedir "$WORK/no-write" > "$WORK/out" 2>&1 && [[ ! -e "$WORK/no-write" ]]; then
+  report ok "refuses a missing market before any destination writes"
+else report fail "refuses a partial archive"; fi
+if ! "$RESTORE" --archive "$newest" --savedir "$WORK/no-write" --world Midgard > "$WORK/out" 2>&1; then
+  report ok "refuses world-only restore with global characters"
+else report fail "refuses world-only restore with global characters"; fi
+mv "$SAVE/ServerManager/characters" "$SAVE/ServerManager/missing"
+if ! "$BACKUP" --savedir "$SAVE" --out "$WORK/refused" > "$WORK/out" 2>&1 && [[ ! -e "$WORK/refused" ]]; then
+  report ok "refuses installed ServerManager without characters"
+else report fail "refuses installed ServerManager without characters"; fi
+mv "$SAVE/ServerManager/missing" "$SAVE/ServerManager/characters"
+for missing in ServerManager bepinex-state/Guilds bepinex-state/Lembitu.Guilds INVENTORY.txt; do
+  rm -rf "$WORK/partial"
+  mkdir -p "$WORK/partial"
+  tar xzf "$newest" -C "$WORK/partial"
+  rm -rf "$WORK/partial/$missing"
+  (cd "$WORK/partial" && tar czf "$WORK/partial.tar.gz" .)
+  if ! "$RESTORE" --archive "$WORK/partial.tar.gz" --savedir "$WORK/no-write" > "$WORK/out" 2>&1 && [[ ! -e "$WORK/no-write" ]]; then
+    report ok "refuses missing $missing before writes"
+  else report fail "refuses missing $missing before writes"; fi
+done
+printf 'later admin\n' > "$WORK/full/save/adminlist.txt"
+printf 'later cached biome\n' > "$WORK/full/save/cache/Midgard_biomedatacache.bin"
+"$RESTORE" --archive "$newest" --savedir "$WORK/full/save" --bepinex "$WORK/full/state" --force > "$WORK/out" 2>&1
+if cmp "$SAVE/adminlist.txt" "$WORK/full/save/adminlist.txt" && diff -r "$SAVE/cache" "$WORK/full/save/cache"; then
+  report ok "replaces later admission and cache instead of mixing backup ages"
+else report fail "replaces later admission and cache"; fi
+"$RESTORE" --archive "$newest" --savedir "$WORK/full/save" --bepinex "$WORK/full/state" --dry-run > "$WORK/plan" 2>&1
+plan_ok=true
+for store in ServerManager cache adminlist.txt permittedlist.txt; do
+  grep -Fq "would move aside: $WORK/full/save/$store" "$WORK/plan" || plan_ok=false
+done
+for store in Guilds Marketplace Lembitu.Guilds; do
+  grep -Fq "would move aside: $WORK/full/state/$store" "$WORK/plan" || plan_ok=false
+done
+if $plan_ok; then report ok "dry run lists every present store including characters"; else report fail "dry run lists every present store"; fi
+mkdir -p "$WORK/full/save/bannedlist.txt" 
+printf 'later ban\n' > "$WORK/full/save/bannedlist.txt/entry"
+"$RESTORE" --archive "$newest" --savedir "$WORK/full/save" --bepinex "$WORK/full/state" > "$WORK/out" 2>&1
+if [[ ! -e "$WORK/full/save/bannedlist.txt" ]] && compgen -G "$WORK/full/save/bannedlist.txt.replaced-*" >/dev/null; then
+  report ok "moves aside later admission store recorded absent"
+else report fail "moves aside later admission store recorded absent"; fi
+make_world "$WORK/absent/save" NoMods 1
+"$BACKUP" --savedir "$WORK/absent/save" --out "$WORK/absent/backups" > "$WORK/absent/archive" 2>/dev/null
+absent_archive="$(cat "$WORK/absent/archive")"
+mkdir -p "$WORK/absent-target/state/Marketplace"
+printf later > "$WORK/absent-target/state/Marketplace/NoMods.dat"
+"$RESTORE" --archive "$absent_archive" --savedir "$WORK/absent-target/save" --bepinex "$WORK/absent-target/state" > "$WORK/out" 2>&1
+if [[ ! -e "$WORK/absent-target/state/Marketplace" ]] && compgen -G "$WORK/absent-target/state/Marketplace.replaced-*" >/dev/null; then
+  report ok "moves aside later market store recorded absent"
+else report fail "moves aside later market store recorded absent"; fi
+printf 'jobs: [one-off-save-and-stop]\n' > "$SAVE/ServerManager/cron.yml"
+"$BACKUP" --savedir "$SAVE" --bepinex "$WORK/state" --out "$WORK/cron-backup" > "$WORK/cron-archive" 2>/dev/null
+"$RESTORE" --archive "$(cat "$WORK/cron-archive")" --savedir "$WORK/cron/save" --bepinex "$WORK/cron/state" > "$WORK/out" 2>&1
+if cmp "$REPO_ROOT/config/launch/servermanager-cron.yml" "$WORK/cron/save/ServerManager/cron.yml" && cmp "$SAVE/ServerManager/cron_last.yml" "$WORK/cron/save/ServerManager/cron_last.yml"; then
+  report ok "restores idle cron instead of archived one-off jobs while preserving cron_last"
+else report fail "restores idle cron and preserves cron_last"; fi
 
 # --- 4. admission lists travel with the world ------------------------------------------------
 

@@ -3,21 +3,11 @@
 #
 #   scripts/restore-world.sh --archive <file> --savedir <dir> [--world <name>] [--dry-run] [--force]
 #
-# The archive holds `worlds_local/<World>/...` plus the admission lists and the biome cache, exactly
-# the set scripts/backup-world.sh captured. Restoring means replacing the world directory in the
-# target save directory with the archived one; the game then loads it as an ordinary save.
-#
-# Safety: the target world directory, if it exists, is moved aside to `<World>.replaced-<stamp>`
-# rather than deleted, so a mistaken restore is itself reversible. `--force` is required to
-# overwrite an existing world without that move-aside, and `--dry-run` prints the plan and exits.
-#
-# What a restore does NOT do:
-#
-#   characters    client-owned (ADR-0010). A player's character file, and with it character level,
-#                 XP and personal keys, stays on the player's machine; the server cannot restore it
-#                 and this script does not pretend to.
-#   BepInEx config The enforced overlay is applied from the repository
-#                 (scripts/apply-enforced-config.sh), not carried in the archive.
+# Restores the world, cache, admission lists, authoritative ServerManager store and
+# Guilds/Marketplace/region-claim state together. BepInEx deployed configuration is
+# excluded. Use an isolated destination and stop the target server before restoring.
+# Existing stores are moved aside unless --force is given. Account-global character
+# archives cannot select a single world. Integrity is checked before any target write.
 #
 # Restore with the generation settings used by that world, including Expand_World_Size.
 # Removing world content is not a tested recovery path (ADR-0009, ADR-0018).
@@ -31,6 +21,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARCHIVE=""
 SAVEDIR=""
 WORLD=""
+BEPINEX=""
 DRY_RUN=false
 FORCE=false
 
@@ -43,6 +34,7 @@ usage: scripts/restore-world.sh --archive <file> --savedir <dir> [options]
 
   --archive <file>  a lembitu-*.tar.gz produced by scripts/backup-world.sh
   --savedir <dir>   the save directory to restore into (the game's -savedir)
+  --bepinex <dir>   state destination (default: sibling bepinex beside savedir)
   --world <name>    restore only this world from a multi-world archive
   --dry-run         print what would change, change nothing
   --force           replace an existing world directory outright instead of moving it aside
@@ -53,6 +45,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --archive) ARCHIVE=${2:?}; shift 2 ;;
     --savedir) SAVEDIR=${2:?}; shift 2 ;;
+    --bepinex) BEPINEX=${2:?}; shift 2 ;;
     --world) WORLD=${2:?}; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
     --force) FORCE=true; shift ;;
@@ -64,6 +57,7 @@ done
 [[ -n "$ARCHIVE" ]] || die "--archive is required"
 [[ -n "$SAVEDIR" ]] || die "--savedir is required"
 [[ -f "$ARCHIVE" ]] || die "no such archive: $ARCHIVE"
+BEPINEX=${BEPINEX:-$(dirname "$SAVEDIR")/bepinex}
 
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
@@ -92,6 +86,15 @@ for w in "${worlds[@]}"; do
   has_generation "$work/worlds_local/$w" \
     || die "world '$w' has no _main.*.ok generation marker; the archive is not a usable 1.0 save"
 done
+if [[ -f "$work/INVENTORY.txt" ]]; then
+  [[ "$(store_inventory "$work")" == "$(cat "$work/INVENTORY.txt")" ]] || die "partial or damaged archive: inventory mismatch"
+else
+  die "partial archive: missing inventory; legacy world-only backups require a separate manual recovery"
+fi
+if [[ -d "$SAVEDIR/ServerManager" || -d "$work/ServerManager" ]]; then
+  [[ -d "$work/ServerManager/characters" ]] || die "partial archive: missing character store"
+  [[ -z "$WORLD" ]] || die "partial restore refused with account-global character store"
+fi
 
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 note "archive: $ARCHIVE"
@@ -111,6 +114,14 @@ if $DRY_RUN; then
       note "would create: $SAVEDIR/worlds_local/$w"
     fi
   done
+  for f in cache ServerManager "${ADMISSION_FILES[@]}" "${BEPINEX_STORES[@]/#/bepinex-state/}"; do
+    case "$f" in bepinex-state/*) target="$BEPINEX/${f#bepinex-state/}" ;; *) target="$SAVEDIR/$f" ;; esac
+    if [[ -e "$target" ]]; then
+      if $FORCE; then note "would replace: $target"; else note "would move aside: $target -> $target.replaced-$stamp"; fi
+    elif [[ -e "$work/$f" ]]; then note "would create: $target"; fi
+    [[ -e "$work/$f" ]] || note "would leave absent: $target"
+  done
+  [[ ! -d "$work/ServerManager" ]] || note "would reset: $SAVEDIR/ServerManager/cron.yml to idle seed (keep cron_last.yml)"
   note "dry run: nothing changed"
   exit 0
 fi
@@ -132,23 +143,29 @@ for w in "${worlds[@]}"; do
   note "restored: $target"
 done
 
-# The admission lists are restored only when the archive has them and the target is missing one, so
-# a restore never silently discards a roster change made after the backup was taken.
-for f in "${ADMISSION_FILES[@]}"; do
-  if [[ -f "$work/$f" ]]; then
-    if [[ -e "$SAVEDIR/$f" ]]; then
-      note "kept existing $f (archive copy: $work/$f)"
-    else
-      cp -a "$work/$f" "$SAVEDIR/$f"
-      note "restored: $SAVEDIR/$f"
-    fi
+# Replace every archived store, including admission and cache; never merge later state.
+restore_store() {
+  local source=$1 target=$2
+  if [[ -e "$target" ]]; then
+    if $FORCE; then rm -rf -- "$target"; else mv -- "$target" "$target.replaced-$stamp"; fi
   fi
+  if [[ -e "$source" ]]; then
+    mkdir -p "$(dirname "$target")"
+    cp -a "$source" "$target"
+    note "restored: $target"
+  else
+    note "restored absence: $target"
+  fi
+}
+for f in cache ServerManager "${ADMISSION_FILES[@]}"; do
+  restore_store "$work/$f" "$SAVEDIR/$f"
 done
-
-# The biome cache is regenerable and world-specific; a stale one for a restored world is discarded
-# rather than restored, because the game rewrites it on first load.
-if [[ -d "$work/cache" ]]; then
-  note "note: cache/ was captured but is not restored; the game regenerates it"
+for f in "${BEPINEX_STORES[@]}"; do
+  restore_store "$work/bepinex-state/$f" "$BEPINEX/$f"
+done
+if [[ -d "$SAVEDIR/ServerManager" ]]; then
+  cp "$REPO_ROOT/config/launch/servermanager-cron.yml" "$SAVEDIR/ServerManager/cron.yml"
+  note "reset ServerManager cron.yml to idle seed; kept cron_last.yml"
 fi
 
 note "restore complete; start the server with -savedir $SAVEDIR and confirm the world loads"

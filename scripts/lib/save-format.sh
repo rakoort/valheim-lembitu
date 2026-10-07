@@ -47,3 +47,15 @@ has_generation() {  # has_generation <world-dir>
 
 # Admission files that live beside the worlds in the save directory. Valheim reads all three.
 ADMISSION_FILES=(permittedlist.txt adminlist.txt bannedlist.txt)
+# Guilds/Marketplace use <World>.dat, .dat.bak and .log; claims use <World>.claims.json.
+# ServerManager is account-global, so its archives restore only as a whole.
+BEPINEX_STORES=(Guilds Marketplace Lembitu.Guilds)
+
+# Include empty directories as well as file bytes in the archive integrity contract.
+store_inventory() {
+  (cd "$1" && find . -type d -print && find . -type f ! -name INVENTORY.txt ! -name INVENTORY.txt.part -exec shasum -a 256 {} \;) | LC_ALL=C sort
+}
+
+file_mtime() {
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1"
+}

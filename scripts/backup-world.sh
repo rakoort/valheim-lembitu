@@ -19,24 +19,19 @@
 #   adminlist.txt           admins - server
 #   bannedlist.txt          bans - server
 #
-# What is deliberately NOT captured, and why:
-#
-#   characters/*.fch        client-owned. A client's character file, and therefore character level
-#                           and personal keys, lives on the player's machine (ADR-0010 accepts
-#                           client-owned progression). A server-only archive must not be described
-#                           as backing it up.
-#   config/ServerManager/   contained a retired mod's state on the historical host; nothing in the
-#                           current pack reads it.
-#
-# Consistency: the game writes `_main.<n>.ok` last and only then reaps generation n-1, so a
-# generation whose `.ok` set is unchanged across the copy was not reaped underneath it. The script
-# copies, compares marker sets, and retries; it never claims consistency it did not observe.
-#
-# A running server is copied live by default, using the marker comparison. `--stop-command` is
-# intentionally not offered: pausing saves requires controlling the server, which is the operator's
-# decision, not this script's.
+# ServerManager/ holds the authoritative account-global characters (ADR-0034).
+# Guilds/, Marketplace/ and Lembitu.Guilds/ under the sibling bepinex directory
+# hold per-world state, not deployed configuration. Override with --bepinex.
+# All these stores travel together; selecting one world is refused once installed.
+# Consistency: world generation markers and state file hashes must remain unchanged
+# across copying. This is a stable disk snapshot, not a requested checkpoint. World
+# saves and character uploads may differ by the five-minute upload interval (or more
+# for a stalled client); per-file disk timestamps in STATE-TIMES.txt record observed
+# age, not gameplay freshness. No character/world atomicity is claimed.
 
 set -euo pipefail
+# ServerManager can include Discord configuration; archives are private operator data.
+umask 077
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/save-format.sh
@@ -48,6 +43,7 @@ WORLD=""
 KEEP=14
 OFFHOST=""
 ATTEMPTS=3
+BEPINEX=""
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 note() { printf '%s\n' "$*" >&2; }
@@ -58,6 +54,7 @@ usage: scripts/backup-world.sh --savedir <dir> --out <dir> [options]
 
   --savedir <dir>   the server's save directory (the game's -savedir, e.g. /config/save)
   --out <dir>       where backup archives are written
+  --bepinex <dir>   state source (default: sibling bepinex beside savedir)
   --world <name>    world to capture; default: every world directory found
   --keep <n>        how many archives to retain (default 14); 0 disables rotation
   --offhost <spec>  a destination for a second copy; one of:
@@ -71,6 +68,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --savedir) SAVEDIR=${2:?}; shift 2 ;;
     --out) OUT=${2:?}; shift 2 ;;
+    --bepinex) BEPINEX=${2:?}; shift 2 ;;
     --world) WORLD=${2:?}; shift 2 ;;
     --keep) KEEP=${2:?}; shift 2 ;;
     --offhost) OFFHOST=${2:?}; shift 2 ;;
@@ -88,6 +86,11 @@ done
 
 WORLDS_DIR="$SAVEDIR/worlds_local"
 [[ -d "$WORLDS_DIR" ]] || die "no worlds_local in $SAVEDIR; is this the server's -savedir?"
+BEPINEX=${BEPINEX:-$(dirname "$SAVEDIR")/bepinex}
+if [[ -d "$SAVEDIR/ServerManager" ]]; then
+  [[ -d "$SAVEDIR/ServerManager/characters" ]] || die "ServerManager installed without character store"
+  [[ -z "$WORLD" ]] || die "partial world capture refused with account-global character store"
+fi
 
 # world_dirs and generations come from scripts/lib/save-format.sh, which restore-world.sh uses too:
 # the two scripts must agree on exactly which directories are worlds.
@@ -106,6 +109,7 @@ capture() {
   for (( attempt = 1; attempt <= ATTEMPTS; attempt++ )); do
     before=""
     local d
+    state_before="$(state_fingerprint)"
     for d in "$@"; do before+="$(generations "$d")|"; done
     rm -rf -- "$stage"
     mkdir -p "$stage/worlds_local"
@@ -121,15 +125,29 @@ capture() {
     for f in "${ADMISSION_FILES[@]}"; do
       [[ -f "$SAVEDIR/$f" ]] && { cp -a "$SAVEDIR/$f" "$stage/$f" || rc=$?; }
     done
+    [[ ! -d "$SAVEDIR/ServerManager" ]] || cp -a "$SAVEDIR/ServerManager" "$stage/ServerManager" || rc=$?
+    mkdir -p "$stage/bepinex-state"
+    for f in "${BEPINEX_STORES[@]}"; do
+      [[ ! -d "$BEPINEX/$f" ]] || cp -a "$BEPINEX/$f" "$stage/bepinex-state/$f" || rc=$?
+    done
+    [[ ! -d "$SAVEDIR/ServerManager" || -d "$stage/ServerManager/characters" ]] || die "character store disappeared during capture"
     after=""
     for d in "$@"; do after+="$(generations "$d")|"; done
-    if [[ "$before" == "$after" ]]; then
+    if [[ "$before" == "$after" && "$state_before" == "$(state_fingerprint)" ]]; then
       (( rc == 0 )) || die "copy failed (exit $rc)"
       return 0
     fi
     note "a save committed during the copy (generations '$before' -> '$after'); retrying ($attempt/$ATTEMPTS)"
   done
   die "could not capture the world between saves after $ATTEMPTS attempts"
+}
+
+# Account-global characters and per-world mod stores can change independently of .ok.
+state_fingerprint() {
+  local p
+  for p in "$SAVEDIR/ServerManager" "${BEPINEX_STORES[@]/#/$BEPINEX/}"; do
+    [[ ! -d "$p" ]] || { printf '%s\n' "$p"; store_inventory "$p"; }
+  done
 }
 
 worlds=()
@@ -158,9 +176,21 @@ capture "$stage" "${worlds[@]}"
   printf 'world=%s\n' "${WORLD:-<all>}"
   printf 'generations_marker_set=%s\n' "$(for d in "${worlds[@]}"; do printf '%s=%s ' "$(basename "$d")" "$(generations "$d")"; done)"
   printf 'host=%s\n' "$(hostname)"
-  printf 'contents=worlds_local,cache,permittedlist.txt,adminlist.txt,bannedlist.txt\n'
-  printf 'excluded=characters (client-owned), BepInEx config (deployed from the repo)\n'
+  printf 'format=2\n'
+  printf 'contents=worlds_local,cache,admission lists,ServerManager,bepinex-state/Guilds,bepinex-state/Marketplace,bepinex-state/Lembitu.Guilds\n'
+  printf 'excluded=BepInEx deployed configuration; local character exports\n'
+  printf 'consistency=stable disk files; no forced checkpoint; world and characters may differ by upload interval (300s), longer if stalled\n'
+  for f in cache ServerManager "${ADMISSION_FILES[@]}" "${BEPINEX_STORES[@]/#/bepinex-state/}"; do
+    if [[ -e "$stage/$f" ]]; then printf 'store_%s=present\n' "$f"; else printf 'store_%s=absent\n' "$f"; fi
+  done
 } > "$stage/MANIFEST.txt"
+time_roots=("$stage/worlds_local" "$stage/bepinex-state")
+[[ ! -d "$stage/ServerManager" ]] || time_roots+=("$stage/ServerManager")
+while IFS= read -r f; do
+  printf '%s %s\n' "$(file_mtime "$f")" "${f#"$stage/"}"
+done < <(find "${time_roots[@]}" -type f) > "$stage/STATE-TIMES.txt"
+store_inventory "$stage" > "$stage/INVENTORY.txt.part"
+mv "$stage/INVENTORY.txt.part" "$stage/INVENTORY.txt"
 
 # A capture with no world files is the failure this script exists to prevent: the container's own
 # backup produced 23 byte-identical archives of a directory the live server never wrote to.
