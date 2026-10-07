@@ -7,8 +7,8 @@ using Jotunn.Utils;
 namespace Lembitu.Oathbound;
 
 /// <summary>
-/// Adapts LionAndOtter/Oathbound where it has no setting (ADR-0020, ADR-0022): respec and class switch
-/// start over at level 1, kill XP is split within the killer's party, a poison kill pays the poisoner,
+/// Adapts LionAndOtter/Oathbound: oath changes stay at the Oathstone,
+/// kill XP is split within the killer's party, a poison kill pays the poisoner,
 /// and every class may use the gathering tools. Patches Oathbound at runtime; each feature verifies
 /// its own hooks first and switches off alone if an Oathbound release moved them.
 /// </summary>
@@ -17,6 +17,7 @@ namespace Lembitu.Oathbound;
 [BepInDependency(OathboundGuid)]
 [BepInDependency(SocialSystemGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(WorldAdvancementGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(ArcheryLock.Guid, BepInDependency.DependencyFlags.SoftDependency)]
 [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
 public sealed class OathboundPlugin : BaseUnityPlugin
 {
@@ -40,6 +41,8 @@ public sealed class OathboundPlugin : BaseUnityPlugin
         PartyExperience.Configure(Config, log);
         ClassPower.Configure(Config);
         CompanionDamage.Configure(Config);
+        ArcheryLock.Configure(Config);
+        ArcheryLock.Enable(log);
 
         BaseUnityPlugin oathbound = Chainloader.PluginInfos[OathboundGuid].Instance;
         if (!oathbound.enabled)
@@ -58,10 +61,7 @@ public sealed class OathboundPlugin : BaseUnityPlugin
         }
 
         _harmony = new Harmony(PluginInfo.Guid);
-        Hooks.Enable(_harmony, log, "Respec resets the class to level 1", ClassReset.RespecPlan);
-        Hooks.Enable(_harmony, log, "Class switch resets both classes to level 1", ClassReset.SwitchPlan);
-        Hooks.Enable(_harmony, log, "Class switch asks for confirmation", ClassReset.SwitchConfirmationPlan);
-        Hooks.Enable(_harmony, log, "Oathstone labels describe the reset", ClassReset.LabelPlan);
+        Hooks.Enable(_harmony, log, "Oaths and free respec require the Oathstone; the tree opens anywhere after the first oath", OathAccess.Plan);
         Hooks.Enable(_harmony, log, "Kill XP is split within the killer's party", PartyExperience.Plan);
         Hooks.Enable(_harmony, log, "A poison kill pays the player who poisoned", PoisonCredit.Plan);
         Hooks.Enable(_harmony, log, "Every class may equip the fishing rod", GatheringTools.FishingRodPlan);
@@ -71,5 +71,9 @@ public sealed class OathboundPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "An equipment refusal names the guide page", EquipmentGuide.Plan);
     }
 
-    private void OnDestroy() => _harmony?.UnpatchSelf();
+    private void OnDestroy()
+    {
+        ArcheryLock.Disable();
+        _harmony?.UnpatchSelf();
+    }
 }

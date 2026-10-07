@@ -11,7 +11,8 @@ player-facing text. The stack itself is in [docs/modstack.md](docs/modstack.md);
 
 **Run**:
 The period the server is open for play, from an announced start date. Open-ended, but every system
-is sized for an actively playing group to kill the last boss in about one month (ADR-0019).
+is sized for an actively playing group to kill Kall Fimbulbringer, the last boss, in about one
+month (ADR-0033).
 _Avoid_: season, wipe cycle, campaign
 
 **Shakedown**:
@@ -88,18 +89,19 @@ talents, abilities and companions are available. A character levels one class at
 _Avoid_: job, profession, build
 
 **Oathstone**:
-The stone beside the sacrificial stones where a character chooses a class, buys talents and changes
-their Calling. Every new character wakes beside it, so the first evening of the Run is spent there.
+The stone beside the sacrificial stones where a character takes or changes an oath, resets talents
+for free and changes their Calling. After the first oath, the tree can be read and talent points
+spent anywhere (ADR-0031). Every new character wakes beside it.
 
 **Class level**:
 The active class's XP ladder, earned from kills, which grants one talent point per level. Death
-costs half the progress into the current level, never a level. Respecing or switching class starts
-the character over at level 1.
+costs half the progress into the current level, never a level, in the active class only. Each class
+keeps its own XP and talents through switches; a talent reset keeps XP (ADR-0031).
 _Avoid_: character level, MMO level, rank, XP level
 
 **Talent**:
-A perk bought with a talent point from the active class's tree. Changing talents means a respec,
-which costs the class level.
+A perk bought with a talent point from the active class's tree, anywhere after the first oath.
+Changing the allocation means a free respec at the Oathstone, without losing XP (ADR-0031).
 _Avoid_: skill (that word is Valheim's own skills)
 
 **Class band**:
@@ -140,21 +142,27 @@ The hidden level a focus profession carries: what the skill would be without the
 the steep-curve rate and draining on death like a non-focus skill. Dropping the focus sets the skill
 to it (ADR-0021, ADR-0022).
 
-**Profession ladder**:
-The level a profession needs to craft what it makes, ten per biome of the item's materials, from
-none in the Meadows to 70 in the Deep North. Each step is a **rung**. Only crafting is gated; anyone
-may use what a specialist made (ADR-0023).
-_Avoid_: master recipe, recipe tier, gate level
+**Profession ladder (retired)**:
+The former profession-level requirement for crafting, removed by ADR-0032. Personal boss keys
+still gate progress; professions earn benefits rather than recipe blocks.
+_Avoid_: rung, master recipe, recipe tier, gate level
 
 **Cook's grade**:
 The grade a dish carries from the Cooking level of the cook who made it, 1 below 25 and one more per
-25 levels, 5 at 100. Each grade above 1 makes the dish give more and keep longer; it travels through
-a cooking station and the Market (ADR-0029).
+25 levels, 5 at 100, reading the cook's real level rather than borrowed levels. Each grade above 1
+gives 5% more food benefit and 12.5% more shelf life; it travels through a cooking station and the
+Market (ADR-0029, ADR-0032).
 _Avoid_: food quality, stars, tier
+
+**Brewer's grade**:
+The grade a mead base, mead, tonic or elixir carries from its brewer's real Herbalist level: 1 below
+25, one more per 25 levels, 5 at 100. The grade, not the drinker's skill, supplies Herbalist scaling;
+it survives fermentation and the Market. Ungraded drinks count as grade 1 (ADR-0032).
+_Avoid_: potion quality, stars, tier
 
 **Work meal**:
 A dish that, while it is one of the eater's foods, makes one Land or Road profession count as ten
-levels higher for its perks, never for a rung (ADR-0029).
+levels higher for its perks, never for a maker's grade (ADR-0029, ADR-0032).
 _Avoid_: buff food, profession food
 
 **Freshness**:
@@ -169,7 +177,8 @@ _Avoid_: item power, loot tier
 **Personal key**:
 A boss or progression unlock stored per character, not in world state. Killing a boss awards it to
 every player present at the kill and nobody else; guilds do not share keys. A biome's key is needed
-both to craft and to equip that biome's gear (ADR-0005, ADR-0019).
+both to craft and to equip that biome's gear. Deep North gear needs the player's Fader key
+(ADR-0005, ADR-0019, ADR-0032).
 _Avoid_: global key, world key, boss flag
 
 **World key**:
@@ -220,10 +229,11 @@ An extra trait a creature can spawn with, such as armoured, enraged or an elemen
 main knob for fine-tuning difficulty.
 
 **Tuning target**:
-The number of players a fight is balanced for: eight for bosses, two for ordinary creatures. At the
+The number of players a fight is balanced for: five for bosses, about three for ordinary creatures
+in practice. At the
 target, average players with gear of that biome win with margin, so class mix never decides who is
 invited; a smaller skilled group can still win a boss. Fixed, never scaled by how many players are
-online or nearby, so grouping up is what makes a fight easier (ADR-0019).
+online or nearby, so grouping up is what makes a fight easier (ADR-0019, ADR-0033).
 _Avoid_: player scaling, headcount
 
 **Enforced config**:
@@ -234,9 +244,9 @@ already matches.
 _Avoid_: server settings, config overrides, the overlay
 
 **Difficulty tier**:
-The biome level preset that decides what level a creature spawns at, and through it how much health
-a boss has. It is one setting for the whole Run, not a per-creature value, and it is not a
-progression pillar: players do not advance through tiers.
+The biome level preset that decides what level an ordinary creature spawns at. Bosses stay at
+level 1 and do not follow it (ADR-0033). It is one setting for the whole Run, not a progression
+pillar: players do not advance through tiers.
 _Avoid_: level preset, difficulty, boss scaling
 
 ### Mods

@@ -4,6 +4,8 @@ Date: 2026-10-04
 Status: Accepted; implemented 2026-10-04 in `src/plugins/Lembitu.Oathbound` and `src/plugins/Lembitu.Callings`; `Lembitu.Callings` widened by [ADR-0029](0029-the-cook-grades-dishes-feeds-the-trades-and-food-spoils.md) (the cook's grade and work meals, hooking FineDining)
 Amends: ADR-0020 (scope of `Lembitu.Oathbound`), ADR-0021 (owner of the Callings code)
 
+Amended 2026-10-06 (owner): ADR-0031 drops class resets and opens the tree anywhere; ADR-0032 adds brewer grades and the Deep North personal-key rule. Earlier values below are historical where annotated.
+
 ## Context
 
 ADR-0020 decided one patch plugin, `Lembitu.Oathbound`, for the four changes Oathbound has no
@@ -17,8 +19,8 @@ change rarely, and needs from Oathbound only where the Oathstone stands.
 
 **Two plugins, split by what they patch.**
 
-- **`Lembitu.Oathbound`** adapts Oathbound: respec and class switch reset to level 1, and party
-  kill XP.
+- **`Lembitu.Oathbound`** adapts Oathbound: Oathstone-only oath and talent reset with a tree
+  readable anywhere (ADR-0031), and party kill XP.
 - **`Lembitu.Callings`** owns professions: the focus choice, the steep curve, shadow levels, the
   star in the skills window and the Oathstone check. It finds the Oathstone without linking
   Oathbound's assembly.
@@ -72,15 +74,9 @@ bow restrictions stay as Oathbound ships them. A class therefore never narrows a
 
 How it is built, decided from the code rather than asked:
 
-- **Respec.** After `Warrior.Core.Progression.Respec` clears the active class's talents, its XP is
-  set to zero, so the class is at level 1. The tree's "Reset for free" button reads "Reset to level
-  1".
-- **Class switch.** After a successful `Progression.SwitchClass`, both the class left and the class
-  taken have their XP and talents cleared. Their records are kept, because Oathbound keys the unlock
-  of Berserker, Highlander, Breaker and Dragonsworn on the record existing. Oathbound switches at
-  the first click on "Take this oath", so when either class has progress the button now asks once
-  more and names both classes; the picker's and the notice's "each class keeps its own progress"
-  say the opposite now.
+- **Respec and class switch (retired 2026-10-06).** The previous hooks zeroed XP on respec and
+  cleared both classes on switching, relabelled the buttons and added a confirmation. ADR-0031
+  removes them: stock per-class XP and talents survive, with the Oathstone required for both actions.
 - **Kill XP.** Oathbound's server-side `RouteDeath` keeps its validation and its per-creature XP
   (`KillRewards.Experience`); only the send of the killer's reward is replaced, by a transpiler on its
   one `ZRpc.Invoke` and its listen-host `ReceiveReward` call. Party membership comes from
@@ -114,13 +110,12 @@ uses a click on the row to show skill buffs.
 progress into the next level untouched. Its shadow, being what the skill would be without the focus,
 drains as a non-focus skill would: World Advancement Progression's relative drain and boss-key floor,
 applied to the shadow's own level. Dropping a focus therefore gives back both the faster gain and the
-death protection the focus gave. Combat, body and non-focus profession skills drain as before. With
-the ladder of ADR-0023, a specialist never drains below a rung of their own focus.
+death protection the focus gave. Combat, body and non-focus profession skills drain as before.
+The former recipe-rung consequence is retired by ADR-0032 (2026-10-06).
 
-**Herbalist and Fishing get a bonus-output perk.** Neither mod gives its producer a level-scaled
-perk: tonic strength reads the drinker's skill, and no pinned mod scales fishing. `Lembitu.Callings`
-adds expected extra output that grows linearly with level: about 1.5 extra items per successful
-tonic, elixir or mead-base craft and about 1.25 extra fish per landed catch at 100 (ADR-0024). Each
+**Herbalist and Fishing get bonus output.** Initially about 1.5 and 1.25 extra items at 100;
+ADR-0032 replaces both with two extra at 100 and gives brewed goods a maker's grade rather
+than drinker-skill scaling. Output still grows linearly with effective perk level. Each
 craft or catch rolls once: the whole part of the expectation is given and the fraction is a chance,
 so the average is exact. It copies the item's identity and quality, consumes nothing more and grants
 no extra skill XP.
@@ -172,7 +167,7 @@ feature leave together. Explorer's bundled-manager skill takes the Road slot.
 **Explorer markers reach further as the skill grows.** A verified prefix on
 `Explorer.Patches.Tracker.Update` replaces its captured creation-time range with
 `lerp(RangeAtLevel1, RangeAt100, clamp((level - 1) / 99))`. Server-locked defaults
-are 20 m and 64 m. Upstream tier checks and unsaved-marker lifetime remain intact.
+are 20 m and ~~64 m~~ 96 m (ADR-0032, 2026-10-06). Tier checks and unsaved-marker lifetime stay.
 
 How it is built, decided from the code rather than asked:
 

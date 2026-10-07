@@ -5,6 +5,8 @@ Status: Accepted; amended by [ADR-0020](0020-oathbound-owns-class-level-talents-
 Supersedes: ADR-0006, ADR-0008, ADR-0012, ADR-0013; replaces the power-curve counts of ADR-0017 and
 ADR-0018
 
+Amended 2026-10-06 (owner): ADR-0033 replaces the tuning targets and month endpoint; ADR-0031 makes class respec free. Earlier values below are historical where annotated.
+
 ## Context
 
 On 2026-10-04 the owner added thirty mods at once, removed Clan for Northarun/Guilds, and asked for
@@ -29,22 +31,19 @@ there, and a founded guild claims one of the three start regions as its members'
 2026-10-05; first written as "agreed before launch", and before that "does not cap how many guilds
 exist").
 
-**Difficulty.** Harder than vanilla. Bosses are tuned for eight players and ordinary creatures for
-two: at that size, average players with gear of the biome win with margin, and six or seven skilled
-players can still win a boss, so the class mix never decides who is invited (owner, 2026-10-05).
-Combat difficulty never changes with how many players are online or present: no headcount
-health, damage or raid-chance bonus. Grouping up is therefore the clear way to make a fight easier.
-Difficulty may still move with other mechanics: biome, rolled level, Karma, modifiers, sieges by
-outpost biome. Rewards for playing together, such as the party XP bonus and the crew sailing bonus,
-are allowed (owner, 2026-10-05; first written as "no dynamic scaling of any kind").
-CreatureManager's modifiers and tables are the fine-tuning knob. Tuning bosses for eight means a
-single guild needs another guild for a boss, which is the cooperation incentive built into the
-numbers. Deaths are costly: class-level XP loss, skill drain down to the boss-key floor (focus
+**Difficulty (amended 2026-10-06, ADR-0033).** Harder than vanilla. Bosses are tuned for five
+players, fixed at level 1 with 5× health; ordinary creatures keep 2× health, gain 75% per star
+and roll modifiers on about 20% of spawns. Combat hard stays. A full guild can win alone;
+inter-guild cooperation rests on the Market, parties and smaller guilds rather than forcing
+every guild to borrow boss fighters. These replace the eight-player boss and two-player creature
+targets. Nothing scales health, damage or raid chance with headcount. Biome levels, Karma,
+modifiers and outpost-biome sieges still matter; party XP and crew sailing rewards are allowed. Deaths are costly: class-level XP loss, skill drain down to the boss-key floor (focus
 professions excepted, ADR-0022) and a corpse run. Carried items and durability are not touched. (A
 timed debuff after respawn was dropped the same day: no well-built mod provides one, and the other
 three costs are enough.)
 
-**Pace.** An actively playing group should kill Fader in about one month. The server is open-ended
+**Pace.** An actively playing group should kill ~~Fader~~ Kall Fimbulbringer in about one month
+(ADR-0033, amended 2026-10-06). The server is open-ended
 after that, but systems are sized for that month, not for a long endgame.
 
 **Solo play.** Possible, much harder, and steered away from progression. A boss key goes only to the
@@ -53,8 +52,8 @@ Time alone should pay through building, gathering, professions and guild contrib
 
 **Feel: MMORPG-lite.** A harder base game with more progression systems. Seven pillars: character
 level, a talent tree, professions, gear tiers, boss powers, guild progression and magic schools.
-Anyone can do anything given time, but specialising is more efficient. Respec is allowed at a
-meaningful cost. A late joiner catches up by being carried through re-kills and by party XP, never
+Anyone can do anything given time, but specialising is more efficient. Respec is free at the
+Oathstone (ADR-0031, 2026-10-06; previously a meaningful XP cost). A late joiner catches up by being carried through re-kills and by party XP, never
 by skipping content. (Corrected the same day: the boss-key skill floor only shields skills from
 death drain; it never raises a skill, so it is no catch-up.)
 
@@ -74,7 +73,7 @@ personal, shared by choice at a cartography table or through guild pins. Interfa
 readouts (hover stats, skill progress, clock, forecast) but no creature radar. Amended 2026-10-05:
 Explorer 1.1.7 grants skill-gated live resource and dungeon markers, not saved automatic pins.
 Biome unlocks are 1/10/20/30/40/50/60 and dungeons 10; marker range grows from 20 m at
-level 1 to 64 m at 100. BetterMap auto-pins are off. Raids from early on, with permanent base safety earned later
+level 1 to ~~64 m~~ 96 m at 100 (ADR-0032, 2026-10-06). BetterMap auto-pins are off. Raids from early on, with permanent base safety earned later
 through guild progress. Raids are Oathbound's sieges, which replace vanilla's random raids (revised
 the same day, ADR-0020). Creature modifiers, hunt events and regional pressure are in. (Seasons that
 change spawns, farming and cold were scrapped the same day, with the Seasonality mod.)
@@ -91,8 +90,9 @@ or has a proven hard conflict is cut now. The Pack is the contract: everyone run
 mod is acceptable when the server locks its settings or it has none. Player-side settings that only
 express preference, such as snapping behaviour or convenience automation, are allowed; settings
 that change difficulty, combat or what one player gets over another are not (refined the same day,
-when BetterArchery's unlockable ballistics were cut and Extra Snap Points and backpack automation
-were kept).
+when BetterArchery's unlockable ballistics were cut and preference settings were kept).
+The 2026-10-06 Pack decision returns BetterArchery with gameplay locked by our plugin
+(premium-review.md, #93), not an exception to this rule.
 
 ## What this supersedes
 
@@ -116,6 +116,7 @@ equipping alike.
   research is kept in `local/mod-review-2026-10-04/`.
 - Kill XP shared by party is not available off the shelf: EpicMMO's group XP reads the deprecated
   Smoothbrain/Groups API. A party mod has to be found, screened, or written.
-- Tuning targets (eight for bosses, two for creatures) are measured in the Shakedown, not argued.
+- Tuning targets (five for bosses, about three for creatures in practice, ADR-0033) are measured
+  in play, not argued.
 - `CONTEXT.md` replaces the clan vocabulary with guild and party, and drops the stance and the Trade
   Post terms. `docs/rules.md` still describes the old design until the stack is chosen.

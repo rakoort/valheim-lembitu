@@ -17,7 +17,7 @@ internal sealed record GuidePage(string Id, string Title, string Body);
 /// </summary>
 internal static class GuideContent
 {
-    /// <summary>The page ids every refusal message in the Pack may name. Order is display order.</summary>
+    /// <summary>Stable page ids; ladder now explains profession benefits. Order is display order.</summary>
     internal static readonly string[] FixedIds =
     {
         "first-steps", "oath-and-class", "calling", "ladder", "boss-keys", "groups", "death",

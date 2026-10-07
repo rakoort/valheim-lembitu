@@ -244,10 +244,11 @@ default on first run — so seeding three keys does not freeze the other two hun
 
 Two seeds ship today, both of them keys marked "Not Synced with Server":
 
-- `randyknapp.mods.epicloot.cfg` — the muted rarity palette (weathered iron, bronze, moss, tanned
-  leather, ember, bruised slate, and a muted set-item colour in place of neon cyan) and
-  `Use Generated Magic Item Names = false`. Stock is six saturated hues that the first tester
-  called a bag of Skittles against Valheim's rustic look, plus an invented name on a level-1 kill.
+- `randyknapp.mods.epicloot.cfg` — from Pack v17 (owner, 2026-10-06) the stock rarity colours
+  (Magic Blue, Rare Yellow, Epic Purple, Legendary Teal, Mythic Orange, Ancient Red, set items
+  `#26ffff`) and `Use Generated Magic Item Names = true`, written explicitly so a v16 player's muted
+  palette is replaced on install. Before v17 this seed held the muted palette chosen on 2026-09-16
+  (weathered iron, bronze, moss, tanned leather, ember, bruised slate) with generated names off.
 - `WackyMole.EpicMMOSystemUI.cfg` — `3.1StaminaColor`, `4.1HPColor` and `5.1EitrColor` set to
   `none`, which those keys' own descriptions define as "make vanilla", so health, stamina and
   eitr go back to the game's own bars. The exp fill colour is deliberately left set: `none` there
@@ -849,3 +850,46 @@ can destroy an item on failure (50%), and Adventure Mode on with `Gated Bounty M
 and at most five bounties per player. Everything else is stock. The #73 enchant-count patch is
 retired: 0.14.13's stock `MagicEffectsCount` is identical to it. None of this is on the live
 server yet; it waits for the owner to lock the configuration in.
+
+## Pack v17 candidate — native acceptance, 2026-10-07 (#92–#99)
+
+The 2026-10-06 grilling's update (ADR-0031, ADR-0032, ADR-0033) was built and accepted on the test
+host; it is not yet on the live server or published. The stack stays at 71 packages: BetterArchery
+2.0.2 joins (both sides; its quiver registers network prefabs) and Item_Requirement leaves.
+`Lembitu.Oathbound` is 0.4.0, `Lembitu.Callings` 0.6.0 and `Lembitu.Guide` 0.3.0, so every player
+needs v17 to join. A candidate archive built from the same `dist/`
+(`lembitu-client-pack-v17-candidate.zip`, 321 MB) carries BetterArchery and the stock EpicLoot seed
+and no Item_Requirement, MaxPlayerCount or harness.
+
+One native run, `~/lembitu-native-tests/20261006T222827Z-v17/` on astral-tricep, passed all fourteen
+checks on a fresh world with the full Pack; the test stage alone set `[XP log] ReportMinutes = 1` so
+the XP log reported within the run:
+
+- enforced config verified, 417 entries; 47 Lembitu features `on`, none off; Item_Requirement absent;
+- BetterArchery: a client file seeded with velocity 200 read 70 after joining, its zoom preference 3
+  kept;
+- no inventory Classes button before the first oath and one after; Mage 30 XP and Ranger 10 XP both
+  kept across Mage → Ranger → Mage switches at the stone; a free respec kept the XP;
+- 56 m from the stone the tree opened from the inventory button, while Reset and Take this oath
+  changed nothing and showed "Visit the Oathstone to take an oath or reset talents.";
+- a Ranger without Fader's key was refused a Deep North bow ("Needs your own Fader boss key to equip
+  Deep North gear. Guide: Boss keys (boss-keys).") and equipped it with the key;
+- the mead ketill (`piece_MeadCauldron`) made grade-5 mead bases at Herbalist 100 and grade-1 at 10,
+  in separate stacks, tooltip "Brewer's grade 5";
+- a Herbalist 0 drinker got grade-5 invisibility 104 s and grade-1 59 s (configured 60 s), grade-5
+  poison resist 1,199 s (twice vanilla); an ungraded frost resist at drinker Herbalist 100 lasted
+  749 s, grade 1 with no hour floor;
+- six summoned Eikthyrs each had 2,500 maximum health and one to three modifiers, each with an
+  offence modifier; 5 of 30 boars carried a modifier;
+- one unit of raised XP logged Wood Cutting 1.9, Mining 1.9, Blacksmithing 3.8, Explorer 2.9 and
+  Herbalist 9.2 (4.6 times Herbalist's own factor 2). Farming 0.675, Fishing 0.475, Cooking 1,
+  Animal Handling 0.1 and Sailing 0.15 are the new rates times a constant factor applied by another
+  prefix on those skills; the first-evening rates already include it, so each step is the intended
+  ratio.
+
+Earlier attempts that night failed on the test script, not the build: a hidden button counted as
+visible, teleports and spawns beyond the harness limits, a SeparateSpawns seed reroll that stops the
+server, an unlit fire under the cauldron (the player was wet; rain is the likely cause), the wrong
+station (mead bases are made at the mead ketill in 1.0), and a player killed between checks. Not covered
+natively: the fermenter carrying a grade (managed smoke only), a second client, the Market round
+trip, and a client editing a locked BetterArchery key while connected.

@@ -15,19 +15,21 @@ implements it. Read the four registers below before trusting any sentence here.
 | **Unresolved** | Policy nobody has settled. Do not read an answer into it. |
 
 The pack is a candidate until the acceptance gate passes (`docs/modstack.md`, "Acceptance gate"),
-and this page was rewritten on 2026-10-04 from the decisions of that day (ADR-0019 to ADR-0024).
+and this page records the Pack v17 decisions of 2026-10-06 (ADR-0031 to ADR-0033).
+The live Run is still on Pack v16 until v17 passes native acceptance; v17 changes below are
+*Planned* until that cutover, not claims of already observed behaviour.
 Almost everything below is therefore *Intended* or *Planned*; the Shakedown is where it gets measured.
 
 ## What this server is
 
 A private, modded Valheim server for one group of about eight active players, organised into
 guilds of three to five (ADR-0019). The **Run** is open-ended, but every system is sized for an
-actively playing group to kill Fader in about one month. Before it comes the **Shakedown**, played on
+actively playing group to kill Kall Fimbulbringer in about one month (ADR-0033). Before it comes the **Shakedown**, played on
 a world that will be discarded, where the rules below are tried and corrected.
 
 The concept is **MMORPG-lite for rival guilds that must cooperate**. There is no PvP. Guilds compete
-through progress, territory and the Market. A boss is tuned for eight players, so guilds need each
-other to kill one. Trade between guilds is an advantage rather than a necessity: a guild of three can
+through progress, territory and the Market. A boss is tuned for five players: a full guild can
+win alone; smaller guilds benefit from parties across guilds (ADR-0033). Trade between guilds is an advantage rather than a necessity: a guild of three can
 cover every profession, but not every hour of the day. Anyone can do anything given time;
 specialising is how you do it well.
 
@@ -125,9 +127,10 @@ schools. Hunter and Dragonsworn fight beside a companion (ADR-0020).
 
 **Go to the Oathstone first.** It stands 17-21 m from the start temple near the centre of the world.
 Guilds start 0.5 to 1.2 km from there, so reaching it is the first short trip of the Run. A character with no
-class earns no class XP at all (`Warrior.Core.Progression.GrantExperience`). Class, talents and your
-Calling change only at the Oathstone (`config/enforced/local.warrior.rpg.cfg`, `AccessMode =
-Oathstone`).
+class earns no class XP at all (`Warrior.Core.Progression.GrantExperience`). Your class and
+Calling change at the Oathstone; talent resets do too. After your first oath the inventory Classes button opens the
+tree anywhere, where you may read it and spend talent points (`AccessMode = MenuButton`, ADR-0031).
+The button is hidden before that first oath.
 
 **Class level.** Kills earn XP for your active class, up to level 80. A kill pays about
 2·√(its maximum health), between 10 and 80, four times that for a boss, plus up to 5 for creatures
@@ -143,11 +146,11 @@ outgrows the gear gate. Talent points, class XP and the class level itself are u
 growth stays 4% per power level behind a server-locked setting (`lembitu.oathbound.cfg`, `[Power]
 SpellGrowth`), and companions start the Shakedown at 0.75× damage (`[Companions] DamageMultiplier`).
 
-**Respec and class switch cost the class level.** Resetting your talents puts the class back to
-level 1, and so does switching to another class: both the class you leave and the class you take
-start over. You level one class at a time. This is cheap early and expensive late (ADR-0020,
-ADR-0022). The tree says so: its reset button reads "Reset to level 1", and taking an oath while
-either class has progress asks once more.
+**Respec and class switch are free at the Oathstone.** Each class keeps its own XP and talents;
+returning to a class restores its progress. Reset talents changes the allocation, not the class
+level. Away from the stone, taking an oath and resetting talents are refused with an Oathstone
+hint. You still earn XP only in the active class. Levels already lost to switches cannot be
+restored (ADR-0031). Kall adds no class power: the cap remains 80 after Fader (ADR-0033).
 
 **Class equipment rules stay, except for tools.** Classes keep Oathbound's armour, weapon, shield
 and bow rules: Mages, Warlocks, Rangers, Monks and Rogues wear no metal armour, Shieldbearers and
@@ -171,11 +174,9 @@ Combat skills (weapons, magic, blocking, dodge) and body skills (run, jump, swim
 not professions and are not affected by anything in this section.
 
 **Your Calling is four focus professions: two Land, one Craft, one Road.** A focus levels at full
-speed to 100. Every other profession levels at full speed to 30, half speed to 60, a quarter to 80
-and a tenth beyond. Nothing is capped, so anyone can master anything given time; a non-focus skill
-needs 1.8 times the work of a focus to reach 60, 2.5 times to reach 70 and nearly 6 times to reach
-100. Until you choose, every profession follows the slow curve, which changes
-nothing below 30.
+speed to 100. Every other profession levels at full speed to 10, half speed to 60, a quarter to 80
+and a tenth beyond (ADR-0030). Nothing is capped, so anyone can master anything given time.
+Until you choose, every profession follows the steep curve, which changes nothing below 10.
 
 **You choose your focuses in the Calling window**, opened from the Calling button in the skills
 window. It can be read anywhere; a change takes effect only while standing at the Oathstone, and
@@ -198,75 +199,68 @@ its existing SeedBed conversion is not removed.
 
 - Register: *Intended* (`Lembitu.Callings`, `config/enforced/lembitu.callings.cfg`, ADR-0022).
 
-## What professions make: the biome ladder
+## What professions make: benefits, not blocks
 
-**What a profession makes climbs ten levels per biome** (ADR-0023). Crafting an item needs the
-matching profession at its rung, by the biome of its materials, the same biome World Advancement
-Progression reads for its boss-key locks:
+**There is no profession-level requirement to craft or upgrade.** The profession ladder and its
+three level-40 exceptions have left with Item_Requirement (ADR-0032). Personal boss keys still
+apply. Anyone can make a dish, potion or piece of gear when the recipe, materials, station and
+personal key allow it; specialists make better goods and make more of them.
 
-| Biome | Level to craft |
-| --- | --- |
-| Meadows | none |
-| Black Forest | 10 |
-| Swamp | 20 |
-| Mountains | 30 |
-| Plains | 40 |
-| Mistlands | 50 |
-| Ashlands | 60 |
-| Deep North | 70 |
+**The smith sells better gear.** Per ten real Blacksmithing levels, the maker stamps +2% damage,
++1 armour and +2 block power, with no added elemental rider or per-upgrade extra (ADR-0032).
 
-Up to the Mountains a rung only asks for practice. From the Plains on, a crafter without the focus
-needs 1.5 times the skill XP at 40, rising to 2.5 times at 70.
+**The brewer's grade belongs to the maker, not the drinker.** Meads, mead bases, Herbalist tonics
+and elixirs carry grade 1 below Herbalist 25, 2 at 25, 3 at 50, 4 at 75 and 5 at 100, from the
+brewer's real level, not borrowed levels. Grades have separate stacks, show in the tooltip and
+survive the Market; a graded base ferments into the same grade of mead. Old or looted ungraded
+drinks count as grade 1. With f = (grade − 1) / 4, tonic/elixir durations gain ×(1 + 0.75 f),
+healing/stamina/eitr mead cooldowns shorten 10–80%, and resist, Tasty and Lingering meads last
+1.25–2× as long. There is no one-hour minimum. Your own Herbalist skill no longer strengthens
+someone else's brew (ADR-0032).
 
-| Profession | What climbs the ladder |
-| --- | --- |
-| Blacksmithing | Every weapon, shield and armour piece, capes and Galdr-table magic gear included, crafted or upgraded. Pickaxes and axes are weapons too; the iron pickaxe that silver needs sits on the Swamp rung. |
-| Herbalist | Mead bases, Herbalist's tonics and elixirs |
-| Cooking | Dishes made in the crafting menu, up to the feasts. Meat cooked on a cooking station is not a recipe and stays open. |
-| Fishing | Biome baits |
-| Animal Handling | Saddles |
-| Hauling | Backpacks |
-| Farming | The Scythe |
-| Sailing | OdinShip's caulked wood at 40, the one named material exception |
-| Mining, Wood Cutting, Exploration | Nothing to craft; their perks are their reward |
+**Elixirs keep their boss-fight strength** (ADR-0024): Berserker ×1.25 damage, Swift ×1.2 speed,
+Jump ×1.5, Fast Learner ×1.5 skill XP at half health, Defender as shipped (very resistant but a
+fifth of your damage), Invisibility 60 s, Heavy Lifter 60 s and Slow Fall as shipped. Their duration
+scaling now comes from the brewer's grade. Herbalist's own tonic tiers stay at 1.
 
-**Only crafting is gated, never use.** Anyone may wear, wield, drink or buy what a specialist made.
-Repairs, ammunition, the hammer, hoe and cultivator, and utility items stay open to everyone.
-Three Meadows-material items climb early by name, all crafting-only: the Herbalist's Swift elixir
-at Herbalist 40, SeaAnimals' saddle at Animal Handling 40 and OdinShip's caulked wood at Sailing 40
-(2026-10-05, ADR-0023) — a taste of each speciality before its biome rung.
+**The cook's grade rewards the cook.** Grade 1 below real Cooking 25, then one more per 25 levels,
+5 at 100. Each grade above 1 gives 5% more health, stamina, eitr and regeneration and 12.5% more
+shelf life: grade 5 gives +20% food benefits and +50% shelf life. A graded dough bakes into graded
+bread, and the Market keeps both grade and expiry. Borrowed Cooking levels never improve the grade;
+feasts remain ungraded. FineDining's freshness, preservation, three food slots and work meals
+remain unchanged (ADR-0029, ADR-0032).
+Work meals lend ten perk levels while eaten: boar jerky Exploration, deer stew Wood Cutting,
+sausages Mining, carrot soup Farming, serpent stew Sailing, wolf jerky Hauling, blood pudding
+Animal Handling and fish wraps Fishing. They never raise a maker’s grade (ADR-0029).
 
-**The smith is the guild's armourer and the alchemist its apothecary** (ADR-0024). From the Plains
-on, every new piece of gear comes from a smith at the right rung, and every vanilla mead (healing,
-stamina, eitr, and the poison, frost and fire resistance meads) and every elixir comes from an
-alchemist. Gear is bought once per tier; potions are used up every fight. A master smith's gear is
-also a little better: +1% damage, +0.5 armour and +1 block power per 10 Blacksmithing levels.
-EpicLoot drops still give gear no smith made.
 
-**Herbalist's elixirs, retuned to boss-fight strength** (`config/enforced/blacks7ar.Herbalist.cfg`):
-Berserker ×1.25 damage, Swift ×1.2 speed, Jump ×1.5, Fast Learner ×1.5 skill XP at half health,
-Defender as shipped (very resistant, but you deal a fifth of your damage), Invisibility 60 s,
-Heavy Lifter 60 s, Slow Fall as shipped. Durations grow with the drinker's own Herbalist skill.
+**Pace targets differ by group.** A steady Land focus should master a little before Fader, Road at
+Fader and Craft at Kall. Within each group the profession band remains 1.25×, judged on combined
+pace and perks. Non-focus follows the same steep curve. These are targets from the first evening's
+logs, not guaranteed levelling times; they are watched after each session and corrected weekly
+(ADR-0032, #100).
 
-- Register: the ladder *Intended* (364 rules in `config/enforced/ItemRequirement/`, generated from the
-  game's item database; a rung follows an item's materials, not its name, ADR-0023); elixir and
-  smith numbers *Intended*.
+- Register: Pack v17 changes *Planned*, pending native acceptance (#99).
+
 
 ## Perks
 
 **A focus makes you visibly better at the job, and no profession is the obvious pick** (ADR-0024).
 Perks grow with every level: more wood and ore per swing, faster taming and more from each animal,
 more carry weight, a wider map reveal, longer-lasting tools and faster smelting. At 100, for
-example, chopping and digging hit 1.5 times as hard and yield 1.67 times the wood or ore, taming runs
-2.5 times as fast, a hauler carries 100 more and an explorer reveals 300 m around them. Herbalist and
-Fishing get extra output instead: about 1.5 extra items per craft and 1.25 extra fish per catch at
-100, from `Lembitu.Callings`, because their mods give the maker nothing. A master sailor's ship takes
-up to 2.5 times the sail force and rows faster.
+example, wood and ore yield reach ×2, a hauler carries 150 more with 90% cart-mass reduction,
+animal slaughter yield reaches ×3 with 40% bonus-star chance, and an explorer reveals up to
+400 m. Herbalist and Fishing each average two extra items per craft or catch. A master sailor's
+speed factor reaches 2 and its cutting minimum angle 10 degrees (ADR-0032).
+At mastery, Mining’s rock-breaker chance reaches 10%; Wood Cutting’s log splitter rises from
+10% at 50 to 50% at 100. Farming gathering-luck steps are 50/70/90/100. These remain perks,
+never craft requirements (ADR-0032).
 
-**Power perks that switch on at a level sit on the ladder's rungs**, never below 30. Explorer's
+
+**Power perks switch on at their milestone levels**, not recipe requirements. Explorer's
 information unlocks instead follow the biomes: Meadows 1, Black Forest 10, Swamp 20,
 Mountain 30, Plains 40, Mistlands 50, Ashlands 60; dungeons and caves 10. Live marker
-range grows linearly from 20 m at Explorer 1 to 64 m at 100.
+range grows linearly from 20 m at Explorer 1 to 96 m at 100 (ADR-0032).
 
 | Level | Perks |
 | --- | --- |
@@ -275,7 +269,7 @@ range grows linearly from 20 m at Explorer 1 to 64 m at 100.
 | 60 | Crops in any biome |
 | 70 | Whole-vein mining, an extra star on tamed animals, no ram damage to your ship |
 
-- Register: rungs and magnitudes *Intended* (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`,
+- Register: milestones and v17 magnitudes *Planned* (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`,
   `config/enforced/blacks7ar.Explorer.cfg`); the Herbalist and Fishing bonus *Intended*
   (`Lembitu.Callings`). The Shakedown judges the balance by playing each focus.
 
@@ -296,7 +290,8 @@ and portals. Every lock follows the biome of the item's materials
 (`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). Drinking follows the
 same rule for Herbalist's tonics and elixirs (ADR-0022): each needs the personal boss key of its
 strongest herb's biome, a biome World Advancement Progression does not know on its own
-(`Lembitu.Callings`). Trade helps, but never skips a boss.
+(`Lembitu.Callings`). Deep North gear and Frost Foundry intermediates require your Fader key to craft and equip
+(ADR-0032). Baits and Herbalist herbs have no added key lock. Trade helps, but never skips a boss.
 
 **Boss powers are passive and grow with boss kills** (ProgressivePowers). You attune one Forsaken
 power at a time; it gives passive bonuses rather than the vanilla active power, and it gains up to
@@ -356,20 +351,18 @@ hover stats, skill progress, a clock and the weather forecast.
 ## Difficulty
 
 **Harder than vanilla, and the same fight whoever turns up** (ADR-0019). Nothing scales with the
-number of players nearby. Bosses are tuned for eight players and ordinary creatures for two:
+number of players nearby. Bosses are tuned for five players; ordinary creatures for about three
+in practice (ADR-0033):
 
-- Ordinary creatures carry twice vanilla health and vanilla damage (the 2026-10-04 raise to 1.2
-  was trimmed back on 2026-10-05 — health keeps a fight long, damage growth was what one-shot);
-  bosses eight times its health and 1.5 times its damage. Level growth is slower than vanilla on
-  both (`config/enforced/CreatureManager/levels.yml`).
-- Creature levels follow CreatureManager's `Hard` biome preset, so a late biome spawns stronger
-  creatures and bosses follow suit (`config/enforced/sighsorry.CreatureManager.cfg`).
-- The game's own `Combat hard` world modifier is also set (`config/launch/launch.env.example`).
-- About 10 in 100 ordinary creatures carry a **creature modifier** (armoured, enraged, an elemental
-  infusion and others), a boss about one, and an Enforcer two. Deathward, regenerating, omen and
-  blamer are off, and bosses and Enforcers never roll the three counters that punish ranged and
-  caster classes — vortex, adaptive and chameleon (`config/enforced/CreatureManager/levels.yml`,
-  `karma.yml`, 2026-10-05).
+- Ordinary creatures keep twice vanilla base health and unchanged damage, with +75% health per
+  star. Their levels still follow CreatureManager's Hard biome preset.
+- Every boss stays at level 1, independent of the biome preset, with 5× vanilla health and 1.5×
+  damage before Combat hard. Combat hard stays: boss damage is effectively 2.25× vanilla and
+  effective health about 5.9× because players deal 85% damage.
+- About 20 in 100 ordinary creatures carry a modifier. Bosses carry 1–4: offence always rolls,
+  defence, on-hit and utility each about 33%. Deathward, regenerating, omen and blamer stay off;
+  bosses and Enforcers never roll vortex, adaptive or chameleon. Kall's second phase retains
+  CreatureManager's exemption. Karma and Enforcers are unchanged.
 - **Karma:** an area where players kill heavily grows more dangerous — two steps, at 90 and 180,
   capped at +2 — and eventually an **Enforcer**, an elite hunt target worth a group's effort,
   appears.
@@ -396,22 +389,28 @@ siege of places to spawn. There are no blood moons (`config/enforced/local.warri
 ## Gear and loot
 
 **Magic gear comes from EpicLoot.** Magic items, rarities, effects, enchanting and Haldor's adventure
-trade: treasure maps, bounties (at most five in progress per player), gambling and the secret stash.
-Drops run at 0.6 of stock — a creature drop's odds of coming out magic are 0.36 times the
-package's — and shardstones at 0.1; a failed tempering can destroy the item. A drop is
-gated on recipes the player knows rather than on world progress (`Item Drop Limits =
-PlayerMustKnowRecipe`). A boss drops one trophy, one Wishbone and one swamp key per kill, not one per
-player present, so killing it again pays (`config/enforced/randyknapp.mods.epicloot.cfg`). The sea
+trade: treasure maps, bounties, gambling and the secret stash. Pack v17 restores stock drops
+(Global Drop Rate Modifier 1), shardstone ratio 0.2, no destruction on failed tempering and no
+bounty limit. A boss gives one trophy, Wishbone and swamp key to each player within 100 m.
+Drops still require recipes you know rather than blocked world keys (PlayerMustKnowRecipe).
+Stock rarity colours and generated magic names return, including on an upgrade from the old
+muted client seed (2026-10-06 decision log, #98). The sea
 hunts the oceans gained — sharks, the Humboldt squid and the crocodile — drop magic gear like the
 land creature of their biome's tier, and the peaceful turtles and whales drop none
 (`config/enforced/EpicLoot/patches/lembitu-seaanimals.json`).
+
+**BetterArchery returns in v17.** Its quiver, arrow improvements, retrievable arrows and bow
+draw gameplay run at server-locked stock values; Ranger True Flight and Snapshot stack on top.
+Quiver layout and hotkeys, Bow Zoom, draw-cancel keys, crosshair, sneak readout and nocked-arrow
+visuals remain your preferences. Removing the mod later loses arrows stored in its quiver
+(2026-10-06 decision log, #93).
 
 ## The Market
 
 **One server-wide market that works while the other side is offline.** Northarun/Marketplace offers
 coin sales, buy orders, bounties and a bank. A 5% fee on every payout keeps coins scarce
-(`config/enforced/adrian.valheim.marketplace.cfg`). Under the ladder the Market is where a guild buys
-what its own members cannot yet make.
+(`config/enforced/adrian.valheim.marketplace.cfg`). The Market buys better maker-stamped goods,
+surplus and time saved, not relief from a profession craft block (ADR-0032).
 
 ## Crafting, building and comforts
 
@@ -461,8 +460,8 @@ characters. Each character is restored by Steam Cloud or the player's own copy
 server but carry no lock entry; whether a player can change them while connected is a Shakedown check
 (ADR-0024).
 
-**Boss health is a weighting, not a fixed step.** A boss rolls its level from the biome preset, so a
-single kill can land above or below its expected health.
+**Boss health is fixed in v17.** Every boss stays at level 1 with 5× base health; modifiers
+still vary the fight (ADR-0033).
 
 ## Where the rest lives
 

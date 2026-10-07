@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.callings</PluginGuid>
-    <Version>0.5.0</Version>
-    <Description>Callings (ADR-0021, ADR-0022): four focus professions chosen in the Calling window at the Oathstone, the steep curve for every other profession, shadow levels, focus protection on death, and the Herbalist and Fishing bonus output. Also follows soil's rules for SeedBed's beds, refuses Herbalist tonics whose biome's boss key the drinker lacks, keeps Herbalist's mead scaling to once per drink, and locks BlacksmithingExpanded's settings. The cook (ADR-0029): the cook's grade on dishes, through cooking stations and into FineDining's food stats and shelf life, eaten food's scale kept through a relog, and work meals. The balance policy (ADR-0030): log splitter, quick bite and steady overload milestones, and an hourly profession XP log on the server.</Description>
+    <Version>0.6.0</Version>
+    <Description>Callings: four focus professions, the steep curve, shadow levels, focus protection, profession perks and XP logging. Maker grades on dishes and potions; brewer grades survive fermentation and replace drinker skill scaling, without a mead-duration floor. Personal Fader-key locks on generated Deep North gear. SeedBed soil rules, Herbalist tonic keys, Explorer marker range and BlacksmithingExpanded settings lock.</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -78,7 +78,7 @@ internal static class SeedBedBiomeRule
             return false;
         }
         planter.Message(MessageHud.MessageType.Center,
-            $"{LocalizedName(item)} cannot grow in this biome. Farming {UnrestrictedLevel()} lifts the rule, as it does for soil. Guide: Profession ladder (ladder).");
+            $"{LocalizedName(item)} cannot grow in this biome. Farming {UnrestrictedLevel()} lifts the rule, as it does for soil. Guide: Profession benefits (ladder).");
         return true;
     }
 

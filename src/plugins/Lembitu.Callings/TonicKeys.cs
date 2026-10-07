@@ -10,8 +10,7 @@ namespace Lembitu.Callings;
 /// Tonics follow the food rule for boss keys (ADR-0022). World Advancement Progression locks eating by
 /// the biome of an item's materials but lets materials it does not know through, and it knows none of
 /// Herbalist's herbs, so a tonic or elixir bought on the Market could be drunk without its biome's
-/// boss key. Each herb is mapped to its biome the way the ladder generator maps it
-/// (scripts/generate-ladder.py, from Herbalist 1.5.0 VegetationSetup.cs), and a tonic or elixir whose
+/// boss key. Each herb is mapped to its biome from Herbalist 1.5.0 VegetationSetup.cs, and a tonic or elixir whose
 /// highest-biome herb needs a boss key the drinker lacks is refused at vanilla item use, before
 /// Herbalist's consume prefix can return an empty bottle for a drink that never happened.
 /// </summary>
@@ -30,7 +29,7 @@ internal static class TonicKeys
     private static readonly Biome Plains = new("Plains", "defeated_dragon", 4);
     private static readonly Biome Mistlands = new("Mistlands", "defeated_goblinking", 5);
 
-    /// <summary>The ladder's herb rungs: rung 10n is the biome whose boss is n kills deep (ADR-0023).</summary>
+    /// <summary>Herbalist herbs mapped to the biome whose preceding boss key permits drinking.</summary>
     private static readonly Dictionary<string, Biome> BiomeOfHerb = new(StringComparer.Ordinal)
     {
         { "BH_Boswellia", BlackForest },

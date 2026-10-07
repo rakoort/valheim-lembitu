@@ -4,6 +4,8 @@ Date: 2026-10-05
 Status: Accepted; implemented 2026-10-05 in `src/plugins/Lembitu.Oathbound`
 Amends: ADR-0020 and ADR-0022 (scope of `Lembitu.Oathbound`)
 
+Amended 2026-10-06 (owner): ADR-0033 names Kall as the last boss; the power cap remains 80 after Fader and Kall adds no class power. Earlier values below are historical where annotated.
+
 ## Context
 
 Oathbound 0.21.14 scales classes unevenly (`docs/wiki/premium-review.md`, Lessons). A weapon class's
@@ -22,8 +24,8 @@ Run, each keeping its own strength. Equal classes were not the goal; a loose ±4
 making a weak pick feel like a handicap, a tight ±15% as reducing classes to flavour.
 
 **The power level is the class level, capped at ten per personal boss key** (owner, 2026-10-05): 10
-before Eikthyr, 20 after him, and so on to 80 after Fader, the same ten-per-biome step as the
-profession ladder (ADR-0023). Oathbound's level-scaled power reads the power level instead of the
+before Eikthyr, 20 after him, and so on to 80 after Fader. Kall adds no class power (ADR-0033);
+the former comparison with the profession ladder is retired by ADR-0032. Oathbound's level-scaled power reads the power level instead of the
 class level. Talent points, class XP and the class level itself are untouched; capping talent points
 too was rejected as a new hard lock on players who level without killing bosses.
 

@@ -8,7 +8,50 @@ proposes are Shakedown starting points, not measurements. Implementation is trac
 and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Guide`) and #91
 (`Lembitu.Guilds`).
 
-## Decisions
+## Decisions — 2026-10-06 grilling, Pack v17
+
+Owner decisions, before the v17 native gate (#99); the Run remains on v16 until cutover. The ADRs
+are the authoritative policy records; this log indexes tickets and records the two Pack choices.
+Earlier entries below retain dated history, not conflicting current instructions.
+
+| Decision | Ticket | Record |
+| --- | --- | --- |
+| Each class keeps XP and talents; free switch/reset at the Oathstone, tree anywhere after first oath | #92 | ADR-0031 |
+| BetterArchery returns with server-locked gameplay and personal UI preferences | #93 | Pack decision below |
+| Item_Requirement and all 367 rules leave; Deep North crafting/equipping requires the personal Fader key | #94 | ADR-0032 |
+| Brewer's grade replaces drinker-skill scaling; graded mead bases survive fermentation and Market | #95 | ADR-0032 |
+| Land mastery before Fader, Road at Fader, Craft at Kall; toned pace and master-not-god ramps, band unchanged | #96 | ADR-0032 |
+| Fixed level-1 five-player bosses, 1–4 modifiers; creature base health 2, +75% per star, about 20% traits; Combat hard stays; month ends at Kall, class power stays 80 | #97 | ADR-0033 |
+| EpicLoot returns to stock apart from recipe-known drops and the SeaAnimals integration | #98 | Pack decision below |
+| Ship everything together only after native acceptance; no live deployment in this work | #99 | Pack integration |
+| Read XP and boss fights after every session, correct pace by group weekly | #100 | shakedown.md per-session watch |
+
+**BetterArchery 2.0.2 returns** (ishid4, latest package dated 2026-09-20), reversing the
+2026-10-04 cut for unsynced gameplay. Lembitu.Oathbound locks BetterArchery ConfigEntry objects
+through server-locked Jotunn values at load, server arrival and local edit. Gameplay uses stock:
+quiver on; arrow improvements on, velocity 70, gravity 15, accuracy 0, aim direction (0, 0.05, 0);
+bow draw movement reduction, crouch draw and wooden arrows anywhere on; retrievable arrows on,
+disappear time 60, disappear on hit off, solid collider off, auto pickup off and the package's
+retrieve-list string unchanged. Quiver slot/model/HUD positions and hotkeys, Bow Zoom, draw-cancel
+keys, crosshair toggles, sneak-damage readout and nocked-arrow visual stay player preferences.
+Ranger True Flight (+10% projectile speed) and Snapshot (+50% for five seconds after dodge) stack
+on top. Both client and server install it: its decompile registers quiver network prefabs in
+ZNetScene (1171–1191), items in ObjectDB (1200–1222), and patches ObjectDB (3143–3158)
+(/tmp/lembitu-research/ProgressionCluster/BetterArchery.cs, worker evidence). The declared
+BepInEx 5.4.1501 dependency requires the documented stage-stack override. Removing BetterArchery
+later loses arrows in its quiver. The live lock still needs native proof (#93).
+
+**EpicLoot returns to stock** (#98). The only deliberate server deviation is Item Drop Limits =
+PlayerMustKnowRecipe: stock world-key filtering would stay at Meadows because this Run blocks
+world keys. Global Drop Rate Modifier returns 0.6→1, Shard Stone Drop Ratio 0.1→0.2, Boss Trophy
+Drop Mode Default→OnePerPlayerNearBoss (trophies, Wishbones and swamp keys per player within
+100 m), Temper Fail Destroys Item true→false and Enable Bounty Limit true→false. Stock entries
+the Run depends on may stay pinned under CONTEXT.md's Enforced config rule. The SeaAnimals
+loot-table patch stays as an integration, not a balance override. Client seed restores Magic Blue,
+Rare Yellow, Epic Purple, Legendary Teal, Mythic Orange, Ancient Red, Set Item #26ffff and Use
+Generated Magic Item Names = true, including upgrading a player whose cfg still has muted colours.
+
+## Decisions — earlier history
 
 - **Trade between guilds is an optional advantage, not a dependency** (owner, 2026-10-04). Fact:
   three players cover all eleven professions under the 2 Land + 1 Craft + 1 Road quota
@@ -58,11 +101,11 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
   `karma.yml` `Enforcer.modifiers` chameleon, vortex and adaptive to chance 0; applied 2026-10-05 (#87). Enforcers
   are group hunts like bosses; on ordinary creatures the counters are rare (about 0.44% per group
   roll each) and fights are short.
-- **"Bosses for eight" means eight win with margin** (owner, 2026-10-05; `CONTEXT.md` tuning target,
+- **“Bosses for eight” (superseded 2026-10-06 by ADR-0033: five players)** (owner, 2026-10-05; `CONTEXT.md` tuning target,
   ADR-0019): eight average players with the biome's gear win on a first or second try, and six or
   seven skilled players can win. Grounded in Lessons: razor-edge tuning made about 1% of boss health
   decide job invitations in FFXIV.
-- **Magic loot from creatures stays scarce: 0.36× the package's odds** (owner, 2026-10-05). EpicLoot's
+- **Magic loot scarcity (superseded 2026-10-06 by #98: stock odds)** (owner, 2026-10-05). EpicLoot’s
   `Global Drop Rate Modifier = 0.6` divides the no-drop weight and multiplies the drop weights, so odds
   fall to 0.6² (`EpicLoot.cs:17081-17099`); boss tables have no empty outcome and still always drop.
   Kept as deliberate scarcity because bosses guarantee and smiths supply core gear; the overlay comment
@@ -202,7 +245,7 @@ and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Gu
 - **Housekeeping, all accepted** (owner, 2026-10-05): add the measurements these decisions depend on
   to `docs/wiki/shakedown.md`; correct the outdated comments and docs the review found; close #67
   and #82-#86 as superseded by the 2026-10-04 concept.
-- **Three Meadows-material items join the ladder by name** (owner, 2026-10-05; ADR-0023): Runner
+- **Three named ladder exceptions (retired 2026-10-06 by ADR-0032, #94)** (owner, 2026-10-05; ADR-0023): Runner
   (Swift) elixir at Herbalist 40, SeaAnimals' saddle at Animal Handling 40, OdinShip's caulked wood at
   Sailing 40; crafting only, through `scripts/generate-ladder.py` `ITEM_FLOORS` policy; regenerated
   2026-10-05 (#87) from the original native dump (SHA-256

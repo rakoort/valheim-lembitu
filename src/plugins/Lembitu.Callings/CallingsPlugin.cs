@@ -29,7 +29,7 @@ namespace Lembitu.Callings;
 public sealed class CallingsPlugin : BaseUnityPlugin
 {
     private Harmony? _harmony;
-
+    private bool _deepNorthOn;
     private void Awake()
     {
         ManualLogSource log = Logger;
@@ -48,7 +48,12 @@ public sealed class CallingsPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "Calling window in the skills dialog", CallingWindow.Plan);
         Hooks.Enable(_harmony, log, $"Seed beds follow the soil's rules ({Pinned.Loaded("blacks7ar.SeedBed", "SeedBed")})", SeedBedBiomeRule.Plan);
         Hooks.Enable(_harmony, log, $"Herbalist tonics need their biome's boss key ({Pinned.Loaded("blacks7ar.Herbalist", "Herbalist")}, {Pinned.Loaded(SkillRules.WorldAdvancementProgressionGuid, "World Advancement Progression")})", TonicKeys.Plan);
-        Hooks.Enable(_harmony, log, $"Mead durations scale once per drink ({Pinned.Loaded("blacks7ar.Herbalist", "Herbalist")})", MeadDurations.Plan);
+        _deepNorthOn = Hooks.Enable(_harmony, log, "Deep North personal Fader-key locks", DeepNorthKeys.Plan);
+        if (_deepNorthOn) DeepNorthKeys.Enable(log);
+        Hooks.Enable(_harmony, log, "Potions carry the brewer's grade", BrewersGrade.CraftPlan);
+        Hooks.Enable(_harmony, log, "Brewer's grade through fermentation", FermenterGrade.Plan);
+        Hooks.Enable(_harmony, log, "Herbalist drinks use the brewer's grade", BrewersGrade.DrinkPlan);
+        Hooks.Enable(_harmony, log, $"Mead durations use the brewer's grade without a floor ({Pinned.Loaded("blacks7ar.Herbalist", "Herbalist")})", MeadDurations.Plan);
         SmithLock.Enable(log);
         Hooks.Enable(_harmony, log, "Herbalist bonus output", BonusOutput.HerbalistPlan);
         Hooks.Enable(_harmony, log, "Fishing bonus output", BonusOutput.FishingPlan);
@@ -72,7 +77,11 @@ public sealed class CallingsPlugin : BaseUnityPlugin
         Logger.LogInfo($"Shadow levels and profession drains follow {SkillRules.RuleSource}.");
     }
 
-    private void Update() => XpLog.Tick(UnityEngine.Time.unscaledDeltaTime);
+    private void Update()
+    {
+        XpLog.Tick(UnityEngine.Time.unscaledDeltaTime);
+        if (_deepNorthOn) DeepNorthKeys.Tick(UnityEngine.Time.unscaledDeltaTime);
+    }
 
     private void OnDestroy() => _harmony?.UnpatchSelf();
 }

@@ -11,8 +11,7 @@ namespace Lembitu.Callings;
 /// The cook's grade (ADR-0029): a dish made at a Cooking station carries the grade of the cook who
 /// made it, 1 below the first step of Cooking levels and one more per step, 5 at 100 with the
 /// default 25. Grade 2 and up gives health, stamina, eitr and regeneration a bonus and a longer shelf
-/// life. The grade reads the cook's real Cooking level, never a bonus from food or gear, the way the
-/// profession ladder does.
+/// life. The grade reads the cook's real Cooking level, never a bonus from food or gear.
 ///
 /// The grade lives in two places. Item quality keeps grades in separate stacks, because Valheim
 /// stacks by name, quality and world level only (<c>Inventory.FindFreeStackItem</c>), and it travels

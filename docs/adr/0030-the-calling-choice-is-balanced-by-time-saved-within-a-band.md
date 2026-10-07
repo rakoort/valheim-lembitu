@@ -5,6 +5,8 @@ Status: Accepted; implemented 2026-10-06 in `Lembitu.Callings` 0.5.0 and the enf
 Amends: ADR-0021 (where the steep curve starts), ADR-0024 (Wood Cutting, Fishing and Hauling perks;
 smith and herbalist XP)
 
+Amended 2026-10-06 (owner): ADR-0032 replaces the initial pace and mastery settings; the profession band and steep curve stay. Earlier values below are historical where annotated.
+
 ## Context
 
 The owner set the balancing goal for professions: choosing a Calling should be hard from an
@@ -44,13 +46,13 @@ one at 50, written in `Lembitu.Callings` and adjustable by setting:
 
 | Profession | Milestone at 50 | Default |
 | --- | --- | --- |
-| Wood Cutting | Log splitter: a chop on a fallen log can split the whole log, half logs included, into wood | 10% per chop at 50, rising to 30% at 100 |
+| Wood Cutting | Log splitter: a chop on a fallen log can split the whole log, half logs included, into wood | 10% per chop at 50; ~~30%~~ 50% at 100 (ADR-0032, 2026-10-06) |
 | Fishing | Quick bite: fish head for your float every time they look for one | vanilla sends them half the time |
 | Hauling | Steady overload: walking over the carry limit costs no stamina | up to 1.5 times the limit |
 
-**Smith and herbalist XP take half of the audit's step now.** BlacksmithingExpanded's craft, smelt,
-upgrade and first-craft XP rise about 1.75 times; Herbalist's Exp Gain Factor goes to 2. The audit's
-full step (2.5 and 3.5 times) waits for measurement.
+**Smith and herbalist XP first took half of the audit's step.** BlacksmithingExpanded's XP
+rose about 1.75× and Herbalist's Exp Gain Factor to 2. Those remain underneath ADR-0032's
+new profession-rate multipliers; the previous wait for a full audit step is retired 2026-10-06.
 
 **Measurement: timed tasks and an XP log.** Each client reports its profession XP to the server log
 every ten minutes of play: per profession, the real level, whether it is a focus, the raw XP after

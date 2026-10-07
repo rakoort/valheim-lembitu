@@ -63,8 +63,8 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #   - denikson-BepInExPack_Valheim 5.4.2351 is what scripts/test-server.sh installs and what
 #     scripts/extract-refs.sh compiles against; adopted packages name older ones — most at 5.4.2350,
 #     EpicLoot, DiscordConnector and Jotunn at 5.4.2333, SearsCatalog at 5.4.2202. The 5.4.2202
-#     line has left and returned more than once, with the mods that declare it (#80); the 5.4.1501
-#     skew left with BetterArchery on 2026-10-04,
+#     line has left and returned more than once (#80); BetterArchery 2.0.2 returns in Pack v17
+#     with its 5.4.1501 declaration deliberately overridden (2026-10-06, owner),
 #   - Jotunn is pinned at 2.30.2, overriding the 2.29.0 Guilds and Marketplace declare, the 2.29.2
 #     EpicLoot declares, the 2.30.0 that World Advancement Progression, ProgressivePowers, XPortal and
 #     others declare, and PlanBuild's 2.30.1 (docs/modstack.md),
@@ -73,6 +73,7 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #   - Oathbound is pinned at 0.21.14, overriding the 0.21.6 minimum Oathbound Addon declares
 #     (2026-10-06); every Oathbound bump re-checks the addon as it does Lembitu.Oathbound.
 KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
+denikson-BepInExPack_Valheim-5.4.1501
 denikson-BepInExPack_Valheim-5.4.2333
 denikson-BepInExPack_Valheim-5.4.2350
 denikson-BepInExPack_Valheim-5.4.2351
@@ -238,7 +239,7 @@ PINS="$WORK/pins"
 parse_pins "$MODSTACK" > "$PINS" || die "cannot read pins from $MODSTACK"
 [[ -s "$PINS" ]] || die "no pins parsed from $MODSTACK - broken parser or broken file"
 if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
-  # A tripwire, not a lock on growth: the pack is 70 pins today, and a smaller count means the table
+  # A tripwire, not a lock on growth: the pack is 71 pins today, and a smaller count means the table
   # changed shape unnoticed rather than that a mod was deliberately retired. Retiring a pin on
   # purpose means editing this number in the same commit — which the 2026-09-16 review did, taking
   # it from 23 to 21 by dropping AdminQoL and BoneMod (#70), #78 raised it with five Azumatt mods,
@@ -252,13 +253,14 @@ if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
   # the three map-sharing mods, then to 74 by dropping STU_Ward for Guilds' wards, then to 70 by
   # dropping OCDheim and the client-side Infinity Hammer tools, then to 68 by dropping the two
   # chest sorters, then to 67 by dropping ComfyAutoRepair, then to 66 by dropping ZenBossStone,
-  # then back to 67 by adding Item_Requirement as the master-recipe gate (ADR-0021), then to 66 by
+  # then back to 67 by adding the master-recipe gate (ADR-0021), then to 66 by
   # scrapping Seasonality, then to 65 by dropping BetterStations, then to 64 by dropping
   # BetterArchery, then to 63 by dropping Njord so the Sailing profession owns ship speed (ADR-0024);
   # 2026-10-05 took it to 70 with the five Shakedown mods, CrewStats and ConditionalConfigSync
   # (#87, ADR-0026), then to 68 when the owner removed CrewStats and DamageMeter that evening;
   # 2026-10-06 took it back to 70 with LiveExperienceTracker and Oathbound Addon (owner), then to
   # 71 with FineDining's spoilage (ADR-0029).
+  # Pack v17 swaps the profession-gate package for BetterArchery; the pin count stays 71.
   # The Hexium re-pins, Guilds 1.2.3 and Explorer replacement change versions, not the count.
   [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 71 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"

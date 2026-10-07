@@ -8,6 +8,8 @@ and [ADR-0030](0030-the-calling-choice-is-balanced-by-time-saved-within-a-band.m
 starts at 10)
 Amends: ADR-0019 (professions), ADR-0020 (scope of our own plugin code)
 
+Amended 2026-10-06 (owner): ADR-0032 retires craft level gates in favour of maker benefits and group pace targets. Earlier values below are historical where annotated.
+
 ## Context
 
 ADR-0019 asks for soft specialisation: anyone can do anything given enough time, but specialists
@@ -67,14 +69,11 @@ advantage the focus gave, in gain and in death protection.
 skills window; it can be read anywhere, but a change only takes effect while standing at the
 Oathstone, where the class is chosen too (owner, 2026-10-05; first built as clickable stars on the
 skills rows, which remain as read-only markers). Until a
-Calling is chosen, every profession follows the steep curve; below 30 that changes nothing.
+Calling is chosen, every profession follows the steep curve; below 10 that changes nothing (ADR-0030).
 
-**What makes the top of a skill worth having.** Each mod's best perks are retuned to sit above the
-full-speed band. What a profession makes, weapons and armour included for Blacksmithing, is gated
-by profession level with Radamanto/Item_Requirement on a ladder of ten levels per biome, which
-blocks the craft itself and reads modded skills such as Blacksmithing and Herbalist. Only items
-already in the game and the Pack are gated (ADR-0023, which replaced the first plan of a few master
-recipes and withdrew premium items authored in DataForge).
+**What makes the top of a skill worth having (amended 2026-10-06, ADR-0032).** Perks and
+maker-stamped goods reward skill; recipes no longer require profession levels. Personal boss keys
+remain. A smith makes better gear, a cook better dishes and a brewer better potions.
 
 ## Consequences
 

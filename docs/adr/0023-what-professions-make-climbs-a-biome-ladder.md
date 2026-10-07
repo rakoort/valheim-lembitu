@@ -1,7 +1,7 @@
 # ADR-0023: What professions make climbs a biome ladder
 
 Date: 2026-10-04
-Status: Accepted; the rule file is generated (2026-10-04, `scripts/generate-ladder.py`)
+Status: Superseded by ADR-0032 (2026-10-06, owner); all decisions and ladder rules below are historical, not current requirements.
 Amends: ADR-0021 (what makes the top of a skill worth having)
 
 ## Context

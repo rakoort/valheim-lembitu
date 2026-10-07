@@ -233,6 +233,33 @@ else
   report fail "patchers/ and config/ deploy from dist and prune when retired"
 fi
 
+# --- retired package: owned plugin and seeds disappear together, player config survives -------
+
+fresh_dist
+mkdir -p "$WORK/dist/plugins/RecipeGate" "$WORK/dist/config/RecipeGate"
+write_file "$WORK/dist/plugins/Keeper.dll" keeper
+write_file "$WORK/dist/plugins/RecipeGate/RecipeGate.dll" gate
+write_file "$WORK/dist/config/RecipeGate/rules.yml" rules
+write_file "$WORK/dist/config/recipe-gate.cfg" settings
+run_install
+# A player's unowned setting must survive retirement even alongside tracked package seeds.
+write_file "$WORK/bepinex/config/player.cfg" preference
+rm -r "$WORK/dist/plugins/RecipeGate" "$WORK/dist/config"
+
+if run_install \
+   && expect_tree "$WORK/bepinex" \
+      .lembitu-installed .lembitu-removed \
+      plugins plugins/Keeper.dll config config/player.cfg \
+   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Keeper.dll \
+   && expect_lines "$WORK/bepinex/.lembitu-removed" \
+      plugins/RecipeGate/RecipeGate.dll config/RecipeGate/rules.yml config/recipe-gate.cfg \
+   && [[ "$(cat "$WORK/bepinex/config/player.cfg")" == preference ]]; then
+  report ok "retiring a package prunes its owned DLL and config seeds through the manifest"
+else
+  report fail "retiring a package prunes its owned DLL and config seeds through the manifest"
+fi
+
+
 # --- 8. the plugins subdirectory as target is refused -----------------------------------------
 
 fresh_dist

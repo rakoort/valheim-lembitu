@@ -4,6 +4,8 @@ Date: 2026-10-04
 Status: Accepted
 Amends: ADR-0010 (adopt rather than write plugins), ADR-0019 (one owner per axis)
 
+Amended 2026-10-06 (owner): ADR-0031 drops the respec and class-switch resets. Earlier values below are historical where annotated.
+
 ## Context
 
 ADR-0019 asks for a character level, a talent tree with limited points, costly respec, parties
@@ -36,8 +38,8 @@ so the boss-key skill floor and the professions keep working.
 - **Four changes Oathbound has no settings for are made by our own plugin, `Lembitu.Oathbound`**,
   which patches Oathbound at runtime rather than editing its DLLs, so an upstream update
   replaces their files without losing ours:
-  1. Respec resets the active class to level 1. Cheap early, expensive late.
-  2. Switching class also starts over at level 1: one levelled class at a time.
+  1. ~~Respec resets the active class to level 1. Cheap early, expensive late.~~ Dropped 2026-10-06 (ADR-0031): free talent reset at the Oathstone, XP kept.
+  2. ~~Switching class also starts over at level 1: one levelled class at a time.~~ Dropped 2026-10-06 (ADR-0031): each class keeps its progress.
   3. Kill XP goes to the killer's party members near the kill, split so the party's total rises
      from 100% of the kill for one member to 150% for four or more (ADR-0022; first written as
      110-125%, then 150% for eight),

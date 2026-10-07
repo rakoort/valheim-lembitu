@@ -11,7 +11,7 @@ namespace Lembitu.Callings;
 /// bonus and shows it, and its time follows the food, which FineDining saves with the player, so the
 /// bonus survives a relog, leaves with the food and is never a consume effect: vanilla refuses to
 /// consume an item whose consume effect is active, which would stop re-eating the dish at half time.
-/// Recipe rungs read the real level (Item_Requirement), and so does the cook's grade.
+/// Maker grades read the real profession level, never the work-meal bonus.
 /// </summary>
 internal static class WorkMeals
 {
@@ -131,7 +131,7 @@ internal static class WorkMeals
         template = ScriptableObject.CreateInstance<SE_Stats>();
         template.name = EffectPrefix + profession.Key;
         template.m_name = $"Work meal: {profession.DisplayName} +{bonus:0}";
-        template.m_tooltip = $"{profession.DisplayName} counts as {bonus:0} levels higher while this meal lasts. Recipes still need your own level.";
+        template.m_tooltip = $"{profession.DisplayName} counts as {bonus:0} levels higher while this meal lasts. Maker grades still read the real level.";
         template.m_icon = food.m_item.GetIcon();
         template.m_skillLevel = profession.Type;
         template.m_skillLevelModifier = bonus;

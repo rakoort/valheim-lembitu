@@ -7,6 +7,8 @@ for Wood Cutting, Fishing and Hauling and the smith's and herbalist's XP amended
 [ADR-0030](0030-the-calling-choice-is-balanced-by-time-saved-within-a-band.md)
 Amends: ADR-0021 (profession mods add no combat power)
 
+Amended 2026-10-06 (owner): ADR-0032 replaces the mastery values, ladder trade role and drinker-skill scaling. Earlier values below are historical where annotated.
+
 ## Context
 
 ADR-0021 asked for each profession mod's best perks to sit above the full-speed band, and kept
@@ -26,11 +28,9 @@ balance them so that an alchemist is as essential as a smith.
 
 ## Decision
 
-**The alchemist sells power by the dose; the smith sells it by the item.** Every tonic, mead base
-and elixir climbs ADR-0023's ladder by its herbs' biome, so from the Plains on every vanilla mead
-(healing, stamina, eitr and the poison, frost and fire resistance meads) and every elixir comes
-from an alchemist. Gear is bought once per tier; potions are used up every fight, which gives the
-alchemist the steadier Market income of the two.
+**The alchemist sells power by the dose; the smith sells it by the item.** The former ladder
+trade role is retired (2026-10-06, ADR-0032): anyone can craft when personal keys permit it;
+maker grades and stamped bonuses make specialist goods better. Potions are used up every fight.
 
 **All eight elixirs stay, retuned to boss-fight strength** (`config/enforced/blacks7ar.Herbalist.cfg`):
 
@@ -47,21 +47,21 @@ alchemist the steadier Market income of the two.
 
 Defender's, Invisibility's and Heavy Lifter's effects are fixed in code, so duration is their only
 lever: Invisibility becomes an escape rather than a stroll through the Mistlands, Heavy Lifter long
-enough to load a cart without replacing Hauling. Durations still grow with the drinker's own
-Herbalist skill, up to ×1.75 at 100.
+enough to load a cart without replacing Hauling. ~~Durations grow with the drinker's skill~~
+Replaced 2026-10-06 by brewer-grade scaling (ADR-0032), up to ×1.75 at grade 5.
 
 **A master smith's gear is modestly better.** BlacksmithingExpanded's bonuses follow the smith's
-level only: +1% damage, +0.5 armour and +1 block power per 10 levels (+10%, +5 and +10 at 100), no
-per-upgrade extra, no added elemental damage
+level only: ~~+1% damage, +0.5 armour and +1 block per ten levels~~ Replaced 2026-10-06
+by ADR-0032's mastery settings; no per-upgrade extra or elemental rider.
 (`config/enforced/org.bepinex.plugins.blacksmithingexpanded.cfg`). Who made a piece matters on the
 Market, as with the alchemist, without a second large combat curve on EpicLoot and Oathbound. Its
 efficiency perks (durability, smelting and kiln speed, ore saving, extra item) stay as shipped.
 
-**Power perks that switch on at a level sit on the ladder's rungs.** No power perk unlocks
-below 30, where every profession levels at full speed (`config/enforced/MidnightsFX.ImpactfulSkills.cfg`).
-Explorer's information unlocks instead follow each biome from level 1, as amended below:
+**Power perks switch on at milestone levels, not craft requirements** (ADR-0032).
+The old comparison with ladder rungs is retired. The steep curve starts at 10 (ADR-0030).
+Explorer's information unlocks still follow each biome from level 1:
 
-| Rung | Perks |
+| Level | Perks |
 | --- | --- |
 | 40 | Cooking bonus servings, honey bonus, mining critical hits, area harvesting, planting several at once, faster paddling |
 | 50 | Hives in any biome, boat damage reduction, area mining, better wind angles; log splitter, quick bite and steady overload (`Lembitu.Callings`, ADR-0030) |
@@ -70,18 +70,20 @@ Explorer's information unlocks instead follow each biome from level 1, as amende
 
 The growth-timer readout stays at 12: it is information, not power. ImpactfulSkills'
 `ScaleCraftedEquipmentQuality` is turned off with the rest of its Crafting perks, because
-high-quality ingredients would otherwise craft higher-star gear around the smith's ladder.
+high-quality ingredients would otherwise bypass maker-stamped gear benefits.
 
 **Felt growth, and no profession an obvious best pick.** What matters is that a focus visibly makes
 the character more capable as it rises, and that no profession a player chooses is clearly better
 than the others; the exact multiplier is secondary (owner, 2026-10-04). Every profession therefore
-has a steady perk that grows with each level, switch-on perks on the rungs above, and a trade role:
-goods on the ladder or raw volume for others. A first attempt to tune every master to exactly 2.5×
+has a steady perk that grows with each level, switch-on milestones above, and a trade role:
+better maker-stamped goods or raw volume (ADR-0032). A first attempt to tune every master to exactly 2.5×
 the main job of a novice, counting vanilla's own skill effects, was dropped: vanilla tool damage
 already gives Wood Cutting and Mining about 2.3×, so their mod perks would have vanished; vanilla
 crafting speed already puts Cooking at 3.1×; and Hauling and Sailing could not get there at all
 (the grilling's PerkCalibration handback). Instead the outliers come to the middle, counting only
 what the mods add on top of vanilla:
+
+Historical starting values below; mastery ramps superseded 2026-10-06 by ADR-0032.
 
 | Profession | Package at 100 | Run at 100 |
 | --- | --- | --- |
@@ -113,11 +115,11 @@ raid odds), not about rewards for playing together.
 **Exploration owns the map reveal, aboard as on foot (amended 2026-10-05).** Explorer
 1.1.7 replaces ExpertExplorer. BetterMap alone sets `Minimap.m_exploreRadius` to the
 100 m baseline before each `UpdateExplore`; Explorer never writes that field, instead multiplying the
-`Minimap.Explore(Vector3,float)` argument by `1 + skillFactor * 2` (100..300 m).
+Minimap.Explore's argument by 1 + skillFactor × ~~2~~ 3 (ADR-0032, 2026-10-06: 100..400 m).
 Voyager's reveal multiplier remains 0: the explorer maps; the sailor moves fast.
-Explorer's live-marker unlocks follow ADR-0023 (Meadows 1 because 0 disables it, then
+Explorer's live-marker unlocks keep their biome thresholds (ADR-0032: Meadows 1 because 0 disables it, then
 10/20/30/40/50/60; dungeons/caves 10). Callings' server-locked `RangeAtLevel1 = 20`
-and `RangeAt100 = 64` replace each tracker's creation-time Detection Radius on every
+and RangeAt100 ~~64~~ 96 m (ADR-0032, 2026-10-06) replace each tracker's creation-time radius on every
 update, interpolating linearly over levels 1..100. `Max Pin = 20` is a shared cap
 across resource and dungeon types, chosen to leave room for mixed markers without
 using the maximum 50. BetterMap auto-pins are off; Explorer markers are not saved.
@@ -127,10 +129,9 @@ elixirs and the smith's mastery bonus are combat power sold as goods.
 
 ## Consequences
 
-- Herbalist's own tonic tiers (minor 1, medium 30, large 60) are set to the minimum, 1, so
-  Item_Requirement's ladder is the one gate. Each tonic and elixir takes the rung of its
-  highest-biome herb (`Herbalist.cs:5505-5705`): minor tonics the Black Forest, medium health and
-  eitr tonics the Mountains, the medium stamina tonic the Plains, large tonics the Mistlands.
+- Herbalist's own tonic tiers stay at the minimum, 1. The former Item_Requirement craft gate is
+  retired 2026-10-06 (ADR-0032). The highest-biome herb still supplies the personal key for drinking:
+  minor tonics Black Forest, medium health/eitr Mountains, medium stamina Plains, large Mistlands.
 - Fast Learner speeds vanilla skills only, never Oathbound class XP, and `Lembitu.Callings` applies
   the steep curve after it, so a non-focus profession stays slow relative to a focus.
 - BlacksmithingExpanded stamps its bonuses on an item when it is crafted and reapplies them on load

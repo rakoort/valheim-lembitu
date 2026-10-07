@@ -5,6 +5,8 @@ Status: Accepted; implemented 2026-10-06 in `Lembitu.Callings` 0.4.0 and the Fin
 Amends: ADR-0021 (what a Cooking focus earns), ADR-0022 (scope of `Lembitu.Callings`), ADR-0024
 (Cooking perks "as shipped")
 
+Amended 2026-10-06 (owner): ADR-0032 retires recipe rungs, raises the food bonus per grade to 5%, and gives the alchemist a separate brewer’s grade. Shelf life is unchanged. Earlier values below are historical where annotated.
+
 ## Context
 
 The owner asked for cooking to be as useful and as fleshed out as alchemy and smithing, with
@@ -22,11 +24,11 @@ Horizons) add recipes but no role.
 ## Decision
 
 **The cook's grade.** A dish made at a Cooking station carries the grade of the cook who made it: 1
-below Cooking 25, then one per 25 levels, 5 at 100. Each grade above 1 adds 2.5% to everything the
-dish gives, health, stamina, eitr and regeneration (+10% at grade 5, like the smith), and 12.5% to its
-shelf life (+50%). The grade reads the cook's real Cooking level, never a bonus from food or gear, the
-way the ladder does. A dish is anything edible made at a Cooking station, or anything a cooking
-station turns into an edible dish: a graded dough bakes into graded bread. Herbalist's products and
+below Cooking 25, then one per 25 levels, 5 at 100. Each grade above 1 adds ~~2.5%~~ 5% to everything
+the dish gives, health, stamina, eitr and regeneration (ADR-0032, amended 2026-10-06: +20% at
+grade 5), and 12.5% to shelf life (+50%, unchanged). The grade reads real Cooking level,
+never food or gear bonuses. Recipe rungs are retired. A dish is anything edible made at a Cooking
+station, or anything a cooking station turns into an edible dish: graded dough bakes into graded bread. Herbalist's products and
 mead bases stay the alchemist's; feasts are ungraded.
 
 The grade lives in item quality, which keeps grades in separate stacks (Valheim stacks by name,
@@ -35,18 +37,19 @@ so a quality-3 fish is never taken for a dish. FineDining computes food stats an
 grade scales its food effect, which FineDining saves with the player, and its lifetime rule.
 
 **Work meals.** While one of these dishes is one of the eater's foods, its profession counts as ten
-levels higher for perks, never for recipe rungs or the cook's grade, which read the real level:
+levels higher for perks, never for the cook's grade, which reads the real level (ADR-0032).
+Recipe requirements are retired; the former rung column is removed.
 
-| Dish | Profession | Rung |
-| --- | --- | --- |
-| Boar jerky | Exploration | Meadows |
-| Deer stew | Wood Cutting | 10 |
-| Sausages | Mining | 10 |
-| Carrot soup | Farming | 10 |
-| Serpent stew | Sailing | 20 |
-| Wolf jerky | Hauling | 30 |
-| Blood pudding | Animal Handling | 40 |
-| Fish wraps | Fishing | 40 |
+| Dish | Profession |
+| --- | --- |
+| Boar jerky | Exploration |
+| Deer stew | Wood Cutting |
+| Sausages | Mining |
+| Carrot soup | Farming |
+| Serpent stew | Sailing |
+| Wolf jerky | Hauling |
+| Blood pudding | Animal Handling |
+| Fish wraps | Fishing |
 
 Only Land and Road professions take work meals; a Craft meal would feed the smith's stamped bonus
 or the cook's own grade. The bonus is a status effect timed to the food, not the dish's consume
@@ -90,8 +93,8 @@ the cook's skill, and was dropped (owner, 2026-10-06). No dish-content mod was a
   FineDining fix takes over without a change here.
 - Vanilla drops a fresh, ungraded copy when a craft finds the inventory full, with no crafter name
   either; a graded craft into a full inventory loses its grade the same way.
-- Creature tuning assumed vanilla food. Fresh food at 110% and graded food up to 121% move the
-  tuning targets, which the Shakedown measures.
+- Historical tuning assumed vanilla food. Fresh food stays 110%; v17's graded food reaches 132%
+  (ADR-0032), replacing the former 121% maximum. Native results below describe earlier settings.
 - One-way: the Icebox and FineDining's rotten foods vanish if FineDining leaves.
 - The test harness's snapshot now reports item quality, custom data and tooltip, foods, status
   effects, maximum health and stamina and effective skill levels, and can give items a quality and

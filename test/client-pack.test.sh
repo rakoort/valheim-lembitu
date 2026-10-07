@@ -198,17 +198,42 @@ fi
 SEEDS="$WORK/client-seeds"
 mkdir -p "$SEEDS/Clan"
 printf 'ours\n' > "$SEEDS/Clan/emblem.png"
-printf '[7 - Item Colors]\nMagic Rarity Color = #8a9ba8\n' > "$SEEDS/randyknapp.mods.epicloot.cfg"
+cp "$REPO_ROOT/config/client/randyknapp.mods.epicloot.cfg" "$SEEDS/"
 
 OUTS="$WORK/out-seeds"
 if CLIENT_SEEDS="$SEEDS" build "$OUTS"; then
-  seeded="$WORK/seeded"; rm -rf "$seeded"; mkdir -p "$seeded"
+  seeded="$WORK/seeded"; mkdir -p "$seeded/BepInEx/config"
+  # Install over a v16 player file, not an empty directory: extraction must replace it.
+  cat > "$seeded/BepInEx/config/randyknapp.mods.epicloot.cfg" <<'V16'
+[1 - General]
+Use Generated Magic Item Names = false
+[7 - Item Colors]
+Magic Rarity Color = #8a9ba8
+Rare Rarity Color = #b08d57
+Epic Rarity Color = #6b7f5e
+Legendary Rarity Color = #9c6b4f
+Mythic Rarity Color = #8c4a3c
+Ancient Rarity Color = #5d4a5c
+Set Item Color = #7d8a6f
+V16
   unzip -qo "$OUTS/lembitu-client-pack-t.zip" -d "$seeded"
-  if grep -q 'Magic Rarity Color = #8a9ba8' "$seeded/BepInEx/config/randyknapp.mods.epicloot.cfg" \
-     && [[ "$(cat "$seeded/BepInEx/config/Clan/emblem.png")" == "ours" ]]; then
-    report ok "a repository config seed ships and overrides the package's own copy"
+  palette_ok=true
+  while IFS= read -r setting; do
+    grep -Fxq "$setting" "$seeded/BepInEx/config/randyknapp.mods.epicloot.cfg" || palette_ok=false
+  done <<'STOCK'
+Use Generated Magic Item Names = true
+Magic Rarity Color = Blue
+Rare Rarity Color = Yellow
+Epic Rarity Color = Purple
+Legendary Rarity Color = Teal
+Mythic Rarity Color = Orange
+Ancient Rarity Color = Red
+Set Item Color = #26ffff
+STOCK
+  if $palette_ok && [[ "$(cat "$seeded/BepInEx/config/Clan/emblem.png")" == "ours" ]]; then
+    report ok "repository seeds override package config and replace v16 EpicLoot display on install"
   else
-    report fail "a repository config seed ships and overrides the package's own copy"
+    report fail "repository seeds override package config and replace v16 EpicLoot display on install"
   fi
 else
   report fail "a repository config seed ships and overrides the package's own copy"

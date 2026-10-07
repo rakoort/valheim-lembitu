@@ -16,6 +16,7 @@ internal static class Settings
     private static ConfigEntry<float> s_explorerRangeAtLevel1 = null!, s_explorerRangeAt100 = null!;
     private static ConfigEntry<float> s_levelsPerGrade = null!, s_foodBonusPerGrade = null!, s_shelfLifePerGrade = null!;
     private static ConfigEntry<float> s_workMealBonus = null!;
+    private static ConfigEntry<float> s_brewerLevelsPerGrade = null!;
     private static ConfigEntry<string> s_workMeals = null!;
     private static ConfigEntry<float> s_logSplitterLevel = null!, s_logSplitterChance = null!, s_logSplitterChanceAt100 = null!;
     private static ConfigEntry<float> s_quickBiteLevel = null!, s_quickBiteHookChance = null!;
@@ -27,6 +28,7 @@ internal static class Settings
 
     /// <summary>Cooking levels per step of the cook's grade; grade 1 lies below the first step.</summary>
     public static int LevelsPerGrade => Math.Max(1, (int)s_levelsPerGrade.Value);
+    public static int BrewerLevelsPerGrade => Math.Max(1, (int)s_brewerLevelsPerGrade.Value);
 
     /// <summary>Extra health, stamina, eitr and regeneration per grade above 1.</summary>
     public static float FoodBonusPerGrade => s_foodBonusPerGrade.Value;
@@ -87,9 +89,10 @@ internal static class Settings
         s_explorerRangeAtLevel1 = Bind(config, "Explorer markers", "RangeAtLevel1", 20f, "Live marker range in metres at Explorer level 1; replaces Explorer Detection Radius on each tracker update.", 0f, 100f);
         s_explorerRangeAt100 = Bind(config, "Explorer markers", "RangeAt100", 64f, "Live marker range in metres at Explorer level 100; interpolated linearly from level 1.", 0f, 100f);
         s_levelsPerGrade = Bind(config, "Cook grade", "LevelsPerGrade", 25f, "Cooking levels per grade: a dish made below this level is grade 1, then one grade per step, grade 5 at 100 with the default.", 5f, 100f);
+        s_brewerLevelsPerGrade = Bind(config, "Brewer grade", "LevelsPerGrade", 25f, "Real Herbalist levels per brewer grade: 1 below the first step, 5 at 100 with the default. The grade replaces the drinker's Herbalist factor.", 25f, 100f);
         s_foodBonusPerGrade = Bind(config, "Cook grade", "FoodBonusPerGrade", 0.025f, "Extra health, stamina, eitr and regeneration a dish gives per grade above 1.", 0f, 0.5f);
         s_shelfLifePerGrade = Bind(config, "Cook grade", "ShelfLifePerGrade", 0.125f, "Extra shelf life a dish gets per grade above 1, on FineDining's lifetime.", 0f, 1f);
-        s_workMealBonus = Bind(config, "Work meals", "LevelBonus", 10f, "Levels a work meal adds to its profession's perks while the meal lasts; recipe rungs read the real level.", 0f, 50f);
+        s_workMealBonus = Bind(config, "Work meals", "LevelBonus", 10f, "Levels a work meal adds to its profession's perks while the meal lasts; maker grades read the real level.", 0f, 50f);
         s_workMeals = config.Bind("Work meals", "Meals",
             "BoarJerky:Explorer, DeerStew:WoodCutting, Sausages:Pickaxes, CarrotSoup:Farming, SerpentStew:midnightsfx.voyager, WolfJerky:midnightsfx.hauling, BloodPudding:midnightsfx.animalwhisper, FishWraps:Fishing",
             new ConfigDescription("Comma-separated Dish:Profession pairs. Professions are the Calling keys of Land and Road professions: Pickaxes, WoodCutting, Farming, Fishing, midnightsfx.animalwhisper, Explorer, midnightsfx.voyager, midnightsfx.hauling.",

@@ -15,7 +15,7 @@ namespace Lembitu.Oathbound;
 /// Wither, Monk fists, class abilities, companions and the defense tree by class level, and class
 /// level comes from kills that no boss gates, so a caster could grind kills past the gear gate that
 /// holds a weapon class back. Every effect above therefore reads the power level: the class level
-/// capped at ten per personal boss key, the same ten-per-biome step as the profession ladder.
+/// capped at ten per personal boss key.
 /// Talent points, class XP and the class level itself are untouched.
 ///
 /// Where each effect runs: Oathbound only ever evaluates its own local player's state
@@ -29,7 +29,7 @@ namespace Lembitu.Oathbound;
 /// untouched by decision); the wolf's pack-command unlock at class level 6 (<c>HunterTree.cs</c> and
 /// the <c>oathbound.hunter.level</c> gate in HunterCompanion — an unlock the tree promises, not
 /// scaling); and <c>Equipment.MonkHardness</c> in the Monk's bare-handed gathering (a tool tier for
-/// rocks and trees, which the profession ladder gates, not combat power in the class band).
+/// rocks and trees, not combat power in the class band).
 /// </summary>
 internal static class ClassPower
 {

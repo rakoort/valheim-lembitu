@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.oathbound</PluginGuid>
-    <Version>0.3.0</Version>
-    <Description>Adapts Oathbound (ADR-0022, ADR-0025): respec and class switch reset to level 1, kill XP shared within the killer's party, a poison kill credited to the poisoner, the gathering tools open to every class, class power capped by personal boss keys, and server-locked spell growth and companion damage.</Description>
+    <Version>0.4.0</Version>
+    <Description>Adapts Oathbound: oath changes and free respec at the Oathstone, a portable talent tree, party kill XP, poison credit, gathering tools for every class, boss-key-capped power, and server-locked spell growth, companion damage and BetterArchery gameplay.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +38,9 @@
     </Reference>
     <Reference Include="UnityEngine.UI" Private="false">
       <HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
   </ItemGroup>
 
