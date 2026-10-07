@@ -8,7 +8,9 @@ proposes are Shakedown starting points, not measurements. Implementation is trac
 and Pack), #88 (`Lembitu.Oathbound`), #89 (`Lembitu.Callings`), #90 (`Lembitu.Guide`) and #91
 (`Lembitu.Guilds`).
 
-## Decisions — 2026-10-06 grilling, Pack v17
+## Decisions
+
+### 2026-10-06 grilling, Pack v17
 
 Owner decisions, before the v17 native gate (#99); the Run remains on v16 until cutover. The ADRs
 are the authoritative policy records; this log indexes tickets and records the two Pack choices.
@@ -51,7 +53,7 @@ loot-table patch stays as an integration, not a balance override. Client seed re
 Rare Yellow, Epic Purple, Legendary Teal, Mythic Orange, Ancient Red, Set Item #26ffff and Use
 Generated Magic Item Names = true, including upgrading a player whose cfg still has muted colours.
 
-## Decisions — earlier history
+### Earlier history
 
 - **Trade between guilds is an optional advantage, not a dependency** (owner, 2026-10-04). Fact:
   three players cover all eleven professions under the 2 Land + 1 Craft + 1 Road quota
@@ -278,13 +280,13 @@ Generated Magic Item Names = true, including upgrading a player whose cfg still 
   2026-10-05; ADR-0019 sharpened). Party XP (150% at four) and the crew sailing bonus are kept as the
   incentive to group up. Difficulty moves only with biome, rolled level, Karma, modifiers and sieges
   by outpost biome.
-- **Open check: Wishbone and Swamp key may drop once per player online.** Vanilla gives a drop flagged
-  `m_onePerPlayer` one copy per player connected to the server, present or not
+- **Open check: Wishbone and Swamp key may drop once per player online** (superseded by v17). Vanilla
+  gives a drop flagged `m_onePerPlayer` one copy per player connected to the server, present or not
   (`assembly_valheim` `CharacterDrop.cs:137-139`, decompiled 2026-10-05). EpicLoot's `Default` boss
-  drop mode leaves that flag, and its code tests the flag on exactly these two items
-  (EpicLoot 0.14.13 `CharacterDrop_GenerateDropList_Patch`), which suggests vanilla sets it. That
-  would contradict the decided one per kill (`config/enforced/randyknapp.mods.epicloot.cfg:31-36`).
-  Settle with one Bonemass and one Elder kill while two players are connected.
+  drop mode left that flag, which would have contradicted the then-decided one per kill. From v17 the
+  owner chose stock `Boss Trophy Drop Mode = OnePerPlayerNearBoss`
+  (`config/enforced/randyknapp.mods.epicloot.cfg:17-18`): one per player within 100 m of the kill, so
+  the check no longer applies.
 - **Trim damage growth, keep health growth** (owner, 2026-10-05): `levels.yml`
   `Global.damagePerLevel 0.25 → 0.15` and `Boss.damagePerLevel 0.1 → 0.05`; health growth and the Hard
   preset unchanged; applied 2026-10-05 (#87). Average Ashlands creature damage falls from about 2.8× to 2.4×
