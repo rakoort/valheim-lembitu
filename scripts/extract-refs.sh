@@ -33,8 +33,7 @@ REF_GLOBS=(
   'SoftReferenceableAssets.dll'
   'Splatform*.dll'
   'com.rlabrecque.steamworks.net.dll'
-  # ZPlayFabMatchmaking's members are typed in these, and naming a game member with nameof needs
-  # the compiler to bind it (src/forks/MaxPlayerCount patches the crossplay player limit).
+  # Preserve PlayFab game API dependencies for native reference binding.
   'PlayFab*.dll'
 )
 

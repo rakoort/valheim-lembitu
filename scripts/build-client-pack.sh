@@ -24,15 +24,8 @@
 #
 # It is NOT the server's dist/: five things differ, and all of them matter.
 #
-#   MaxPlayerCount   server-only. Every surface it patches - the admission literal in
-#                    ZNet.RPC_PeerInfo, the Steam capacity prefix, the PlayFab lobby request - runs
-#                    on the host. A client is told the server's capacity by the server, so shipping
-#                    it to players changes nothing and would only add a mismatched plugin.
-#                    It is a fork, so it is not in the adopted pin table and never staged here;
-#                    the assertion below is what keeps that true if it ever moves.
 #   Lembitu.Harness  our test harness. Inert without -lembitu-harness, and it belongs to the
 #                    disposable test client, not to players.
-#   DiscordConnector the server's Discord webhook relay; there is no client half.
 #   Server_devcommands  the server half of the admin tools (2026-10-04). Admins install Infinity
 #                    Hammer and its companions on their own clients; players never need it.
 #   OdinEye          a server-only REST/WebSocket API (2026-10-04); a player gains nothing from it.
@@ -44,7 +37,8 @@
 # behaves differently for every player: AdminQoL proved it and BoneMod fell to the same argument
 # (#70). #78 narrowed that to gameplay-bearing mods whose settings the server cannot hold, so the
 # Pack carries client-only mods again; scripts/install-plugins.sh's CLIENT_ONLY list names them.
-# None enforces anything, and a player who removes one loses only that convenience.
+# The seven presentation-only choices are optional; Tally is required so every player
+# can compare the same shared damage and healing meters (#109).
 #
 # Staging is delegated to scripts/stage-stack.sh, which owns pin parsing, hash verification,
 # dependency closure and the package-layout normalisation. This script adds what is specific to a
@@ -68,9 +62,9 @@ LIST=0
 # Plugins that must NOT reach a player, in two kinds. Matched as path components anywhere in the
 # staged tree, so a rename of the containing directory does not quietly reintroduce one.
 # Never staged: ours or a fork, not in the adopted table. Finding one means the build is wrong.
-NEVER_STAGED=(MaxPlayerCount Lembitu.Harness)
+NEVER_STAGED=(Lembitu.Harness ValheimWebMap)
 # Adopted but server-only: staged for the server like every pin, so the builder withholds them.
-SERVER_ONLY=(DiscordConnector Server_devcommands OdinEye)
+SERVER_ONLY=(Server_devcommands OdinEye)
 EXCLUDED=("${NEVER_STAGED[@]}" "${SERVER_ONLY[@]}")
 # Adopted packages a client needs, each because its absence is a hard failure rather than a
 # feature nobody notices. Jotunn, because a client without it is refused at the handshake
@@ -78,7 +72,8 @@ EXCLUDED=("${NEVER_STAGED[@]}" "${SERVER_ONLY[@]}")
 # so a Pack that lost it would refuse every player who installed that Pack (docs/modstack.md,
 # "Where each mod runs"; #78). This assertion used to name BoneMod, which the 2026-09-16 review
 # dropped along with every other client-only mod (#70).
-REQUIRED=(Jotunn AzuCraftyBoxes)
+# Tally remains client-only, but #109 makes its exact DLL mandatory in the character-store policy.
+REQUIRED=(Jotunn AzuCraftyBoxes Tally)
 # Our own plugins every player needs, taken from the build output rather than the pin table. All
 # four declare Jotunn's EveryoneMustHaveMod, so the server refuses a client without them (ADR-0022,
 # ADR-0027, ADR-0028).

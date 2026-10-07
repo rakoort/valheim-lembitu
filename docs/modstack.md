@@ -19,24 +19,24 @@ The stack was reduced from thirty packages to twenty-three on **2026-09-15**, an
 plugin of ours except the test harness was cancelled, because upstream mods now cover the
 load-bearing behaviour (ADR-0010). What was removed and why is in [Considered and cut](#considered-and-cut).
 
-**This table is the repository state.** It carries seventy-one pins: the sixty-three of the
+**This table is the repository state.** It carries seventy-two pins: the sixty-three of the
 2026-10-04 review plus four retained Shakedown additions, ConditionalConfigSync,
-LiveExperienceTracker and Oathbound Addon (owner, 2026-10-06) and FineDining (ADR-0029).
+LiveExperienceTracker and Oathbound Addon (owner, 2026-10-06), FineDining (ADR-0029), and Tally (#109, 2026-10-07).
 CrewStats and DamageMeter were removed by the owner on 2026-10-05 after CrewStats covered inventory.
 On the review day the owner added thirty-five packages and removed Clan, settled the server concept
 (ADR-0019), and then judged every mod against it; Oathbound replaced the level and magic mods
 (ADR-0020). Each removal is a row in [Considered and cut](#considered-and-cut). The lock records
 the exact package bytes.
-The retired fork and plugins are deleted from `src/`, and `src/forks/` contains only
-MaxPlayerCount. The dated measurements below established earlier packs, not this candidate.
+The retired fork and plugins are deleted from `src/`; the maintained fork is ValheimWebMap.
+The dated measurements below established earlier packs, not this candidate.
 
 ## Adopted upstream
 
 Every mod here is pinned at exactly this version; the side it runs on is in
 [Where each mod runs](#where-each-mod-runs). Most are installed on the server *and* the client
-pack, DiscordConnector is withheld from the Pack as server-only,
-and seven ride in the Pack alone: AzuHoverStats, AzuClock, MouseTweaks, CraftingSearch,
-CompactStatusEffects, LiveExperienceTracker and Oathbound Addon. Candidate staging is
+pack; ServerManager runs on both sides,
+and eight ride in the Pack alone: AzuHoverStats, AzuClock, MouseTweaks, CraftingSearch,
+CompactStatusEffects, LiveExperienceTracker, Oathbound Addon and Tally. Candidate staging is
 not deployment or verification. "Enforced config" is a deliberate deviation from the defaults and
 belongs in server-locked config rather than a player's file.
 
@@ -58,6 +58,7 @@ belongs in server-locked config rather than a player's file.
 | Ab5oluteZer0/CraftingSearch | 1.0.2 | Search box and sort button in the crafting window | — Client-side UI with no settings at all; added for the Shakedown (2026-10-05) |
 | Marins/CompactStatusEffects | 1.1.2 | Compact vertical status-effect HUD under the minimap | — Client-side HUD: position and scale are each player's; the Pack seeds its settings key to Quote (2026-10-05) |
 | dsoltyka/LiveExperienceTracker | 1.0.3 | Live skill XP rows above the health panel: skill, progress bar, current/needed XP and the latest gain | — Client-only HUD; every setting is the player's layout (2026-10-06, owner) |
+| Jumpingmushroom/Tally | 1.0.1 | Shared combat meters and local records | — Required client mod (#109, 2026-10-07); no server install or config lock. Pack seed: `Sharing.Enabled = true`, toggle F10, window 300 × 220. Shared numbers and positions reach every participating player; records stay in each player's local file, not the character store. Two-account meter/layout acceptance remains owner-only |
 | Somedudethattrytomakemodwork/oathbound_addon | 1.0.1 | Oathbound Addon: a command window for the Hunter's wolf — free hunt, stay, heel, recall — with a stance badge | — Client-only; no stat changes. Its settings are the window key, the badge and Oathbound HUD offsets, all preferences; the Pack seeds the window key to Y, because its default G is vanilla 1.0's radial menu. It reflects Oathbound internals and declares Oathbound 0.21.6, so every Oathbound bump re-checks it (2026-10-06, owner) |
 | Crystal/BetterChat | 1.6.4 | Chat window that appears on new messages; talk, whisper and shout handling | Talk and whisper distances pinned at the vanilla 15 m and 4 m through the mod's server-enforced sync policy, so it adds convenience without changing who hears what (2026-10-05) |
 | shudnal/ConditionalConfigSync | 1.0.6 | Library | Declared by BetterChat |
@@ -65,7 +66,7 @@ belongs in server-locked config rather than a player's file.
 | sighsorry/DataForge | 1.3.5 | Item, recipe and effect tuning | Tuning only: no cloned or custom items |
 | sighsorry/SkadiNet | 1.1.6 | Peer-aware network pacing, dungeon-layer filtering | — |
 | sighsorry/Blasted_Swimming_Tarred_Bug_Fix | 1.2.6 | Vanilla state and teardown bug fixes | — |
-| nwesterhausen/DiscordConnector | 3.1.3 | Server-side Discord webhook relay: joins, deaths, events | Webhook URL is a secret, set per deployment |
+| sighsorry/ServerManager | 1.1.7 | Authoritative characters, exact mod admission, ten-player capacity and Discord operations | ADR-0034; one character per account, empty starter items, log-only cheat/stat actions. Seven presentation mods optional; Tally required. Five-minute saves; native acceptance #101 passed with owner-only two-account checks outstanding |
 | JereKuusela/Expand_World_Size | 1.43.0 | World radius, edge and stretch. World-permanent in the strongest sense: the values are baked into terrain at generation | `World radius` 13250, `Stretch world` 1.325, `Stretch biomes` 1.25, `Locations` 1.75: about 1.76x vanilla area with points of interest at vanilla density, chosen 2026-10-04 for rival-but-cooperating guilds (ADR-0019); before that 12500/1.25/1.25, and ADR-0018's 15000/1.5/1.25 |
 | Mushroom_Vikings/SeparateSpawns | 0.1.1 | One scored start region per guild | `InnerRadius` 1200 and `MinStonesDistance` 500, so starts lie 0.5-1.2 km from the sacrificial stones, at least 1 km apart (halved on 2026-10-04 at the owner's request, from 2400 and 1000). From 2026-10-04 one group per guild, rostered by Steam ID before launch (ADR-0019); the committed roster still holds the three empty, randomly filled groups of the collaborative 2026-10-03 setup until the guilds are known. Its config lives in the game tree rather than BepInEx's, so `config/dedicated/` and `scripts/apply-dedicated-config.sh` own it, not the enforced overlay |
 | MidnightMods/ProgressivePowers | 0.3.4 | Forsaken power mastery: powers grow with use | The boss-power pillar (ADR-0019): mastery credit within 100 m of the dead boss (package 200 m), the same radius as boss keys and party XP; one attuned power; active use blocked, so powers are passive bonuses over seven mastery levels (2026-10-04) |
@@ -98,7 +99,7 @@ belongs in server-locked config rather than a player's file.
 | VentureValheim/Venture_Multiplayer_Tweaks | 1.0.0 | Server tweaks: PvP, map positions, trader pins, death behaviour | PvP held off for everyone; public map positions off (guild and party positions come from Guilds and SocialSystem); trader map pins off, temple pin on; vanilla respawn and skill loss on death (2026-10-04, ADR-0019) |
 | VentureValheim/Venture_Logout_Tweaks | 1.0.0 | Restores status effects such as Rested from the last logout | — Added 2026-10-04 (owner's instruction) |
 | ZenDragon/ZenRaids | 1.2.3 | Lit fires keep spawns out of a base; raid trigger control | Vanilla raid odds with no per-player bonus (2026-10-04, ADR-0019). It still decides when a raid would roll, but every raid is now an Oathbound siege, so its biome list no longer matters; frequency is lowered by the launch modifier `Raids less`. Base safety is earned later through the Guilds monster ward at guild level 10 |
-| ZenDragon/Zen_ModLib | 1.14.20 | Library | Declared by ZenRaids |
+| ZenDragon/Zen_ModLib | 1.14.21 | Library | Declared by ZenRaids; rebuilt upstream for Valheim 1.0.17 (2026-10-07) |
 | Searica/Extra_Snap_Points_Made_Easy | 2.1.0 | Extra snap points on vanilla pieces | — Added 2026-10-04 (owner's instruction). Its settings are plain local config despite their "synced" labels, so snapping is each player's preference; accepted under the Pack rule (ADR-0019) |
 | JereKuusela/Server_devcommands | 1.115.0 | Server side of the admin tools: remote devcommands and permissions for admins | Server-only, withheld from the Pack. Admins install Infinity Hammer, its addon and World Edit Commands on their own clients; none of them is in the player stack (2026-10-04) |
 | Nekitker/SaunaMod | 2.1.0 | Buildable, upgradable sauna: steam heal, buffs and up to +2 comfort | `[Mead] DurationMultiplier = 1` server-pinned in `nekitker.saunamod.cfg`: resistance meads keep vanilla duration (2026-10-05). Its comfort still stacks with the Guilds Comfort upgrade; both kept, the guild one priced late |
@@ -188,10 +189,9 @@ ProximityVoiceChat, where the failure is benign and deliberate.
 
 | Mod | Why |
 | --- | --- |
-| MaxPlayerCount (fork) | Every patched surface runs on the host; a client is told the capacity by the server. Already excluded from the client pack by an assertion in the builder |
-| nwesterhausen/DiscordConnector | Reads server events and posts a webhook; there is no client half |
 | JereKuusela/Server_devcommands | Admin remote commands run on the server; players never use them. Withheld from the client pack by the builder's exclusion list |
 | SeasonedProfessionals/OdinEye | A REST/WebSocket API on the server's loopback; there is no player half. Withheld from the client pack by the builder's exclusion list |
+| ValheimWebMap (fork) | The web server runs inside the game server and players use a browser, not a mod. Withheld from the client pack by the builder's `NEVER_STAGED` list and from ServerManager's client lists |
 
 **Client-only — presentation only, reopened 2026-09-16 (#78).** The 2026-09-16 review had cut this
 whole category, on the AdminQoL lesson: a mod the server cannot enforce is a mod whose behaviour
@@ -208,6 +208,7 @@ rule changes. A gameplay-bearing mod the server cannot reach still does not ship
 | Ab5oluteZer0/CraftingSearch | **Adopted client-only (2026-10-05).** Interface only: a search box and sort button in the crafting window. No config or sync code in the DLL; it patches `InventoryGui` display methods only, so a player who removes it sees the vanilla recipe list |
 | Marins/CompactStatusEffects | **Adopted client-only (2026-10-05).** Interface only: a compact vertical status-effect HUD. Plain `Config.Bind` (position, scale, settings key), no sync code in the DLL; a player who removes it sees the vanilla status-effect area. Its settings key is seeded to Quote, leaving the default F8 to DetailedLevels |
 | dsoltyka/LiveExperienceTracker | **Adopted client-only (2026-10-06).** Interface only: a postfix on `Skills.Skill.Raise` reads the skill's accumulator and paints a fading row per skill above the health panel. Plain `Config.Bind` layout settings, no sync code, no `NetworkCompatibility` attribute in the DLL; a player who removes it loses the readout |
+| Jumpingmushroom/Tally | **Adopted client-only (2026-10-07).** Required rather than optional under the character-store mod policy (#102/#109). The Pack seeds sharing on and the toggle to F10; records remain local. Shared numbers and positions are not private. The owner's two-account session must still prove both-player meters and default-resolution placement |
 | Somedudethattrytomakemodwork/oathbound_addon | **Adopted client-only (2026-10-06).** Gameplay-bearing but setting-free in the ADR-0019 sense: stay and heel stop the local Hunter's own wolf from sensing or chasing targets (`BaseAI.CanSenseTarget` and `MonsterAI.UpdateAI` patches limited to that one wolf), and nothing it binds changes difficulty or numbers. No sync code and no Jotunn; on a dedicated server it finds no local player and does nothing. Orders act on the client that runs the wolf's AI, so a wolf whose AI moved to another player's client ignores them until it moves back [INFERENCE from the patches; a Shakedown check] |
 | sighsorry/AdminQoL | **Dropped.** All 29 settings are client-decided: none is marked `[Synced with Server]` and it takes no part in the handshake (#70) |
 | TOYNBEE/BoneMod | **Dropped.** Cosmetic bone scaling, client-side, pointless on the server, and unenforceable by the same argument (#70) |
@@ -217,7 +218,7 @@ rule changes. A gameplay-bearing mod the server cannot reach still does not ship
 stages every adopted pin into `dist/`, because the client Pack is built from the same table, so
 `dist/` alone does not distinguish the sides. `scripts/install-plugins.sh` carries the server's
 half — a `CLIENT_ONLY` list naming AzuHoverStats, AzuClock, MouseTweaks, CraftingSearch,
-CompactStatusEffects, LiveExperienceTracker and oathbound_addon — and it withholds them
+CompactStatusEffects, LiveExperienceTracker, oathbound_addon and Tally — and it withholds them
 from a server install and prunes them from a server that already has one. That is not tidiness:
 AzuHoverStats disconnects a peer that does not answer its version check, so deploying it would
 refuse exactly the players the Pack shipped it for. The mirror-image list, for the server-only
@@ -237,15 +238,15 @@ not the 2026-10-03 removal of the dungeon mod from the stack.
 
 ## Forks
 
-One fork remains. Adoption is the default (ADR-0003), and configuration reaches most
+One fork is maintained. Adoption is the default (ADR-0003), and configuration reaches most
 project-specific behaviour without owning someone else's source.
 
-| Fork | Forked from | Why | Ticket |
-| --- | --- | --- | --- |
-| MaxPlayerCount | `AzumattDev/MaxPlayerCount@4482e27` = 1.2.4 source, pinned release 1.2.5, MIT-0 | Player cap above 10, raised to 20. Upstream 1.2.5 is binary-only and declares an older BepInEx pack, so there is nothing to recompile and no adopted package that does this | #9 |
+| Fork | Forked from | Licence | Why | Retire when | Config |
+| --- | --- | --- | --- | --- | --- |
+| ValheimWebMap | [koenhendriks/Valheim-Web-Map](https://github.com/koenhendriks/Valheim-Web-Map) v1.3.0 (`1e69163286110ecd23f596dedfd2f38fd570b6a0`) | MIT | Server-only public web map; 1.3.0 draws only ±10,240 m and this world reaches 13,250 m (ADR-0003, 2026-10-07 amendment). Our changes: the world's radius and edge read from Expand_World_Size, corrected render and cartography extents, and a hidden player's exploration held back until logout (`src/forks/ValheimWebMap/UPSTREAM.md`) | An upstream release covers larger worlds and passes this world's checks | `config/enforced/com.valheimwebmap.cfg` |
 
-MaxPlayerCount is server-only and stays out of the client pack: every surface it patches runs on the
-host, and a client is told the server's capacity by the server. Its config default is 20.
+The MaxPlayerCount fork left on 2026-10-07: ServerManager's ten-player capacity replaced it, and
+DiscordConnector left with it (#102).
 
 ## Our plugins
 
@@ -489,7 +490,7 @@ PvPBiomeDominions. On 2026-10-04 Oathbound replaced WackyEpicMMOSystem (ADR-0020
 | Nosferatu/SmoothServer | One pacing layer only; SkadiNet chosen |
 | WackyMole/WackysDatabase | DataForge covers tuning |
 | Tristan/Valheim_PvP_Tweaks | Excluded in September 2026 for overlapping PvPBiomeDominions and old pins; not adopted as a replacement after the 2026-10-03 removal |
-| sighsorry/ServerManager | Its Discord and logging role is DiscordConnector's |
+| sighsorry/ServerManager | **Adopted 2026-10-07 (#101/#102), reversing the 2026-10-04 rejection.** Its authoritative character store and exact-Pack admission are now required; its Discord and ten-player capacity replace DiscordConnector and MaxPlayerCount |
 | AWLGaming/DiscordBot_AWL, warpalicious/DiscordTools, RustyMods/DiscordBot | Need an external bot host or two-way chat; the relay is a webhook |
 | warpalicious/Discord_Screenshots | Client-only, nothing depends on it |
 | sighsorry/YouAreNotWorthy | Gates on world keys, which this server does not write |

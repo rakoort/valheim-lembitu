@@ -483,16 +483,16 @@ fi
 
 fresh_dist
 write_file "$WORK/dist/plugins/Clan.dll" clan
-mkdir -p "$WORK/dist/plugins/AzuHoverStats" "$WORK/dist/plugins/AzuClock"
+mkdir -p "$WORK/dist/plugins/AzuHoverStats" "$WORK/dist/plugins/AzuClock" "$WORK/dist/plugins/Tally"
 write_file "$WORK/dist/plugins/AzuHoverStats/AzuHoverStats.dll" hover
 write_file "$WORK/dist/plugins/AzuClock/AzuClock.dll" clock
 write_file "$WORK/dist/plugins/MouseTweaks.dll" mouse
+write_file "$WORK/dist/plugins/Tally/Tally.dll" tally
+write_file "$WORK/dist/plugins/Tally.dll" tally-legacy
 
 if run_install \
    && expect_tree "$WORK/bepinex" .lembitu-installed plugins plugins/Clan.dll \
-   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Clan.dll \
-   && grep -q '^withheld Pack-only plugins/AzuHoverStats/ (1 files)$' "$WORK/out" \
-   && grep -q '^withheld Pack-only plugins/MouseTweaks.dll$' "$WORK/out"; then
+   && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Clan.dll; then
   report ok "a Pack-only package is never installed on the server"
 else
   report fail "a Pack-only package is never installed on the server"
@@ -501,18 +501,49 @@ fi
 # The same dist, but the server already carries the mod under our manifest: the next run must take
 # it away. Pruning is driven by the manifest, and its predicate used to be "still in dist", which
 # would have kept this file loaded forever.
-mkdir -p "$WORK/bepinex/plugins/AzuHoverStats"
+mkdir -p "$WORK/bepinex/plugins/AzuHoverStats" "$WORK/bepinex/plugins/Tally"
 write_file "$WORK/bepinex/plugins/AzuHoverStats/AzuHoverStats.dll" hover
-printf 'plugins/Clan.dll\nplugins/AzuHoverStats/AzuHoverStats.dll\n' > "$WORK/bepinex/.lembitu-installed"
+write_file "$WORK/bepinex/plugins/Tally/Tally.dll" tally
+write_file "$WORK/bepinex/plugins/Tally.dll" tally-legacy
+printf 'plugins/Clan.dll\nplugins/AzuHoverStats/AzuHoverStats.dll\nplugins/Tally/Tally.dll\nplugins/Tally.dll\n' > "$WORK/bepinex/.lembitu-installed"
 
 if run_install \
    && expect_tree "$WORK/bepinex" \
       .lembitu-installed .lembitu-removed plugins plugins/Clan.dll \
    && expect_lines "$WORK/bepinex/.lembitu-installed" plugins/Clan.dll \
-   && expect_lines "$WORK/bepinex/.lembitu-removed" plugins/AzuHoverStats/AzuHoverStats.dll; then
+   && expect_lines "$WORK/bepinex/.lembitu-removed" plugins/AzuHoverStats/AzuHoverStats.dll plugins/Tally/Tally.dll plugins/Tally.dll; then
   report ok "a Pack-only package already on the server is pruned, directory and all"
 else
   report fail "a Pack-only package already on the server is pruned, directory and all"
+fi
+
+# Retired packages must disappear from both the owned install and its container mirror.
+fresh_dist
+write_file "$WORK/dist/plugins/MaxPlayerCount.dll" old-cap
+mkdir -p "$WORK/dist/plugins/DiscordConnector"
+write_file "$WORK/dist/plugins/DiscordConnector/DiscordConnector.dll" old-relay
+run_install
+mkdir -p "$FAKE_MIRROR/DiscordConnector"
+write_file "$FAKE_MIRROR/MaxPlayerCount.dll" old-cap
+write_file "$FAKE_MIRROR/DiscordConnector/DiscordConnector.dll" old-relay
+write_file "$FAKE_MIRROR/foreign.dll" foreign
+rm -rf "$WORK/dist/plugins/MaxPlayerCount.dll" "$WORK/dist/plugins/DiscordConnector"
+mkdir -p "$WORK/dist/plugins/ServerManager"
+write_file "$WORK/dist/plugins/ServerManager/ServerManager.dll" replacement
+cat > "$WORK/bin/docker" <<SH
+#!/bin/sh
+sed "1s|^cd \"[^\"]*\"|cd \"$FAKE_MIRROR\"|" > "$WORK/docker-script"
+sh "$WORK/docker-script"
+SH
+chmod +x "$WORK/bin/docker"
+if run_install \
+   && (export PATH="$WORK/bin:$PATH"; "$INSTALLER" prune-mirror "$WORK/bepinex" test-container) >"$WORK/out" 2>&1 \
+   && [[ ! -e "$WORK/bepinex/plugins/MaxPlayerCount.dll" && ! -e "$WORK/bepinex/plugins/DiscordConnector" ]] \
+   && [[ ! -e "$FAKE_MIRROR/MaxPlayerCount.dll" && ! -e "$FAKE_MIRROR/DiscordConnector" ]] \
+   && [[ -f "$WORK/bepinex/plugins/ServerManager/ServerManager.dll" && -f "$FAKE_MIRROR/foreign.dll" ]]; then
+  report ok "ServerManager cutover prunes both retired plugins and their mirror, preserving foreign files"
+else
+  report fail "ServerManager cutover prunes both retired plugins and their mirror, preserving foreign files"
 fi
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

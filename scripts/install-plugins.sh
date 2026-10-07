@@ -55,7 +55,7 @@ CONTAINER_PLUGINS_DIR="/opt/valheim/bepinex/BepInEx/plugins"
 # LiveExperienceTracker (a skill-XP HUD) and oathbound_addon (Oathbound Addon: Hunter wolf orders
 # that drive the owner's own wolf AI on the client); neither has anything to run or sync on a server.
 CLIENT_ONLY=(AzuHoverStats AzuClock MouseTweaks CraftingSearch CompactStatusEffects
-  LiveExperienceTracker oathbound_addon)
+  LiveExperienceTracker oathbound_addon Tally)
 
 # shellcheck source=lib/ledger.sh
 . "$REPO_ROOT/scripts/lib/ledger.sh"
@@ -88,7 +88,7 @@ path_is_client_only() {  # path_is_client_only <dist-relative-path>
 }
 
 # One line per staged tree, so a 230-file bundle tree is summarized instead of scrolled:
-#   installed plugins/MaxPlayerCount.dll
+#   installed plugins/Lembitu.Guide.dll
 #   removed stale plugins/RetiredMod/ (40 files)
 # Groups are the first two path components - tree and package - because with dist/ mirroring
 # BepInEx/ the first component alone would collapse every package into "plugins/".

@@ -62,7 +62,7 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 # Dependencies satisfied by something other than an exact pin:
 #   - denikson-BepInExPack_Valheim 5.4.2351 is what scripts/test-server.sh installs and what
 #     scripts/extract-refs.sh compiles against; adopted packages name older ones — most at 5.4.2350,
-#     EpicLoot, DiscordConnector and Jotunn at 5.4.2333, SearsCatalog at 5.4.2202. The 5.4.2202
+#     EpicLoot and Jotunn at 5.4.2333, SearsCatalog at 5.4.2202. The 5.4.2202
 #     line has left and returned more than once (#80); BetterArchery 2.0.2 returns in Pack v17
 #     with its 5.4.1501 declaration deliberately overridden (2026-10-06, owner),
 #   - Jotunn is pinned at 2.30.2, overriding the 2.29.0 Guilds and Marketplace declare, the 2.29.2

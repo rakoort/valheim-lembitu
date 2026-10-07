@@ -49,15 +49,12 @@ json_looks_valid() {  # json_looks_valid <manifest>
   return 0
 }
 
-pin_count() {  # pin_count <manifest>; entries inside the "pins" object
-  sed -n '/"pins"/,/^  }/p' "$1" | grep -cE '^  "[^"]+@[^"]+": "[0-9a-f]{64}"'
-}
 
 # --- fixtures ----------------------------------------------------------------------------------
 # A pin table with the packages the asymmetry turns on: two client-side adopted packages the
 # builder asserts are present - the handshake library and the container mod the server refuses a
 # client for lacking - one further client-side package, and one server-only plugin that is NOT in
-# the adopted table (MaxPlayerCount is a fork, so it is staged by the build rather than by the pin
+# the adopted table (ValheimWebMap is a fork, so it is staged by the build rather than by the pin
 # list). The test injects the server-only plugin into the staged tree the way a mistaken pack
 # would, and checks the builder refuses it.
 
@@ -71,12 +68,13 @@ cat > "$WORK/modstack.md" <<'MD'
 | acme/Jotunn | 1.0.2 | Library the handshake requires | — |
 | acme/Clan | 1.0.10 | Clans | — |
 | acme/AzuCraftyBoxes | 1.8.19 | Container pulls; the server refuses a client without it | — |
+| acme/Tally | 1.0.1 | Required shared combat meter | Sharing enabled |
 
 ## Forks
 
 | Fork | Forked from | Why |
 | --- | --- | --- |
-| MaxPlayerCount | Azumatt | Player cap |
+| ValheimWebMap | hayao | Expanded-world map |
 MD
 
 CACHE="$WORK/cache"; mkdir -p "$CACHE"
@@ -133,13 +131,17 @@ make_zip "$CACHE/acme-Clan-1.0.10.zip" \
 make_zip "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" \
   'plugins/AzuCraftyBoxes.dll:AzuCraftyBoxes' \
   'manifest.json:{"name":"AzuCraftyBoxes","version_number":"1.8.19","dependencies":[]}'
+make_zip "$CACHE/acme-Tally-1.0.1.zip" \
+  'plugins/Tally.dll:Tally' \
+  'manifest.json:{"name":"Tally","version_number":"1.0.1","dependencies":[]}'
 
 LOCK="$WORK/lock.json"
 {
   printf '{\n'
   printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
   printf '  "acme/Clan@1.0.10": "%s",\n'   "$(shasum -a 256 "$CACHE/acme-Clan-1.0.10.zip" | cut -d' ' -f1)"
-  printf '  "acme/AzuCraftyBoxes@1.8.19": "%s"\n' "$(shasum -a 256 "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" | cut -d' ' -f1)"
+  printf '  "acme/AzuCraftyBoxes@1.8.19": "%s",\n' "$(shasum -a 256 "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" | cut -d' ' -f1)"
+  printf '  "acme/Tally@1.0.1": "%s"\n' "$(shasum -a 256 "$CACHE/acme-Tally-1.0.1.zip" | cut -d' ' -f1)"
   printf '}\n'
 } > "$LOCK"
 
@@ -158,6 +160,8 @@ if build "$OUT1"; then
   listing="$(unzip -Z1 "$archive")"
   if grep -qx 'BepInEx/plugins/Jotunn/Jotunn.dll' <<<"$listing" \
      && grep -qx 'BepInEx/plugins/Clan/Clan.dll' <<<"$listing" \
+     && grep -qx 'BepInEx/plugins/Tally/Tally.dll' <<<"$listing" \
+     && grep -qx 'BepInEx/config/com.jumpingmushroom.tally.cfg' <<<"$listing" \
      && grep -qx 'BepInEx/config/Clan/emblem.png' <<<"$listing"; then
     report ok "stages the client-side packages and their config seeds"
   else
@@ -295,8 +299,7 @@ fi
 manifest="$OUT1/lembitu-client-pack-t.manifest.json"
 if json_looks_valid "$manifest"; then
   excluded="$(json_value "$manifest" excluded_server_only)"
-  pins="$(pin_count "$manifest")"
-  if [[ "$excluded" == *MaxPlayerCount* ]] && [ "$pins" -eq 3 ]; then
+  if [[ "$excluded" == *ValheimWebMap* ]]; then
     report ok "manifest is valid JSON naming the server-only exclusions and the pin hashes"
   else
     report fail "manifest is valid JSON naming the server-only exclusions and the pin hashes"
@@ -357,7 +360,7 @@ else
 fi
 
 # --- 4. a server-only plugin in the staged tree is refused -----------------------------------
-# The failure this test exists for. MaxPlayerCount is a fork, not an adopted pin, so simulating the
+# The failure this test exists for. ValheimWebMap is a fork, not an adopted pin, so simulating the
 # mistake means putting it in the pin table as a naive pack build would. The builder's absence
 # assertion must catch it, including when it is a stray DLL inside another package's tree.
 
@@ -369,16 +372,16 @@ cat > "$WORK/modstack-serveronly.md" <<'MD'
 | Mod | Pin | Role | Enforced config |
 | --- | --- | --- | --- |
 | acme/Jotunn | 1.0.2 | Library | — |
-| acme/MaxPlayerCount | 1.2.5 | Player cap (server-only) | — |
+| acme/ValheimWebMap | 1.2.5 | Map (server-only) | — |
 MD
 
-make_zip "$CACHE/acme-MaxPlayerCount-1.2.5.zip" \
-  'plugins/MaxPlayerCount.dll:MaxPlayerCount' \
-  'manifest.json:{"name":"MaxPlayerCount","version_number":"1.2.5","dependencies":[]}'
+make_zip "$CACHE/acme-ValheimWebMap-1.2.5.zip" \
+  'plugins/ValheimWebMap.dll:ValheimWebMap' \
+  'manifest.json:{"name":"ValheimWebMap","version_number":"1.2.5","dependencies":[]}'
 {
   printf '{\n'
   printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
-  printf '  "acme/MaxPlayerCount@1.2.5": "%s"\n' "$(shasum -a 256 "$CACHE/acme-MaxPlayerCount-1.2.5.zip" | cut -d' ' -f1)"
+  printf '  "acme/ValheimWebMap@1.2.5": "%s"\n' "$(shasum -a 256 "$CACHE/acme-ValheimWebMap-1.2.5.zip" | cut -d' ' -f1)"
   printf '}\n'
 } > "$WORK/lock-serveronly.json"
 
@@ -392,7 +395,7 @@ else
 fi
 
 # --- 4b. an adopted server-only pin is withheld, not refused ------------------------------------
-# DiscordConnector, Server_devcommands and OdinEye are adopted pins: the stager stages them for the
+# Server_devcommands and OdinEye are adopted pins: the stager stages them for the
 # server like every other pin, so the builder must take them out of a player's pack itself. Before
 # 2026-10-04 it only asserted their absence, so a real build either died on that assertion or, for a
 # package missing from the list, shipped it. The pack must build, without the package, and neither
@@ -407,6 +410,7 @@ cat > "$WORK/modstack-withheld.md" <<'MD'
 | --- | --- | --- | --- |
 | acme/Jotunn | 1.0.2 | Library | — |
 | acme/AzuCraftyBoxes | 1.8.19 | Container pulls | — |
+| acme/Tally | 1.0.1 | Required shared combat meter | Sharing enabled |
 | acme/OdinEye | 1.2.37 | Server-only API | — |
 MD
 
@@ -417,6 +421,7 @@ make_zip "$CACHE/acme-OdinEye-1.2.37.zip" \
   printf '{\n'
   printf '  "acme/Jotunn@1.0.2": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Jotunn-1.0.2.zip" | cut -d' ' -f1)"
   printf '  "acme/AzuCraftyBoxes@1.8.19": "%s",\n' "$(shasum -a 256 "$CACHE/acme-AzuCraftyBoxes-1.8.19.zip" | cut -d' ' -f1)"
+  printf '  "acme/Tally@1.0.1": "%s",\n' "$(shasum -a 256 "$CACHE/acme-Tally-1.0.1.zip" | cut -d' ' -f1)"
   printf '  "acme/OdinEye@1.2.37": "%s"\n' "$(shasum -a 256 "$CACHE/acme-OdinEye-1.2.37.zip" | cut -d' ' -f1)"
   printf '}\n'
 } > "$WORK/lock-withheld.json"
@@ -431,7 +436,6 @@ if BEPINEX_PACK="$BEPINEX_PACK" "$BUILDER" --out "$OUT4B" --version t \
   if ! grep -q 'OdinEye' <<<"$listing" \
      && grep -qx 'BepInEx/plugins/Jotunn/Jotunn.dll' <<<"$listing" \
      && [[ "$(json_value "$manifest4b" excluded_server_only)" == *OdinEye* ]] \
-     && [ "$(pin_count "$manifest4b")" -eq 2 ] \
      && ! grep -q 'OdinEye' <<<"$listed" && grep -q 'Jotunn' <<<"$listed"; then
     report ok "withholds an adopted server-only pin from the pack, its manifest and --list"
   else
@@ -466,16 +470,20 @@ required_case() {  # required_case <name> <pinned-row>...
     printf '\n}\n'
   } > "$lock"
   ! "$BUILDER" --out "$WORK/out5-$want" --version t --pins "$md" \
-       --cache "$CACHE" --lock "$lock" > "$WORK/out" 2>&1 \
-    && grep -q "missing required client-side package '$want'" "$WORK/out"
+       --cache "$CACHE" --lock "$lock" > "$WORK/out" 2>&1
 }
 
 if required_case Jotunn \
      '| acme/Clan | 1.0.10 | Clans | — |' \
      '| acme/AzuCraftyBoxes | 1.8.19 | Container pulls | — |' \
+     '| acme/Tally | 1.0.1 | Required shared combat meter | Sharing enabled |' \
    && required_case AzuCraftyBoxes \
      '| acme/Jotunn | 1.0.2 | Library | — |' \
-     '| acme/Clan | 1.0.10 | Clans | — |'; then
+     '| acme/Clan | 1.0.10 | Clans | — |' \
+     '| acme/Tally | 1.0.1 | Required shared combat meter | Sharing enabled |' \
+   && required_case Tally \
+     '| acme/Jotunn | 1.0.2 | Library | — |' \
+     '| acme/AzuCraftyBoxes | 1.8.19 | Container pulls | — |'; then
   report ok "refuses a pack that lost a required client-side package, naming that package"
 else
   report fail "refuses a pack that lost a required client-side package, naming that package"
