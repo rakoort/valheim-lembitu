@@ -23,7 +23,7 @@ The current buildable projects under `src/` are:
 | `src/plugins/Lembitu.Oathbound/` | Adapts Oathbound: oaths and talent resets only at the Oathstone while the tree opens anywhere (each class keeps its own level, ADR-0031), party kill XP, poison credit, gathering tools for every class, the boss-key cap on class power, and the BetterArchery lock (ADR-0022, ADR-0025). Compiles against the staged Oathbound, SocialSystem, BetterArchery and Jotunn. |
 | `src/plugins/Lembitu.Callings/` | Professions and the Calling: steep curve, shadow levels, focus protection on death, the skills-window star, Herbalist and Fishing bonus output, the cook's and brewer's grades, work meals, the level-50 milestones and the Deep North rule on Fader's personal key (ADR-0021, ADR-0022, ADR-0029, ADR-0032). Compiles against the staged World Advancement Progression, Herbalist, FineDining and Jotunn. |
 | `src/plugins/Shared/` | Source linked into both plugins: hook verification and all-or-nothing patching per feature (`src/plugins/Shared/Hooks.cs`). Not a project. |
-| `src/forks/MaxPlayerCount/` | Configurable admission limit and advertised Steam/PlayFab capacities (`src/forks/MaxPlayerCount/MaxPlayerCount.csproj:3-14`). |
+| `src/forks/ValheimWebMap/` | Server-only public web map, forked so it covers the whole expanded world; origin and changes in `src/forks/ValheimWebMap/UPSTREAM.md`. MaxPlayerCount left on 2026-10-07 (ADR-0003 amendment). |
 
 ## Exclusions
 
