@@ -96,6 +96,13 @@
   },
   "channels": [
     {
+      "name": "🌍-web-map",
+      "category": "Info",
+      "access": "readonly",
+      "topic": "Live map of the world: https://lembitu-map.astral.ee",
+      "message": "🌍 **Live web map:** https://lembitu-map.astral.ee\nEveryone's combined exploration, live player positions with their guild, cartography-table pins, deaths and play sessions."
+    },
+    {
       "name": "announcements",
       "category": "Info",
       "access": "readonly"

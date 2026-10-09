@@ -29,19 +29,26 @@ assert 'FAKE_OPS_TOKEN_DO_NOT_PRINT' in sys.stdin.read()
 p=Path(os.environ['FAKE_STATE'])
 s=json.loads(p.read_text()) if p.exists() else {'roles':[{'id':'ops','managed':True,'tags':{'bot_id':'33333333333333333'}},{'id':'server','managed':True,'tags':{'bot_id':'44444444444444444'}}], 'channels':[], 'hooks':{}, 'writes':0,'calls':0,'next':100,'times':[]}
 s['calls']+=1;s['times'].append(time.monotonic())
-method=arg('--request'); path=args[-1].split('/api/v10')[1].split('/')[1:]
+method=arg('--request'); path=args[-1].split('/api/v10')[1].split('?')[0].split('/')[1:]
 body=json.loads(arg('--data') or '{}');status=200;out={};headers=''
 if os.environ.get('FAKE_ERROR') and not s.get('errored'):
  status=int(os.environ['FAKE_ERROR']);s['errored']=True
  headers='Retry-After: 0.15\r\n';out={'retry_after':0.01,'global':True}
 elif method=='GET':
  if path[0]=='guilds': out=s[path[2]]
+ elif len(path)>2 and path[2]=='messages': out=s.setdefault('messages',{}).get(path[1],[])
  else: out=s['hooks'].get(path[1],[])
 elif method=='POST':
  s['next']+=1;out=dict(body,id=str(60000000000000000+s['next']));s['writes']+=1
  if path[0]=='guilds':s[path[2]].append(out)
+ elif len(path)>2 and path[2]=='messages':
+  out['author']={'id':'33333333333333333'};s.setdefault('messages',{}).setdefault(path[1],[]).append(out)
  else:
   out.update(type=1,token='FAKE_WEBHOOK_SECRET');s['hooks'].setdefault(path[1],[]).append(out)
+elif method=='PUT' and 'pins' in path:
+ s['writes']+=1
+ for m in s.get('messages',{}).get(path[1],[]):
+  if m['id']==path[-1]: m['pinned']=True
 elif method=='PATCH':
  s['writes']+=1
  items=s['roles'] if path[0]=='guilds' else s['channels']
@@ -61,7 +68,10 @@ report test "$(cksum < "$HOME/.config/lembitu/discord.env")" = "$ids_before"
 report state '.writes == 0'
 report test ! -e "$HOME/.config/lembitu/discord-webhooks.env"
 report run
-report state '(.roles | length) == 3 and (.channels | length) == 15 and ([.hooks[][]] | length) == 6'
+report state '(.roles | length) == 3 and (.channels | length) == 16 and ([.hooks[][]] | length) == 6'
+report state 'any(.channels[]; .name == "🌍-web-map" and (.topic | contains("https://lembitu-map.astral.ee")))'
+report state '([.messages[][]] | length) == 1 and ([.messages[][]][0] | .pinned == true and (.content | contains("https://lembitu-map.astral.ee")))'
+report state 'any(.roles[]; .name == "Player" and .mentionable == true)'
 report state 'any(.channels[]; .name == "🔴 Offline" and .type == 2 and .parent_id == null and .position == 0 and any(.permission_overwrites[]; .id == "11111111111111111" and .allow == "1024" and .deny == "1048576") and any(.permission_overwrites[]; .id == "server" and .allow == "1049616" and .deny == "0"))'
 report python3 -c 'import os,json,stat; p=os.environ["HOME"]+"/.config/lembitu/discord.env"; ids=dict(line.strip().split("=",1) for line in open(p)); s=json.load(open(os.environ["FAKE_STATE"])); assert ids["DISCORD_EXISTING_ID"]=="55555555555555555"; assert ids["DISCORD_ROLE_PLAYER_ID"]==next(r["id"] for r in s["roles"] if r.get("name")=="Player"); assert ids["DISCORD_STATUS_VOICE_CHANNEL_ID"]==next(c["id"] for c in s["channels"] if c["type"]==2); assert stat.S_IMODE(os.stat(p).st_mode)==0o600'
 report state 'all(.channels[] | select(.type != 2); all(.permission_overwrites[] | select(.id == "server"); ((.allow | tonumber) % 32) < 16))'

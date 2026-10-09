@@ -97,7 +97,7 @@ while IFS= read -r row; do ensure_role "$(jq -r .name <<< "$row")" "$(jq -r .per
 if [[ $mode == guild ]]; then ensure_role "Guild · $1" 0 Guild; fi
 category_ids='{}'
 ensure_channel() {
-  local name=$1 type=$2 parent=$3 overwrites=$4 matches desired current id result stored=''
+  local name=$1 type=$2 parent=$3 overwrites=$4 topic=${5:-} matches desired current id result stored=''
   if [[ $type == 2 ]]; then
     stored=$(while IFS='=' read -r k v; do [[ $k != DISCORD_STATUS_VOICE_CHANNEL_ID ]] || printf '%s' "$v"; done < "$ids")
     [[ -z $stored || $stored =~ ^[0-9]{17,20}$ ]] || { echo 'Invalid DISCORD_STATUS_VOICE_CHANNEL_ID' >&2; exit 1; }
@@ -117,6 +117,11 @@ ensure_channel() {
   id=$(jq -r '.[0].id // empty' <<< "$matches")
   desired=$(jq -nc --arg n "$name" --argjson t "$type" --arg p "$parent" --argjson o "$overwrites" '{name:$n,type:$t,parent_id:(if $p == "" then null else $p end),permission_overwrites:$o}')
   current=$(jq -c '.[0] | {name,type,parent_id:(.parent_id // null),permission_overwrites:((.permission_overwrites // []) | sort_by(.id))}' <<< "$matches")
+  # A channel's topic shows in its header, so a link there is one click away (the web map channel).
+  if [[ -n $topic ]]; then
+    desired=$(jq --arg t "$topic" '. + {topic:$t}' <<< "$desired")
+    current=$(jq --arg t "$(jq -r '.[0].topic // ""' <<< "$matches")" '. + {topic:$t}' <<< "$current")
+  fi
   if [[ $type == 2 ]]; then
     desired=$(jq --argjson p "$(jq '.status_voice.position' "$LAYOUT")" '. + {position:$p}' <<< "$desired")
     current=$(jq --argjson p "$(jq '.[0].position // null' <<< "$matches")" '. + {position:$p}' <<< "$current")
@@ -153,8 +158,22 @@ while IFS= read -r row; do
   name=$(jq -r .name <<< "$row"); access=$(jq -r .access <<< "$row")
   parent=$(jq -r --arg n "$(jq -r .category <<< "$row")" '.[$n]' <<< "$category_ids")
   overwrites=$(jq -c --arg a "$access" --argjson ids "$role_ids" --argjson c "$common" '$c + [.permissions[$a][] | {id:$ids[.subject],type:0,allow,deny}]' "$LAYOUT")
-  ensure_channel "$name" 0 "$parent" "$overwrites"
+  ensure_channel "$name" 0 "$parent" "$overwrites" "$(jq -r '.topic // ""' <<< "$row")"
   channel_ids=$(jq --arg n "$name" --arg id "$channel_id" '. + {($n):$id}' <<< "$channel_ids")
+  # A row's message is posted once by the Ops bot and pinned; it is never edited or reposted.
+  message=$(jq -r '.message // ""' <<< "$row")
+  if [[ -n $message && $channel_id != planned-* ]]; then
+    posted=$(api GET "/channels/$channel_id/messages?limit=50" | jq --arg a "$ops" 'any(.[]; .author.id == $a)')
+    if [[ $posted != true ]]; then
+      echo "Post pinned message: $name"
+      if ! $dry; then
+        mid=$(api POST "/channels/$channel_id/messages" "$(jq -nc --arg c "$message" '{content:$c,allowed_mentions:{parse:[]}}')" | jq -er .id)
+        api PUT "/channels/$channel_id/messages/pins/$mid" >/dev/null
+      fi
+    fi
+  elif [[ -n $message ]]; then
+    echo "Post pinned message: $name"
+  fi
 done <<< "$rows"
 while IFS= read -r row; do
   route=$(jq -r .route <<< "$row"); name="Lembitu · $route"

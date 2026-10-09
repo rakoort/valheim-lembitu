@@ -17,6 +17,7 @@ The agent builds and keeps this layout; changes go through this page first.
 | Category | Channel | Who sees it | Fed by |
 | --- | --- | --- | --- |
 | Top level | `🟢 Online · N/10` / `🔴 Offline` / `🟠 Restarting` (locked voice channel) | Everyone; nobody joins | Host status timer, Lembitu Server bot |
+| Info | `#🌍-web-map` | Everyone, read-only | Topic and one pinned message with the map link, posted once by the Ops bot (`topic` and `message` in `config/discord/layout.json`) |
 | Info | `#announcements` | Everyone; only the owner and the bots post | Owner, and a Pack-release webhook |
 | Info | `#rules` | Everyone, read-only | Owner |
 | Info | `#password` | Player role, read-only | Owner |
@@ -30,7 +31,7 @@ The agent builds and keeps this layout; changes go through this page first.
 
 Roles, highest first: the owner's own, **Lembitu Ops**, **Lembitu Server**, **Player** (given by the
 owner to people who may join the game), and one **Guild · name** role per Guild. The web map's link
-is posted in `#announcements`. ServerManager's event names are from its README, "Webhooks: game →
+sits in `#🌍-web-map`'s header and pinned message. ServerManager's event names are from its README, "Webhooks: game →
 Discord". Player is **mentionable**: a webhook can only ping a mentionable role, and the v17
 release post's `@Player` showed as text but notified nobody until this was set (2026-10-09).
 
