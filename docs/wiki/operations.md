@@ -518,18 +518,10 @@ Install on astral-bicep (operator steps; not applied by these changes):
    SSH argument, shell history or log. This is the same Server bot used by ServerManager, with
    Manage Channels granted only on the status voice channel.
 3. Put the updated checkout at `~/code/valheim-lembitu` and deploy the labelled staged plugins
-   through the normal installer. From a Bash shell on astral-bicep, install and start the units:
-
-   ```bash
-   mkdir -p ~/.config/systemd/user
-   cp ~/code/valheim-lembitu/config/discord-status/lembitu-discord-status.{service,timer} ~/.config/systemd/user/
-   systemctl --user daemon-reload
-   systemctl --user enable --now lembitu-discord-status.timer
-   systemctl --user start lembitu-discord-status.service
-   systemctl --user status lembitu-discord-status.timer
-   journalctl --user -u lembitu-discord-status.service -n 20
-   ```
-
+   through the normal installer. On astral-bicep, copy
+   `config/discord-status/lembitu-discord-status.{service,timer}` into `~/.config/systemd/user/`,
+   run `systemctl --user daemon-reload`, then `systemctl --user enable --now
+   lembitu-discord-status.timer`, and read `journalctl --user -u lembitu-discord-status.service`.
    Enable user lingering with `loginctl enable-linger "$USER"` if it is not already enabled.
    A different checkout location needs an `ExecStart` unit override. `scripts/lib/python.sh`
    supplies Python through the repository-pinned Nix fallback when no `python3` is on PATH.
