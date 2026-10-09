@@ -349,8 +349,10 @@ connected. The deploy went in this order:
    the server after the backups.
 
 **A first verify can race AdventureBackpacks.** It writes its per-backpack sections some time after
-the chainloader completes, so a verify straight after a fresh container's boot can report those keys
-absent. Re-run `scripts/verify-enforced-config.sh` before treating it as drift.
+the chainloader completes, so a verify straight after a boot can report those keys absent. The
+first v17 maintenance restart (2026-10-09) failed this way with 11 absent entries while the server
+itself came up fine; a manual verify a minute later matched all 448. `scripts/launch-server.sh` now
+checks once more after 60 seconds (`VERIFY_RETRY_DELAY`) before calling it drift.
 
 **Pack v17 on `LembituRun`, 2026-10-09** (owner's go). Nobody was connected. In order:
 1. Backups: the hourly unit's archive `lembitu-all-worlds-20261009T145716Z.tar.gz` and
