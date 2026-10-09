@@ -244,12 +244,27 @@ step "  Zone · Zone · Read"
 step "  Zone · Zone WAF · Edit          (the map's rate limit)"
 step "  Account · Cloudflare Tunnel · Edit"
 step "Zone Resources: Include · Specific zone · $ZONE.  Account Resources: Include · your account."
+step "Leave Client IP Address Filtering and TTL empty: a TTL start date in the future disables the token until then."
 step "Continue to summary → Create Token, then Copy. It is shown once."
 say "Paste the token at the 'password data' prompt below (input is hidden)."
 security add-generic-password -U -a "$USER" -s "$TOKEN_SERVICE" -l "Lembitu Cloudflare API" -w
 check=$(cf GET /user/tokens/verify)
 [[ "$(jq -r '.result.status // empty' <<<"$check")" == active ]] \
   || { warn "Cloudflare does not accept that token; re-run this stage"; exit 1; }
+# An active token with a future start date still refuses every call, with only a message to say so.
+not_before=$(jq -r '.result.not_before // empty' <<<"$check")
+if [[ -n "$not_before" ]] && (( $(date -u -j -f '%Y-%m-%dT%H:%M:%SZ' "$not_before" +%s 2>/dev/null || echo 0) > $(date -u +%s) )); then
+  warn "the token only works from $not_before (its TTL start date)."
+  warn "Edit the token in Cloudflare, clear the TTL start date, save, and re-run this wizard."
+  exit 1
+fi
+# astral-bicep keeps using this token to follow the home address, so an expiry date would break it later.
+expires_on=$(jq -r '.result.expires_on // empty' <<<"$check")
+if [[ -n "$expires_on" ]]; then
+  warn "the token expires at $expires_on; astral-bicep needs it for as long as the Run lasts."
+  warn "Edit the token in Cloudflare, clear both TTL dates, save, and re-run this wizard."
+  exit 1
+fi
 printf '  %s✓ token active%s and stored in the keychain as %s\n' "$GREEN" "$RESET" "$TOKEN_SERVICE"
 
 stage "Find the zone and account"
