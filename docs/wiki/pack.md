@@ -27,7 +27,7 @@ Root Thunderstore metadata (`README.md`, `CHANGELOG.md`, `icon.png`, `manifest.j
 
 **Adopt upstream unless maintaining source buys something upstream cannot.** The original 1.0.7 compatibility rationale disappeared for Clan, STU_Ward, PvPBiomeDominions and DetailedLevels when official builds arrived, and on 2026-09-15 the same happened to the last content fork. Project-specific behaviour is no longer accepted as a reason to own source: configuration and enforced config reach it (`docs/adr/0003-adopt-upstream-1-0-7-builds-instead-of-forking.md`). What remains:
 
-- **MaxPlayerCount:** the only fork. Upstream's 1.2.5 release is binary-only — public source stops at 1.2.4 — and it declares an older BepInEx pack, while admission still uses a ten-player literal. Server-only, not something players install in the Pack (`src/forks/MaxPlayerCount/UPSTREAM.md:15-32`).
+- **MaxPlayerCount:** the only fork until 2026-10-07. Upstream's 1.2.5 release is binary-only — public source stops at 1.2.4 — and it declares an older BepInEx pack, while admission still uses a ten-player literal. Server-only, not something players install in the Pack. It left with Pack v17, when ServerManager took over admission and the cap returned to ten (ADR-0003 and ADR-0007, 2026-10-07 amendments).
 - **WackyEpicMMOSystem:** restored on 2026-09-17, then replaced on 2026-10-04 by Oathbound, which owns class level, talents and magic (ADR-0020). WackyItemRequiresSkillLevel remains removed. Both had once been forks; adopting official builds retired that source ownership. Oathbound is adapted by our own patch plugin, `Lembitu.Oathbound`, not forked.
 - **ValheimRAFT:** removed on 2026-10-03 at the owner's instruction, along with its bundled DynamicLocations. Custom ships and cannons are no longer in the stack.
 - **World Advancement Progression and DiscordConnector:** adopted rather than written, replacing the personal-keys, progression-bridge and Discord-relay plugins that were planned (ADR-0010).
@@ -211,7 +211,7 @@ pointed at a zip.
 
 | Package | Server | Client | Why |
 | --- | --- | --- | --- |
-| `AzumattDev/MaxPlayerCount` | required | **excluded** | A fork, and every surface it patches runs on the host: the admission literal in `ZNet.RPC_PeerInfo`, the `SteamGameServer.SetMaxPlayerCount` prefix, and the two `ZPlayFabMatchmaking` sites. A client is told the server's capacity by the server (`src/forks/MaxPlayerCount/UPSTREAM.md`). |
+| `AzumattDev/MaxPlayerCount` | required | **excluded** | A fork, and every surface it patched ran on the host: the admission literal in `ZNet.RPC_PeerInfo`, the `SteamGameServer.SetMaxPlayerCount` prefix, and the two `ZPlayFabMatchmaking` sites. A client is told the server's capacity by the server. Retired with Pack v17 (ADR-0003, 2026-10-07 amendment). |
 | `TOYNBEE/BoneMod` | — | — | **Dropped 2026-09-16, done in v6.** Cosmetic bone scaling, client-side, and unenforceable from the server, which is the category the review cut. It was the builder's only `REQUIRED` entry; that assertion now names Jotunn, because a client without Jotunn is refused at the handshake outright. |
 | `sighsorry/AdminQoL` | — | — | **Dropped 2026-09-16, done in v6.** None of its twenty-nine settings is server-synced, so its gameplay defaults — no durability loss, no equip delay, no roof requirement — were live for every player and unreachable from the server. Vanilla shelter requirements and durability decay return with it. |
 | `nwesterhausen/DiscordConnector`, `Digitalroot/Max_Dungeon_Rooms` | required | **still shipped, wrongly** | Server-only: the relay has no client half, and dungeon room counts apply when the server generates the dungeon. v6 still carries both, because the builder excludes by name and neither was added to that list. Max Dungeon Rooms stays installed on the server, where ADR-0009 requires it for the life of the world; removing it from the Pack needs one check first, a client without it entering a crypt the server generated. |
@@ -694,6 +694,35 @@ Two defects were found and fixed by this install, both of which had shipped in e
   inventory and refuses to publish when the inventory and archive disagree.
 - The truncated copy is worth naming too: a partially transferred zip verified as a file but
   installed an incomplete tree. Check the archive's own SHA-256 before extracting.
+
+### Clean install on a Linux client — `scripts/install-client-pack.sh` (2026-10-07)
+
+Re-extracting over an install keeps whatever the old Pack had and the new one dropped, so a machine
+the project manages gets a clean swap instead. `scripts/install-client-pack.sh` installs the newest
+published `client-pack-*` release (or `--release <tag>`, or a local `--zip` candidate with its
+`.versions.txt` beside it) into a game folder, by default tricep's
+`/games/SteamLibrary/steamapps/common/Valheim`. It needs no checkout on the client:
+
+    ssh astral-tricep bash -s -- [--without ValheimVisualEnhanced] < scripts/install-client-pack.sh
+
+- **Checked before anything moves.** The download must match the SHA-256 digest GitHub publishes for
+  each asset, the archive and its inventory must name the same files, every file must lie inside
+  what a clean removes (BepInEx/, the doorstop files, both launchers), and the extracted tree must
+  pass the inventory. Then the old Pack moves and the new one is checked again in place; a failure
+  after the move puts the old Pack back.
+- **Moved, not deleted.** The whole previous BepInEx/ (configs, saved password, logs) and the loader
+  files go to `~/lembitu-pack-backups/game-<UTC stamp>.<random>/`; the newest three are kept. Game
+  files and the Steam launch option are never touched.
+- **Refusals.** Valheim running from the folder, or a native test session holding
+  `~/lembitu-native.lock`, since those sessions copy this folder.
+- **`--without <plugin>`** leaves one `BepInEx/plugins/<plugin>/` out. It exists for tricep, where
+  ValheimVisualEnhanced was removed after two GPU hangs on 2026-10-06; leaving out a mod the server
+  requires gets the client refused at join.
+
+Measured 2026-10-07 on astral-tricep with a scratch game folder: v16 downloaded and digest-checked,
+353 files matched with ValheimVisualEnhanced left out, the stale plugin went to the backup, the
+folder kept mode 755, and a second run reused the cached download. `test/install-client-pack.test.sh`
+covers the swap, `--without`, the refusals and backup pruning.
 
 ### Verifying a connected player
 
