@@ -85,7 +85,8 @@ for name in ['launch-server.sh','maintenance-restart.py']:shutil.copy(root/'scri
 (repo/'scripts/lib').mkdir();shutil.copy(root/'scripts/lib/python.sh',repo/'scripts/lib')
 shutil.copy(root/'config/launch/launch.env.example',repo/'config/launch')
 (repo/'config/launch/launch.secret.env').write_text('SERVER_PASS=fake-only\n')
-verify=repo/'scripts/verify-enforced-config.sh';verify.write_text('#!/usr/bin/env bash\nset -euo pipefail\nexit "${VERIFY_FAIL:-0}"\n');verify.chmod(0o755)
+verify=repo/'scripts/verify-enforced-config.sh';verify.write_text('#!/usr/bin/env bash\nset -euo pipefail\nif [[ -n "${VERIFY_FAIL_ONCE:-}" && -e "$VERIFY_FAIL_ONCE" ]]; then rm -f "$VERIFY_FAIL_ONCE"; exit 1; fi\nexit "${VERIFY_FAIL:-0}"\n');verify.chmod(0o755)
+os.environ['VERIFY_RETRY_DELAY']='0'
 shim=work/'clockshim';shim.mkdir();(shim/'sitecustomize.py').write_text('import time\nnow=[1791320000.]\ntime.time=lambda:now[0]\ntime.monotonic=lambda:now[0]\ndef advance(seconds):now[0]+=seconds\ntime.sleep=advance\n')
 os.environ['PYTHONPATH']=str(shim);os.environ['DATA_ROOT']=str(work/'data')
 store=work/'data/config/save/ServerManager';store.mkdir(parents=True);cron=store/'cron.yml';cron.write_text('jobs: []\n');os.environ['CRON']=str(cron)
@@ -102,6 +103,13 @@ for action,mode,running,verify_fail in [('restart','confirmed',True,False),('sto
  if not failed and action!='stop':assert not marker.exists()
  else:assert int(marker.read_text())>1791320000
  print('pass: shell '+action+' '+('running' if running else 'stopped')+' '+mode+(' verify-failed' if verify_fail else ''));count+=1
+# A mod still writing its config fails the first verify only; the start then succeeds.
+once=work/'verify-once';once.write_text('');os.environ['VERIFY_FAIL_ONCE']=str(once);os.environ['VERIFY_FAIL']='0';os.environ['MODE']='confirmed'
+state.write_text('false');os.environ['TRACE']=str(work/'retry.jsonl')
+result=subprocess.run(['bash',str(repo/'scripts/launch-server.sh'),'start'],capture_output=True,text=True)
+assert result.returncode==0 and 'checking again' in result.stdout and not once.exists(),result.stderr
+os.environ.pop('VERIFY_FAIL_ONCE')
+print('pass: a verify that fails once because a mod is still writing passes on the retry');count+=1
 # ServerManager's policy is applied then checked before start, from the Pack, once it is installed.
 policy=repo/'scripts/servermanager-policy.sh'
 policy.write_text('#!/usr/bin/env bash\nset -euo pipefail\nprintf \'["policy","%s","%s"]\\n\' "$1" "$*" >> "$TRACE"\n[[ "${POLICY_FAIL:-}" != "$1" ]]\n');policy.chmod(0o755)

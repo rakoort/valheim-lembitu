@@ -128,8 +128,7 @@ do_run() {
   if compgen -G "$CONFIG_DIR/bepinex/*.cfg" > /dev/null; then
     wait_for_chainloader "${CHAINLOADER_TIMEOUT:-300}" \
       || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
-    "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
-      || die "the server booted with a drifted config; the keys above are not in effect"
+    verify_after_boot
   fi
 
   printf 'next: deploy the pack with scripts/install-plugins.sh %s/bepinex\n' "$CONFIG_DIR"
@@ -175,9 +174,20 @@ do_start() {
 
   wait_for_chainloader "${CHAINLOADER_TIMEOUT:-300}" "$since" \
     || die "no 'Chainloader startup complete' within ${CHAINLOADER_TIMEOUT:-300}s; read docker logs $CONTAINER_NAME"
+  verify_after_boot
+  rm -f "$state/maintenance-until"
+}
+
+# Some mods write their sections a little after the chainloader reports done: AdventureBackpacks
+# adds its per-backpack sections later (docs/wiki/operations.md), and a first check then reports
+# them absent. One retry after VERIFY_RETRY_DELAY seconds tells that race from real drift, which
+# is still there on the second look.
+verify_after_boot() {
+  "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" && return 0
+  printf 'verify failed once; checking again in %ss in case a mod is still writing its config\n' "${VERIFY_RETRY_DELAY:-60}"
+  sleep "${VERIFY_RETRY_DELAY:-60}"
   "$REPO_ROOT/scripts/verify-enforced-config.sh" "$CONFIG_DIR/bepinex" \
     || die "the server booted with a drifted config; the keys above are not in effect"
-  rm -f "$state/maintenance-until"
 }
 
 # The enforced overlay is re-applied on every start and proved afterwards (ADR-0011, #69).
