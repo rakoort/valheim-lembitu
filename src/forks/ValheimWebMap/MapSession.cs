@@ -24,6 +24,8 @@ namespace ValheimWebMap
         private readonly string _exploredPath;
         private readonly ExploredMask _mask;
         private readonly PrivateExploration _privateExploration;
+        private readonly GuildLookup _guilds;
+        private readonly Func<long, string> _guildName;
         private readonly TileService _tiles;
         private readonly PlayerHistory _history;
         private readonly CartographyTables _tables;
@@ -77,6 +79,8 @@ namespace ValheimWebMap
 
             _mask = new ExploredMask(HalfSize, Geometry.Radius);
             _privateExploration = new PrivateExploration(_mask);
+            _guilds = new GuildLookup(message => _log.LogWarning(message));
+            _guildName = _guilds.NameOf;
             try
             {
                 if (_mask.TryLoad(_exploredPath))
@@ -251,17 +255,8 @@ namespace ValheimWebMap
             ZNet znet = ZNet.instance;
             if (znet == null) return;
             PlayerTracker.Collect(znet, _players);
-            float radius = _cfg.ExploreRadius.Value;
-            _privateExploration.BeginSample();
-            foreach (PlayerEntry p in _players)
-            {
-                _privateExploration.Online(p.Id);
-                // Players without a spawned character report the origin; the game does not reveal there either.
-                if (!p.HasCharacter || p.Dead || p.Position.sqrMagnitude < 1f) continue;
-                if (p.Visible) _mask.Reveal(p.Position.x, p.Position.z, radius);
-                else _privateExploration.Record(p.Id, p.Position.x, p.Position.z, radius);
-            }
-            _privateExploration.EndSample();
+            PlayerPublishing.Sample(_players, _cfg.IgnorePositionPrivacy.Value, _cfg.ExploreRadius.Value,
+                _mask, _privateExploration, _guildName);
             if (_history != null)
             {
                 EnvMan env = EnvMan.instance;
@@ -500,9 +495,7 @@ namespace ValheimWebMap
             {
                 if (!p.Visible && !_cfg.ShowHiddenPlayers.Value) continue;
                 j.BeginObject();
-                j.Prop("id", p.Id);
-                j.Prop("name", p.Name);
-                j.Prop("visible", p.Visible);
+                PlayerPublishing.WriteIdentity(j, p);
                 if (_cfg.ShowDeadStatus.Value) j.Prop("dead", p.Dead);
                 DateTime since;
                 int sessionDeaths, totalDeaths;
@@ -515,14 +508,7 @@ namespace ValheimWebMap
                         j.Prop("deaths", totalDeaths);
                     }
                 }
-                if (p.Visible)
-                {
-                    j.Prop("x", p.Position.x, 1);
-                    j.Prop("z", p.Position.z, 1);
-                    j.Prop("y", p.Position.y, 1);
-                    if (_cfg.ShowHeading.Value) j.Prop("yaw", p.Yaw, 0);
-                    if (_cfg.ShowBiome.Value) j.Prop("biome", p.Biome);
-                }
+                PlayerPublishing.WritePosition(j, p, _cfg.ShowHeading.Value, _cfg.ShowBiome.Value);
                 j.EndObject();
             }
             j.EndArray();

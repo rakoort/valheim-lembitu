@@ -292,6 +292,7 @@ admin channel. Discord calls it a guild; in this project a Guild is only the in-
 _Avoid_: guild (for the Discord), Discord guild, community
 
 **Web map**:
-The public web page showing the Run's world as explored by all players together, with
-cartography-table pins, deaths and play sessions. It is not the in-game map, which stays personal.
+The public web page showing every online player's live position, heading and guild, and the Run's
+world as explored by all players together, with cartography-table pins, deaths and play sessions.
+It is not the in-game map, which stays personal; its public-position toggle does not hide web positions.
 _Avoid_: live map, online map, atlas

@@ -354,11 +354,12 @@ BetterMap makes no automatic resource pins. Everyone's public position is off
 `config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`). Readouts are welcome:
 hover stats, skill progress, a clock and the weather forecast.
 
-**The web map is public, from Pack v17.** A web page shows the whole world as explored by every
-player together, with cartography-table pins, deaths and play sessions, to anyone with the link.
-Rival guilds can see where you have been and what you have pinned on a table; your own in-game map
-stays yours. Live positions still follow the off setting above (`docs/wiki/operations.md`,
-Decisions of 2026-10-07).
+**The web map is public, from Pack v17.** Anyone with the link sees everyone's live position,
+heading and guild, and the whole world as explored by every player together, with cartography-table
+pins, deaths and play sessions. Exploration appears while players are connected, not only after
+logout. Rival guilds can see where you are, where you have been and what you have pinned on a table.
+Your own in-game map stays yours, and its public-position setting remains off; that setting does not
+hide you on the web map (owner reversal, 2026-10-09; `docs/wiki/operations.md`).
 
 **There is no PvP.** It is held off for everyone (`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`).
 

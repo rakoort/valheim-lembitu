@@ -5,25 +5,6 @@ using UnityEngine;
 
 namespace ValheimWebMap
 {
-    internal struct PlayerEntry
-    {
-        /// <summary>Connection id; changes every time the player connects.</summary>
-        public long Id;
-        /// <summary>Stable identity across connections: platform user id when known, else the character name.</summary>
-        public string Key;
-        public string Name;
-        /// <summary>The player's in-game "visible to other players" map setting, and a spawned character to show.</summary>
-        public bool Visible;
-        public bool HasCharacter;
-        /// <summary>Identifies the spawned character (ZDOID as text); empty without one. A new value while connected means a respawn.</summary>
-        public string CharacterKey;
-        /// <summary>The character's persistent player id, the value cartography table pins carry as owner. 0 when unknown.</summary>
-        public long PlayerId;
-        public bool Dead;
-        public Vector3 Position;
-        public float Yaw;
-        public string Biome;
-    }
 
     /// <summary>Reads connected players from ZNet. Main thread only.</summary>
     internal static class PlayerTracker

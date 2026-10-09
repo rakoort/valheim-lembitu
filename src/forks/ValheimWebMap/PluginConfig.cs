@@ -23,6 +23,7 @@ namespace ValheimWebMap
         public readonly ConfigEntry<bool> TrackDeaths;
         public readonly ConfigEntry<int> HistoryRetentionDays;
 
+        public readonly ConfigEntry<bool> IgnorePositionPrivacy;
         public readonly ConfigEntry<bool> ShowHiddenPlayers;
         public readonly ConfigEntry<bool> ShowBiome;
         public readonly ConfigEntry<bool> ShowCoordinates;
@@ -93,6 +94,8 @@ namespace ValheimWebMap
                     "frames and only tables whose contents changed are read again.",
                     new AcceptableValueRange<float>(5f, 600f)));
 
+            IgnorePositionPrivacy = file.Bind("Players", "IgnorePositionPrivacy", false,
+                "Publish every spawned player's live position and exploration regardless of the in-game public-position setting.");
             UpdateInterval = file.Bind("Players", "UpdateInterval", 1f,
                 new ConfigDescription("Seconds between player position samples.", new AcceptableValueRange<float>(0.25f, 10f)));
 

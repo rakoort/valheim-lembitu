@@ -20,6 +20,9 @@ cat > "$work/Coverage.csproj" <<EOF
 <Compile Include="$ROOT/src/forks/ValheimWebMap/TileService.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/Palette.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/PrivateExploration.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/PlayerPublishing.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/GuildLookup.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/JsonWriter.cs" />
 </ItemGroup>
 </Project>
 EOF
@@ -78,6 +81,32 @@ class Program
         Check(privateMask.Sample(13000,0) == 0,"hidden exploration stays private while peer connected");
         privacy.BeginSample(); privacy.EndSample();
         Check(privateMask.Sample(13000,0) > .99f,"hidden exploration joins combined map only after logout");
+        foreach (bool ignore in new[] { false, true })
+        {
+            var liveMask = new ExploredMask(g.HalfSize,g.Radius);
+            var pending = new PrivateExploration(liveMask);
+            var players = new System.Collections.Generic.List<PlayerEntry> { new PlayerEntry { Id=7, PlayerId=42, Name="Rival", HasCharacter=true, Position=new UnityEngine.Vector3(13000,12,0), Yaw=90, Biome="Mountain" } };
+            PlayerPublishing.Sample(players,ignore,100,liveMask,pending,pid => pid == 42 ? "Oak & Iron" : null);
+            var json = new JsonWriter(); json.BeginObject(); PlayerPublishing.WriteIdentity(json,players[0]); PlayerPublishing.WritePosition(json,players[0],true,true); json.EndObject();
+            using var state = System.Text.Json.JsonDocument.Parse(json.ToString());
+            Check(state.RootElement.GetProperty("guild").GetString() == "Oak & Iron","guild lookup appears in player state");
+            Check(state.RootElement.GetProperty("visible").GetBoolean() == ignore,"visibility follows privacy override " + ignore);
+            Check(state.RootElement.TryGetProperty("x",out var x) == ignore && (!ignore || x.GetSingle() == 13000),"coordinates follow privacy override " + ignore);
+            Check(state.RootElement.TryGetProperty("yaw",out var yaw) == ignore && (!ignore || yaw.GetSingle() == 90),"heading follows privacy override " + ignore);
+            Check((liveMask.Sample(13000,0) > .99f) == ignore,"connected exploration follows privacy override " + ignore);
+            players[0] = new PlayerEntry { Id=7, PlayerId=42, Name="Rival", HasCharacter=true, Position=new UnityEngine.Vector3(13000,12,0) };
+            PlayerPublishing.Sample(players,ignore,100,liveMask,pending,_ => null);
+            json = new JsonWriter(); json.BeginObject(); PlayerPublishing.WriteIdentity(json,players[0]); json.EndObject();
+            using var absent = System.Text.Json.JsonDocument.Parse(json.ToString());
+            Check(absent.RootElement.GetProperty("guild").ValueKind == System.Text.Json.JsonValueKind.Null,"absent guild is JSON null");
+            players.Clear(); PlayerPublishing.Sample(players,ignore,100,liveMask,pending,_ => null);
+            Check(liveMask.Sample(13000,0) > .99f,"exploration published after disconnect " + ignore);
+        }
+        int warnings = 0;
+        var lookup = new GuildLookup(_ => warnings++);
+        Check(lookup.NameOf(42) == "Oak & Iron" && lookup.NameOf(99) == null,"reflection reads authoritative guild and guildless player");
+        Guilds.GuildServer.Broken = true;
+        Check(lookup.NameOf(42) == null && lookup.NameOf(42) == null && warnings == 1,"changed guild API fails soft with one warning");
         const int size = 2048;
         float cell = g.SharedMapHalfSize * 2 / size;
         int col = (int)Math.Round(13000/cell + size/2f);
@@ -108,6 +137,7 @@ class Program
         Console.WriteLine("webmap coverage: all checks passed");
     }
 }
+namespace Guilds { public sealed class Guild { public string Name = "Oak & Iron"; } public static class GuildServer { public static bool Broken; public static void EnsureLoaded() { if (Broken) throw new Exception("changed API"); } public static Guild GuildOf(long pid) => pid == 42 ? new Guild() : null; } }
 namespace HarmonyLib { static class AccessTools { public static bool Enabled = true; public static Type TypeByName(string name) => Enabled ? typeof(ExpandWorldSize.Configuration) : null; } }
 namespace ExpandWorldSize { static class Configuration { public static float WorldRadius => 13250; public static float WorldEdgeSize => 500; public static float MapSize => 1; public static float MapPixelSize => 0; } }
 namespace ValheimWebMap {
@@ -131,6 +161,7 @@ namespace UnityEngine
     {
         public float x,y,z;
         public Vector3(float x,float y,float z) { this.x=x; this.y=y; this.z=z; }
+        public float sqrMagnitude => x*x+y*y+z*z;
         public Vector3 normalized { get { float length = MathF.Sqrt(x*x+y*y+z*z); return new Vector3(x/length,y/length,z/length); } }
     }
     static class Mathf

@@ -175,6 +175,8 @@
     el.explored.textContent = typeof s.exploredPercent === 'number' ? s.exploredPercent.toFixed(1) + '% explored' : '';
   }
 
+  function playerLabel(p) { return p.name + (p.guild ? ' · ' + p.guild : ''); }
+
   function renderPlayers(players) {
     var seen = {};
     el.count.textContent = players.length;
@@ -205,7 +207,7 @@
       li.innerHTML = '<span class="dot"></span><span class="name"></span>' +
         '<span class="follow">' + (key === followId ? 'following' : p.dead ? '<span class="skull">☠</span>' : '') + '</span>' +
         '<span class="sub"></span>';
-      li.querySelector('.name').textContent = p.name;
+      li.querySelector('.name').textContent = playerLabel(p);
       li.querySelector('.sub').textContent = parts.join(' · ');
       if (p.visible) {
         li.addEventListener('click', function () {
@@ -262,8 +264,8 @@
       root.style.setProperty('--yaw', Math.round(p.yaw || 0) + 'deg');
       root.classList.toggle('no-heading', typeof p.yaw !== 'number');
       root.classList.toggle('following', key === followId);
-      root.querySelector('.pm-label').textContent = p.name;
-      root.title = p.name + (p.biome ? ' · ' + p.biome : '');
+      root.querySelector('.pm-label').textContent = playerLabel(p);
+      root.title = playerLabel(p) + (p.biome ? ' · ' + p.biome : '');
     }
   }
 

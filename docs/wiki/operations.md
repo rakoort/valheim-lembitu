@@ -180,7 +180,7 @@ amendment records the cap, the enforced Pack and admission. The research is in
 | Backups | One hourly archive holds the world, cache, admission lists, the character store, and the Guilds, Marketplace and region-claim files, so a restore returns all of them to the same hour |
 | Admission | Public with a password, shared in a members-only Discord channel; the owner is the only admin |
 | Host | The game stays on astral-bicep with reserved CPU and memory (CPU shares 4096, 4 GiB reservation). The other projects' containers are not capped (owner, 2026-10-09); monitoring's resource alerts decide whether that changes |
-| Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's combined exploration, cartography-table pins, deaths and play sessions, at `https://lembitu-map.astral.ee` through a Cloudflare Tunnel with a Cloudflare rate limit; no router port opens and the game's own port 3000 stays private. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
+| Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's live position, heading and guild, live combined exploration, cartography-table pins, deaths and play sessions, at `https://lembitu-map.astral.ee` through a Cloudflare Tunnel with a Cloudflare rate limit; no router port opens and the game's own port 3000 stays private. The owner reversed web-map position privacy on 2026-10-09; the in-game public-position setting stays off. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
 | Pack additions and refusals | Jumpingmushroom/Tally is required, with sharing on. nbusseneau/Better_Cartography_Table is not added: its guild pins need Smoothbrain's Guilds, not Northarun's, its settings cannot be locked, and pin privacy is checked only on the client. ValMedia/OdinOnDemand is already pinned at its latest release, 1.3.0 |
 
 Tickets: the ServerManager trial #101 and adoption #102, the maintenance restart #103, backups #104,
@@ -579,10 +579,18 @@ vanilla 10,500 m edge and assumed a 12,288 m cartography bitmap; both are correc
 pixel is 6.7 m and the render arrays take about 160 MiB on two background workers.
 `test/webmap-coverage.test.sh` runs the real renderer and tile service on synthetic terrain and
 finds land, not fog or void, at 13,000 m on all four sides, and mask coverage at the 13,750 m edge.
-A player whose public position is off would still have been tracked by the clearing their live
-exploration cuts in the public fog, so the fork withholds a hidden player's exploration until they
-log out; a server crash loses that pending part, which cartography tables can still share. The
-map listens on 3000 inside the container, published only on `127.0.0.1`.
+
+**The owner reversed web-map privacy on 2026-10-09.** Everyone's live position, heading and guild
+are public, regardless of the in-game public-position toggle, and exploration reveals during the
+connection rather than waiting for logout. The enforced `[Players] IgnorePositionPrivacy = true`
+bypasses the fork's private-exploration buffer; its default false preserves the earlier behaviour
+for other installations. The in-game map still keeps public positions off. Guild names come from
+Northarun/Guilds 1.2.3's server membership store, keyed by the character's persistent player ID,
+not a client-provided guild or a matching display name. The optional reflection lookup calls
+`GuildServer.EnsureLoaded()` and `GuildServer.GuildOf(long)`, then reads `Guild.Name`; missing or
+changed Guilds leaves the name null and logs one warning per map session. Map labels and the online
+list show the guild beside the player name. The map listens on 3000 inside the container, published
+only on `127.0.0.1`.
 
 **The map is published through a Cloudflare Tunnel, not an open port (owner, 2026-10-09).** The
 first plan put Caddy on astral-bicep behind router forwards of TCP 80 and 443. The owner judged
