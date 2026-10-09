@@ -226,6 +226,16 @@ enforce_servermanager() {
   "$REPO_ROOT/scripts/servermanager-policy.sh" apply "${args[@]}"
   "$REPO_ROOT/scripts/servermanager-policy.sh" check "${args[@]}" \
     || die "ServerManager's policy does not match the Pack; the server was not started"
+  # Discord routes and bot channels come from the layout's private files, regenerated each start
+  # (docs/wiki/discord.md). The bot token travels in the container environment, not this file.
+  if [[ -f "$HOME/.config/lembitu/discord.env" && -f "$HOME/.config/lembitu/discord-webhooks.env" ]]; then
+    # shellcheck source=lib/python.sh
+    . "$REPO_ROOT/scripts/lib/python.sh"
+    run_python "$REPO_ROOT/scripts/servermanager-discord.py" "$CONFIG_DIR/save/ServerManager" \
+      || die "could not write ServerManager's discord.yml; the server was not started"
+  else
+    printf 'warning: no Discord settings in ~/.config/lembitu; ServerManager starts without Discord\n' >&2
+  fi
 }
 
 deploy_value() {  # deploy_value <key>

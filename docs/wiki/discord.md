@@ -64,6 +64,22 @@ Discord".
 
 No token or webhook URL enters the repository, a Ticket, the wiki or a log.
 
+**ServerManager's `discord.yml` is generated, not edited.** `scripts/servermanager-discord.py`
+writes it from `discord.env` and `discord-webhooks.env` before every start
+(`scripts/launch-server.sh`, after the policy check): the Server status, Activity, Chat and Admin
+alerts routes with the events in the layout table (only Admin alerts carries Steam IDs), and the
+bot for this guild with the owner as the only admin user, `#admin-console` as its admin channel and
+`#chat` as its chat channel. It holds no token; the container receives
+`SERVERMANAGER_DISCORD_BOT_TOKEN` from the launch secret file. The MONITOR and PACK_RELEASES routes
+stay ours. `discord-layout.sh` records the chat and admin-console channel IDs for it.
+`test/servermanager-discord.test.sh` covers it.
+
+**The status channel was created twice (2026-10-09).** The first, with Connect denied for
+everyone and no bot exception, locked both bots out, so they could neither rename nor delete it,
+and creating a channel with a Manage Roles overwrite is refused without Administrator. The layout
+now grants each bot View, Connect and Manage Channels on that channel, and the replacement renamed
+itself to `🟢 Online · 0/10` on its first run. The first one stays until the owner deletes it.
+
 ### Giving the agent access: the owner's part
 
 Run `scripts/wizard-discord.sh` on the Mac. It walks through seven stages and stores each value

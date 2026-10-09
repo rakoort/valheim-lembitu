@@ -172,12 +172,15 @@ if ! $dry; then
   mkdir -p "$HOME/.config/lembitu"
   mv "$work/webhooks.env" "$HOME/.config/lembitu/discord-webhooks.env"
   chmod 600 "$HOME/.config/lembitu/discord-webhooks.env"
-  # Replace both discovered IDs in one rename on the same filesystem, retaining wizard IDs.
+  # Replace the discovered IDs in one rename on the same filesystem, retaining wizard IDs. The chat
+  # and admin-console IDs feed ServerManager's bot (scripts/servermanager-discord.py).
   ids_tmp=$(mktemp "$HOME/.config/lembitu/.discord.env.XXXXXX")
   while IFS= read -r line || [[ -n $line ]]; do
-    case "$line" in DISCORD_ROLE_PLAYER_ID=*|DISCORD_STATUS_VOICE_CHANNEL_ID=*) ;; *) printf '%s\n' "$line" ;; esac
+    case "$line" in DISCORD_ROLE_PLAYER_ID=*|DISCORD_STATUS_VOICE_CHANNEL_ID=*|DISCORD_CHANNEL_CHAT_ID=*|DISCORD_CHANNEL_ADMIN_CONSOLE_ID=*) ;; *) printf '%s\n' "$line" ;; esac
   done < "$ids" > "$ids_tmp"
-  printf 'DISCORD_ROLE_PLAYER_ID=%s\nDISCORD_STATUS_VOICE_CHANNEL_ID=%s\n' "$(jq -r '.Player' <<< "$role_ids")" "$status_voice_id" >> "$ids_tmp"
+  printf 'DISCORD_ROLE_PLAYER_ID=%s\nDISCORD_STATUS_VOICE_CHANNEL_ID=%s\nDISCORD_CHANNEL_CHAT_ID=%s\nDISCORD_CHANNEL_ADMIN_CONSOLE_ID=%s\n' \
+    "$(jq -r '.Player' <<< "$role_ids")" "$status_voice_id" \
+    "$(jq -r '.chat' <<< "$channel_ids")" "$(jq -r '."admin-console"' <<< "$channel_ids")" >> "$ids_tmp"
   chmod 600 "$ids_tmp"
   mv "$ids_tmp" "$ids"
 fi
