@@ -81,6 +81,10 @@ Boss powers are passive and grow with every boss kill you attend.
 page groups | Guilds, parties and the Market
 A guild is who you belong to: ranks, guild chat, a shared vault, wards, a banner territory and guild levels. At most five members, at most three guilds. Founding one is free.
 
+A guild banner claims a square territory. Outsiders, including players without a guild, cannot walk in; members, allies and guilds at war with its owner pass. Placing the banner, and every territory upgrade, levels the ground to the banner's height and removes trees and rocks for good, so choose the spot carefully. Guild buildings - armory, warehouse, longhouse, barracks, towers and more - go up inside it from the hammer's Guild tab.
+
+Guild XP comes from members' activity, boss kills, achievements and coin donations. Each guild level gives a point for banner upgrades, bought at the banner.
+
 Press F9 to open the guild window. FOUND A GUILD starts your own guild; INVITATIONS lets you accept an invitation; GUILD LIST lets you apply to a guild and wait for approval.
 
 Guilds claim their start regions in game. Everyone starts at the sacrificial stones. A guild leader whose guild holds no region claims an unclaimed start region by using that region's portal stone in the ring around the stones, after a confirmation window names the region and shows where it lies. The hover text explains who can claim it; a claimed portal names its guild. One region per guild, first come, first served.

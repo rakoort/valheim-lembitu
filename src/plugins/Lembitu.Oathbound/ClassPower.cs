@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
-using BepInEx.Configuration;
 using BepInEx.Bootstrap;
 using HarmonyLib;
 using VentureValheim.Progression;
@@ -36,9 +35,6 @@ internal static class ClassPower
     /// <summary>Class levels of power per personal boss key: 10 before Eikthyr, 80 after Fader.</summary>
     private const int LevelsPerKey = 10;
 
-    /// <summary>The growth literal in Oathbound's SpellLevelPower, which the setting replaces.</summary>
-    private const float ShippedSpellGrowth = 0.04f;
-
     /// <summary>The seven personal boss keys, in World Advancement Progression's own spelling.</summary>
     private static readonly string[] BossKeys =
     {
@@ -46,17 +42,8 @@ internal static class ClassPower
         "defeated_goblinking", "defeated_queen", "defeated_fader",
     };
 
-    private static ConfigEntry<float> s_spellGrowth = null!;
     private static MethodInfo s_levelGetter = null!;
     private static MethodInfo s_levelOf = null!;
-    private static MethodInfo s_growth = null!;
-
-    public static void Configure(ConfigFile config)
-    {
-        s_spellGrowth = config.Bind("Power", "SpellGrowth", ShippedSpellGrowth, new ConfigDescription(
-            "Spell damage growth per power level for Mage and Warlock spells, Warlock summons and wards. Oathbound's own rate; the Shakedown lowers it only if casters fall outside the class band (ADR-0025).",
-            new AcceptableValueRange<float>(0f, 0.25f), OathboundPlugin.AdminOnly()));
-    }
 
     /// <summary>
     /// The personal boss keys the local character holds, as World Advancement Progression records
@@ -82,9 +69,6 @@ internal static class ClassPower
 
     private static int Of(int level) => Math.Min(level, LevelsPerKey * (PersonalBossKeys() + 1));
 
-    /// <summary>Stands in for the 4% literal inside SpellLevelPower.</summary>
-    public static float Growth() => s_spellGrowth.Value;
-
     public static IEnumerable<PatchPlan> Plan()
     {
         if (!Chainloader.PluginInfos.ContainsKey(OathboundPlugin.WorldAdvancementGuid))
@@ -99,18 +83,17 @@ internal static class ClassPower
         s_levelGetter = AccessTools.PropertyGetter(typeof(Progression), nameof(Progression.Level))
             ?? throw new HookMismatch("Warrior.Core.Progression.Level getter not found");
         s_levelOf = Hooks.Method(typeof(ClassPower), nameof(Of), new[] { typeof(Progression) }, typeof(int));
-        s_growth = Hooks.Method(typeof(ClassPower), nameof(Growth), Type.EmptyTypes, typeof(float));
 
         // The two multipliers every spell, summon, ward, Wither curse, Monk fist and class ability
-        // goes through. SpellLevelPower also takes our growth setting.
+        // goes through. Spell growth per level is Oathbound's own server setting since 0.22.0
+        // (`Scaling/SpellPowerPerLevel`); only the level it multiplies is ours.
         MethodInfo levelPower = Hooks.Method(typeof(ClassMagic), nameof(ClassMagic.LevelPower), new[] { typeof(Progression) }, typeof(float));
         Hooks.Once(levelPower, "class level read", ci => ci.Calls(s_levelGetter));
         yield return new PatchPlan(levelPower) { Transpiler = Hooks.Patch(typeof(ClassPower), nameof(CapLevel)) };
 
         MethodInfo spellLevelPower = Hooks.Method(typeof(ClassMagic), nameof(ClassMagic.SpellLevelPower), new[] { typeof(Progression) }, typeof(float));
         Hooks.Once(spellLevelPower, "class level read", ci => ci.Calls(s_levelGetter));
-        Hooks.Once(spellLevelPower, "4% growth literal", ci => ci.opcode == OpCodes.Ldc_R4 && ci.operand is float rate && Math.Abs(rate - ShippedSpellGrowth) < 1e-5f);
-        yield return new PatchPlan(spellLevelPower) { Transpiler = Hooks.Patch(typeof(ClassPower), nameof(CapLevelAndSetGrowth)) };
+        yield return new PatchPlan(spellLevelPower) { Transpiler = Hooks.Patch(typeof(ClassPower), nameof(CapLevel)) };
 
         // The formulas that read the class level directly: companion health and damage, the defense
         // tree's ward pool. WarlockTree.LevelPower only forwards SpellLevelPower, so the summons
@@ -149,25 +132,6 @@ internal static class ClassPower
             {
                 instruction.opcode = OpCodes.Call;
                 instruction.operand = s_levelOf;
-            }
-            yield return instruction;
-        }
-    }
-
-    /// <summary>CapLevel, plus the growth literal swapped for our setting.</summary>
-    private static IEnumerable<CodeInstruction> CapLevelAndSetGrowth(IEnumerable<CodeInstruction> instructions)
-    {
-        foreach (CodeInstruction instruction in instructions)
-        {
-            if (instruction.Calls(s_levelGetter))
-            {
-                instruction.opcode = OpCodes.Call;
-                instruction.operand = s_levelOf;
-            }
-            else if (instruction.opcode == OpCodes.Ldc_R4 && instruction.operand is float rate && Math.Abs(rate - ShippedSpellGrowth) < 1e-5f)
-            {
-                instruction.opcode = OpCodes.Call;
-                instruction.operand = s_growth;
             }
             yield return instruction;
         }

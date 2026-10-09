@@ -74,7 +74,7 @@ internal static class CooksGrade
     /// <summary>The grade's bonus to food stats and its longer shelf life, through FineDining.</summary>
     public static IEnumerable<PatchPlan> FoodPlan()
     {
-        Pinned.Pin(FineDiningGuid, "1.1.3", "FineDining");
+        Pinned.Pin(FineDiningGuid, "1.1.4", "FineDining");
         var effect = Hooks.Method(typeof(FoodRules), nameof(FoodRules.CalculateFoodEffect),
             new[] { typeof(ItemDrop.ItemData), typeof(int), typeof(bool), typeof(float), typeof(bool), typeof(int) }, typeof(FoodEffect));
         var resolve = Hooks.Method(typeof(SpoilagePolicy), nameof(SpoilagePolicy.Resolve), new[] { typeof(ItemDrop.ItemData) }, typeof(ResolvedSpoilageRule));

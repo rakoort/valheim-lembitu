@@ -70,8 +70,11 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #     others declare, and PlanBuild's 2.30.1 (docs/modstack.md),
 #   - Zen_ModLib is pinned at its latest release, overriding the older minimum ZenRaids declares
 #     (2026-10-04),
-#   - Oathbound is pinned at 0.21.14, overriding the 0.21.6 minimum Oathbound Addon declares
-#     (2026-10-06); every Oathbound bump re-checks the addon as it does Lembitu.Oathbound.
+#   - Oathbound is pinned at 0.22.0, overriding the 0.21.6 minimum Oathbound Addon declares
+#     (2026-10-06, re-checked at 0.22.0 on 2026-10-09); every Oathbound bump re-checks the addon
+#     as it does Lembitu.Oathbound,
+#   - ConditionalConfigSync is pinned at its latest release, overriding the 1.0.6 BetterChat
+#     declares (2026-10-09).
 KNOWN_OVERRIDES="denikson-BepInExPack_Valheim-5.4.2202
 denikson-BepInExPack_Valheim-5.4.1501
 denikson-BepInExPack_Valheim-5.4.2333
@@ -82,7 +85,8 @@ ValheimModding-Jotunn-2.29.2
 ValheimModding-Jotunn-2.30.0
 ValheimModding-Jotunn-2.30.1
 ZenDragon-Zen_ModLib-1.14.14
-LionAndOtter-Oathbound-0.21.6"
+LionAndOtter-Oathbound-0.21.6
+shudnal-ConditionalConfigSync-1.0.6"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 

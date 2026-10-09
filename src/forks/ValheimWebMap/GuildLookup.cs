@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace ValheimWebMap
 {
-    /// <summary>Optional Northarun/Guilds 1.2.3 server store. Called only on the main thread.</summary>
+    /// <summary>Optional Northarun/Guilds server store (read from 1.2.3, re-checked at 1.5.1). Called only on the main thread.</summary>
     internal sealed class GuildLookup
     {
         private readonly Action<string> _warn;

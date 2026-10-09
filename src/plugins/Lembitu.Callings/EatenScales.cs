@@ -7,7 +7,7 @@ using HarmonyLib;
 namespace Lembitu.Callings;
 
 /// <summary>
-/// FineDining 1.1.3 saves its diet state with Unity's JsonUtility, which in this game build writes
+/// FineDining 1.1.3 (and 1.1.4, whose FoodStateStore is unchanged) saves its diet state with Unity's JsonUtility, which in this game build writes
 /// only the slot fields and drops the list of eaten foods (seen 2026-10-06: the saved state is
 /// <c>{"UnlockedFoodSlots":3,"AppliedBaseSlotScale":1.1}</c> after eating). After a relog every
 /// eaten food falls back to the base scale, so a graded dish loses its grade and stale food comes
@@ -20,7 +20,7 @@ internal static class EatenScales
 
     public static IEnumerable<PatchPlan> Plan()
     {
-        Pinned.Pin(CooksGrade.FineDiningGuid, "1.1.3", "FineDining");
+        Pinned.Pin(CooksGrade.FineDiningGuid, "1.1.4", "FineDining");
         var save = Hooks.Method(typeof(FoodStateStore), nameof(FoodStateStore.SaveState), new[] { typeof(Player), typeof(PlayerFoodStateData) }, typeof(void));
         var load = Hooks.Method(typeof(FoodStateStore), "LoadState", new[] { typeof(Player) }, typeof(PlayerFoodStateData));
         Hooks.Field(typeof(PlayerFoodStateData), nameof(PlayerFoodStateData.Active), typeof(List<ActiveFoodData>));

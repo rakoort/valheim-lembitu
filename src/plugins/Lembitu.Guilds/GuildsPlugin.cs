@@ -28,7 +28,7 @@ public sealed class GuildsPlugin : BaseUnityPlugin
 
     /// <summary>The releases every hook below was read from (docs/modstack.md).</summary>
     private const string VerifiedSeparateSpawns = "0.1.1";
-    private const string VerifiedGuilds = "1.2.3";
+    private const string VerifiedGuilds = "1.5.1";
 
     private Harmony? _harmony;
     private static ManualLogSource s_log = null!;

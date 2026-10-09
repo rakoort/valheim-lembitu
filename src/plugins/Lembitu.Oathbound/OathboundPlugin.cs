@@ -26,7 +26,7 @@ public sealed class OathboundPlugin : BaseUnityPlugin
     internal const string WorldAdvancementGuid = "com.orianaventure.mod.WorldAdvancementProgression";
 
     /// <summary>The Oathbound release every hook below was read from (docs/modstack.md).</summary>
-    private const string VerifiedOathbound = "0.21.14";
+    private const string VerifiedOathbound = "0.22.0";
 
     /// <summary>The World Advancement Progression release the boss-key counts were read from.</summary>
     private const string VerifiedWorldAdvancement = "1.0.0";
@@ -39,7 +39,6 @@ public sealed class OathboundPlugin : BaseUnityPlugin
     {
         ManualLogSource log = Logger;
         PartyExperience.Configure(Config, log);
-        ClassPower.Configure(Config);
         CompanionDamage.Configure(Config);
         ArcheryLock.Configure(Config);
         ArcheryLock.Enable(log);

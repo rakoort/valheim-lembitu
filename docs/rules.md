@@ -151,8 +151,9 @@ wards and Wither, Monk fists, class abilities, the Hunter's wolf and the Dragons
 defense tree's pool — reads the **power level** instead: your class level capped at ten per personal
 boss key, so 10 before Eikthyr and 80 after Fader (ADR-0025). Grinding kills without bosses no longer
 outgrows the gear gate. Talent points, class XP and the class level itself are untouched. Spell
-growth stays 4% per power level behind a server-locked setting (`lembitu.oathbound.cfg`, `[Power]
-SpellGrowth`), and companions start the Shakedown at 0.75× damage (`[Companions] DamageMultiplier`).
+growth stays 4% per power level, Oathbound's own server-controlled `Scaling/SpellPowerPerLevel` since
+0.22.0 (Pack v18; before it, our `[Power] SpellGrowth`), and companions start the Shakedown at 0.75×
+damage (`lembitu.oathbound.cfg`, `[Companions] DamageMultiplier`).
 
 **Respec and class switch are free at the Oathstone.** Each class keeps its own XP and talents;
 returning to a class restores its progress. Reset talents changes the allocation, not the class

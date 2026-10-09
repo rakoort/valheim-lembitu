@@ -26,8 +26,8 @@ public sealed class GuidePlugin : BaseUnityPlugin
     internal const string SocialSystemGuid = "M2Valheim.SocialSystem";
 
     /// <summary>The releases every read below was verified against (docs/modstack.md).</summary>
-    private const string VerifiedOathbound = "0.21.14";
-    private const string VerifiedSocialSystem = "1.0.4";
+    private const string VerifiedOathbound = "0.22.0";
+    private const string VerifiedSocialSystem = "1.0.5";
 
     internal static ManualLogSource ClientLog = null!;
 
