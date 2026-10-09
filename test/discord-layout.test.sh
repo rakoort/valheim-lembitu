@@ -62,7 +62,7 @@ report state '.writes == 0'
 report test ! -e "$HOME/.config/lembitu/discord-webhooks.env"
 report run
 report state '(.roles | length) == 3 and (.channels | length) == 15 and ([.hooks[][]] | length) == 6'
-report state 'any(.channels[]; .name == "🔴 Offline" and .type == 2 and .parent_id == null and .position == 0 and any(.permission_overwrites[]; .id == "11111111111111111" and .allow == "1024" and .deny == "1048576") and any(.permission_overwrites[]; .id == "server" and .allow == "1040" and .deny == "0"))'
+report state 'any(.channels[]; .name == "🔴 Offline" and .type == 2 and .parent_id == null and .position == 0 and any(.permission_overwrites[]; .id == "11111111111111111" and .allow == "1024" and .deny == "1048576") and any(.permission_overwrites[]; .id == "server" and .allow == "1049616" and .deny == "0"))'
 report python3 -c 'import os,json,stat; p=os.environ["HOME"]+"/.config/lembitu/discord.env"; ids=dict(line.strip().split("=",1) for line in open(p)); s=json.load(open(os.environ["FAKE_STATE"])); assert ids["DISCORD_EXISTING_ID"]=="55555555555555555"; assert ids["DISCORD_ROLE_PLAYER_ID"]==next(r["id"] for r in s["roles"] if r.get("name")=="Player"); assert ids["DISCORD_STATUS_VOICE_CHANNEL_ID"]==next(c["id"] for c in s["channels"] if c["type"]==2); assert stat.S_IMODE(os.stat(p).st_mode)==0o600'
 report state 'all(.channels[] | select(.type != 2); all(.permission_overwrites[] | select(.id == "server"); ((.allow | tonumber) % 32) < 16))'
 report state 'all(.roles[]; (((.permissions // "0") | tonumber) % 32) < 16)'
@@ -104,7 +104,7 @@ mv "$WORK/new" "$FAKE_STATE"
 report run --dry-run
 report state ".writes == $first"
 report run
-report state 'any(.channels[]; .type == 2 and .name == "🟢 Online · 3 players" and .position == 0 and .parent_id == null and any(.permission_overwrites[]; .id == "server" and .allow == "1040"))'
+report state 'any(.channels[]; .type == 2 and .name == "🟢 Online · 3 players" and .position == 0 and .parent_id == null and any(.permission_overwrites[]; .id == "server" and .allow == "1049616"))'
 report state ".writes == $((first+1))"
 # Correct text-channel permission drift without creating duplicate channels.
 jq '(.channels[] | select(.name == "password") | .permission_overwrites) = []' "$FAKE_STATE" > "$WORK/new"

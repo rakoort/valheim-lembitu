@@ -45,9 +45,10 @@ Discord".
   and Read Message History (`84992`), and its application has the Message Content intent on,
   because the chat bridge reads ordinary messages (ServerManager README, bot section). The game
   server reads its token from `SERVERMANAGER_DISCORD_BOT_TOKEN`.
-  The layout grants its role View Channel and Manage Channels (`1040`) **only on the locked
-  status voice channel**, not server-wide. Everyone can see that channel but cannot Connect
-  (`1048576` denied). The Ops token stays on the Mac.
+  The layout grants its role View Channel, Connect and Manage Channels (`1049616`) **only on the
+  locked status voice channel**, not server-wide. Discord refuses to rename a voice channel for a
+  bot that cannot Connect to it, which the first live run showed with `1040`. Everyone else can
+  see that channel but cannot Connect (`1048576` denied). The Ops token stays on the Mac.
 - Both are private applications (Public Bot off), so only the owner can install them
   ([bot authorization](https://docs.discord.com/developers/topics/oauth2#bot-authorization-flow)).
   Separate applications keep the agent's broad rights out of the game server's process.

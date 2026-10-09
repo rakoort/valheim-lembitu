@@ -10,8 +10,21 @@
     "type": 2,
     "position": 0,
     "permission_overwrites": [
-      {"subject": "everyone", "allow": "1024", "deny": "1048576"},
-      {"subject": "server", "allow": "1040", "deny": "0"}
+      {
+        "subject": "everyone",
+        "allow": "1024",
+        "deny": "1048576"
+      },
+      {
+        "subject": "server",
+        "allow": "1049616",
+        "deny": "0"
+      },
+      {
+        "subject": "ops",
+        "allow": "269485072",
+        "deny": "0"
+      }
     ]
   },
   "categories": [
