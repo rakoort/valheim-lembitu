@@ -527,8 +527,17 @@ Install on astral-bicep (operator steps; not applied by these changes):
    supplies Python through the repository-pinned Nix fallback when no `python3` is on PATH.
 4. Check the one status message and locked voice channel in Discord. The fake scenarios in
    `test/discord-status.test.sh` cover creation, edits, deleted-message recreation, maintenance,
-   names, empty lists, unavailable OdinEye, throttling and missing secrets; local real-curl HTTP
-   smoke passes. Live Discord, NixOS unit execution and deployed marker remain unverified.
+   names, empty lists, unavailable OdinEye, throttling and missing secrets.
+
+**Live since 2026-10-09, before the cutover.** The timer runs on astral-bicep from a separate
+checkout, `~/code/valheim-lembitu-ops`, through a unit drop-in that overrides `ExecStart`, so the
+live server's own checkout, which the hourly backup and drift check use, stays on v16 until the
+cutover. Its first run posted `🟢 Online`, `0/10`, game `l-1.0.17`, Pack `Unknown` (the label
+arrives with the v17 install) and the uptime. Two findings: the Ops and Server bots both lost
+access to the voice channel because its @everyone overwrite denies Connect, so the layout now
+grants each its own Connect; and the Ops bot cannot read message text without the Message
+Content intent, so the message is read back through its webhook instead. Until v17 deploys, the
+message's "next daily maintenance" line describes the schedule v17 brings.
 
 **The web map draws the whole world (#108).** Expand_World_Size does not change
 `WorldGenerator.worldSize`, a constant 10000; it patches the game's literals and exposes its radius
