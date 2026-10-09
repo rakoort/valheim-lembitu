@@ -75,7 +75,7 @@ belongs in server-locked config rather than a player's file.
 | MathiasDecrock/PlanBuild | 0.20.0 | Plan, copy and share builds | Direct build and terrain tools off for players, so a plan is finished with real materials at the right station; admins keep both (2026-10-04, ADR-0019) |
 | OdinPlus/OdinsKingdom | 1.6.2 | Castle building pieces with their own build tool | — Added 2026-10-03 (owner's instruction). One-way: its pieces live in the world save |
 | ComfyMods/SearsCatalog | 1.9.0 | Resizable, movable build panel | — Added 2026-10-03 (owner's instruction). Declares BepInEx 5.4.2202, a documented override |
-| SpikeHimself/XPortal | 1.2.25 | Pick a portal destination from a list | — Added 2026-10-03 (owner's instruction). The only portal mod since PortalRules left the same day |
+| SpikeHimself/XPortal | 1.2.26 | Pick a portal destination from a list | — Added 2026-10-03 (owner's instruction). The only portal mod since PortalRules left the same day. 1.2.26 (released 2026-10-08, adopted 2026-10-09) fixes the configuration panel that was dead near the sacrificial stones: its buttons ignored input and the open panel blocked the game |
 | Marlthon/OdinShip | 0.8.7 | Seven cargo and war ships | — Added 2026-10-03 (owner's instruction). One-way: its ships live in the world save |
 | blacks7ar/GlassPieces | 1.2.8 | Glass, iron and copper building pieces and a minable resource | `Use Smelter = Off` server-pinned: glass uses the mod's furnace rather than vanilla smelters (2026-10-05). Added 2026-10-03. One-way: its pieces live in the world save |
 | Marlthon/TheFisher | 0.3.9 | New fish, aquatic creatures and aquariums | — Added 2026-10-03 (owner's instruction) |

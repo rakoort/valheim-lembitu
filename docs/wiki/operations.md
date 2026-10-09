@@ -651,6 +651,10 @@ its addon and World Edit Commands on top of the Pack; any other player stands in
 | 5 | Each writes in the Discord `#chat` and in game chat | Messages cross both ways through the Lembitu Server bot | #106 |
 | 6 | A runs `scripts/launch-server.sh restart` with B online | B sees the 10-, 5- and 1-minute warnings in game and in `#status`; after rejoining, B has the progress made just before the save | #103 |
 
+### First-evening finding: the portal panel near the spawn stones — #110
+
+A Windows player reported that pressing E on a wood portal crashed the game. ServerManager's per-player log put both of the player's disconnects beside the portal at (44, 34, 219), near the sacrificial stones. On a copy of the live world on the test host, XPortal 1.2.25's configuration panel opened there with both buttons non-interactable while it blocked game input; far from the stones it worked. XPortal 1.2.26 fixes this upstream (the panel now outranks the game's start-temple UI group), and the same run with it shows the buttons interactable. The pin moved to 1.2.26 in `docs/modstack.md`. The Windows process exit itself was not captured, because no Player.log or crash dump was available.
+
 ## Exclusions
 
 - The overlay does not own every setting. PvP and death now follow vanilla rules. No biome-forced flag, flagged-player retention or special tombstone-looting rule replaces the removed mod.

@@ -66,7 +66,7 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #     line has left and returned more than once (#80); BetterArchery 2.0.2 returns in Pack v17
 #     with its 5.4.1501 declaration deliberately overridden (2026-10-06, owner),
 #   - Jotunn is pinned at 2.30.2, overriding the 2.29.0 Guilds and Marketplace declare, the 2.29.2
-#     EpicLoot declares, the 2.30.0 that World Advancement Progression, ProgressivePowers, XPortal and
+#     EpicLoot declares, the 2.30.0 that World Advancement Progression, ProgressivePowers and
 #     others declare, and PlanBuild's 2.30.1 (docs/modstack.md),
 #   - Zen_ModLib is pinned at its latest release, overriding the older minimum ZenRaids declares
 #     (2026-10-04),
