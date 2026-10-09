@@ -68,17 +68,18 @@ for bot in ops server; do
   role_ids=$(jq --arg key "$bot" --arg id "$id" '. + {($key):$id}' <<< "$role_ids")
 done
 ensure_role() {
-  local name=$1 permissions=$2 key=$3 matches id actual body
+  local name=$1 permissions=$2 key=$3 mentionable=${4:-false} matches id actual body
   matches=$(jq --arg n "$name" '[.[] | select(.name == $n and (.managed != true))]' <<< "$roles")
   [[ $(jq length <<< "$matches") -le 1 ]] || { echo "Ambiguous role: $name" >&2; exit 1; }
   id=$(jq -r '.[0].id // empty' <<< "$matches")
-  body=$(jq -nc --arg name "$name" --arg p "$permissions" '{name:$name,permissions:$p}')
+  # A webhook can ping a role only when the role is mentionable (the Pack release post pings Player).
+  body=$(jq -nc --arg name "$name" --arg p "$permissions" --argjson m "$mentionable" '{name:$name,permissions:$p,mentionable:$m}')
   if [[ -z $id ]]; then
     echo "Create role: $name"
     if $dry; then id="planned-role-$key"; else id=$(api POST "/guilds/$guild/roles" "$body" | jq -er .id); fi
   else
-    actual=$(jq -r '.[0].permissions' <<< "$matches")
-    if [[ $actual != "$permissions" ]]; then echo "Edit role permissions: $name"; if ! $dry; then api PATCH "/guilds/$guild/roles/$id" "$body" >/dev/null; fi; fi
+    actual=$(jq -c '.[0] | [.permissions, (.mentionable // false)]' <<< "$matches")
+    if [[ $actual != "$(jq -nc --arg p "$permissions" --argjson m "$mentionable" '[$p,$m]')" ]]; then echo "Edit role: $name"; if ! $dry; then api PATCH "/guilds/$guild/roles/$id" "$body" >/dev/null; fi; fi
   fi
   role_ids=$(jq --arg key "$key" --arg id "$id" '. + {($key):$id}' <<< "$role_ids")
 }
@@ -92,7 +93,7 @@ if [[ $mode == guild ]]; then
     echo "Guild channel slug belongs to another channel or Guild: $2" >&2; exit 1
   fi
 fi
-while IFS= read -r row; do ensure_role "$(jq -r .name <<< "$row")" "$(jq -r .permissions <<< "$row")" "$(jq -r .name <<< "$row")"; done < <(jq -c '.roles[]' "$LAYOUT")
+while IFS= read -r row; do ensure_role "$(jq -r .name <<< "$row")" "$(jq -r .permissions <<< "$row")" "$(jq -r .name <<< "$row")" "$(jq -r '.mentionable // false' <<< "$row")"; done < <(jq -c '.roles[]' "$LAYOUT")
 if [[ $mode == guild ]]; then ensure_role "Guild · $1" 0 Guild; fi
 category_ids='{}'
 ensure_channel() {

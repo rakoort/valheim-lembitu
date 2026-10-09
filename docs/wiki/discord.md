@@ -31,7 +31,8 @@ The agent builds and keeps this layout; changes go through this page first.
 Roles, highest first: the owner's own, **Lembitu Ops**, **Lembitu Server**, **Player** (given by the
 owner to people who may join the game), and one **Guild · name** role per Guild. The web map's link
 is posted in `#announcements`. ServerManager's event names are from its README, "Webhooks: game →
-Discord".
+Discord". Player is **mentionable**: a webhook can only ping a mentionable role, and the v17
+release post's `@Player` showed as text but notified nobody until this was set (2026-10-09).
 
 ### Two bots, two applications
 

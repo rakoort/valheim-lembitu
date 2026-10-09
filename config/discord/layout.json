@@ -2,7 +2,8 @@
   "roles": [
     {
       "name": "Player",
-      "permissions": "0"
+      "permissions": "0",
+      "mentionable": true
     }
   ],
   "status_voice": {
