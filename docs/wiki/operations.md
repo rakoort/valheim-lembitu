@@ -180,7 +180,7 @@ amendment records the cap, the enforced Pack and admission. The research is in
 | Backups | One hourly archive holds the world, cache, admission lists, the character store, and the Guilds, Marketplace and region-claim files, so a restore returns all of them to the same hour |
 | Admission | Public with a password, shared in a members-only Discord channel; the owner is the only admin |
 | Host | The game stays on astral-bicep with reserved CPU and memory; the development stacks there are capped; it moves only if monitoring shows contention |
-| Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's combined exploration, cartography-table pins, deaths and play sessions. Served through Caddy on astral-bicep with TLS and rate limiting at a subdomain the owner supplies; the game's own port 3000 stays private. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
+| Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's combined exploration, cartography-table pins, deaths and play sessions, at `https://lembitu-map.astral.ee` through a Cloudflare Tunnel with a Cloudflare rate limit; no router port opens and the game's own port 3000 stays private. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
 | Pack additions and refusals | Jumpingmushroom/Tally is required, with sharing on. nbusseneau/Better_Cartography_Table is not added: its guild pins need Smoothbrain's Guilds, not Northarun's, its settings cannot be locked, and pin privacy is checked only on the client. ValMedia/OdinOnDemand is already pinned at its latest release, 1.3.0 |
 
 Tickets: the ServerManager trial #101 and adoption #102, the maintenance restart #103, backups #104,
@@ -505,21 +505,31 @@ finds land, not fog or void, at 13,000 m on all four sides, and mask coverage at
 A player whose public position is off would still have been tracked by the clearing their live
 exploration cuts in the public fog, so the fork withholds a hidden player's exploration until they
 log out; a server crash loses that pending part, which cartography tables can still share. The
-map listens on 3000 inside the container, published only on `127.0.0.1`; Caddy,
-built with the `caddy-ratelimit` module, serves it with TLS at `{$LEMBITU_MAP_DOMAIN}`
-(`config/launch/Caddyfile`, validated; a local burst returned 119 × 200 and 6 × 429).
+map listens on 3000 inside the container, published only on `127.0.0.1`.
 
-**The server has names, not just an address (owner, 2026-10-07).** The owner registered `astral.ee`
-on Cloudflare: `lembitu.astral.ee` is the game's address and `map.lembitu.astral.ee` the web map,
-named under the game so it reads as Lembitu's, not the domain's. Both are A records set to DNS only,
-because game traffic is UDP and Caddy holds the map's certificate (Cloudflare's free certificate
-would not cover a second-level name anyway).
-astral-bicep sits behind the home router (`192.168.0.101`) on an address that changes: the Pack's
-join button still pointed at `85.253.16.237` while the host was at `85.253.100.163`. Valheim
-resolves a hostname at join (`DnsResolver.URLToIP`) and ServerQuickConnect accepts one, so the
-v17 seed uses the name. `scripts/wizard-cloudflare.sh` walks the owner through a token limited to
-the zone's DNS, creates or updates both records, copies the token to astral-bicep for the address
-updater, and lists the router forwards the map needs (TCP 80 and 443).
+**The map is published through a Cloudflare Tunnel, not an open port (owner, 2026-10-09).** The
+first plan put Caddy on astral-bicep behind router forwards of TCP 80 and 443. The owner judged
+opening web ports into the home network a security risk. A `cloudflared` container
+(`scripts/launch-server.sh tunnel`, host networking, pinned image) dials out to Cloudflare and
+forwards only `lembitu-map.astral.ee` to `127.0.0.1:3000`; the name is a proxied CNAME, so visitors
+see Cloudflare's addresses, and a Cloudflare rule blocks any visitor sending more than 100 requests
+in 10 seconds. Caddy and its configuration left the repository. The map is `lembitu-map.astral.ee`
+rather than `map.lembitu.astral.ee` because Cloudflare's free certificate covers only names one
+level under the domain, and the owner chose the free plan.
+
+**The game has a name, not just an address (owner, 2026-10-07).** The owner registered `astral.ee`
+on Cloudflare. `lembitu.astral.ee` is the game's address, an A record set to DNS only, because
+Cloudflare's free plan cannot carry the game's UDP traffic; the home address therefore stays
+visible, as it already is in Steam's server browser. astral-bicep sits behind the home router
+(`192.168.0.101`) on an address that changes: the Pack's join button still pointed at
+`85.253.16.237` while the host was at `85.253.100.163`. Valheim resolves a hostname at join
+(`DnsResolver.URLToIP`) and ServerQuickConnect accepts one, so the v17 seed uses the name.
+
+**`scripts/wizard-cloudflare.sh` sets all of this up.** It walks the owner through one API token
+limited to the zone (DNS edit, zone read, WAF edit) and to Cloudflare Tunnel, then creates or
+updates the game record, the tunnel, its route and CNAME, and the rate-limit rule, and copies the
+tunnel token and the API token to private files on astral-bicep, the latter for the address
+updater. Tokens reach `curl` and `ssh` on standard input, never as arguments.
 
 ## Owner's two-account session before Pack v17
 

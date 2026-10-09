@@ -30,13 +30,14 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() {
   cat >&2 <<'EOF'
-usage: scripts/launch-server.sh env | run | start | restart | stop | world-rules
+usage: scripts/launch-server.sh env | run | start | restart | stop | tunnel | world-rules
 
   env          print the container environment, secret file merged in
   run          create the data directories and start the container
   start        apply the overlay, start an existing stopped container and verify
   restart      warn, save, confirm, stop, apply the overlay, start and verify
   stop         warn at 10/5/1 minutes, save and confirm before stopping
+  tunnel       (re)create the Cloudflare Tunnel container that publishes the web map
   world-rules  print the world-rule arguments alone
 
 Reads config/launch/launch.env.example (committed, non-secret) and, for the password,
@@ -260,12 +261,33 @@ do_stop() {
   run_python "$REPO_ROOT/scripts/maintenance-restart.py" "$CONTAINER_NAME" "$CONFIG_DIR"
 }
 
+# The web map reaches the internet only through a Cloudflare Tunnel (docs/wiki/operations.md): this
+# container dials out to Cloudflare and forwards lembitu-map.astral.ee to the map on 127.0.0.1:3000,
+# so no router port opens. Host networking is what lets it reach that loopback-only port. The
+# tunnel's routes live in Cloudflare (scripts/wizard-cloudflare.sh); its token stays in a private
+# file on the host and enters the container as an environment file, never an argument.
+TUNNEL_CONTAINER=${TUNNEL_CONTAINER:-lembitu-tunnel}
+TUNNEL_IMAGE=${TUNNEL_IMAGE:-cloudflare/cloudflared:2026.10.0}
+TUNNEL_ENV=${TUNNEL_ENV:-$HOME/.config/lembitu/cloudflared.env}
+do_tunnel() {
+  command -v docker >/dev/null 2>&1 || die "docker is not available"
+  [[ -f "$TUNNEL_ENV" ]] || die "no $TUNNEL_ENV; run scripts/wizard-cloudflare.sh on the Mac first"
+  grep -q '^TUNNEL_TOKEN=.' "$TUNNEL_ENV" || die "$TUNNEL_ENV has no TUNNEL_TOKEN"
+  if docker inspect "$TUNNEL_CONTAINER" >/dev/null 2>&1; then
+    docker rm -f "$TUNNEL_CONTAINER" >/dev/null
+  fi
+  docker run -d --name "$TUNNEL_CONTAINER" --restart unless-stopped --network host \
+    --env-file "$TUNNEL_ENV" "$TUNNEL_IMAGE" tunnel --no-autoupdate run >/dev/null
+  printf 'started %s (%s)\n' "$TUNNEL_CONTAINER" "$TUNNEL_IMAGE"
+}
+
 case "${1:-}" in
   env) do_env ;;
   run) do_run ;;
   restart) do_restart ;;
   start) do_start ;;
   stop) do_stop ;;
+  tunnel) do_tunnel ;;
   world-rules) world_rules ;;
   -h|--help) usage; exit 0 ;;
   *) usage; exit 1 ;;

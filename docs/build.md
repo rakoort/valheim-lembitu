@@ -972,26 +972,15 @@ these are relative/soft reservations, not a hard CPU allocation or memory limit.
 host cgroup support with `docker inspect lembitu` after an approved run and measure save/tick times
 under capped synthetic load before claiming contention protection.
 
-Port 3000 is published only at `127.0.0.1:3000`. For the public map install Caddy 2.11.4 with
-`github.com/mholt/caddy-ratelimit@v0.1.0` (stock Caddy lacks the module):
+Port 3000 is published only at `127.0.0.1:3000`. The public map at `lembitu-map.astral.ee` reaches it
+through a Cloudflare Tunnel, so no router port opens (`docs/wiki/operations.md`):
 
-```sh
-xcaddy build v2.11.4 --with github.com/mholt/caddy-ratelimit@v0.1.0
-# Install the resulting binary through the host's Caddy package/service mechanism.
-sudo install -m 0644 config/launch/Caddyfile /etc/caddy/lembitu-map.caddy
-# Add: import /etc/caddy/lembitu-map.caddy to the existing /etc/caddy/Caddyfile.
-# Set LEMBITU_MAP_DOMAIN in the Caddy service environment (outside this repo).
-sudo systemctl edit caddy
-# [Service]
-# EnvironmentFile=/etc/caddy/lembitu-map.env
-sudo systemctl daemon-reload
-# Export the same domain before validating; preserve all existing host sites.
-caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-sudo systemctl restart caddy
-```
+1. On the Mac, run `scripts/wizard-cloudflare.sh`. It creates the tunnel and its route to
+   `http://127.0.0.1:3000`, the proxied CNAME, a rate limit of 100 requests per 10 seconds per
+   visitor, and writes `~/.config/lembitu/cloudflared.env` (the tunnel token) on astral-bicep.
+2. On astral-bicep, run `scripts/launch-server.sh tunnel`. It (re)creates the `lembitu-tunnel`
+   container from the pinned `cloudflare/cloudflared` image with host networking.
 
-The owner supplies the domain, DNS A/AAAA records and inbound TCP 80/443. Caddy obtains and renews
-TLS, proxies to loopback and limits each source IP to 120 requests/minute and all map traffic to
-1200/minute. Validate with a dummy domain before installation, then check the real certificate,
-external refusal of port 3000, a burst returning HTTP 429 and save/tick timings during that burst.
-Do not deploy while the domain/DNS prerequisite is missing.
+Then check that `https://lembitu-map.astral.ee/api/info` answers, that the name resolves to
+Cloudflare rather than the home address, that port 3000 is refused from another host, that a burst
+gets HTTP 429, and the save/tick timings during that burst.

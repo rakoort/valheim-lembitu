@@ -184,22 +184,25 @@ finish() {
 # Replace the example below. Set TOTAL_STAGES to match the stages you write.
 # ──────────────────────────────────────────────────────────────────────────
 
-# Points lembitu.astral.ee (the game) and map.lembitu.astral.ee (the web map) at astral-bicep, and leaves
-# a DNS-edit token where the address updater on astral-bicep can use it (docs/wiki/operations.md).
-# The token is typed into the macOS keychain's own hidden prompt and is copied to astral-bicep over
-# ssh standard input; it never passes through this script's arguments, the shell history or the
-# repository. Public IDs go to ~/.config/lembitu/cloudflare.env.
+# Sets up astral.ee for the Run (docs/wiki/operations.md): lembitu.astral.ee points at astral-bicep
+# for the game, and lembitu-map.astral.ee reaches the web map through a Cloudflare Tunnel, so no
+# router port opens. Tokens are typed into the macOS keychain's own hidden prompt or come back from
+# the API, and reach astral-bicep over ssh standard input; they never pass through this script's
+# arguments, the shell history or the repository. Public IDs go to ~/.config/lembitu/cloudflare.env.
 
-TOTAL_STAGES=6
+TOTAL_STAGES=7
 
 ENV_FILE="$HOME/.config/lembitu/cloudflare.env"
 mkdir -p "$(dirname "$ENV_FILE")"
 chmod 700 "$(dirname "$ENV_FILE")"
 
 ZONE="astral.ee"
-RECORDS=(lembitu map.lembitu)
+GAME_NAME="lembitu"
+MAP_NAME="lembitu-map"
+TUNNEL_NAME="lembitu-map"
+MAP_ORIGIN="http://127.0.0.1:3000"
 GAME_HOST="astral-bicep"
-TOKEN_SERVICE="lembitu.cloudflare.dns"
+TOKEN_SERVICE="lembitu.cloudflare.api"
 API="https://api.cloudflare.com/client/v4"
 
 [[ "$(uname -s)" == "Darwin" ]] || { warn "this wizard stores the token in the macOS keychain; run it on the Mac"; exit 1; }
@@ -215,30 +218,52 @@ cf() {
     | curl -sS -K - -X "$method" ${data[@]+"${data[@]}"} "$API$path"
 }
 
-stage "Create a DNS token"
-say "The token lets the wizard, and later astral-bicep, edit DNS records in $ZONE and nothing else."
+# ok JSON WHAT: stop with Cloudflare's own error unless the call succeeded.
+ok() { [[ "$(jq -r '.success' <<<"$1")" == true ]] || { warn "$2 failed: $(jq -c '.errors' <<<"$1")"; exit 1; }; }
+
+# upsert_record TYPE NAME CONTENT PROXIED: create the record, or update the one already there.
+upsert_record() {
+  local type=$1 fqdn="$2.$ZONE" content=$3 proxied=$4 body existing id result
+  body=$(jq -cn --arg t "$type" --arg n "$fqdn" --arg c "$content" --argjson p "$proxied" \
+    '{type:$t,name:$n,content:$c,ttl:(if $p then 1 else 60 end),proxied:$p,comment:"Lembitu"}')
+  existing=$(cf GET "/zones/$CLOUDFLARE_ZONE_ID/dns_records?name=$fqdn")
+  id=$(jq -r '.result[0].id // empty' <<<"$existing")
+  if [[ -n "$id" ]]; then result=$(cf PUT "/zones/$CLOUDFLARE_ZONE_ID/dns_records/$id" "$body")
+  else result=$(cf POST "/zones/$CLOUDFLARE_ZONE_ID/dns_records" "$body"); fi
+  ok "$result" "$fqdn"
+  printf '  %s✓ %s%s → %s (%s)\n' "$GREEN" "$fqdn" "$RESET" "$content" "$([[ $proxied == true ]] && echo proxied || echo 'DNS only')"
+}
+
+stage "Create an API token"
+say "One token, limited to $ZONE and to Cloudflare Tunnel, for this wizard and the address updater."
 open_url "https://dash.cloudflare.com/profile/api-tokens"
-step "Create Token → use the template 'Edit zone DNS'."
-step "Permissions: keep Zone · DNS · Edit, then Add more: Zone · Zone · Read."
-step "Zone Resources: Include · Specific zone · $ZONE."
+step "Create Token → Create Custom Token. Name it 'Lembitu'."
+step "Permissions (Add more for each row):"
+step "  Zone · DNS · Edit"
+step "  Zone · Zone · Read"
+step "  Zone · Zone WAF · Edit          (the map's rate limit)"
+step "  Account · Cloudflare Tunnel · Edit"
+step "Zone Resources: Include · Specific zone · $ZONE.  Account Resources: Include · your account."
 step "Continue to summary → Create Token, then Copy. It is shown once."
 say "Paste the token at the 'password data' prompt below (input is hidden)."
-security add-generic-password -U -a "$USER" -s "$TOKEN_SERVICE" -l "Lembitu Cloudflare DNS" -w
+security add-generic-password -U -a "$USER" -s "$TOKEN_SERVICE" -l "Lembitu Cloudflare API" -w
 check=$(cf GET /user/tokens/verify)
-[[ "$(jq -r '.success' <<<"$check")" == true && "$(jq -r '.result.status' <<<"$check")" == active ]] \
+[[ "$(jq -r '.result.status // empty' <<<"$check")" == active ]] \
   || { warn "Cloudflare does not accept that token; re-run this stage"; exit 1; }
 printf '  %s✓ token active%s and stored in the keychain as %s\n' "$GREEN" "$RESET" "$TOKEN_SERVICE"
 
-stage "Find the zone"
+stage "Find the zone and account"
 zones=$(cf GET "/zones?name=$ZONE")
 CLOUDFLARE_ZONE_ID=$(jq -r '.result[0].id // empty' <<<"$zones")
-[[ -n "$CLOUDFLARE_ZONE_ID" ]] \
+CLOUDFLARE_ACCOUNT_ID=$(jq -r '.result[0].account.id // empty' <<<"$zones")
+[[ -n "$CLOUDFLARE_ZONE_ID" && -n "$CLOUDFLARE_ACCOUNT_ID" ]] \
   || { warn "the token cannot see $ZONE; it needs Zone · Zone · Read for that zone"; exit 1; }
 write_env CLOUDFLARE_ZONE "$ZONE"
 write_env CLOUDFLARE_ZONE_ID "$CLOUDFLARE_ZONE_ID"
+write_env CLOUDFLARE_ACCOUNT_ID "$CLOUDFLARE_ACCOUNT_ID"
 
-stage "Point the names at astral-bicep"
-say "Asking $GAME_HOST for its public address, so the records match the server, not this Mac."
+stage "Point the game's name at astral-bicep"
+say "Asking $GAME_HOST for its public address, so the record matches the server, not this Mac."
 ip=$(ssh -o BatchMode=yes -o ConnectTimeout=8 "$GAME_HOST" "curl -s -4 --max-time 5 https://api.ipify.org" || true)
 if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   warn "could not reach $GAME_HOST over ssh"
@@ -246,56 +271,86 @@ if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   ip=$PUBLIC_IP
 fi
 [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { warn "that is not an IPv4 address"; exit 1; }
-say "Public address: $ip. Records are DNS only: game traffic is UDP, which the proxy cannot carry."
-for name in "${RECORDS[@]}"; do
-  fqdn="$name.$ZONE"
-  body=$(jq -cn --arg n "$fqdn" --arg c "$ip" '{type:"A",name:$n,content:$c,ttl:60,proxied:false,comment:"Lembitu; kept current by astral-bicep"}')
-  existing=$(cf GET "/zones/$CLOUDFLARE_ZONE_ID/dns_records?type=A&name=$fqdn")
-  id=$(jq -r '.result[0].id // empty' <<<"$existing")
-  if [[ -n "$id" ]]; then result=$(cf PUT "/zones/$CLOUDFLARE_ZONE_ID/dns_records/$id" "$body")
-  else result=$(cf POST "/zones/$CLOUDFLARE_ZONE_ID/dns_records" "$body"); fi
-  [[ "$(jq -r '.success' <<<"$result")" == true ]] \
-    || { warn "Cloudflare refused $fqdn: $(jq -c '.errors' <<<"$result")"; exit 1; }
-  printf '  %s✓ %s%s → %s (DNS only)\n' "$GREEN" "$fqdn" "$RESET" "$ip"
+note "DNS only: game traffic is UDP, which Cloudflare's free plan cannot carry."
+upsert_record A "$GAME_NAME" "$ip" false
+for stale in play map map.lembitu; do
+  old=$(cf GET "/zones/$CLOUDFLARE_ZONE_ID/dns_records?name=$stale.$ZONE")
+  old_id=$(jq -r '.result[0].id // empty' <<<"$old")
+  if [[ -n "$old_id" ]] && confirm "Delete the unused $stale.$ZONE record?"; then
+    cf DELETE "/zones/$CLOUDFLARE_ZONE_ID/dns_records/$old_id" >/dev/null
+    printf '  %s✓ deleted%s %s.%s\n' "$GREEN" "$RESET" "$stale" "$ZONE"
+  fi
 done
-play=$(cf GET "/zones/$CLOUDFLARE_ZONE_ID/dns_records?name=play.$ZONE")
-play_id=$(jq -r '.result[0].id // empty' <<<"$play")
-if [[ -n "$play_id" ]] && confirm "Delete the unused play.$ZONE record?"; then
-  cf DELETE "/zones/$CLOUDFLARE_ZONE_ID/dns_records/$play_id" >/dev/null
-  printf '  %s✓ deleted%s play.%s\n' "$GREEN" "$RESET" "$ZONE"
-fi
 
-stage "Give astral-bicep the token"
-say "astral-bicep keeps both records current when your home address changes."
-say "This writes ~/.config/lembitu/cloudflare.env on $GAME_HOST, readable only by you."
-if confirm "Copy the token and zone ID to $GAME_HOST now?"; then
-  { printf 'CLOUDFLARE_API_TOKEN=%s\n' "$(security find-generic-password -a "$USER" -s "$TOKEN_SERVICE" -w)"
-    printf 'CLOUDFLARE_ZONE=%s\nCLOUDFLARE_ZONE_ID=%s\nCLOUDFLARE_RECORDS=%s\n' \
-      "$ZONE" "$CLOUDFLARE_ZONE_ID" "${RECORDS[*]}"
-  } | ssh -o BatchMode=yes "$GAME_HOST" \
-      "sh -c 'umask 077; mkdir -p ~/.config/lembitu && cat > ~/.config/lembitu/cloudflare.env'" \
-    && printf '  %s✓ written%s on %s\n' "$GREEN" "$RESET" "$GAME_HOST" \
-    || { SKIPPED+=("copy the token to $GAME_HOST: re-run stage 4"); warn "copy failed"; }
+stage "Create the map's tunnel"
+say "astral-bicep connects out to Cloudflare; visitors reach the map through Cloudflare only."
+tunnels=$(cf GET "/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel?name=$TUNNEL_NAME&is_deleted=false")
+ok "$tunnels" "listing tunnels"
+TUNNEL_ID=$(jq -r '.result[0].id // empty' <<<"$tunnels")
+if [[ -z "$TUNNEL_ID" ]]; then
+  created=$(cf POST "/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel" \
+    "$(jq -cn --arg n "$TUNNEL_NAME" '{name:$n,config_src:"cloudflare"}')")
+  ok "$created" "creating the tunnel"
+  TUNNEL_ID=$(jq -r '.result.id' <<<"$created")
+fi
+write_env CLOUDFLARE_TUNNEL_ID "$TUNNEL_ID"
+config=$(jq -cn --arg h "$MAP_NAME.$ZONE" --arg s "$MAP_ORIGIN" \
+  '{config:{ingress:[{hostname:$h,service:$s},{service:"http_status:404"}]}}')
+ok "$(cf PUT "/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" "$config")" "configuring the tunnel"
+printf '  %s✓ tunnel%s %s sends %s.%s to %s on astral-bicep\n' "$GREEN" "$RESET" "$TUNNEL_NAME" "$MAP_NAME" "$ZONE" "$MAP_ORIGIN"
+upsert_record CNAME "$MAP_NAME" "$TUNNEL_ID.cfargotunnel.com" true
+
+stage "Rate-limit the map"
+say "Cloudflare blocks any visitor sending more than 100 map requests in 10 seconds, for 10 seconds."
+phase="/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/http_ratelimit/entrypoint"
+current=$(cf GET "$phase")
+others=$(jq '[.result.rules // [] | .[] | select(.description != "Lembitu map")] | length' <<<"$current" 2>/dev/null || echo 0)
+if [[ "$others" != 0 ]]; then
+  warn "the zone already has other rate-limit rules; leaving them alone and skipping this one"
+  SKIPPED+=("rate-limit rule for $MAP_NAME.$ZONE (zone has other rules)")
 else
-  SKIPPED+=("copy the token to $GAME_HOST (re-run the wizard and accept stage 4)")
+  rule=$(jq -cn --arg h "$MAP_NAME.$ZONE" '{rules:[{description:"Lembitu map",
+    expression:("(http.host eq \"" + $h + "\")"), action:"block",
+    ratelimit:{characteristics:["cf.colo.id","ip.src"],period:10,requests_per_period:100,mitigation_timeout:10}}]}')
+  result=$(cf PUT "$phase" "$rule")
+  if [[ "$(jq -r '.success' <<<"$result")" == true ]]; then
+    printf '  %s✓ rate limit%s on %s.%s\n' "$GREEN" "$RESET" "$MAP_NAME" "$ZONE"
+  else
+    warn "Cloudflare refused the rule: $(jq -c '.errors' <<<"$result")"
+    SKIPPED+=("rate-limit rule for $MAP_NAME.$ZONE")
+  fi
 fi
 
-stage "Open the web ports on your router"
-say "The map needs TCP 80 and 443 to reach astral-bicep; the game ports should already be open."
-step "On your router's admin page, add port forwards to 192.168.0.101:"
-step "  TCP 80 → 80, TCP 443 → 443 (for map.lembitu.$ZONE)."
-step "  Check UDP 2456–2458 → 2456–2458 is already there (the game)."
-note "This wizard cannot open your router's page: its address depends on your router."
-if confirm "Are the forwards in place?"; then write_env ROUTER_WEB_PORTS forwarded
-else SKIPPED+=("forward TCP 80 and 443 to 192.168.0.101 on the router"); fi
+stage "Give astral-bicep its two secrets"
+say "The tunnel token runs the map's connection; the API token lets astral-bicep keep"
+say "$GAME_NAME.$ZONE current when your home address changes. Both files are readable only by you."
+if confirm "Write ~/.config/lembitu/cloudflared.env and cloudflare.env on $GAME_HOST now?"; then
+  tunnel_token=$(cf GET "/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/token" | jq -r '.result // empty')
+  [[ -n "$tunnel_token" ]] || { warn "Cloudflare returned no tunnel token"; exit 1; }
+  { printf 'TUNNEL_TOKEN=%s\n' "$tunnel_token"; } | ssh -o BatchMode=yes "$GAME_HOST" \
+      "sh -c 'umask 077; mkdir -p ~/.config/lembitu && cat > ~/.config/lembitu/cloudflared.env'" \
+    || { warn "copy failed"; exit 1; }
+  unset tunnel_token
+  { printf 'CLOUDFLARE_API_TOKEN=%s\n' "$(security find-generic-password -a "$USER" -s "$TOKEN_SERVICE" -w)"
+    printf 'CLOUDFLARE_ZONE=%s\nCLOUDFLARE_ZONE_ID=%s\nCLOUDFLARE_RECORDS=%s\n' "$ZONE" "$CLOUDFLARE_ZONE_ID" "$GAME_NAME"
+  } | ssh -o BatchMode=yes "$GAME_HOST" \
+      "sh -c 'umask 077; cat > ~/.config/lembitu/cloudflare.env'" \
+    || { warn "copy failed"; exit 1; }
+  printf '  %s✓ written%s on %s\n' "$GREEN" "$RESET" "$GAME_HOST"
+else
+  SKIPPED+=("copy the tunnel and API tokens to $GAME_HOST (re-run and accept this stage)")
+fi
 
-stage "Check the names resolve"
-for name in "${RECORDS[@]}"; do
-  got=$(dig +short "$name.$ZONE" @1.1.1.1 | tail -n 1)
-  if [[ "$got" == "$ip" ]]; then printf '  %s✓ %s.%s%s resolves to %s\n' "$GREEN" "$name" "$ZONE" "$RESET" "$got"
-  else warn "$name.$ZONE resolves to '${got:-nothing}' yet; Cloudflare usually updates within a minute"; fi
-done
-say "Tell the agent the wizard finished; it sets up the map's HTTPS and the address updater."
+stage "Check"
+got=$(dig +short "$GAME_NAME.$ZONE" @1.1.1.1 | tail -n 1)
+if [[ "$got" == "$ip" ]]; then printf '  %s✓ %s.%s%s resolves to %s\n' "$GREEN" "$GAME_NAME" "$ZONE" "$RESET" "$got"
+else warn "$GAME_NAME.$ZONE resolves to '${got:-nothing}' yet; Cloudflare usually updates within a minute"; fi
+map_ip=$(dig +short "$MAP_NAME.$ZONE" @1.1.1.1 | tail -n 1)
+if [[ -n "$map_ip" && "$map_ip" != "$ip" ]]; then
+  printf '  %s✓ %s.%s%s resolves to Cloudflare (%s), not your home address\n' "$GREEN" "$MAP_NAME" "$ZONE" "$RESET" "$map_ip"
+else warn "$MAP_NAME.$ZONE resolves to '${map_ip:-nothing}' yet"; fi
+say "No router port needs opening. If you already forwarded TCP 80 or 443, remove those forwards."
+say "Tell the agent the wizard finished; it starts the tunnel and the address updater on astral-bicep."
 pause
 
 finish

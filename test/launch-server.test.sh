@@ -154,5 +154,20 @@ for case,prep,ok in [('missing link is created',None,True),('correct link kept',
  if ok:assert link.is_symlink() and os.readlink(link)==str(croot/'bepinex')
  if prep=='dir':assert (link/'mod.cfg').read_text()=='x'
  print('pass: frozen start '+case);count+=1
+# The map's tunnel runs with host networking and its token only in an environment file.
+tenv=work/'.config/lembitu/cloudflared.env'
+os.environ['RUN']='1';os.environ['TRACE']=str(work/'tunnel-missing.jsonl')
+result=subprocess.run(['bash',str(repo/'scripts/launch-server.sh'),'tunnel'],capture_output=True,text=True)
+assert result.returncode!=0 and 'wizard-cloudflare' in result.stderr,result.stderr
+assert not (work/'tunnel-missing.jsonl').exists() or 'run' not in (work/'tunnel-missing.jsonl').read_text()
+print('pass: tunnel refused without its token file');count+=1
+tenv.write_text('TUNNEL_TOKEN=fake-tunnel-secret\n');tenv.chmod(0o600)
+os.environ['TRACE']=str(work/'tunnel.jsonl')
+subprocess.run(['bash',str(repo/'scripts/launch-server.sh'),'tunnel'],check=True,stdout=subprocess.DEVNULL)
+targs=next(json.loads(x) for x in (work/'tunnel.jsonl').read_text().splitlines() if json.loads(x)[0]=='run')
+assert targs[targs.index('--network')+1]=='host' and targs[targs.index('--env-file')+1]==str(tenv)
+assert 'cloudflare/cloudflared:2026.10.0' in targs and targs[-3:]==['tunnel','--no-autoupdate','run']
+assert not any('fake-tunnel-secret' in a for a in targs)
+print('pass: tunnel uses host networking, a pinned image and an environment file');count+=1
 print(str(count)+' passed, 0 failed')
 PY
