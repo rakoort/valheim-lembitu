@@ -96,6 +96,13 @@
   },
   "channels": [
     {
+      "name": "📖-how-it-works",
+      "category": "Info",
+      "access": "readonly",
+      "topic": "The concept, how the server works, guilds and progression. Start here.",
+      "guide": "config/discord/how-it-works.md"
+    },
+    {
       "name": "🌍-web-map",
       "category": "Info",
       "access": "readonly",

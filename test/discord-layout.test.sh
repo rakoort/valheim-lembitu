@@ -36,7 +36,7 @@ if os.environ.get('FAKE_ERROR') and not s.get('errored'):
  headers='Retry-After: 0.15\r\n';out={'retry_after':0.01,'global':True}
 elif method=='GET':
  if path[0]=='guilds': out=s[path[2]]
- elif len(path)>2 and path[2]=='messages': out=s.setdefault('messages',{}).get(path[1],[])
+ elif len(path)>2 and path[2]=='messages': out=list(reversed(s.setdefault('messages',{}).get(path[1],[])))
  else: out=s['hooks'].get(path[1],[])
 elif method=='POST':
  s['next']+=1;out=dict(body,id=str(60000000000000000+s['next']));s['writes']+=1
@@ -49,6 +49,11 @@ elif method=='PUT' and 'pins' in path:
  s['writes']+=1
  for m in s.get('messages',{}).get(path[1],[]):
   if m['id']==path[-1]: m['pinned']=True
+elif method=='PATCH' and len(path)>3 and path[2]=='messages':
+ s['writes']+=1
+ target=next(m for m in s['messages'][path[1]] if m['id']==path[3]);target.update(body);out=target
+elif method=='DELETE' and len(path)>3 and path[2]=='messages':
+ s['writes']+=1;s['messages'][path[1]]=[m for m in s['messages'][path[1]] if m['id']!=path[3]]
 elif method=='PATCH':
  s['writes']+=1
  items=s['roles'] if path[0]=='guilds' else s['channels']
@@ -68,9 +73,21 @@ report test "$(cksum < "$HOME/.config/lembitu/discord.env")" = "$ids_before"
 report state '.writes == 0'
 report test ! -e "$HOME/.config/lembitu/discord-webhooks.env"
 report run
-report state '(.roles | length) == 3 and (.channels | length) == 16 and ([.hooks[][]] | length) == 6'
+report state '(.roles | length) == 3 and (.channels | length) == 17 and ([.hooks[][]] | length) == 6'
 report state 'any(.channels[]; .name == "🌍-web-map" and (.topic | contains("https://lembitu-map.astral.ee")))'
-report state '([.messages[][]] | length) == 1 and ([.messages[][]][0] | .pinned == true and (.content | contains("https://lembitu-map.astral.ee")))'
+report state '(.channels[] | select(.name == "🌍-web-map") | .id) as $c | (.messages[$c] | length) == 1 and (.messages[$c][0] | .pinned == true and (.content | contains("https://lembitu-map.astral.ee")))'
+# The guide channel holds the guide file's posts, in file order, without link previews.
+guide_matches() {
+  python3 - "$FAKE_STATE" "$1" <<'PY'
+import json,sys
+s=json.load(open(sys.argv[1])); posts=[p.strip() for p in open(sys.argv[2]).read().split("\n---\n")]
+c=next(c["id"] for c in s["channels"] if c["name"]=="📖-how-it-works")
+messages=sorted(s["messages"][c],key=lambda m:(len(m["id"]),m["id"]))
+assert [m["content"] for m in messages]==posts, [m["content"][:40] for m in messages]
+assert all(m["flags"]==4 for m in messages)
+PY
+}
+report guide_matches "$ROOT/config/discord/how-it-works.md"
 report state 'any(.roles[]; .name == "Player" and .mentionable == true)'
 report state 'any(.channels[]; .name == "🔴 Offline" and .type == 2 and .parent_id == null and .position == 0 and any(.permission_overwrites[]; .id == "11111111111111111" and .allow == "1024" and .deny == "1048576") and any(.permission_overwrites[]; .id == "server" and .allow == "1049616" and .deny == "0"))'
 report python3 -c 'import os,json,stat; p=os.environ["HOME"]+"/.config/lembitu/discord.env"; ids=dict(line.strip().split("=",1) for line in open(p)); s=json.load(open(os.environ["FAKE_STATE"])); assert ids["DISCORD_EXISTING_ID"]=="55555555555555555"; assert ids["DISCORD_ROLE_PLAYER_ID"]==next(r["id"] for r in s["roles"] if r.get("name")=="Player"); assert ids["DISCORD_STATUS_VOICE_CHANNEL_ID"]==next(c["id"] for c in s["channels"] if c["type"]==2); assert stat.S_IMODE(os.stat(p).st_mode)==0o600'
@@ -139,6 +156,33 @@ jq '.channels += [{id:"unrelated",name:"outside",type:0,parent_id:null,permissio
 mv "$WORK/new" "$FAKE_STATE"
 report reject_collision Intruders outside
 report state '.channels[] | select(.id == "unrelated") | .parent_id == null'
+# A guide edit changes its own post in place; a removed section deletes its post; an overlong post
+# stops the run before any write. Runs from a copy so the guide file can change.
+copy="$WORK/root"
+mkdir -p "$copy/scripts" "$copy/config"
+cp "$ROOT/scripts/discord-layout.sh" "$copy/scripts/"
+cp -R "$ROOT/config/discord" "$copy/config/"
+run_copy() { bash "$copy/scripts/discord-layout.sh" "$@" > "$WORK/output" 2>&1; }
+guide="$copy/config/discord/how-it-works.md"
+before=$(jq .writes "$FAKE_STATE")
+python3 - "$guide" <<'PY'
+import sys
+p=sys.argv[1]; posts=open(p).read().split("\n---\n"); posts[1]=posts[1].rstrip()+"\nEdited for the test."
+open(p,"w").write("\n---\n".join(posts))
+PY
+report run_copy
+report state ".writes == $((before+1))"
+report guide_matches "$guide"
+python3 - "$guide" <<'PY'
+import sys
+p=sys.argv[1]; posts=open(p).read().split("\n---\n"); open(p,"w").write("\n---\n".join(posts[:-1]))
+PY
+report run_copy
+report state ".writes == $((before+2))"
+report guide_matches "$guide"
+printf '\n---\n%s' "$(printf 'x%.0s' {1..2001})" >> "$guide"
+if run_copy; then echo 'FAIL: overlong guide post stops the run'; fail=$((fail+1)); else echo 'pass: overlong guide post stops the run'; pass=$((pass+1)); fi
+report state ".writes == $((before+2))"
 rm "$FAKE_STATE"
 export FAKE_ERROR=429
 report run

@@ -58,6 +58,16 @@ api() {
     esac
   done
 }
+# A guide file split into Discord posts. Every post is checked before anything is written, because a
+# post Discord refuses half-way would leave the channel out of order.
+guide_posts() {
+  jq -Rs 'split("\n---\n") | map(sub("^\\s+"; "") | sub("\\s+$"; ""))' "$ROOT/$1"
+}
+while IFS= read -r guide; do
+  [[ -f $ROOT/$guide ]] || { echo "Missing guide file: $guide" >&2; exit 1; }
+  guide_posts "$guide" | jq -e 'length > 0 and all(.[]; length > 0 and length <= 2000)' >/dev/null \
+    || { echo "Guide posts must be non-empty and at most 2000 characters: $guide" >&2; exit 1; }
+done < <(jq -r '.channels[] | .guide // empty' "$LAYOUT")
 roles=$(api GET "/guilds/$guild/roles")
 channels=$(api GET "/guilds/$guild/channels")
 role_ids=$(jq -nc --arg everyone "$guild" --arg owner "$owner" '{everyone:$everyone,owner:$owner}')
@@ -173,6 +183,32 @@ while IFS= read -r row; do
     fi
   elif [[ -n $message ]]; then
     echo "Post pinned message: $name"
+  fi
+  # A row's guide is a file of posts split on '---' lines, kept in order by the Ops bot: a changed
+  # post is edited in place, a missing one posted after the others, a surplus one deleted.
+  guide=$(jq -r '.guide // ""' <<< "$row")
+  if [[ -n $guide ]]; then
+    posts=$(guide_posts "$guide")
+    if [[ $channel_id == planned-* ]]; then existing='[]'; else
+      existing=$(api GET "/channels/$channel_id/messages?limit=100" | jq -c --arg a "$ops" '[.[] | select(.author.id == $a)] | sort_by([(.id | length), .id])')
+    fi
+    count=$(jq length <<< "$posts"); have=$(jq length <<< "$existing")
+    for ((i = 0; i < count; i++)); do
+      body=$(jq -c --argjson i "$i" '{content:.[$i],flags:4,allowed_mentions:{parse:[]}}' <<< "$posts")
+      if ((i < have)); then
+        if [[ $(jq -c --argjson i "$i" '.[$i].content' <<< "$existing") != "$(jq -c .content <<< "$body")" ]]; then
+          echo "Edit guide post $((i + 1)): $name"
+          if ! $dry; then api PATCH "/channels/$channel_id/messages/$(jq -r --argjson i "$i" '.[$i].id' <<< "$existing")" "$body" >/dev/null; fi
+        fi
+      else
+        echo "Post guide post $((i + 1)): $name"
+        if ! $dry; then api POST "/channels/$channel_id/messages" "$body" >/dev/null; fi
+      fi
+    done
+    for ((i = count; i < have; i++)); do
+      echo "Delete surplus guide post $((i + 1)): $name"
+      if ! $dry; then api DELETE "/channels/$channel_id/messages/$(jq -r --argjson i "$i" '.[$i].id' <<< "$existing")" >/dev/null; fi
+    done
   fi
 done <<< "$rows"
 while IFS= read -r row; do

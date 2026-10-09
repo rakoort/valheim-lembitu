@@ -17,6 +17,7 @@ The agent builds and keeps this layout; changes go through this page first.
 | Category | Channel | Who sees it | Fed by |
 | --- | --- | --- | --- |
 | Top level | `🟢 Online · N/10` / `🔴 Offline` / `🟠 Restarting` (locked voice channel) | Everyone; nobody joins | Host status timer, Lembitu Server bot |
+| Info | `#📖-how-it-works` | Everyone, read-only | The concept and how the server works, guilds first: one Ops-bot post per section of `config/discord/how-it-works.md` (sections split on `---` lines, each at most 2,000 characters). Re-running the layout edits a changed post in place, posts a new section and deletes a removed one, so the file is the only place to change it |
 | Info | `#🌍-web-map` | Everyone, read-only | Topic and one pinned message with the map link, posted once by the Ops bot (`topic` and `message` in `config/discord/layout.json`) |
 | Info | `#announcements` | Everyone; only the owner and the bots post | Owner, and a Pack-release webhook |
 | Info | `#rules` | Everyone, read-only | Owner |
