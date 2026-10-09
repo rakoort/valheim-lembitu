@@ -597,13 +597,9 @@ Pack carries two things Thunderstore cannot express, namely the pinned set as a 
 `config/` seeds that ship outside any single package's plugin directory.
 
 The release is cut by the operator, because publishing is an outward-facing action this repository's
-automation does not take on its own. Build and preview, then publish explicitly:
-
-```bash
-scripts/build-client-pack.sh --version <label>
-scripts/publish-pack.sh --dry-run --version <label> --notes-file <notes-file> --changes 'Short player-facing change list'
-scripts/publish-pack.sh --version <label> --notes-file <notes-file> --changes 'Short player-facing change list'
-```
+automation does not take on its own. Build with `scripts/build-client-pack.sh --version <label>`,
+preview the post with `scripts/publish-pack.sh --dry-run --version <label> --notes-file <file>
+--changes '<short player-facing change list>'`, then run the same command without `--dry-run`.
 
 The publisher requires all three nonempty artifacts (`.zip`, `.manifest.json`, `.versions.txt`)
 and a notes file, creates `client-pack-<label>` through authenticated `gh release create`, then
