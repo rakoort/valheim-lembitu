@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Behaviour tests for scripts/build-client-pack.sh (#21).
+# Launcher fixture strings deliberately contain literal shell expansions.
+# shellcheck disable=SC2016
 #
 # The boundary this test defends is the server/client asymmetry: a client pack that carries a
 # server-only plugin, or silently loses a client-side one, is a support problem for a non-technical
@@ -183,7 +185,12 @@ if [[ -n "${listing:-}" ]] \
 else
   report fail "ships our own plugins from the build output"
 fi
-
+if [[ $(cat "$WORK/.lembitu-pack-version") == t ]]; then
+  report ok "successful build records the durable pack version"
+else
+  report fail "successful build records the durable pack version"
+fi
+printf 'previous\n' > "$WORK/.lembitu-pack-version"
 UNBUILT="$WORK/unbuilt"; mkdir -p "$UNBUILT"
 cp "$OWN_PLUGINS/Lembitu.Oathbound.dll" "$OWN_PLUGINS/Lembitu.Callings.dll" "$OWN_PLUGINS/Lembitu.Guide.dll" "$UNBUILT/"
 if OWN_PLUGINS="$UNBUILT" build "$WORK/out-unbuilt"; then
@@ -193,7 +200,11 @@ elif grep -q 'Lembitu.Guilds.dll' "$WORK/out"; then
 else
   report fail "refuses a pack missing one of our plugins"
 fi
-
+if [[ $(cat "$WORK/.lembitu-pack-version") == previous ]]; then
+  report ok "failed build preserves the last successful pack version"
+else
+  report fail "failed build preserves the last successful pack version"
+fi
 # --- 1b. our own client seeds ship, and beat a package's copy ----------------------------------
 # The rarity palette and the HUD colours are "Not Synced with Server", so the Pack is the only
 # place they can be set. A seed that does not reach BepInEx/config, or that a package's own file
@@ -352,7 +363,7 @@ fi
 # The published directory holds exactly the three artifacts, and the archive holds none of them. A
 # pack that ships its own manifest inside itself is the mistake this asserts against.
 listing="$(unzip -Z1 "$OUT1/lembitu-client-pack-t.zip")"
-published="$(ls "$OUT1" | wc -l | tr -d ' ')"
+published="$(find "$OUT1" -mindepth 1 -maxdepth 1 -type f | wc -l | tr -d ' ')"
 if [ "$published" -eq 3 ] && ! grep -qxE '\.?/(manifest\.json|versions\.txt|pack\.zip|stage\.log)' <<<"$listing"; then
   report ok "publishes exactly three artifacts and puts no builder file inside the archive"
 else

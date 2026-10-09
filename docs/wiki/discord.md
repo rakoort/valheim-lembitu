@@ -16,10 +16,11 @@ The agent builds and keeps this layout; changes go through this page first.
 
 | Category | Channel | Who sees it | Fed by |
 | --- | --- | --- | --- |
+| Top level | `🟢 Online · N/10` / `🔴 Offline` / `🟠 Restarting` (locked voice channel) | Everyone; nobody joins | Host status timer, Lembitu Server bot |
 | Info | `#announcements` | Everyone; only the owner and the bots post | Owner, and a Pack-release webhook |
 | Info | `#rules` | Everyone, read-only | Owner |
 | Info | `#password` | Player role, read-only | Owner |
-| Server | `#status` | Everyone | ServerManager webhook: `server.status`, `server.announcement` |
+| Server | `#status` | Everyone | One live status message through STATUS; ServerManager events may also post |
 | Server | `#activity` | Everyone | ServerManager webhook: `player.connection`, `player.death`, `boss.killed`, `raid.status` |
 | Server | `#chat` | Player role | ServerManager bot (chat channel) and webhook `chat.shout` |
 | Help | `#support` | Everyone | Players and the owner |
@@ -44,6 +45,9 @@ Discord".
   and Read Message History (`84992`), and its application has the Message Content intent on,
   because the chat bridge reads ordinary messages (ServerManager README, bot section). The game
   server reads its token from `SERVERMANAGER_DISCORD_BOT_TOKEN`.
+  The layout grants its role View Channel and Manage Channels (`1040`) **only on the locked
+  status voice channel**, not server-wide. Everyone can see that channel but cannot Connect
+  (`1048576` denied). The Ops token stays on the Mac.
 - Both are private applications (Public Bot off), so only the owner can install them
   ([bot authorization](https://docs.discord.com/developers/topics/oauth2#bot-authorization-flow)).
   Separate applications keep the agent's broad rights out of the game server's process.
@@ -52,10 +56,10 @@ Discord".
 
 | Value | Secret | Where |
 | --- | --- | --- |
-| Server, owner and application IDs | No | `~/.config/lembitu/discord.env` on the owner's Mac |
+| Server, owner, application, Player role and status voice-channel IDs | No | `~/.config/lembitu/discord.env` on the Mac; copied to astral-bicep for the status timer |
 | Lembitu Ops token | Yes | macOS login keychain, service `lembitu.discord.ops` |
-| Lembitu Server token | Yes | macOS login keychain, service `lembitu.discord.serverbot`; the agent copies it into the game server's secret environment on astral-bicep |
-| Webhook URLs | Yes | Created by the agent; written only to ServerManager's `discord.yml` and the monitor's config on astral-bicep |
+| Lembitu Server token | Yes | macOS keychain `lembitu.discord.serverbot`; game-server secret environment and `~/.config/lembitu/discord-serverbot.env` on astral-bicep (`DISCORD_SERVER_BOT_TOKEN`, 0600) |
+| Webhook URLs | Yes | `~/.config/lembitu/discord-webhooks.env` (0600) on Mac and astral-bicep; also ServerManager's private `discord.yml` |
 
 No token or webhook URL enters the repository, a Ticket, the wiki or a log.
 
@@ -116,7 +120,7 @@ by hand:
   it to `curl` on standard input, never as an argument, and writes the six route URLs atomically to
   `~/.config/lembitu/discord-webhooks.env` (0600) as `DISCORD_WEBHOOK_STATUS`, `_ACTIVITY`,
   `_CHAT`, `_ADMIN_ALERTS`, `_MONITOR` and `_PACK_RELEASES`. The integrator copies that file to the
-  same path on astral-bicep. `test/discord-layout.test.sh` proves it against a fake API (31
+  same path on astral-bicep. `test/discord-layout.test.sh` proves it against a fake API (42
   checks): a second apply sends no writes, a `429` pauses every request, a `401` or `403` stops at
   once, and neither token nor webhook secret is printed. It has not yet run against Discord.
 - **Rate limits.** On `429` it waits `Retry-After` seconds; a `global` limit pauses every call; it
@@ -126,6 +130,40 @@ by hand:
   Roles on it without Administrator
   ([create channel](https://docs.discord.com/developers/resources/guild#create-guild-channel)). Our
   layout needs neither.
+
+### Live status and Pack releases (owner, 2026-10-09)
+
+`scripts/discord-status.sh` runs once a minute through `config/discord-status/`. It creates one
+STATUS webhook message with `?wait=true`, stores the returned ID in
+`~/.local/state/lembitu/discord-status.json`, then edits it; a missing message (`404`) is recreated.
+It shows online/offline/restarting, players N/10 and character names, game and Pack versions,
+container uptime, the next 06:00 Europe/Oslo maintenance restart and
+`https://lembitu-map.astral.ee`. Online means the container is running and OdinEye answers; a valid
+maintenance marker takes precedence and shows restarting. An unanswered player query shows an
+unknown count rather than inventing zero players. OdinEye 1.2.37's `/players` DTO uses `Name`
+(decompiled staged `OdinEye.Models.Api.Player`, `PlayersController` and its Utf8Json serializer).
+The game version is read only from this container boot's logs. The Pack version comes from the
+installer's host-side `.lembitu-pack-version`, not a guess at the newest GitHub release.
+
+The voice display uses `DISCORD_STATUS_VOICE_CHANNEL_ID` written by the layout. Its name changes
+only when the text differs and at least five minutes have elapsed since the last rename attempt;
+unchanged text makes no request. This respects Discord's two-renames-per-ten-minutes limit.
+Webhook and channel failures warn without stopping future timer runs; missing webhook or bot
+credentials skip only that display. Credentials reach curl through stdin, never argv or logs.
+`test/discord-status.test.sh` exercises the cycle with fakes and real curl against a local fake
+HTTP server; live Discord and astral-bicep deployment remain unverified.
+
+`scripts/publish-pack.sh` creates the GitHub release and then posts through PACK_RELEASES to
+`#announcements`: version, the explicit `--changes` summary, download link, **reinstall required**
+and `@Player`. It permits only the recorded Player role ID in `allowed_mentions.roles`; other
+mentions cannot ping. Its dry run publishes nothing. See `docs/wiki/pack.md`, Distribution.
+The layout preserves its non-secret IDs file while recording `DISCORD_ROLE_PLAYER_ID` and the
+status channel ID, and identifies the voice channel by ID after the status timer renames it.
+
+API references: [execute/edit webhook](https://docs.discord.com/developers/resources/webhook)
+(`POST ?wait=true`, `PATCH /messages/{id}`) and
+[modify channel](https://docs.discord.com/developers/resources/channel#modify-channel)
+(`PATCH /channels/{id}`), verified against Discord's current API documentation.
 
 ## Exclusions
 
@@ -144,3 +182,5 @@ by hand:
   `guild` paths mean the Discord server (`CONTEXT.md`, Discord server).
 - **A bot's reach is its role's position.** The Ops role must sit above every role it manages, or
   role and overwrite edits fail with `403`.
+- **Status is a snapshot, not an event feed.** Retaining the webhook message ID avoids a new post
+  every minute, and retaining the voice channel ID avoids duplicate channels after dynamic renames.

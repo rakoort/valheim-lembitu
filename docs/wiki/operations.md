@@ -179,7 +179,7 @@ amendment records the cap, the enforced Pack and admission. The research is in
 | Monitoring | Built on OdinEye plus host statistics. Alerts go to the private admin channel when the server is down or unresponsive, unreachable from outside, misses a world save, fails a backup or its off-host copy, or runs short of memory, CPU or disk |
 | Backups | One hourly archive holds the world, cache, admission lists, the character store, and the Guilds, Marketplace and region-claim files, so a restore returns all of them to the same hour |
 | Admission | Public with a password, shared in a members-only Discord channel; the owner is the only admin |
-| Host | The game stays on astral-bicep with reserved CPU and memory; the development stacks there are capped; it moves only if monitoring shows contention |
+| Host | The game stays on astral-bicep with reserved CPU and memory (CPU shares 4096, 4 GiB reservation). The other projects' containers are not capped (owner, 2026-10-09); monitoring's resource alerts decide whether that changes |
 | Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's combined exploration, cartography-table pins, deaths and play sessions, at `https://lembitu-map.astral.ee` through a Cloudflare Tunnel with a Cloudflare rate limit; no router port opens and the game's own port 3000 stays private. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
 | Pack additions and refusals | Jumpingmushroom/Tally is required, with sharing on. nbusseneau/Better_Cartography_Table is not added: its guild pins need Smoothbrain's Guilds, not Northarun's, its settings cannot be locked, and pin privacy is checked only on the client. ValMedia/OdinOnDemand is already pinned at its latest release, 1.3.0 |
 
@@ -494,6 +494,50 @@ host at 38% memory and 55% disk) and must be tuned after a week of play. Proved 
 `test/monitor.test.sh` (26 scenarios) and a local UDP protocol smoke; the staged-fault drill on a
 disposable test container is part of the v17 acceptance run.
 
+**The public Discord display is a separate snapshot, not an admin alert.**
+`scripts/discord-status.sh` and `config/discord-status/lembitu-discord-status.timer` refresh one
+STATUS webhook message every minute. The Lembitu Server bot renames the locked top-level voice
+channel only on a changed status/count, at most once per five minutes. State is outside the saves
+in `~/.local/state/lembitu/discord-status.json`; a valid maintenance marker displays restarting.
+The map link remains the Cloudflare Tunnel URL; no OdinEye or game port is exposed for Discord.
+The installed Pack marker is `~/lembitu/config/bepinex/.lembitu-pack-version`: a successful
+`scripts/build-client-pack.sh --version LABEL` labels the staged `dist/`, and
+`scripts/install-plugins.sh` copies that label with the deployed plugins. An unlabelled install
+removes a stale marker and status reports Unknown. This reports the deployed Pack rather than
+assuming a newly published client release was already deployed. See `docs/wiki/discord.md`.
+
+Install on astral-bicep (operator steps; not applied by these changes):
+
+1. Reconcile the layout on the Mac with `scripts/discord-layout.sh apply`. Copy the resulting
+   `~/.config/lembitu/discord.env` and `discord-webhooks.env` to the same directory on astral-bicep.
+   The first contains `DISCORD_STATUS_VOICE_CHANNEL_ID` and `DISCORD_ROLE_PLAYER_ID`; the second
+   contains `DISCORD_WEBHOOK_STATUS`. Keep the webhook file 0600.
+2. Transfer the **Lembitu Server** token from keychain service `lembitu.discord.serverbot` through
+   private stdin to `~/.config/lembitu/discord-serverbot.env` on astral-bicep as
+   `DISCORD_SERVER_BOT_TOKEN=...`, mode 0600. Never transfer the Ops token or put a token in an
+   SSH argument, shell history or log. This is the same Server bot used by ServerManager, with
+   Manage Channels granted only on the status voice channel.
+3. Put the updated checkout at `~/code/valheim-lembitu` and deploy the labelled staged plugins
+   through the normal installer. From a Bash shell on astral-bicep, install and start the units:
+
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   cp ~/code/valheim-lembitu/config/discord-status/lembitu-discord-status.{service,timer} ~/.config/systemd/user/
+   systemctl --user daemon-reload
+   systemctl --user enable --now lembitu-discord-status.timer
+   systemctl --user start lembitu-discord-status.service
+   systemctl --user status lembitu-discord-status.timer
+   journalctl --user -u lembitu-discord-status.service -n 20
+   ```
+
+   Enable user lingering with `loginctl enable-linger "$USER"` if it is not already enabled.
+   A different checkout location needs an `ExecStart` unit override. `scripts/lib/python.sh`
+   supplies Python through the repository-pinned Nix fallback when no `python3` is on PATH.
+4. Check the one status message and locked voice channel in Discord. The fake scenarios in
+   `test/discord-status.test.sh` cover creation, edits, deleted-message recreation, maintenance,
+   names, empty lists, unavailable OdinEye, throttling and missing secrets; local real-curl HTTP
+   smoke passes. Live Discord, NixOS unit execution and deployed marker remain unverified.
+
 **The web map draws the whole world (#108).** Expand_World_Size does not change
 `WorldGenerator.worldSize`, a constant 10000; it patches the game's literals and exposes its radius
 and edge in its configuration. The fork in `src/forks/ValheimWebMap/` reads those once per world:
@@ -550,12 +594,12 @@ against a fake API (9 checks); a dry run on astral-bicep with the real token rep
 The outside reachability check in monitoring uses the same name: set
 `LEMBITU_QUERY_TARGET=lembitu.astral.ee` in the monitor unit's drop-in.
 
-## Owner's two-account session before Pack v17
+## Two-player checks, on the live server after Pack v17
 
-The test host has one Steam account, so these checks wait for the owner: two separately licensed
-accounts, both with the exact Pack v17 build, on the test server, never the live one. Account A is
-the admin with Infinity Hammer, its addon and World Edit Commands on top of the Pack; account B has
-only the Pack.
+The test host has one Steam account. The owner chose on 2026-10-09 to ship v17 without a separate
+two-account test session and to watch these on the first live evening instead; failures are fixed
+forward or rolled back from the backup. Account A is the owner, the admin, with Infinity Hammer,
+its addon and World Edit Commands on top of the Pack; any other player stands in for account B.
 
 | # | Do | Expect | Ticket |
 | --- | --- | --- | --- |

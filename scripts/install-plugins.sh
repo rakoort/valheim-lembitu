@@ -57,7 +57,7 @@ CONTAINER_PLUGINS_DIR="/opt/valheim/bepinex/BepInEx/plugins"
 CLIENT_ONLY=(AzuHoverStats AzuClock MouseTweaks CraftingSearch CompactStatusEffects
   LiveExperienceTracker oathbound_addon Tally)
 
-# shellcheck source=lib/ledger.sh
+# shellcheck source=scripts/lib/ledger.sh
 . "$REPO_ROOT/scripts/lib/ledger.sh"
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
@@ -228,7 +228,12 @@ do_install() {
   done
   printf '%s\n' "${installed[@]}" > "$manifest"
   report "installed" "${installed[@]}"
-
+  # An unlabelled staging tree must not leave a previous pack label behind.
+  if [[ -f "$DIST_DIR/.lembitu-pack-version" ]]; then
+    cp "$DIST_DIR/.lembitu-pack-version" "$target/.lembitu-pack-version"
+  else
+    rm -f -- "$target/.lembitu-pack-version"
+  fi
   if [[ -s "$target/.lembitu-removed" ]]; then
     echo "note: removals pending in the container; run: scripts/install-plugins.sh prune-mirror $target_arg <container>" >&2
   fi

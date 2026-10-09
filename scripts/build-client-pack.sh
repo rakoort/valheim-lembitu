@@ -114,7 +114,7 @@ while [[ $# -gt 0 ]]; do
     --version) VERSION=${2:?}; shift 2 ;;
     --pins) PINS_ARGS+=(--pins "$2"); shift 2 ;;
     --cache) PINS_ARGS+=(--cache "$2"); shift 2 ;;
-    --lock) LOCK=${2:?}; PINS_ARGS+=(--lock "$2"); shift 2 ;;
+    --lock) PINS_ARGS+=(--lock "${2:?}"); shift 2 ;;
     --list) LIST=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown argument: $1 (try --help)" ;;
@@ -227,6 +227,8 @@ chmod +x "$stage/valheim_Data/start_game_bepinex.sh"
 # Steam re-exec handshake in particular - is preserved exactly. awk, because this is a single-line
 # substitution and the repo's scripts stay bash-only.
 launcher="$stage/start_game_bepinex.sh"
+# This matches upstream shell source, not an expanded executable path.
+# shellcheck disable=SC2016
 grep -qF 'file -b "${executable_path}"' "$launcher" \
   || die "the launcher no longer contains the \`file\` probe this build patches; upstream changed"
 awk '
@@ -267,7 +269,7 @@ for tree in plugins patchers config; do
       # hosts. Strip the `./` prefix here instead.
     done < <(cd "$stage/$tree" && find . -type f | sed 's|^\./||')
     cp -a "$stage/$tree/." "$stage/BepInEx/$tree/"
-    rm -rf "$stage/$tree"
+    rm -rf "${stage:?}/$tree"
   else
     mv "$stage/$tree" "$stage/BepInEx/$tree"
   fi
@@ -442,7 +444,10 @@ fi
 mv -- "$archive_tmp" "$archive"
 mv -- "$built/versions.txt" "$versions"
 mv -- "$built/manifest.json" "$manifest"
-
+# Only a completed pack may label the server staging tree (fixtures override OWN_PLUGINS).
+mkdir -p "$(dirname "$OWN_PLUGINS")"
+printf '%s\n' "$VERSION" > "$built/pack-version"
+mv -- "$built/pack-version" "$(dirname "$OWN_PLUGINS")/.lembitu-pack-version"
 printf '\nclient pack: %s (%s)\n' "$archive" "$(du -h "$archive" | cut -f1)"
 printf 'manifest:    %s\n' "$manifest"
 printf 'files:       %s\n' "$versions"

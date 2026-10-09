@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Behaviour tests for scripts/install-plugins.sh: deployment of the three dist/ BepInEx trees,
+# Each fake Docker invocation intentionally scopes PATH to its own subshell.
+# shellcheck disable=SC2030,SC2031
 # pruning of what the manifest owns (and nothing else), migration of plugins/-era manifests, and
 # the container-side replay of .lembitu-removed.
 #
@@ -545,6 +547,19 @@ if run_install \
 else
   report fail "ServerManager cutover prunes both retired plugins and their mirror, preserving foreign files"
 fi
-
+fresh_dist
+printf dll > "$WORK/dist/plugins/Example.dll"
+printf 'release-one\n' > "$WORK/dist/.lembitu-pack-version"
+if run_install && [[ $(cat "$WORK/bepinex/.lembitu-pack-version") == release-one ]]; then
+  report ok "installs pack version at BepInEx root"
+else
+  report fail "installs pack version at BepInEx root"
+fi
+rm "$WORK/dist/.lembitu-pack-version"
+if run_install && [[ ! -e "$WORK/bepinex/.lembitu-pack-version" ]]; then
+  report ok "unlabelled install removes stale pack version"
+else
+  report fail "unlabelled install removes stale pack version"
+fi
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

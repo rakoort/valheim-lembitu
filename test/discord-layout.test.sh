@@ -13,6 +13,7 @@ DISCORD_GUILD_ID=11111111111111111
 DISCORD_OWNER_USER_ID=22222222222222222
 DISCORD_OPS_APP_ID=33333333333333333
 DISCORD_SERVER_BOT_APP_ID=44444444444444444
+DISCORD_EXISTING_ID=55555555555555555
 ENV
 cat > "$WORK/bin/security" <<'SH'
 #!/usr/bin/env bash
@@ -37,7 +38,7 @@ elif method=='GET':
  if path[0]=='guilds': out=s[path[2]]
  else: out=s['hooks'].get(path[1],[])
 elif method=='POST':
- s['next']+=1;out=dict(body,id=str(s['next']));s['writes']+=1
+ s['next']+=1;out=dict(body,id=str(60000000000000000+s['next']));s['writes']+=1
  if path[0]=='guilds':s[path[2]].append(out)
  else:
   out.update(type=1,token='FAKE_WEBHOOK_SECRET');s['hooks'].setdefault(path[1],[]).append(out)
@@ -54,14 +55,24 @@ pass=0 fail=0
 report() { if "$@"; then echo "pass: $*"; pass=$((pass+1)); else echo "FAIL: $*"; fail=$((fail+1)); fi; }
 run() { bash "$ROOT/scripts/discord-layout.sh" "$@" > "$WORK/output" 2>&1; }
 state() { jq -e "$1" "$FAKE_STATE" >/dev/null; }
+ids_before=$(cksum < "$HOME/.config/lembitu/discord.env")
 report run --dry-run
+report test "$(cksum < "$HOME/.config/lembitu/discord.env")" = "$ids_before"
 report state '.writes == 0'
 report test ! -e "$HOME/.config/lembitu/discord-webhooks.env"
 report run
-report state '(.roles | length) == 3 and (.channels | length) == 14 and ([.hooks[][]] | length) == 6'
+report state '(.roles | length) == 3 and (.channels | length) == 15 and ([.hooks[][]] | length) == 6'
+report state 'any(.channels[]; .name == "🔴 Offline" and .type == 2 and .parent_id == null and .position == 0 and any(.permission_overwrites[]; .id == "11111111111111111" and .allow == "1024" and .deny == "1048576") and any(.permission_overwrites[]; .id == "server" and .allow == "1040" and .deny == "0"))'
+report python3 -c 'import os,json,stat; p=os.environ["HOME"]+"/.config/lembitu/discord.env"; ids=dict(line.strip().split("=",1) for line in open(p)); s=json.load(open(os.environ["FAKE_STATE"])); assert ids["DISCORD_EXISTING_ID"]=="55555555555555555"; assert ids["DISCORD_ROLE_PLAYER_ID"]==next(r["id"] for r in s["roles"] if r.get("name")=="Player"); assert ids["DISCORD_STATUS_VOICE_CHANNEL_ID"]==next(c["id"] for c in s["channels"] if c["type"]==2); assert stat.S_IMODE(os.stat(p).st_mode)==0o600'
+report state 'all(.channels[] | select(.type != 2); all(.permission_overwrites[] | select(.id == "server"); ((.allow | tonumber) % 32) < 16))'
+report state 'all(.roles[]; (((.permissions // "0") | tonumber) % 32) < 16)'
+# The running status bot owns the name; layout reconciles by the saved ID.
+jq '(.channels[] | select(.type == 2) | .name) = "🟢 Online · 3 players"' "$FAKE_STATE" > "$WORK/new"
+mv "$WORK/new" "$FAKE_STATE"
 first=$(jq .writes "$FAKE_STATE")
 report run
 report state ".writes == $first"
+report state 'any(.channels[]; .type == 2 and .name == "🟢 Online · 3 players")'
 report python3 -c 'import os,stat; assert stat.S_IMODE(os.stat(os.environ["HOME"]+"/.config/lembitu/discord-webhooks.env").st_mode)==0o600'
 report test "$(wc -l < "$HOME/.config/lembitu/discord-webhooks.env" | tr -d ' ')" = 6
 check_visibility() {
@@ -87,11 +98,19 @@ for member in (False,True):
 PY
 }
 report check_visibility
-# Correct an actual permission drift without creating duplicate channels.
+# Repair voice placement and permissions without clobbering the live status name.
+jq '(.channels[] | select(.type == 2)) |= (.position = 7 | .parent_id = "wrong-category" | .permission_overwrites = [])' "$FAKE_STATE" > "$WORK/new"
+mv "$WORK/new" "$FAKE_STATE"
+report run --dry-run
+report state ".writes == $first"
+report run
+report state 'any(.channels[]; .type == 2 and .name == "🟢 Online · 3 players" and .position == 0 and .parent_id == null and any(.permission_overwrites[]; .id == "server" and .allow == "1040"))'
+report state ".writes == $((first+1))"
+# Correct text-channel permission drift without creating duplicate channels.
 jq '(.channels[] | select(.name == "password") | .permission_overwrites) = []' "$FAKE_STATE" > "$WORK/new"
 mv "$WORK/new" "$FAKE_STATE"
 report run
-report state ".writes == $((first+1))"
+report state ".writes == $((first+2))"
 report run guild Ravens ravens
 report state '(.roles | map(select(.name == "Guild · Ravens")) | length) == 1 and (.channels | map(select(.name == "ravens")) | length) == 1'
 guild_writes=$(jq .writes "$FAKE_STATE")

@@ -597,12 +597,30 @@ Pack carries two things Thunderstore cannot express, namely the pinned set as a 
 `config/` seeds that ship outside any single package's plugin directory.
 
 The release is cut by the operator, because publishing is an outward-facing action this repository's
-automation does not take on its own: run `scripts/build-client-pack.sh --version <label>`, then
-create a release with `gh release create` and attach the three artifacts it wrote — the `.zip`, the
-`.manifest.json` and the `.versions.txt`. Release tags follow `client-pack-<label>`.
+automation does not take on its own. Build and preview, then publish explicitly:
 
-Players then download two files: the zip and, for the verification step below, the `.versions.txt`.
-The operator records the release URL in the Roster's usual gathering place; the URL is not secret.
+```bash
+scripts/build-client-pack.sh --version <label>
+scripts/publish-pack.sh --dry-run --version <label> --notes-file <notes-file> --changes 'Short player-facing change list'
+scripts/publish-pack.sh --version <label> --notes-file <notes-file> --changes 'Short player-facing change list'
+```
+
+The publisher requires all three nonempty artifacts (`.zip`, `.manifest.json`, `.versions.txt`)
+and a notes file, creates `client-pack-<label>` through authenticated `gh release create`, then
+posts version, the short changes, a direct zip download link, **reinstall required** and `@Player`
+to `#announcements` through PACK_RELEASES. It reads the Player role ID from
+`~/.config/lembitu/discord.env` and webhook URL from `discord-webhooks.env`; no other role mention
+is allowed. `--out DIR` selects another artifact directory. Dry-run prints the post without
+publishing or posting (GitHub repository metadata is read). If release creation fails, no post
+is sent; if the announcement fails, it clearly reports that the release already exists, so do not
+blindly rerun publication. `test/publish-pack.test.sh` exercises fake gh and webhook failures.
+
+A successful build also writes the label to `dist/.lembitu-pack-version`; the server installer
+copies it into the target BepInEx root for the live status display. Build and deploy the matching
+staged tree; publishing alone does not change the server's label.
+
+Players download two files: the zip and, for the verification step below, the `.versions.txt`.
+The announcement is their stable gathering-place link; the URL is not secret.
 
 ### Install checklist for players
 

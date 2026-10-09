@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh Lembitu Discord status every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=1s
+Unit=lembitu-discord-status.service
+
+[Install]
+WantedBy=timers.target

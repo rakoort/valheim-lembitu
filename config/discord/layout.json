@@ -5,6 +5,15 @@
       "permissions": "0"
     }
   ],
+  "status_voice": {
+    "name": "🔴 Offline",
+    "type": 2,
+    "position": 0,
+    "permission_overwrites": [
+      {"subject": "everyone", "allow": "1024", "deny": "1048576"},
+      {"subject": "server", "allow": "1040", "deny": "0"}
+    ]
+  },
   "categories": [
     "Info",
     "Server",

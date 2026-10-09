@@ -1,0 +1,9 @@
+[Unit]
+Description=Refresh Lembitu Discord status message and voice channel
+
+[Service]
+Type=oneshot
+# Files read directly: discord-webhooks.env, discord-serverbot.env, discord.env in ~/.config/lembitu.
+ExecStart=%h/code/valheim-lembitu/scripts/discord-status.sh
+TimeoutStartSec=2min
+UMask=0077

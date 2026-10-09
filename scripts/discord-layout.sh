@@ -96,8 +96,19 @@ while IFS= read -r row; do ensure_role "$(jq -r .name <<< "$row")" "$(jq -r .per
 if [[ $mode == guild ]]; then ensure_role "Guild · $1" 0 Guild; fi
 category_ids='{}'
 ensure_channel() {
-  local name=$1 type=$2 parent=$3 overwrites=$4 matches desired current id result
-  matches=$(jq --arg n "$name" --argjson t "$type" '[.[] | select(.name == $n and .type == $t)]' <<< "$channels")
+  local name=$1 type=$2 parent=$3 overwrites=$4 matches desired current id result stored=''
+  if [[ $type == 2 ]]; then
+    stored=$(while IFS='=' read -r k v; do [[ $k != DISCORD_STATUS_VOICE_CHANNEL_ID ]] || printf '%s' "$v"; done < "$ids")
+    [[ -z $stored || $stored =~ ^[0-9]{17,20}$ ]] || { echo 'Invalid DISCORD_STATUS_VOICE_CHANNEL_ID' >&2; exit 1; }
+  fi
+  if [[ -n $stored ]]; then
+    matches=$(jq --arg id "$stored" '[.[] | select(.id == $id)]' <<< "$channels")
+    if jq -e 'any(.[]; .type != 2)' <<< "$matches" >/dev/null; then
+      echo 'Stored status channel is not a voice channel' >&2; exit 1
+    fi
+  else
+    matches=$(jq --arg n "$name" --argjson t "$type" '[.[] | select(.name == $n and .type == $t)]' <<< "$channels")
+  fi
   if [[ $type == 0 && ${access:-} == guild ]]; then
     matches=$(jq --arg p "$parent" '[.[] | select(.parent_id == $p)]' <<< "$matches")
   fi
@@ -105,6 +116,15 @@ ensure_channel() {
   id=$(jq -r '.[0].id // empty' <<< "$matches")
   desired=$(jq -nc --arg n "$name" --argjson t "$type" --arg p "$parent" --argjson o "$overwrites" '{name:$n,type:$t,parent_id:(if $p == "" then null else $p end),permission_overwrites:$o}')
   current=$(jq -c '.[0] | {name,type,parent_id:(.parent_id // null),permission_overwrites:((.permission_overwrites // []) | sort_by(.id))}' <<< "$matches")
+  if [[ $type == 2 ]]; then
+    desired=$(jq --argjson p "$(jq '.status_voice.position' "$LAYOUT")" '. + {position:$p}' <<< "$desired")
+    current=$(jq --argjson p "$(jq '.[0].position // null' <<< "$matches")" '. + {position:$p}' <<< "$current")
+    # Existing status names belong to the live bot, including during permission repairs.
+    if [[ -n $id ]]; then
+      desired=$(jq 'del(.name)' <<< "$desired")
+      current=$(jq 'del(.name)' <<< "$current")
+    fi
+  fi
   if [[ -z $id ]]; then
     echo "Create channel/category: $name"
     if $dry; then id="planned-channel-$name"; else result=$(api POST "/guilds/$guild/channels" "$desired"); id=$(jq -er .id <<< "$result"); fi
@@ -116,6 +136,9 @@ ensure_channel() {
 }
 # Explicit owner member overwrite: the owner remains the only human admin.
 common=$(jq -nc --argjson ids "$role_ids" '[{id:$ids.owner,type:1,allow:"117760",deny:"0"},{id:$ids.ops,type:0,allow:"117760",deny:"0"},{id:$ids.server,type:0,allow:"117760",deny:"0"}]')
+voice_overwrites=$(jq -c --argjson ids "$role_ids" '[.status_voice.permission_overwrites[] | {id:$ids[.subject],type:0,allow,deny}]' "$LAYOUT")
+ensure_channel "$(jq -r '.status_voice.name' "$LAYOUT")" "$(jq -r '.status_voice.type' "$LAYOUT")" '' "$voice_overwrites"
+status_voice_id=$channel_id
 while IFS= read -r name; do
   if [[ $name == Admin || $name == Guilds ]]; then deny=1024; else deny=0; fi
   overwrites=$(jq -nc --argjson c "$common" --arg id "$guild" --arg deny "$deny" '$c + [{id:$id,type:0,allow:"0",deny:$deny}]')
@@ -149,5 +172,13 @@ if ! $dry; then
   mkdir -p "$HOME/.config/lembitu"
   mv "$work/webhooks.env" "$HOME/.config/lembitu/discord-webhooks.env"
   chmod 600 "$HOME/.config/lembitu/discord-webhooks.env"
+  # Replace both discovered IDs in one rename on the same filesystem, retaining wizard IDs.
+  ids_tmp=$(mktemp "$HOME/.config/lembitu/.discord.env.XXXXXX")
+  while IFS= read -r line || [[ -n $line ]]; do
+    case "$line" in DISCORD_ROLE_PLAYER_ID=*|DISCORD_STATUS_VOICE_CHANNEL_ID=*) ;; *) printf '%s\n' "$line" ;; esac
+  done < "$ids" > "$ids_tmp"
+  printf 'DISCORD_ROLE_PLAYER_ID=%s\nDISCORD_STATUS_VOICE_CHANNEL_ID=%s\n' "$(jq -r '.Player' <<< "$role_ids")" "$status_voice_id" >> "$ids_tmp"
+  chmod 600 "$ids_tmp"
+  mv "$ids_tmp" "$ids"
 fi
 echo 'Layout reconciled; unrelated channels, roles and webhooks preserved.'
