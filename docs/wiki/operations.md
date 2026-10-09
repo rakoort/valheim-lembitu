@@ -352,6 +352,36 @@ connected. The deploy went in this order:
 the chainloader completes, so a verify straight after a fresh container's boot can report those keys
 absent. Re-run `scripts/verify-enforced-config.sh` before treating it as drift.
 
+**Pack v17 on `LembituRun`, 2026-10-09** (owner's go). Nobody was connected. In order:
+1. Backups: the hourly unit's archive `lembitu-all-worlds-20261009T145716Z.tar.gz` and
+   `lembitu-bepinex-state-20261009-pre-v17.tar.gz`, both copied to astral-tricep.
+2. `docker stop -t 120 lembitu`; the live checkout fast-forwarded to `a589de3`; the Mac's `dist/`
+   copied over; the Pack unpacked to `~/lembitu/pack/2026-10-09-v17` for ServerManager's policy;
+   `~/.config/lembitu/deploy.env` set with `LEMBITU_LOAD_SERVER_CHARACTER=false`; the bot token
+   added to `launch.secret.env` as `SERVERMANAGER_DISCORD_BOT_TOKEN`.
+3. `scripts/install-plugins.sh` pruned DiscordConnector, Item_Requirement and MaxPlayerCount; the
+   same three were removed from the container's mirror on the host while the container was down,
+   because `prune-mirror` needs a running container and the old plugins must not load beside
+   ServerManager. The web map's overlay was copied as its first target, since the applier refuses an
+   overlay with no generated file.
+4. The container was recreated with `scripts/launch-server.sh run` (frozen updater, reservation,
+   loopback map): `ServerManager policy verified: 78 required DLLs, 7 optional`, `discord.yml: 4
+   webhook routes`, `enforced config verified: 448 entries match`, game `l-1.0.17`, `68 loaded, 1
+   skipped, 0 failed`, no version-mismatch warning, `ZNet.LoadWorld: LembituRun … save number 148`,
+   `Opened Steam server`, and the map at `https://lembitu-map.astral.ee` answering 200.
+5. Release `client-pack-2026-10-09-v17` published with `scripts/publish-pack.sh`, announced in
+   `#announcements` with `@Player`.
+6. Timers installed: maintenance (first run 06:00 Oslo), monitor (with
+   `LEMBITU_QUERY_TARGET=lembitu.astral.ee`), DNS, Discord status (now from the main checkout) and
+   the updated backup. The status message read `Pack: 2026-10-09-v17`.
+
+Two findings. The first backup after boot ran in the seconds before ServerManager created its
+`characters/` directory and was refused ("ServerManager installed without character store"), so the
+monitor raised one backup fault; a rerun a minute later succeeded and verified 448 entries. And
+Discord refused the bot's privileged intent: the Lembitu Server application needs **Message Content
+Intent** switched on in the Developer Portal for the chat bridge; webhooks and the status display do
+not need it. Enrollment stays open until yesterday's three players have joined once.
+
 ## Backups — #20
 
 **The container's own backup must stay off on this server, and that is a measured finding, not a
