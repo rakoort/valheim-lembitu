@@ -615,7 +615,7 @@ publishing or posting (GitHub repository metadata is read). If release creation 
 is sent; if the announcement fails, it clearly reports that the release already exists, so do not
 blindly rerun publication. `test/publish-pack.test.sh` exercises fake gh and webhook failures.
 
-A successful build also writes the label to `dist/.lembitu-pack-version`; the server installer
+A successful build also writes the label to `.lembitu-pack-version` in `dist/`; the server installer
 copies it into the target BepInEx root for the live status display. Build and deploy the matching
 staged tree; publishing alone does not change the server's label.
 
