@@ -48,6 +48,20 @@ secret.write_text('DISCORD_WEBHOOK_STATUS=https://example.invalid/status\nDISCOR
 spec=importlib.util.spec_from_file_location('m',root/'scripts/maintenance-restart.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 # Independent .NET BinaryWriter/SHA256 oracle, observed with dotnet fsi.
 assert m.job_id("0 0 6 7 10 *", "save")=="save-3d78a57ed14e32f42dbdd5eebfc32a6e5a2d5a0d"
+# Discord's Cloudflare refuses Python's default "Python-urllib" agent with HTTP 403 (error 1010),
+# which silently dropped every restart warning on 2026-10-09; the real post() must name itself.
+sent=[]
+class Reply:
+ def __enter__(self):return self
+ def __exit__(self,*a):return False
+ def read(self):return b''
+real_urlopen=m.urllib.request.urlopen
+m.urllib.request.urlopen=lambda request,timeout:(sent.append(request),Reply())[1]
+m.post('https://example.invalid/status','warning')
+m.urllib.request.urlopen=real_urlopen
+agent=sent[0].get_header('User-agent') or ''
+assert agent.startswith('DiscordBot (') and 'Python-urllib' not in agent,agent
+print('pass: webhook posts carry a Discord-accepted User-Agent')
 class Clock:
  def __init__(self):self.now=1791320000
  def time(self):return self.now

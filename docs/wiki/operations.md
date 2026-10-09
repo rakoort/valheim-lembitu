@@ -655,6 +655,12 @@ its addon and World Edit Commands on top of the Pack; any other player stands in
 
 A Windows player reported that pressing E on a wood portal crashed the game. ServerManager's per-player log put both of the player's disconnects beside the portal at (44, 34, 219), near the sacrificial stones. On a copy of the live world on the test host, XPortal 1.2.25's configuration panel opened there with both buttons non-interactable while it blocked game input; far from the stones it worked. XPortal 1.2.26 fixes this upstream (the panel now outranks the game's start-temple UI group), and the same run with it shows the buttons interactable. The pin moved to 1.2.26 in `docs/modstack.md`. The Windows process exit itself was not captured, because no Player.log or crash dump was available.
 
+### Pack v18 deploy and the silent restart warnings — 2026-10-09
+
+Pack v18 (every mod at its latest release, XPortal's fix included) went live at 23:39 EEST with nobody online. ServerManager's policy was regenerated from `~/lembitu/pack/2026-10-09-v18`, the enforced config was verified at 448 entries, and 68 plugins loaded. The same run was first proven on a copy of the live world on the test host (`~/lembitu-native-tests/20261009T201218Z-update-live`): all 128,551 world objects loaded under Expand World Size 1.44, and the world saved and reloaded. No hook of ours switched off, and the near-spawn portal panel worked.
+
+The deploy restart showed that `scripts/maintenance-restart.py` had never delivered its 10-, 5- and 1-minute warnings to `#status`. Discord's Cloudflare answers Python's default `Python-urllib` agent with HTTP 403 (error 1010), and the script only logs "Discord delivery failed". It now sends the same `DiscordBot (...)` agent as the shell scripts. `test/launch-server.test.sh` checks the agent the real `post()` sends. Check 6 above remains open until a restart with a player online shows the warnings in `#status`.
+
 ## Exclusions
 
 - The overlay does not own every setting. PvP and death now follow vanilla rules. No biome-forced flag, flagged-player retention or special tombstone-looting rule replaces the removed mod.

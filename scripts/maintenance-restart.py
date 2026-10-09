@@ -24,7 +24,9 @@ def post(url, message):
         print('warning: Discord webhook missing; not posting', file=sys.stderr)
         return
     try:
-        request = urllib.request.Request(url, json.dumps({'content': message, 'allowed_mentions': {'parse': []}}).encode(), {'Content-Type': 'application/json'}, method='POST')
+        # Discord's Cloudflare refuses Python's default "Python-urllib" agent (HTTP 403, error 1010).
+        headers = {'Content-Type': 'application/json', 'User-Agent': 'DiscordBot (https://github.com/rakoort/valheim-lembitu, 1)'}
+        request = urllib.request.Request(url, json.dumps({'content': message, 'allowed_mentions': {'parse': []}}).encode(), headers, method='POST')
         with urllib.request.urlopen(request, timeout=15) as response:
             response.read()
     except Exception:
