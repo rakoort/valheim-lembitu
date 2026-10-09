@@ -258,9 +258,9 @@ Seven steps stand between the Shakedown Pack and players (owner answers 2026-10-
    in Skadi from the 2026-10-03 world; it is moved aside, not deleted, before the Shakedown world's
    first boot, so the committed empty roster seeds it.
 2. **ServerQuickConnect is seeded.** `config/client/radamanto.ServerQuickConnect.cfg` points the
-   main-menu button "Join Lembitu" at `85.253.16.237:2456`, astral-bicep's public IPv4 on
-   2026-10-05, with a blank password, which stays with each player. The address is not stable: it was
-   145.14.28.153 on 2026-09-15. When it changes, the seed and the Pack change with it.
+   main-menu button "Join Lembitu" at `lembitu.astral.ee:2456` from Pack v17, with a blank password,
+   which stays with each player. Through v16 it held an address (`85.253.16.237`), which went stale
+   when the home address changed; the name is kept current by `scripts/update-dns.sh` (below).
 3. **Drop `Lembitu.LevelUpSound` from the live server.** The current server loads
    `Lembitu.LevelUpSound.dll`, deployed 2026-10-03 from untracked source in the bicep checkout; the
    owner retired it on 2026-10-04. The live install manifest owns it (the server's
@@ -530,6 +530,25 @@ limited to the zone (DNS edit, zone read, WAF edit) and to Cloudflare Tunnel, th
 updates the game record, the tunnel, its route and CNAME, and the rate-limit rule, and copies the
 tunnel token and the API token to private files on astral-bicep, the latter for the address
 updater. Tokens reach `curl` and `ssh` on standard input, never as arguments.
+A token whose TTL start date lies in the future verifies as "active" yet refuses every call, and
+one with an expiry date would later strand the updater; the wizard now refuses both.
+
+**Set up 2026-10-09.** The owner ran the wizard: `lembitu.astral.ee` (A, DNS only) and
+`lembitu-map.astral.ee` (CNAME to the tunnel, proxied) exist, the rate-limit rule is in place, and
+the token has no TTL dates. The `lembitu-tunnel` container runs on astral-bicep and registered four
+connections to Cloudflare. From astral-tricep the map answered HTTP 502, Cloudflare reaching the
+tunnel with nothing yet on port 3000 (the web map ships with Pack v17), and a burst of 140 requests
+drew 23 × 429 from Cloudflare's rule. No router port was opened.
+
+**`scripts/update-dns.sh` follows the home address.** Run every five minutes by
+`config/dns/lembitu-dns.timer` on astral-bicep, it reads `~/.config/lembitu/cloudflare.env`, takes
+the first public IPv4 from two address services, and patches each A record in `CLOUDFLARE_RECORDS`
+whose content differs. A private, missing or failed answer leaves the records alone. With a 60 s
+TTL, players reach a new address within about six minutes. `test/update-dns.test.sh` covers it
+against a fake API (9 checks); a dry run on astral-bicep with the real token reported
+`lembitu.astral.ee already 85.253.100.163`. The units are installed at cutover, like the others.
+The outside reachability check in monitoring uses the same name: set
+`LEMBITU_QUERY_TARGET=lembitu.astral.ee` in the monitor unit's drop-in.
 
 ## Owner's two-account session before Pack v17
 

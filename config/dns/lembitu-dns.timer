@@ -1,0 +1,11 @@
+[Unit]
+Description=Check astral-bicep's home address every five minutes
+
+[Timer]
+# The record's TTL is 60 s, so a changed address reaches players within about six minutes.
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

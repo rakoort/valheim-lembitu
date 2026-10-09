@@ -1,0 +1,10 @@
+[Unit]
+Description=Keep lembitu.astral.ee pointing at astral-bicep's current home address
+Documentation=https://github.com/rakoort/valheim-lembitu/blob/master/docs/wiki/operations.md
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Reads ~/.config/lembitu/cloudflare.env (0600), written by scripts/wizard-cloudflare.sh.
+ExecStart=%h/code/valheim-lembitu/scripts/update-dns.sh
+TimeoutStartSec=5min
