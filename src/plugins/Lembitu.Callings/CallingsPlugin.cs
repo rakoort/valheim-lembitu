@@ -58,6 +58,7 @@ public sealed class CallingsPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "Herbalist bonus output", BonusOutput.HerbalistPlan);
         Hooks.Enable(_harmony, log, "Fishing bonus output", BonusOutput.FishingPlan);
         Hooks.Enable(_harmony, log, "Explorer markers reach further as the skill grows", ExplorerRange.Plan);
+        Hooks.Enable(_harmony, log, "Explorer pays new-biome XP once per biome, not per crossing", BiomeDiscovery.Plan);
         Hooks.Enable(_harmony, log, "Dishes carry the cook's grade", CooksGrade.CraftPlan);
         Hooks.Enable(_harmony, log, "The cook's grade through cooking stations", StationGrade.Plan);
         CooksGrade.FoodOn = Hooks.Enable(_harmony, log, $"The cook's grade in food stats and shelf life ({Pinned.Loaded(CooksGrade.FineDiningGuid, "FineDining")})", CooksGrade.FoodPlan);

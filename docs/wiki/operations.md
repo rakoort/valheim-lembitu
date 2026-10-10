@@ -663,6 +663,10 @@ The deploy restart showed that `scripts/maintenance-restart.py` had never delive
 
 **Test servers posted to the players' Discord.** The live-world copies used for the v18 checks came from a backup, and backups include ServerManager's discord.yml (in the save directory) with the real bot token and webhooks. Eight test sessions on 2026-10-09 (19:03–20:19 UTC) therefore posted their test characters' joins, chat greetings and admin alerts, plus their own restarts, into `#activity`, `#chat`, `#admin-alerts` and `#status`. The 56 posts were deleted through the webhooks that sent them on 2026-10-10. `scripts/native_session.py` now deletes that file from any save directory a test server adopts.
 
+### Explorer XP on every portal trip — 2026-10-10
+
+A player reported a burst of Explorer XP on every portal use. The server's profession log showed Trilby god's Explorer going from 14.9 to 18.9 in ten minutes (152.8 raw XP, against 1.7 in the window before), with the level-ups between the Meadows base by the stones and the BF1 portal in the Black Forest. Valheim 1.0.17 calls `Player.AddKnownBiome` with a `BiomeSector` at every biome change. Explorer 1.1.7 still patches it as if it took the old `Heightmap.Biome`, so its "already known" check never matches and it pays the 10-XP new-biome reward at every crossing. On a copy of the live world (`~/lembitu-native-tests/20261010T114240Z-explorer-biome`), a fresh character's Explorer rose from 6 to 12 over eight base-to-BF1 crossings. With `Lembitu.Callings`' `BiomeDiscovery` fix (`20261010T115148Z-explorer-biome`), only the first Black Forest arrival paid (6 to 7) and the next seven paid nothing. The fix is client-side, so it reaches players with the next Pack. Explorer levels already gained this way stay unless corrected by hand.
+
 ## Exclusions
 
 - The overlay does not own every setting. PvP and death now follow vanilla rules. No biome-forced flag, flagged-player retention or special tombstone-looting rule replaces the removed mod.
