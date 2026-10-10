@@ -367,6 +367,39 @@ internal sealed class HarnessControl
                 yield return null;
                 yield return null;
                 break;
+            case "settings":
+            {
+                // The pause menu's Settings button and the settings window's Accept, by the methods
+                // those buttons call. Accept must save and close; a mod throwing inside
+                // Settings.ApplyAndClose leaves the window open, which fails here.
+                if (command.target == "open")
+                {
+                    if (Settings.instance != null) throw new InvalidOperationException("settings already open");
+                    Menu.instance.Show();
+                    Menu.instance.OnSettings();
+                    float opened = Time.realtimeSinceStartup + 10f;
+                    while (Settings.instance == null)
+                    {
+                        if (Time.realtimeSinceStartup >= opened) throw new TimeoutException("settings window did not open");
+                        yield return null;
+                    }
+                }
+                else if (command.target == "ok")
+                {
+                    if (Settings.instance == null) throw new InvalidOperationException("settings are not open");
+                    Settings.instance.OnOk();
+                    float closed = Time.realtimeSinceStartup + 10f;
+                    while (Settings.instance != null)
+                    {
+                        if (Time.realtimeSinceStartup >= closed) throw new InvalidOperationException("settings stayed open after Accept");
+                        yield return null;
+                    }
+                    Menu.instance.Hide();
+                }
+                else throw new ArgumentException("settings target must be open or ok");
+                yield return null;
+                break;
+            }
             case "screenshot":
             {
                 if (!Path.IsPathRooted(command.target) || File.Exists(command.target))
