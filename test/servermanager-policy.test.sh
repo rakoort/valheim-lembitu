@@ -9,6 +9,7 @@ passed=0; failed=0
 report() { if [[ "$1" == ok ]]; then echo "pass: $2"; passed=$((passed + 1)); else echo "FAIL: $2"; failed=$((failed + 1)); fi; }
 mkdir -p "$WORK/pack/BepInEx/plugins/Combat" "$WORK/pack/BepInEx/plugins/Tally" \
   "$WORK/pack/BepInEx/plugins/AzuClock" "$WORK/pack/BepInEx/plugins/oathbound_addon" \
+  "$WORK/pack/BepInEx/plugins/ValheimVisualEnhanced/ValheimVisualEnhanced" \
   "$WORK/pack/BepInEx/plugins/Server_devcommands" "$WORK/store/characters/account"
 write_managed() {
   python3 - "$1" "$2" <<'PY'
@@ -28,6 +29,7 @@ write_managed "$WORK/pack/BepInEx/plugins/Combat/Combat.dll" combat
 write_managed "$WORK/pack/BepInEx/plugins/Tally/Tally.dll" tally
 write_managed "$WORK/pack/BepInEx/plugins/AzuClock/AzuClock.dll" clock
 write_managed "$WORK/pack/BepInEx/plugins/oathbound_addon/Addon.dll" addon
+write_managed "$WORK/pack/BepInEx/plugins/ValheimVisualEnhanced/ValheimVisualEnhanced/ValheimVisualEnhanced.dll" visuals
 write_managed "$WORK/pack/BepInEx/plugins/Server_devcommands/server_devcommands.dll" admin
 printf native > "$WORK/pack/BepInEx/plugins/Combat/libvlc.dll"
 printf character > "$WORK/store/characters/account/Hero.fch"
@@ -36,6 +38,8 @@ run() { "$ROOT/scripts/servermanager-policy.sh" "$1" --pack "$WORK/pack" --store
 if run apply && [[ -f "$WORK/store/required/Tally/Tally.dll" ]] \
   && [[ -f "$WORK/store/optional/AzuClock/AzuClock.dll" ]] \
   && [[ -f "$WORK/store/optional/oathbound_addon/Addon.dll" ]] \
+  && [[ -f "$WORK/store/optional/ValheimVisualEnhanced/ValheimVisualEnhanced/ValheimVisualEnhanced.dll" ]] \
+  && [[ ! -e "$WORK/store/required/ValheimVisualEnhanced" ]] \
   && [[ ! -e "$WORK/store/required/Server_devcommands" ]] \
   && [[ ! -e "$WORK/store/required/Combat/libvlc.dll" ]] \
   && [[ "$(cat "$WORK/store/characters/account/Hero.fch")" == character ]] \

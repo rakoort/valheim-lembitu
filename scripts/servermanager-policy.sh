@@ -22,8 +22,11 @@ parser.add_argument('--pack', type=Path, required=True)
 parser.add_argument('--store', type=Path, required=True)
 parser.add_argument('--load-server-character', choices=('false', 'true'), required=True)
 args = parser.parse_args()
+# Presentation-only mods a client may leave out. ValheimVisualEnhanced is filtered to the client
+# process and has no sync; tricep's GPU hangs with it, so it is optional (owner, 2026-10-10).
 optional = {'AzuHoverStats', 'AzuClock', 'MouseTweaks', 'CraftingSearch',
-            'CompactStatusEffects', 'LiveExperienceTracker', 'oathbound_addon'}
+            'CompactStatusEffects', 'LiveExperienceTracker', 'oathbound_addon',
+            'ValheimVisualEnhanced'}
 server_only = {'ValheimWebMap', 'Server_devcommands', 'OdinEye', 'Lembitu.Harness'}
 plugins = args.pack / 'BepInEx/plugins'
 if not plugins.is_dir():
