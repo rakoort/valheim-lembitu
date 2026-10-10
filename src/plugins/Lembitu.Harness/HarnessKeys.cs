@@ -22,8 +22,8 @@ internal static class HarnessKeys
 {
     /// <summary>
     /// Presses <paramref name="keyName"/> (a Unity InputSystem <c>Key</c> name, e.g. "F7") and
-    /// returns a result for the command response through <paramref name="done"/>. The readback
-    /// proves the key state reached the InputSystem; xdotool reports delivery only.
+    /// returns a result for the command response through <paramref name="done"/>. Both paths read
+    /// the key's InputSystem state back while it is held, so <c>pressed</c> means the game saw it.
     /// </summary>
     public static IEnumerator Press(string keyName, string method, float holdSeconds, ManualLogSource log, Action<KeyResult> done)
     {
@@ -36,7 +36,7 @@ internal static class HarnessKeys
         bool wantSynthetic = method is "auto" or "synthetic";
         if (wantXdotool)
         {
-            yield return XdotoolPress(keyName, holdSeconds, log, result);
+            yield return XdotoolPress(key, holdSeconds, log, result);
             if (result.pressed)
             {
                 done(result);
@@ -97,8 +97,25 @@ internal static class HarnessKeys
         yield break;
     }
 
-    /// <summary>Real XTEST input through xdotool; false when it is not usable and the caller should fall back.</summary>
-    private static IEnumerator XdotoolPress(string keyName, float holdSeconds, ManualLogSource log, KeyResult result)
+    /// <summary>
+    /// X keysyms for InputSystem keys whose names differ; xdotool silently ignores an unknown name
+    /// and still exits 0, so "LeftAlt" pressed nothing (2026-10-10). Letters, digits and F-keys
+    /// share their names.
+    /// </summary>
+    private static string Keysym(Key key) => key switch
+    {
+        Key.LeftAlt => "Alt_L", Key.RightAlt => "Alt_R",
+        Key.LeftShift => "Shift_L", Key.RightShift => "Shift_R",
+        Key.LeftCtrl => "Control_L", Key.RightCtrl => "Control_R",
+        Key.Enter => "Return", Key.Space => "space", Key.Backspace => "BackSpace",
+        Key.UpArrow => "Up", Key.DownArrow => "Down", Key.LeftArrow => "Left", Key.RightArrow => "Right",
+        Key.Digit0 => "0", Key.Digit1 => "1", Key.Digit2 => "2", Key.Digit3 => "3", Key.Digit4 => "4",
+        Key.Digit5 => "5", Key.Digit6 => "6", Key.Digit7 => "7", Key.Digit8 => "8", Key.Digit9 => "9",
+        _ => key.ToString(),
+    };
+
+    /// <summary>Real XTEST input through xdotool; not pressed when xdotool is unusable or the game never saw the key.</summary>
+    private static IEnumerator XdotoolPress(Key key, float holdSeconds, ManualLogSource log, KeyResult result)
     {
         string? binary = OnPath("xdotool");
         string? display = Environment.GetEnvironmentVariable("DISPLAY");
@@ -113,7 +130,10 @@ internal static class HarnessKeys
             Run(binary, display, $"windowfocus --sync {id}", out status);
             if (status != 0) yield break;
         }
-        Run(binary, display, $"keydown {keyName}", out status);
+        string keysym = Keysym(key);
+        KeyControl? control = Keyboard.current?[key];
+        bool seen = false;
+        Run(binary, display, $"keydown {keysym}", out status);
         if (status != 0) yield break;
         try
         {
@@ -122,13 +142,15 @@ internal static class HarnessKeys
             {
                 yield return null;
                 result.frames++;
+                seen |= control != null && control.isPressed;
             }
         }
-        finally { Run(binary, display, $"keyup {keyName}", out status); }
+        finally { Run(binary, display, $"keyup {keysym}", out status); }
         yield return null;
         yield return null;
         result.method = "xdotool";
-        result.pressed = status == 0;
+        result.pressed = seen;
+        if (!seen) log.LogWarning($"xdotool sent {keysym} but the game never saw {key} pressed");
     }
 
     private static string Run(string binary, string display, string arguments, out int status)

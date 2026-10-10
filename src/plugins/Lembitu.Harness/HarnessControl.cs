@@ -844,6 +844,8 @@ internal sealed class HarnessControl
                 { center = MessageHud.instance.m_messageCenterText.text, topLeft = MessageHud.instance.m_messageText.text },
             recentMessages = recentMessages.ToArray(),
             chat = chatLines.ToArray(),
+            chatWindowActive = Chat.instance != null && Chat.instance.m_chatWindow.gameObject.activeInHierarchy,
+            chatFocused = Chat.instance != null && Chat.instance.HasFocus(),
             windows = Windows().ToArray(),
             mapPins = Minimap.instance == null ? Array.Empty<MapPinState>() : Minimap.instance.m_pins.Select(p =>
                 new MapPinState { name = p.m_name, save = p.m_save, type = p.m_type.ToString(), x = p.m_pos.x, y = p.m_pos.y, z = p.m_pos.z }).ToArray(),
@@ -979,6 +981,7 @@ internal sealed class HarnessControl
         public SkillState[] skills = null!;
         public MessageState messages = null!;
         public RecentLine[] recentMessages = Array.Empty<RecentLine>(), chat = Array.Empty<RecentLine>();
+        public bool chatWindowActive, chatFocused;
         public WindowState[] windows = Array.Empty<WindowState>();
         public MapPinState[] mapPins = Array.Empty<MapPinState>();
         public ExplorerTrackerState[] explorerTrackers = Array.Empty<ExplorerTrackerState>();
