@@ -31,7 +31,9 @@ Earlier entries below retain dated history, not conflicting current instructions
 **BetterArchery 2.0.2 returns** (ishid4, latest package dated 2026-09-20), reversing the
 2026-10-04 cut for unsynced gameplay. Lembitu.Oathbound locks BetterArchery ConfigEntry objects
 through server-locked Jotunn values at load, server arrival and local edit. Gameplay uses stock:
-quiver on; arrow improvements on, velocity 70, gravity 15, accuracy 0, aim direction (0, 0.05, 0);
+quiver on (turned off on 2026-10-10: AzuExtendedPlayerInventory forces it off, and a locked-on quiver
+added two inventory rows that held any item; the lock no longer covers it); arrow improvements on,
+velocity 70, gravity 15, accuracy 0, aim direction (0, 0.05, 0);
 bow draw movement reduction, crouch draw and wooden arrows anywhere on; retrievable arrows on,
 disappear time 60, disappear on hit off, solid collider off, auto pickup off and the package's
 retrieve-list string unchanged. Quiver slot/model/HUD positions and hotkeys, Bow Zoom, draw-cancel
@@ -40,8 +42,8 @@ Ranger True Flight (+10% projectile speed) and Snapshot (+50% for five seconds a
 on top. Both client and server install it: its decompile registers quiver network prefabs in
 ZNetScene (1171–1191), items in ObjectDB (1200–1222), and patches ObjectDB (3143–3158)
 (/tmp/lembitu-research/ProgressionCluster/BetterArchery.cs, worker evidence). The declared
-BepInEx 5.4.1501 dependency requires the documented stage-stack override. Removing BetterArchery
-later loses arrows in its quiver. The live lock still needs native proof (#93).
+BepInEx 5.4.1501 dependency requires the documented stage-stack override. The live lock still needs
+native proof (#93).
 
 **EpicLoot returns to stock** (#98). The only deliberate server deviation is Item Drop Limits =
 PlayerMustKnowRecipe: stock world-key filtering would stay at Meadows because this Run blocks

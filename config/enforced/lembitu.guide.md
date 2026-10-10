@@ -37,7 +37,7 @@ Classes keep their equipment rules - mages wear no metal armour, shieldbearers c
 
 A Hunter orders the wolf with Y: free hunt, stay, heel or recall. Stay and heel keep it out of fights it would otherwise start; recall breaks off a fight at once.
 
-BetterArchery adds a quiver, bow zoom and retrievable arrows. Gameplay is server-locked at the mod defaults; zoom, hotkeys, quiver layout and visuals remain yours. Ranger True Flight and Snapshot stack above its arrow speed. Removing BetterArchery loses arrows held in its quiver.
+BetterArchery adds bow zoom, better arrow flight and retrievable arrows. Its quiver is off: AzuExtendedPlayerInventory owns the inventory, so arrows stay in your bag. Gameplay is server-locked at the mod defaults; zoom, hotkeys and visuals remain yours. Ranger True Flight and Snapshot stack above its arrow speed.
 
 page calling | Calling
 Your Calling is four focus professions: two Land, one Craft, one Road.

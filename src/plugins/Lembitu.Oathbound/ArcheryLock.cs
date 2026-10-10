@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HarmonyLib;
 using Jotunn.Managers;
 using Jotunn.Utils;
 using BepInEx.Bootstrap;
@@ -10,7 +9,9 @@ using UnityEngine;
 
 namespace Lembitu.Oathbound;
 
-/// <summary>Mirror only BetterArchery gameplay entries through Jotunn's admin-only config sync.</summary>
+/// <summary>Mirror only BetterArchery gameplay entries through Jotunn's admin-only config sync.
+/// The quiver is not one of them: AzuExtendedPlayerInventory forces BetterArchery's Enable Quiver
+/// off and keeps it off, because the quiver's extra rows collide with AzuEPI's slot rows.</summary>
 internal static class ArcheryLock
 {
     internal const string Guid = "ishid4.mods.betterarchery";
@@ -21,7 +22,6 @@ internal static class ArcheryLock
 
     public static void Configure(ConfigFile config)
     {
-        Add(config, "Quiver", "Enable Quiver", true);
         Add(config, "Arrow Improvements", "Enable Arrow Improvements", true);
         Add(config, "Arrow Improvements", "Set Arrow Velocity", 70f);
         Add(config, "Arrow Improvements", "Set Arrow Gravity", 15f);
@@ -73,7 +73,6 @@ internal static class ArcheryLock
                 throw new HookMismatch($"BetterArchery {info.Metadata.Version}; verified release is 2.0.2");
             foreach (Action<ConfigFile> bind in Bindings) bind(info.Instance.Config);
             foreach (Action apply in Apply) apply();
-            RestoreQuiverAssets(info.Instance.GetType());
             SynchronizationManager.OnConfigurationSynchronized += Synced;
             log.LogInfo($"{feature}: on (BetterArchery 2.0.2)");
         }
@@ -87,31 +86,6 @@ internal static class ArcheryLock
     private static void Synced(object sender, ConfigurationSynchronizationEventArgs args)
     {
         foreach (Action apply in Apply) apply();
-    }
-
-    // BetterArchery skips loading its quiver bundle when an old local cfg disables the quiver.
-    // Our dependency has already run Awake, but ZNetScene/ObjectDB have not: restore the same
-    // prefabs before their registration hooks, rather than leave a locked-on quiver without items.
-    private static void RestoreQuiverAssets(Type plugin)
-    {
-        var prefabs = (Dictionary<string, GameObject>)AccessTools.Field(plugin, "Prefabs").GetValue(null);
-        if (prefabs.Count != 0) return;
-        object recipes = AccessTools.Field(plugin, "Recipes").GetValue(null)
-            ?? throw new HookMismatch("BetterArchery quiver recipes unavailable");
-        var list = (System.Collections.IEnumerable)AccessTools.Field(recipes.GetType(), "recipes").GetValue(recipes);
-        using var stream = plugin.Assembly.GetManifestResourceStream(plugin.Assembly.GetName().Name + ".quiverassets")
-            ?? throw new HookMismatch("BetterArchery quiver assets unavailable");
-        AssetBundle bundle = AssetBundle.LoadFromStream(stream);
-        if (bundle == null) throw new HookMismatch("BetterArchery quiver bundle did not load");
-        try
-        {
-            foreach (object recipe in list)
-            {
-                string item = (string)AccessTools.Field(recipe.GetType(), "item").GetValue(recipe);
-                if (bundle.Contains(item)) prefabs.Add(item, bundle.LoadAsset<GameObject>(item));
-            }
-        }
-        finally { bundle.Unload(false); }
     }
 
     public static void Disable()
