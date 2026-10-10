@@ -358,6 +358,13 @@ class Session:
         self.server_password = password or ('N' + uuid.uuid4().hex[:16])
         self.server_world = world or ('N' + uuid.uuid4().hex)
         self.server_saves = Path(save_dir) if save_dir else self._fresh_saves('server')
+        # A save dir copied from the live server (a backup) carries ServerManager's discord.yml with
+        # the real bot token and webhooks; a test server must never post to the players' Discord.
+        # On 2026-10-09 eight test sessions did, and their joins and restarts had to be deleted.
+        live_discord = self.server_saves / 'ServerManager/discord.yml'
+        if live_discord.exists():
+            live_discord.unlink()
+            self.event('discord-config-removed', path=str(live_discord))
         server_game = self._prepare(self.server_dir, 'server')
         if self.mode == 'full-pack':
             if fresh and save_dir is None:

@@ -80,20 +80,22 @@
         "allow": "0",
         "deny": "1024"
       }
-    ],
-    "guild": [
-      {
-        "subject": "everyone",
-        "allow": "0",
-        "deny": "1024"
-      },
-      {
-        "subject": "Guild",
-        "allow": "117760",
-        "deny": "0"
-      }
     ]
   },
+  "guilds": [
+    {
+      "name": "ING",
+      "slug": "ing"
+    },
+    {
+      "name": "Fenrir",
+      "slug": "fenrir"
+    },
+    {
+      "name": "Muninn",
+      "slug": "muninn"
+    }
+  ],
   "channels": [
     {
       "name": "📖-how-it-works",

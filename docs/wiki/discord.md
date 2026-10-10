@@ -26,7 +26,7 @@ The agent builds and keeps this layout; changes go through this page first.
 | Server | `#activity` | Everyone | ServerManager webhook: `player.connection`, `player.death`, `boss.killed`, `raid.status` |
 | Server | `#chat` | Player role | ServerManager bot (chat channel) and webhook `chat.shout` |
 | Help | `#support` | Everyone | Players and the owner |
-| Guilds | one channel per Guild | That Guild's role and the owner | Made by the agent when the Guild forms |
+| Guilds | per Guild: a text channel (`#ing`, `#fenrir`, `#muninn`) and a voice channel (`🔊 ING`, `🔊 Fenrir`, `🔊 Muninn`) | That Guild's role, the owner and the bots; members may write, connect, speak and stream | Declared under `guilds` in `config/discord/layout.json` (2026-10-10, owner): ING is the in-game guild [ING] ILVAR NARKO GAMING, while Fenrir and Muninn are named after unclaimed start regions until those guilds form. The owner gives each member their **Guild · name** role. Channels are matched by name, so renaming a Guild in the layout creates new channels and leaves the old ones for the owner to delete |
 | Admin | `#admin-alerts` | Owner and bots | ServerManager webhook: `security.alert`, `security.admin_bypass`, `character.validation`, `character.shadow_stalled`, `character.revision_observed`, `connection.rejected`, `moderation.action`, `command.executed`, `cron.executed`; and the monitor |
 | Admin | `#admin-console` | Owner and bots | ServerManager bot (admin channel for slash commands) |
 

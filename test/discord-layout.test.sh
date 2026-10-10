@@ -73,7 +73,7 @@ report test "$(cksum < "$HOME/.config/lembitu/discord.env")" = "$ids_before"
 report state '.writes == 0'
 report test ! -e "$HOME/.config/lembitu/discord-webhooks.env"
 report run
-report state '(.roles | length) == 3 and (.channels | length) == 17 and ([.hooks[][]] | length) == 6'
+report state '(.roles | length) == 6 and (.channels | length) == 23 and ([.hooks[][]] | length) == 6'
 report state 'any(.channels[]; .name == "🌍-web-map" and (.topic | contains("https://lembitu-map.astral.ee")))'
 report state '(.channels[] | select(.name == "🌍-web-map") | .id) as $c | (.messages[$c] | length) == 1 and (.messages[$c][0] | .pinned == true and (.content | contains("https://lembitu-map.astral.ee")))'
 # The guide channel holds the guide file's posts, in file order, without link previews.
@@ -90,11 +90,11 @@ PY
 report guide_matches "$ROOT/config/discord/how-it-works.md"
 report state 'any(.roles[]; .name == "Player" and .mentionable == true)'
 report state 'any(.channels[]; .name == "🔴 Offline" and .type == 2 and .parent_id == null and .position == 0 and any(.permission_overwrites[]; .id == "11111111111111111" and .allow == "1024" and .deny == "1048576") and any(.permission_overwrites[]; .id == "server" and .allow == "1049616" and .deny == "0"))'
-report python3 -c 'import os,json,stat; p=os.environ["HOME"]+"/.config/lembitu/discord.env"; ids=dict(line.strip().split("=",1) for line in open(p)); s=json.load(open(os.environ["FAKE_STATE"])); assert ids["DISCORD_EXISTING_ID"]=="55555555555555555"; assert ids["DISCORD_ROLE_PLAYER_ID"]==next(r["id"] for r in s["roles"] if r.get("name")=="Player"); assert ids["DISCORD_STATUS_VOICE_CHANNEL_ID"]==next(c["id"] for c in s["channels"] if c["type"]==2); assert stat.S_IMODE(os.stat(p).st_mode)==0o600'
+report python3 -c 'import os,json,stat; p=os.environ["HOME"]+"/.config/lembitu/discord.env"; ids=dict(line.strip().split("=",1) for line in open(p)); s=json.load(open(os.environ["FAKE_STATE"])); assert ids["DISCORD_EXISTING_ID"]=="55555555555555555"; assert ids["DISCORD_ROLE_PLAYER_ID"]==next(r["id"] for r in s["roles"] if r.get("name")=="Player"); assert ids["DISCORD_STATUS_VOICE_CHANNEL_ID"]==next(c["id"] for c in s["channels"] if c["type"]==2 and c.get("parent_id") is None); assert stat.S_IMODE(os.stat(p).st_mode)==0o600'
 report state 'all(.channels[] | select(.type != 2); all(.permission_overwrites[] | select(.id == "server"); ((.allow | tonumber) % 32) < 16))'
 report state 'all(.roles[]; (((.permissions // "0") | tonumber) % 32) < 16)'
 # The running status bot owns the name; layout reconciles by the saved ID.
-jq '(.channels[] | select(.type == 2) | .name) = "🟢 Online · 3 players"' "$FAKE_STATE" > "$WORK/new"
+jq '(.channels[] | select(.type == 2 and .parent_id == null) | .name) = "🟢 Online · 3 players"' "$FAKE_STATE" > "$WORK/new"
 mv "$WORK/new" "$FAKE_STATE"
 first=$(jq .writes "$FAKE_STATE")
 report run
@@ -106,27 +106,35 @@ check_visibility() {
   python3 - "$FAKE_STATE" <<'PY'
 import json,sys
 s=json.load(open(sys.argv[1])); player=next(r["id"] for r in s["roles"] if r.get("name")=="Player")
-def permissions(name,member):
+guild_role={g:next(r["id"] for r in s["roles"] if r.get("name")=="Guild · "+g) for g in ("ING","Fenrir","Muninn")}
+def permissions(name,roles):
  c=next(c for c in s["channels"] if c["name"]==name); p=0
- for ident in (["11111111111111111",player] if member else ["11111111111111111"]):
+ for ident in ["11111111111111111"]+roles:
   for o in c["permission_overwrites"]:
    if o["id"]==ident:p=(p & ~int(o["deny"])) | int(o["allow"])
  return p
 for member in (False,True):
+ roles=[player] if member else []
  for name in ("announcements","rules","status","activity"):
-  p=permissions(name,member); assert p & 1024 and not p & 2048, (name,member,p)
- assert permissions("support",member) & 2048
+  p=permissions(name,roles); assert p & 1024 and not p & 2048, (name,member,p)
+ assert permissions("support",roles) & 2048
  for name in ("admin-alerts","admin-console"):
-  assert not permissions(name,member) & 1024
- assert bool(permissions("password",member)&1024)==member
- assert not permissions("password",member)&2048
- assert bool(permissions("chat",member)&1024)==member
- assert bool(permissions("chat",member)&2048)==member
+  assert not permissions(name,roles) & 1024
+ assert bool(permissions("password",roles)&1024)==member
+ assert not permissions("password",roles)&2048
+ assert bool(permissions("chat",roles)&1024)==member
+ assert bool(permissions("chat",roles)&2048)==member
+# A Guild's text and voice channels open to its own role only: not to players, not to other Guilds.
+for g,slug in (("ING","ing"),("Fenrir","fenrir"),("Muninn","muninn")):
+ voice="🔊 "+g
+ for roles,allowed in (([player,guild_role[g]],True),([player],False),([player]+[r for k,r in guild_role.items() if k!=g],False)):
+  assert bool(permissions(slug,roles)&1024)==allowed and bool(permissions(slug,roles)&2048)==allowed,(slug,roles)
+  v=permissions(voice,roles); assert all(bool(v&bit)==allowed for bit in (1024,1048576,2097152)),(voice,roles,v)
 PY
 }
 report check_visibility
 # Repair voice placement and permissions without clobbering the live status name.
-jq '(.channels[] | select(.type == 2)) |= (.position = 7 | .parent_id = "wrong-category" | .permission_overwrites = [])' "$FAKE_STATE" > "$WORK/new"
+jq '(.channels[] | select(.type == 2 and .parent_id == null)) |= (.position = 7 | .parent_id = "wrong-category" | .permission_overwrites = [])' "$FAKE_STATE" > "$WORK/new"
 mv "$WORK/new" "$FAKE_STATE"
 report run --dry-run
 report state ".writes == $first"
@@ -138,24 +146,6 @@ jq '(.channels[] | select(.name == "password") | .permission_overwrites) = []' "
 mv "$WORK/new" "$FAKE_STATE"
 report run
 report state ".writes == $((first+2))"
-report run guild Ravens ravens
-report state '(.roles | map(select(.name == "Guild · Ravens")) | length) == 1 and (.channels | map(select(.name == "ravens")) | length) == 1'
-guild_writes=$(jq .writes "$FAKE_STATE")
-report run guild Ravens ravens
-report state ".writes == $guild_writes"
-report run
-report state ".writes == $guild_writes"
-reject_collision() {
-  if run guild "$1" "$2"; then return 1; fi
-  state ".writes == $guild_writes"
-}
-report reject_collision Intruders chat
-report reject_collision Intruders ravens
-# An unrelated channel outside Guilds must not be moved into it.
-jq '.channels += [{id:"unrelated",name:"outside",type:0,parent_id:null,permission_overwrites:[]}]' "$FAKE_STATE" > "$WORK/new"
-mv "$WORK/new" "$FAKE_STATE"
-report reject_collision Intruders outside
-report state '.channels[] | select(.id == "unrelated") | .parent_id == null'
 # A guide edit changes its own post in place; a removed section deletes its post; an overlong post
 # stops the run before any write. Runs from a copy so the guide file can change.
 copy="$WORK/root"
@@ -183,6 +173,20 @@ report guide_matches "$guide"
 printf '\n---\n%s' "$(printf 'x%.0s' {1..2001})" >> "$guide"
 if run_copy; then echo 'FAIL: overlong guide post stops the run'; fail=$((fail+1)); else echo 'pass: overlong guide post stops the run'; pass=$((pass+1)); fi
 report state ".writes == $((before+2))"
+# A Guild slug that names a layout channel, or a channel outside Guilds, stops the run unwritten.
+cp "$ROOT/config/discord/how-it-works.md" "$guide"
+guild_slug() { jq --arg s "$1" '.guilds[1].slug = $s' "$ROOT/config/discord/layout.json" > "$copy/config/discord/layout.json"; }
+reject_slug() {
+  guild_slug "$1"
+  if run_copy; then return 1; fi
+  state ".writes == $((before+2))"
+}
+report reject_slug chat
+report reject_slug ing
+jq '.channels += [{id:"unrelated",name:"outside",type:0,parent_id:null,permission_overwrites:[]}]' "$FAKE_STATE" > "$WORK/new"
+mv "$WORK/new" "$FAKE_STATE"
+report reject_slug outside
+report state '.channels[] | select(.id == "unrelated") | .parent_id == null'
 rm "$FAKE_STATE"
 export FAKE_ERROR=429
 report run

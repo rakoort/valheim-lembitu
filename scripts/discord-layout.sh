@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Reconcile the Run's Discord layout without deleting unrelated resources.
-# Usage: discord-layout.sh [--dry-run] [apply | guild NAME CHANNEL-SLUG]
+# Usage: discord-layout.sh [--dry-run] [apply]
 # Requires bash, jq, curl and the wizard's IDs/keychain entry. Dry runs only read Discord.
 set +x
 set -euo pipefail
@@ -12,8 +12,7 @@ mode=${1:-apply}
 if [[ $# -gt 0 ]]; then shift; fi
 case "$mode" in
   apply) [[ $# == 0 ]] || { echo 'Unexpected arguments' >&2; exit 1; } ;;
-  guild) [[ $# == 2 && $2 =~ ^[a-z0-9][a-z0-9-]{0,99}$ && ${#1} -le 80 && -n $1 ]] || { echo 'Usage: discord-layout.sh [--dry-run] guild NAME CHANNEL-SLUG' >&2; exit 1; } ;;
-  *) echo 'Usage: discord-layout.sh [--dry-run] [apply | guild NAME CHANNEL-SLUG]' >&2; exit 1 ;;
+  *) echo 'Usage: discord-layout.sh [--dry-run] [apply]' >&2; exit 1 ;;
 esac
 for cmd in jq curl security; do command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd" >&2; exit 1; }; done
 # Read only known non-secret IDs, rather than executing the env file as shell code.
@@ -93,22 +92,27 @@ ensure_role() {
   fi
   role_ids=$(jq --arg key "$key" --arg id "$id" '. + {($key):$id}' <<< "$role_ids")
 }
-if [[ $mode == guild ]]; then
-  if jq -e --arg n "$2" 'any(.channels[]; .name == $n)' "$LAYOUT" >/dev/null; then
-    echo "Guild channel slug is reserved by the layout: $2" >&2; exit 1
+# Guilds are declared in the layout: each gets a role, a private text channel named by its slug
+# and a voice channel, all under Guilds. Checked before any write, so a slug that collides with a
+# layout channel, another Guild or a channel outside Guilds stops the run with nothing changed.
+guilds_category=$(jq -r '[.[] | select(.name == "Guilds" and .type == 4)] | if length == 1 then .[0].id else "" end' <<< "$channels")
+jq -e '[.guilds[]?.slug] | length == (unique | length)' "$LAYOUT" >/dev/null || { echo 'Duplicate Guild slug in the layout' >&2; exit 1; }
+while IFS= read -r row; do
+  gname=$(jq -r .name <<< "$row"); slug=$(jq -r .slug <<< "$row")
+  [[ -n $gname && ${#gname} -le 80 && $slug =~ ^[a-z0-9][a-z0-9-]{0,99}$ ]] || { echo "Invalid Guild entry: $row" >&2; exit 1; }
+  if jq -e --arg n "$slug" 'any(.channels[]; .name == $n)' "$LAYOUT" >/dev/null; then
+    echo "Guild channel slug is reserved by the layout: $slug" >&2; exit 1
   fi
-  existing_guild_role=$(jq -r --arg n "Guild · $1" '[.[] | select(.name == $n and .managed != true)] | if length == 1 then .[0].id else "" end' <<< "$roles")
-  existing_category=$(jq -r '[.[] | select(.name == "Guilds" and .type == 4)] | if length == 1 then .[0].id else "" end' <<< "$channels")
-  if ! jq -e --arg n "$2" --arg p "$existing_category" --arg r "$existing_guild_role" 'all(.[] | select(.name == $n); .type == 0 and .parent_id == $p and $p != "" and $r != "" and any(.permission_overwrites[]?; .type == 0 and .id == $r))' <<< "$channels" >/dev/null; then
-    echo "Guild channel slug belongs to another channel or Guild: $2" >&2; exit 1
+  if ! jq -e --arg n "$slug" --arg p "$guilds_category" 'all(.[] | select(.name == $n and .type == 0); .parent_id == $p and $p != "")' <<< "$channels" >/dev/null; then
+    echo "Guild channel slug belongs to a channel outside Guilds: $slug" >&2; exit 1
   fi
-fi
+done < <(jq -c '.guilds[]?' "$LAYOUT")
 while IFS= read -r row; do ensure_role "$(jq -r .name <<< "$row")" "$(jq -r .permissions <<< "$row")" "$(jq -r .name <<< "$row")" "$(jq -r '.mentionable // false' <<< "$row")"; done < <(jq -c '.roles[]' "$LAYOUT")
-if [[ $mode == guild ]]; then ensure_role "Guild · $1" 0 Guild; fi
+while IFS= read -r row; do ensure_role "Guild · $(jq -r .name <<< "$row")" 0 "guild:$(jq -r .slug <<< "$row")"; done < <(jq -c '.guilds[]?' "$LAYOUT")
 category_ids='{}'
 ensure_channel() {
-  local name=$1 type=$2 parent=$3 overwrites=$4 topic=${5:-} matches desired current id result stored=''
-  if [[ $type == 2 ]]; then
+  local name=$1 type=$2 parent=$3 overwrites=$4 topic=${5:-} kind=${6:-} matches desired current id result stored=''
+  if [[ $kind == status ]]; then
     stored=$(while IFS='=' read -r k v; do [[ $k != DISCORD_STATUS_VOICE_CHANNEL_ID ]] || printf '%s' "$v"; done < "$ids")
     [[ -z $stored || $stored =~ ^[0-9]{17,20}$ ]] || { echo 'Invalid DISCORD_STATUS_VOICE_CHANNEL_ID' >&2; exit 1; }
   fi
@@ -120,7 +124,7 @@ ensure_channel() {
   else
     matches=$(jq --arg n "$name" --argjson t "$type" '[.[] | select(.name == $n and .type == $t)]' <<< "$channels")
   fi
-  if [[ $type == 0 && ${access:-} == guild ]]; then
+  if [[ $kind == guild ]]; then
     matches=$(jq --arg p "$parent" '[.[] | select(.parent_id == $p)]' <<< "$matches")
   fi
   [[ $(jq length <<< "$matches") -le 1 ]] || { echo "Ambiguous channel/category: $name" >&2; exit 1; }
@@ -132,7 +136,7 @@ ensure_channel() {
     desired=$(jq --arg t "$topic" '. + {topic:$t}' <<< "$desired")
     current=$(jq --arg t "$(jq -r '.[0].topic // ""' <<< "$matches")" '. + {topic:$t}' <<< "$current")
   fi
-  if [[ $type == 2 ]]; then
+  if [[ $kind == status ]]; then
     desired=$(jq --argjson p "$(jq '.status_voice.position' "$LAYOUT")" '. + {position:$p}' <<< "$desired")
     current=$(jq --argjson p "$(jq '.[0].position // null' <<< "$matches")" '. + {position:$p}' <<< "$current")
     # Existing status names belong to the live bot, including during permission repairs.
@@ -153,7 +157,7 @@ ensure_channel() {
 # Explicit owner member overwrite: the owner remains the only human admin.
 common=$(jq -nc --argjson ids "$role_ids" '[{id:$ids.owner,type:1,allow:"117760",deny:"0"},{id:$ids.ops,type:0,allow:"117760",deny:"0"},{id:$ids.server,type:0,allow:"117760",deny:"0"}]')
 voice_overwrites=$(jq -c --argjson ids "$role_ids" '[.status_voice.permission_overwrites[] | {id:$ids[.subject],type:0,allow,deny}]' "$LAYOUT")
-ensure_channel "$(jq -r '.status_voice.name' "$LAYOUT")" "$(jq -r '.status_voice.type' "$LAYOUT")" '' "$voice_overwrites"
+ensure_channel "$(jq -r '.status_voice.name' "$LAYOUT")" "$(jq -r '.status_voice.type' "$LAYOUT")" '' "$voice_overwrites" '' status
 status_voice_id=$channel_id
 while IFS= read -r name; do
   if [[ $name == Admin || $name == Guilds ]]; then deny=1024; else deny=0; fi
@@ -162,7 +166,6 @@ while IFS= read -r name; do
   category_ids=$(jq --arg n "$name" --arg id "$channel_id" '. + {($n):$id}' <<< "$category_ids")
 done < <(jq -r '.categories[]' "$LAYOUT")
 rows=$(jq -c '.channels[]' "$LAYOUT")
-if [[ $mode == guild ]]; then rows="$rows"$'\n'"$(jq -nc --arg n "$2" '{name:$n,category:"Guilds",access:"guild"}')"; fi
 channel_ids='{}'
 while IFS= read -r row; do
   name=$(jq -r .name <<< "$row"); access=$(jq -r .access <<< "$row")
@@ -211,6 +214,18 @@ while IFS= read -r row; do
     done
   fi
 done <<< "$rows"
+# Guild channels: only the Guild's role, the owner and the bots see them. The voice channel lets
+# members connect, speak, use voice activity and stream.
+guilds_parent=$(jq -r '.Guilds' <<< "$category_ids")
+while IFS= read -r row; do
+  gname=$(jq -r .name <<< "$row"); slug=$(jq -r .slug <<< "$row")
+  overwrites=$(jq -nc --argjson c "$common" --arg e "$guild" --arg r "$(jq -r --arg k "guild:$slug" '.[$k]' <<< "$role_ids")" \
+    '$c + [{id:$e,type:0,allow:"0",deny:"1024"},{id:$r,type:0,allow:"117760",deny:"0"}]')
+  ensure_channel "$slug" 0 "$guilds_parent" "$overwrites" '' guild
+  overwrites=$(jq -nc --argjson c "$common" --arg e "$guild" --arg r "$(jq -r --arg k "guild:$slug" '.[$k]' <<< "$role_ids")" \
+    '$c + [{id:$e,type:0,allow:"0",deny:"1049600"},{id:$r,type:0,allow:"36701696",deny:"0"}]')
+  ensure_channel "🔊 $gname" 2 "$guilds_parent" "$overwrites" '' guild
+done < <(jq -c '.guilds[]?' "$LAYOUT")
 while IFS= read -r row; do
   route=$(jq -r .route <<< "$row"); name="Lembitu · $route"
   id=$(jq -r --arg n "$(jq -r .channel <<< "$row")" '.[$n]' <<< "$channel_ids")
