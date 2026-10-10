@@ -730,8 +730,10 @@ published `client-pack-*` release (or `--release <tag>`, or a local `--zip` cand
 - **Refusals.** Valheim running from the folder, or a native test session holding
   `~/lembitu-native.lock`, since those sessions copy this folder.
 - **`--without <plugin>`** leaves one `BepInEx/plugins/<plugin>/` out. It exists for tricep, where
-  ValheimVisualEnhanced was removed after two GPU hangs on 2026-10-06; leaving out a mod the server
-  requires gets the client refused at join.
+  ValheimVisualEnhanced was removed after two GPU hangs on 2026-10-06. Leaving out a mod the server
+  requires gets the client refused at join: v18 on tricep was refused for exactly this on
+  2026-10-10, so `scripts/servermanager-policy.sh` now lists ValheimVisualEnhanced among the
+  optional presentation mods (client-process only, no sync).
 
 Measured 2026-10-07 on astral-tricep with a scratch game folder: v16 downloaded and digest-checked,
 353 files matched with ValheimVisualEnhanced left out, the stale plugin went to the backup, the
