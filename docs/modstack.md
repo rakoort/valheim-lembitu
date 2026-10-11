@@ -218,7 +218,8 @@ rule changes. A gameplay-bearing mod the server cannot reach still does not ship
 stages every adopted pin into `dist/`, because the client Pack is built from the same table, so
 `dist/` alone does not distinguish the sides. `scripts/install-plugins.sh` carries the server's
 half — a `CLIENT_ONLY` list naming AzuHoverStats, AzuClock, MouseTweaks, CraftingSearch,
-CompactStatusEffects, LiveExperienceTracker, oathbound_addon and Tally — and it withholds them
+CompactStatusEffects, LiveExperienceTracker, oathbound_addon, Tally, and our Lembitu.Updater with
+its patcher — and it withholds them
 from a server install and prunes them from a server that already has one. That is not tidiness:
 AzuHoverStats disconnects a peer that does not answer its version check, so deploying it would
 refuse exactly the players the Pack shipped it for. The mirror-image list, for the server-only
@@ -257,6 +258,7 @@ DiscordConnector left with it (#102).
 | Lembitu.Guide | The in-game guide window (ADR-0027), version 0.3.0: stable page ids, F1 and an inventory button, first-join display, server text sent at join and reload. Pack v17 keeps the `ladder` id but titles it Profession benefits: no profession craft gates, brewer's grade, stronger cook's grades and the Deep North personal Fader key. Reads Oathbound's class record, Callings' window key and SocialSystem's party state for first-event pages; patches neither upstream mod. Settings in `config/enforced/lembitu.guide.cfg` | ADR-0027 |
 | Lembitu.Guilds | Guilds form in game and claim SeparateSpawns' start regions (ADR-0028): every new player wakes at the sacrificial stones while their guild holds no region (SeparateSpawns' random assignment held back), a guild leader claims one of the three regions at its portal stone in the ring after a confirmation window naming the region and where it lies, and the region then follows membership — bedless respawn and portal — until the member leaves or the guild disbands; a bed overrides, as in vanilla. Membership is read from Guilds' server store only; the claim lives in the server's `config/bepinex/Lembitu.Guilds/<world>.claims.json`. Patches SeparateSpawns and reads Guilds, so a bump of either re-checks it; each feature verifies its own hooks at startup and switches off alone on a mismatch. Settings in `config/enforced/lembitu.guilds.cfg` | ADR-0028, #91 |
 | Lembitu.Harness | Client-side test harness: joins the test server from a real client and drives a character through code | #10 |
+| Lembitu.Updater | Client only, version 1.0.0 with its preloader patcher `Lembitu.Updater.Patcher`: keeps a player's Pack current. At start it checks GitHub for a newer `client-pack-*` release, fetches only the changed files out of the release zip by byte range, checks them against the release inventory and stages them; the patcher installs them at the next start, before any plugin loads, all or nothing. Patches nothing in the game and declares no Jotunn compatibility, so the server neither runs it nor checks for it beyond ServerManager's Pack-wide file policy | [Pack](wiki/pack.md) |
 
 These plugins run on the server and every client: they declare Jotunn's
 `EveryoneMustHaveMod`, so the server refuses a client without them, and their settings are locked

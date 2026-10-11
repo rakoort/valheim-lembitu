@@ -3,14 +3,17 @@
 set +x
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-dry=false
+dry=false reinstall=false
 out="$ROOT/dist-client"
 label='' notes='' changes=''
-usage() { echo 'Usage: publish-pack.sh [--dry-run] [--out DIR] --version LABEL --notes-file FILE --changes "Short changes"'; }
+usage() { echo 'Usage: publish-pack.sh [--dry-run] [--reinstall] [--out DIR] --version LABEL --notes-file FILE --changes "Short changes"'; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 while (($#)); do
   case "$1" in
     --dry-run) dry=true; shift ;;
+    # Players' Packs update themselves from Lembitu.Updater on; --reinstall is for a release they
+    # cannot reach that way (the first Pack with the updater, or a change to the loader itself).
+    --reinstall) reinstall=true; shift ;;
     --out) out=${2:?}; shift 2 ;;
     --version) label=${2:?}; shift 2 ;;
     --notes-file) notes=${2:?}; shift 2 ;;
@@ -55,7 +58,12 @@ repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
 [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die 'cannot resolve GitHub repository'
 tag="client-pack-$label"
 link="https://github.com/$repo/releases/download/$tag/lembitu-client-pack-$label.zip"
-content=$(printf '<@&%s> **Client pack %s**\n%s\nDownload: %s\n**Reinstall required:** replace your old client pack with this release before joining.' "$role" "$label" "$changes" "$link")
+if $reinstall; then
+  how='**Reinstall required:** replace your old client pack with this release before joining.'
+else
+  how='**To update:** start Valheim. The Pack downloads the update at the main menu; restart Valheim when it says so.'
+fi
+content=$(printf '<@&%s> **Client pack %s**\n%s\nDownload: %s\n%s' "$role" "$label" "$changes" "$link" "$how")
 jq -n --arg content "$content" --arg role "$role" '{content:$content,allowed_mentions:{parse:[],roles:[$role],users:[],replied_user:false}}' > "$work/post.json"
 if $dry; then
   printf 'Would publish %s with three artifacts and notes from %s\n' "$tag" "$notes"

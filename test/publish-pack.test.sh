@@ -34,8 +34,11 @@ chmod +x "$WORK/bin/gh" "$WORK/bin/curl"
 publish() { "$ROOT/scripts/publish-pack.sh" --out "$WORK/artifacts" --version demo --notes-file "$WORK/notes" --changes 'Fixed inventory overlap. @everyone' "$@"; }
 publish --dry-run > "$WORK/dry"
 [[ ! -e "$RECORD.gh" && ! -e "$RECORD.curl" ]]
-grep -q 'Reinstall required' "$WORK/dry"
-publish > "$WORK/log"
+# Packs update themselves since Lembitu.Updater; only --reinstall still asks for a manual replace.
+grep -q 'restart Valheim when it says so' "$WORK/dry" && ! grep -q 'Reinstall required' "$WORK/dry"
+publish --dry-run --reinstall > "$WORK/dry-reinstall"
+grep -q 'Reinstall required' "$WORK/dry-reinstall"
+publish --reinstall > "$WORK/log"
 [[ $(head -3 "$RECORD.gh" | tail -1) == client-pack-demo ]]
 for suffix in zip manifest.json versions.txt; do grep -Fxq "$WORK/artifacts/lembitu-client-pack-demo.$suffix" "$RECORD.gh"; done
 grep -Fxq -- --notes-file "$RECORD.gh"

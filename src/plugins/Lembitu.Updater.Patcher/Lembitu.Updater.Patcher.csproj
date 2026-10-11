@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.updater.patcher</PluginGuid>
+    <Version>1.0.0</Version>
+    <Description>BepInEx preloader patcher that installs the Pack update Lembitu.Updater staged, before any plugin loads. Patches no assembly.</Description>
+    <!-- A patcher lives in BepInEx/patchers, so it leaves the build through dist/patchers. -->
+    <PluginDistDir>$(RepoRoot)dist/patchers/</PluginDistDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- One definition of the inventory and plan formats for the stager and the applier. -->
+    <Compile Include="../Lembitu.Updater/PackFiles.cs" Link="PackFiles.cs" />
+    <Reference Include="Mono.Cecil" Private="false">
+      <HintPath>$(BepInExRefDir)pack/BepInExPack_Valheim/BepInEx/core/Mono.Cecil.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

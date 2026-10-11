@@ -106,7 +106,10 @@ printf 'oathbound\n' > "$OWN_PLUGINS/Lembitu.Oathbound.dll"
 printf 'callings\n'  > "$OWN_PLUGINS/Lembitu.Callings.dll"
 printf 'guide\n'     > "$OWN_PLUGINS/Lembitu.Guide.dll"
 printf 'guilds\n'    > "$OWN_PLUGINS/Lembitu.Guilds.dll"
-export OWN_PLUGINS
+printf 'updater\n'   > "$OWN_PLUGINS/Lembitu.Updater.dll"
+OWN_PATCHERS="$WORK/own-patchers"; mkdir -p "$OWN_PATCHERS"
+printf 'patcher\n'   > "$OWN_PATCHERS/Lembitu.Updater.Patcher.dll"
+export OWN_PLUGINS OWN_PATCHERS
 
 make_zip() {  # make_zip <zip> <entry:content>...
   local zip=$1; shift
@@ -184,6 +187,15 @@ if [[ -n "${listing:-}" ]] \
   report ok "ships our own plugins from the build output"
 else
   report fail "ships our own plugins from the build output"
+fi
+# Without the updater, its patcher and the label it compares, a player's Pack never updates itself.
+if [[ -n "${listing:-}" ]] \
+   && grep -qx 'BepInEx/plugins/Lembitu.Updater.dll' <<<"$listing" \
+   && grep -qx 'BepInEx/patchers/Lembitu.Updater.Patcher.dll' <<<"$listing" \
+   && [[ "$(unzip -p "$archive" BepInEx/lembitu-pack-version.txt)" == t ]]; then
+  report ok "ships the Pack updater, its patcher and the Pack's label"
+else
+  report fail "ships the Pack updater, its patcher and the Pack's label"
 fi
 if [[ $(cat "$WORK/.lembitu-pack-version") == t ]]; then
   report ok "successful build records the durable pack version"

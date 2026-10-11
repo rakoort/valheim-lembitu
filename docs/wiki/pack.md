@@ -603,8 +603,10 @@ preview the post with `scripts/publish-pack.sh --dry-run --version <label> --not
 
 The publisher requires all three nonempty artifacts (`.zip`, `.manifest.json`, `.versions.txt`)
 and a notes file, creates `client-pack-<label>` through authenticated `gh release create`, then
-posts version, the short changes, a direct zip download link, **reinstall required** and `@Player`
-to `#announcements` through PACK_RELEASES. It reads the Player role ID from
+posts version, the short changes, a direct zip download link, how to update and `@Player`
+to `#announcements` through PACK_RELEASES. How to update is "start Valheim and restart when it says
+so", because players' Packs update themselves (below); `--reinstall` says **reinstall required**
+instead, for a release the updater cannot deliver. It reads the Player role ID from
 `~/.config/lembitu/discord.env` and webhook URL from `discord-webhooks.env`; no other role mention
 is allowed. `--out DIR` selects another artifact directory. Dry-run prints the post without
 publishing or posting (GitHub repository metadata is read). If release creation fails, no post
@@ -632,10 +634,15 @@ manages. Extract, set one launch parameter, press Play:
    launcher's full path followed by the game command — `<game>/start_game_bepinex.sh %command%`,
    with `<game>` replaced by the folder Browse local files opened. The short relative form, a
    dot-slash before the script name, works too: the pack ships a shim for it, as described below.
+   On macOS use the same full-path form as Linux: the Pack's launcher has a macOS branch and ships
+   `libdoorstop_x64.dylib`, but no Mac has been tested with this Pack.
 
 3. **Press Play.**
 
 4. **Join** the server from the browser, or by address, with the password from the group chat.
+
+5. **Later updates install themselves.** When a new Pack is out, the main menu says it is
+   downloaded; restart Valheim and it is installed (see Automatic updates below).
 
 **Why Linux needs the parameter and Windows does not.** On Windows the loader is injected by
 `winhttp.dll`, which the game itself loads from its own folder, so Play is enough. On Linux the
@@ -664,6 +671,61 @@ version. There is no Steam setting that prevents an update; the beta-branch and 
 options change when it happens, not whether. If the game updates, re-extract the pack. A player who
 would rather be immune copies the game folder instead and runs the copy, which Steam does not
 manage — at the price of launching from that folder by hand, since Play always runs Steam's copy.
+
+### Automatic updates — Lembitu.Updater (2026-10-11)
+
+**From the first Pack that carries it, a player never re-extracts again.** The Pack ships
+`Lembitu.Updater` in `BepInEx/plugins` and `Lembitu.Updater.Patcher` in `BepInEx/patchers`, plus a
+one-line version file in BepInEx/ holding the Pack's label (written by
+`scripts/build-client-pack.sh`). At every start the plugin asks GitHub for the newest
+`client-pack-*` release that is neither a draft nor a pre-release, the same rule as
+`scripts/install-client-pack.sh`. When its label differs from the installed one, the plugin:
+
+1. downloads both releases' `.versions.txt` and checks each against the SHA-256 digest GitHub
+   publishes for it;
+2. works out what the Pack changed. A file missing from the install is written. A file the Pack did
+   not change between the two versions keeps its local content, so a player's setting or a mod's
+   own rewrite of a seeded config survives. A file the new Pack dropped is removed, unless the
+   player or a mod changed it;
+3. reads only those files out of the release zip with HTTP range requests (the zip's end record,
+   its central directory, then the wanted entries), checks each against the new inventory and
+   stages it in `BepInEx/lembitu-update/staged/`, writing `plan.txt` last.
+
+The main menu then says the update is downloaded and offers "Quit Valheim"; in game the same news
+arrives as a top-left message. At the next start BepInEx's preloader runs the patcher before the
+chainloader loads any plugin, so no plugin file is in use. The patcher checks every staged file
+against the plan, moves each file it replaces or removes aside, and puts the new ones in place. If
+any step fails, everything moved goes back and the Pack is unchanged. The plugin then shows
+"Lembitu Pack updated to …" for twenty seconds, or the reason it could not install. A failed check
+or download leaves the Pack as it is and names the release page for a manual install. If GitHub
+cannot be reached, only the log mentions it.
+
+Everything happens inside BepInEx with Unity's own web requests, so the updater behaves the same on
+Windows, Linux and macOS. It needs no launcher, no extra program and no change to the Steam launch
+option. Two limits:
+
+- **The first updater Pack is a manual install**, because older Packs have no updater. Release it
+  with `scripts/publish-pack.sh --reinstall`.
+- **The loader's own files** (`BepInEx/core`, the doorstop files and the patcher itself) are already
+  loaded when the patcher runs. On Linux and macOS they are replaced like any other file. On Windows
+  a replaced file that is still in use is renamed aside, and the next start deletes it. If Windows
+  refuses even the rename, the whole update rolls back and the player installs that release by hand.
+  Such a release should be published with `--reinstall`. Not measured on Windows.
+
+**Measured on astral-tricep (native Linux client), 2026-10-11** (`~/lembitu-native-tests/20261011T093702Z-pack-updater`).
+A Pack labelled `upd-a`, built with the updater, ran against a local copy of GitHub's release API.
+The copy redirected each download the way GitHub does and answered byte ranges. Release `upd-b`
+changed the updater's own DLL and one seeded config, added a file, removed a file and changed the
+label. In game, the client staged `upd-b`: four files written and one removed, from 22,339 bytes of
+file data in three range requests, against a 321 MB zip. A seeded config `upd-b` left unchanged,
+which its mod rewrites at every start, stayed out of the plan. After a quit and relaunch on the same
+folder, the log showed `Pack updated to upd-b: 4 file(s) written, 1 removed` before any plugin
+loaded. The plugin then read `upd-b` as the newest release, and the client joined a server whose
+ServerManager policy required `upd-b`'s files. No `.lembitu-old` copy, plan or staged file remained.
+The same logic, run offline against the real releases, parsed GitHub's release list and extracted
+and verified all 369 files of the v19 zip. It planned v18 to v19 as exactly the four changed Lembitu
+DLLs. Not yet verified: a Windows or macOS client, the menu notice on screen, and a real GitHub
+release (the live API and range answers were checked with curl: 302 to `release-assets`, then 206).
 
 ### Measured install — 2026-09-16 (v6)
 
@@ -763,10 +825,10 @@ What is **not** enforced automatically, and why the check above is needed:
 There is no mid-Run Pack update by design (ADR-0007): the accepted combination is fixed, and a
 newer upstream release is declined unless it fixes something actually broken and passes acceptance
 again. If that happens, the procedure is: rebuild with `scripts/build-client-pack.sh --version
-<new>`, bump the version label, re-run `test/client-pack.test.sh`, deploy the server side with
-`scripts/install-plugins.sh` and `scripts/apply-enforced-config.sh`, then distribute the new archive
-and have every player re-extract. Record the accepted pins and hashes before the world is created,
-not after.
+<new>`, re-run `test/client-pack.test.sh`, deploy the server side with `scripts/install-plugins.sh`
+and `scripts/apply-enforced-config.sh`, then publish. Players' Packs fetch the release themselves
+(above) and install it at their next restart; only a release published with `--reinstall` asks
+them to re-extract. Record the accepted pins and hashes before the world is created, not after.
 
 ### What was verified, and what was not
 

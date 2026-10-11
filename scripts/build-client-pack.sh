@@ -18,8 +18,10 @@
 #                    them: a player who extracts only mods gets a vanilla client, which this
 #                    server rejects outright at the handshake.
 #   plugins/         the adopted pin list, plus every package's assets and config seeds, plus our own
-#                    Lembitu.Oathbound, Lembitu.Callings, Lembitu.Guide and Lembitu.Guilds from the
-#                    build output.
+#                    Lembitu.Oathbound, Lembitu.Callings, Lembitu.Guide, Lembitu.Guilds and the
+#                    client-only Lembitu.Updater from the build output.
+#   patchers/        Lembitu.Updater.Patcher, which installs a staged Pack update at the next start.
+#   lembitu-pack-version.txt  the Pack's label, which the updater compares with the newest release.
 #   config/          the package-supplied config seeds, and the client-relevant locked settings.
 #
 # It is NOT the server's dist/: five things differ, and all of them matter.
@@ -80,6 +82,11 @@ REQUIRED=(Jotunn AzuCraftyBoxes Tally)
 PLAYER_PLUGINS=(Lembitu.Oathbound Lembitu.Callings Lembitu.Guide Lembitu.Guilds)
 # Overridable for the same reason as BEPINEX_PACK: the tests supply fixtures.
 OWN_PLUGINS="${OWN_PLUGINS:-$REPO_ROOT/dist/plugins}"
+# The Pack updater: client only and not a Jotunn module. The plugin stages a newer published Pack,
+# the patcher installs it at the next start, before any plugin loads (docs/wiki/pack.md).
+CLIENT_PLUGINS=(Lembitu.Updater)
+CLIENT_PATCHERS=(Lembitu.Updater.Patcher)
+OWN_PATCHERS="${OWN_PATCHERS:-$REPO_ROOT/dist/patchers}"
 
 # Repository-owned client configuration seeds, copied over the package seeds after staging. These
 # are the settings the server cannot hold - every key in them is "Not Synced with Server" - so
@@ -179,6 +186,15 @@ mkdir -p "$stage/plugins"
 for name in "${PLAYER_PLUGINS[@]}"; do
   [[ -f "$OWN_PLUGINS/$name.dll" ]] || die "no $name.dll in $OWN_PLUGINS; run dotnet build first"
   cp -a "$OWN_PLUGINS/$name.dll" "$stage/plugins/"
+done
+for name in "${CLIENT_PLUGINS[@]}"; do
+  [[ -f "$OWN_PLUGINS/$name.dll" ]] || die "no $name.dll in $OWN_PLUGINS; run dotnet build first"
+  cp -a "$OWN_PLUGINS/$name.dll" "$stage/plugins/"
+done
+mkdir -p "$stage/patchers"
+for name in "${CLIENT_PATCHERS[@]}"; do
+  [[ -f "$OWN_PATCHERS/$name.dll" ]] || die "no $name.dll in $OWN_PATCHERS; run dotnet build first"
+  cp -a "$OWN_PATCHERS/$name.dll" "$stage/patchers/"
 done
 
 # --- the loader, and the install shape ---------------------------------------------------------
@@ -287,6 +303,11 @@ if [[ -d "$CLIENT_SEEDS" ]]; then
   done < <(cd "$CLIENT_SEEDS" && find . -type f | sed 's|^\./||' | LC_ALL=C sort)
 fi
 
+# The installed Pack's label. The updater compares it with the newest release and, after an
+# update, the new Pack's own copy replaces it like any other changed file.
+mkdir -p "$stage/BepInEx"
+printf '%s\n' "$VERSION" > "$stage/BepInEx/lembitu-pack-version.txt"
+
 # --- assertions --------------------------------------------------------------------------------
 
 # Absence: no server-only plugin and not our test harness may be in a player's pack. The search is
@@ -325,7 +346,10 @@ for required in \
   "doorstop_config.ini" \
   "winhttp.dll" \
   "valheim_Data/start_game_bepinex.sh" \
-  "BepInEx/plugins/Jotunn"; do
+  "BepInEx/plugins/Jotunn" \
+  "BepInEx/plugins/Lembitu.Updater.dll" \
+  "BepInEx/patchers/Lembitu.Updater.Patcher.dll" \
+  "BepInEx/lembitu-pack-version.txt"; do
   [[ -e "$stage/$required" ]] || die "client pack is missing $required; a player could not run it"
 done
 

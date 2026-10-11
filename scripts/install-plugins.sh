@@ -54,8 +54,9 @@ CONTAINER_PLUGINS_DIR="/opt/valheim/bepinex/BepInEx/plugins"
 # 2026-10-05 premium review CraftingSearch and CompactStatusEffects (#87). From 2026-10-06,
 # LiveExperienceTracker (a skill-XP HUD) and oathbound_addon (Oathbound Addon: Hunter wolf orders
 # that drive the owner's own wolf AI on the client); neither has anything to run or sync on a server.
+# Our Lembitu.Updater and its patcher keep a player's Pack current and have no server half.
 CLIENT_ONLY=(AzuHoverStats AzuClock MouseTweaks CraftingSearch CompactStatusEffects
-  LiveExperienceTracker oathbound_addon Tally)
+  LiveExperienceTracker oathbound_addon Tally Lembitu.Updater Lembitu.Updater.Patcher)
 
 # shellcheck source=scripts/lib/ledger.sh
 . "$REPO_ROOT/scripts/lib/ledger.sh"
@@ -77,12 +78,13 @@ dist_files() {
 }
 
 # Whether a dist-relative path belongs to a Pack-only package. Matched on the staged package
-# directory and on a bare DLL of the same name, so a package that ships a single file rather than a
-# tree is caught too.
+# directory and on a bare DLL of the same name, in plugins/ and patchers/, so a package that ships
+# a single file rather than a tree is caught too.
 path_is_client_only() {  # path_is_client_only <dist-relative-path>
   local path=$1 name
   for name in "${CLIENT_ONLY[@]}"; do
-    [[ "$path" == "plugins/$name/"* || "$path" == "plugins/$name.dll" ]] && return 0
+    [[ "$path" == "plugins/$name/"* || "$path" == "plugins/$name.dll" \
+       || "$path" == "patchers/$name/"* || "$path" == "patchers/$name.dll" ]] && return 0
   done
   return 1
 }

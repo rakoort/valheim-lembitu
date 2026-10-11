@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.updater</PluginGuid>
+    <PluginDisplayName>Lembitu.Updater</PluginDisplayName>
+    <Version>1.0.0</Version>
+    <Description>Keeps a player's Pack current: checks GitHub for a newer Pack, downloads only the changed files and stages them for Lembitu.Updater.Patcher to install at the next start. Client only.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine.UnityWebRequestModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.UnityWebRequestModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.IMGUIModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.IMGUIModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.TextRenderingModule.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>
