@@ -118,11 +118,13 @@ internal sealed class PackUpdater
         }
         else log.LogWarning("The installed Pack's release is not listed; every differing file is replaced and nothing is removed");
 
+        string[] leftOut = PackFiles.LeftOut(root);
+        if (leftOut.Length > 0) log.LogInfo("Left out on purpose, never restored: " + string.Join(", ", leftOut));
         Task<UpdatePlan> planning = Task.Run(() => UpdatePlan.Compute(label, next, before, path =>
         {
             string file = PackFiles.Under(root, path);
             return File.Exists(file) ? PackFiles.Sha256File(file) : null;
-        }));
+        }, leftOut));
         while (!planning.IsCompleted) yield return null;
         UpdatePlan plan = planning.Result;
         log.LogInfo($"Pack {label}: {plan.Writes.Count} file(s) to write, {plan.Deletes.Count} to remove");

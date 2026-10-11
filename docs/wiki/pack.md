@@ -686,7 +686,8 @@ one-line version file in BepInEx/ holding the Pack's label (written by
 2. works out what the Pack changed. A file missing from the install is written. A file the Pack did
    not change between the two versions keeps its local content, so a player's setting or a mod's
    own rewrite of a seeded config survives. A file the new Pack dropped is removed, unless the
-   player or a mod changed it;
+   player or a mod changed it. Nothing under a plugin folder named in the install's left-out list
+   (left-out.txt in the updater's staging folder) is written or removed (see `--without` below);
 3. reads only those files out of the release zip with HTTP range requests (the zip's end record,
    its central directory, then the wanted entries), checks each against the new inventory and
    stages it in `BepInEx/lembitu-update/staged/`, writing `plan.txt` last.
@@ -802,7 +803,16 @@ published `client-pack-*` release (or `--release <tag>`, or a local `--zip` cand
   ValheimVisualEnhanced was removed after two GPU hangs on 2026-10-06. Leaving out a mod the server
   requires gets the client refused at join: v18 on tricep was refused for exactly this on
   2026-10-10, so `scripts/servermanager-policy.sh` now lists ValheimVisualEnhanced among the
-  optional presentation mods (client-process only, no sync).
+  optional presentation mods (client-process only, no sync). The installer records each left-out
+  folder in a left-out.txt in the updater's staging folder, because the updater otherwise restores every Pack
+  file a folder lacks: planned from v19 to v20, an install without ValheimVisualEnhanced got its two
+  files back without the list and none with it. Updaters before the one after v20 do not read the
+  list, so tricep's first in-game update after v20 brings the mod back once; re-run this script
+  with `--without` after it.
+
+Tricep was moved to v20 this way on 2026-10-11, with the list written. A clean install also moves
+the old BepInEx/ aside, saved server passwords included; AutoServerPassword's `passwords.json` was
+copied back from that backup.
 
 Measured 2026-10-07 on astral-tricep with a scratch game folder: v16 downloaded and digest-checked,
 353 files matched with ValheimVisualEnhanced left out, the stale plugin went to the backup, the

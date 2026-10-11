@@ -206,6 +206,12 @@ awk -v list="${WITHOUT[*]+${WITHOUT[*]}}" '
 note "extracting $LABEL"
 unzip -q "$ZIP" ${excludes[@]+-x "${excludes[@]}"} -d "$stage" || die "extraction failed"
 (cd "$stage" && sha_check "$inventory") || die "the extracted Pack fails its inventory; nothing was changed"
+# Lembitu.Updater restores any Pack file a folder lacks; this list tells it which plugin folders
+# were left out on purpose, so a later in-game update does not bring them back.
+if ((${#WITHOUT[@]})); then
+  mkdir -p "$stage/BepInEx/lembitu-update"
+  for name in "${WITHOUT[@]}"; do printf 'BepInEx/plugins/%s/\n' "$name"; done > "$stage/BepInEx/lembitu-update/left-out.txt"
+fi
 files="$(wc -l < "$inventory" | tr -d ' ')"
 
 # --- swap -----------------------------------------------------------------------------------------

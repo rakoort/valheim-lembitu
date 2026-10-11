@@ -101,13 +101,15 @@ fi
 # --- 2. --without ------------------------------------------------------------------------------------
 
 fresh_game
+# The list is what stops Lembitu.Updater from restoring the left-out mod at the next in-game update.
 if run --without Fancy \
   && [[ ! -e "$WORK/game/BepInEx/plugins/Fancy" && -f "$WORK/game/BepInEx/plugins/Jotunn/Jotunn.dll" ]] \
+  && [[ "$(cat "$WORK/game/BepInEx/lembitu-update/left-out.txt")" == 'BepInEx/plugins/Fancy/' ]] \
   && grep -q 'left out: Fancy' "$WORK/out"; then
-  report ok "--without leaves one plugin directory out and still verifies everything else"
+  report ok "--without leaves one plugin directory out, records it for the updater and still verifies everything else"
 else
   cat "$WORK/out" >&2
-  report fail "--without leaves one plugin directory out and still verifies everything else"
+  report fail "--without leaves one plugin directory out, records it for the updater and still verifies everything else"
 fi
 
 # --- 3-4. refusals before anything moves -----------------------------------------------------------

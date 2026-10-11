@@ -16,6 +16,23 @@ internal static class PackFiles
     /// <summary>The installed Pack's label, written by scripts/build-client-pack.sh.</summary>
     internal const string VersionFile = "BepInEx/lembitu-pack-version.txt";
     internal const string PlanFile = "plan.txt", StagedDir = "staged", ResultFile = "result.txt", LeftoverFile = "leftovers.txt";
+    /// <summary>Plugin folders the player's install leaves out on purpose, one "BepInEx/plugins/&lt;name&gt;/"
+    /// per line, written by scripts/install-client-pack.sh --without.</summary>
+    internal const string LeftOutFile = "left-out.txt";
+
+    /// <summary>The left-out plugin folders of the install under root; empty when there is no list.</summary>
+    internal static string[] LeftOut(string root)
+    {
+        string file = Path.Combine(Under(root, StageDir), LeftOutFile);
+        if (!File.Exists(file)) return Array.Empty<string>();
+        return File.ReadAllLines(file).Select(l => l.Trim()).Where(l => l.Length > 0).Select(prefix =>
+        {
+            if (!prefix.StartsWith("BepInEx/plugins/", StringComparison.Ordinal) || !prefix.EndsWith("/", StringComparison.Ordinal))
+                throw new InvalidDataException("left-out entry is not a plugin folder: " + prefix);
+            CheckPath(prefix.TrimEnd('/'));
+            return prefix;
+        }).ToArray();
+    }
     internal const string BackupSuffix = ".lembitu-old";
 
     /// <summary>The Pack root: the folder the Pack zip is extracted into, which holds BepInEx/.</summary>
@@ -97,12 +114,14 @@ internal sealed class UpdatePlan
     /// the Pack did not change between the installed and the new version keeps its local content,
     /// so a player's edit or a mod's own rewrite of a seeded config survives. Without the installed
     /// inventory every differing file is written and nothing is removed. A removed file is deleted
-    /// only while it still holds the installed Pack's bytes.</summary>
+    /// only while it still holds the installed Pack's bytes. Nothing under a left-out plugin folder
+    /// is written or removed.</summary>
     internal static UpdatePlan Compute(string version, IReadOnlyDictionary<string, string> next,
-        IReadOnlyDictionary<string, string>? installed, Func<string, string?> localHash)
+        IReadOnlyDictionary<string, string>? installed, Func<string, string?> localHash, IReadOnlyCollection<string> leftOut)
     {
+        bool Kept(string path) => !leftOut.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal));
         var plan = new UpdatePlan { Version = version };
-        foreach (var file in next.OrderBy(f => f.Key, StringComparer.Ordinal))
+        foreach (var file in next.Where(f => Kept(f.Key)).OrderBy(f => f.Key, StringComparer.Ordinal))
         {
             string? local = localHash(file.Key);
             if (local == file.Value) continue;
@@ -111,7 +130,7 @@ internal sealed class UpdatePlan
             plan.Writes.Add((file.Value, file.Key));
         }
         if (installed != null)
-            foreach (var file in installed.OrderBy(f => f.Key, StringComparer.Ordinal))
+            foreach (var file in installed.Where(f => Kept(f.Key)).OrderBy(f => f.Key, StringComparer.Ordinal))
                 if (!next.ContainsKey(file.Key) && localHash(file.Key) == file.Value)
                     plan.Deletes.Add(file.Key);
         return plan;
