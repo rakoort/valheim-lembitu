@@ -203,13 +203,14 @@ the Chronicle", holds the work in order: guild claims and cards #117, live layer
 Chronicle #119 and Discord #120. Its oracle is `oracles/guild-web-map-chronicle.sh`. A concept
 review of guilds at the centre and of the advantage that free time gives is still owed.
 
-Release and testing, decided the same day. Milestone 8 is built now but reaches the live server only
-after fleet #255 cuts over, in one maintenance restart, so #112's lock of the live plugin bytes
-stays valid. The test host has one Steam account, so cases needing several players or two guilds
-are proven with synthetic data and checked live by the owner and players after deploy. Discord work
-is tested in three channels only the owner and the bots see, `#test-world`, `#test-deaths` and
-`#test-guild`; tests never post in the players' channels. The Discord relay runs wherever the status
-timer runs after the fleet move (#115's timer handoff).
+Release and testing, decided the same day. Each Milestone 8 Ticket deploys in a maintenance restart
+once it is done, unless #112 has already recorded its lock of the live plugin bytes; between that
+lock and fleet #255's cutover, deploys wait or the lock is recorded again. The test host has one
+Steam account, so cases needing several players or two guilds are proven with synthetic data and
+checked live by the owner and players after deploy. Discord work is tested in three channels only
+the owner and the bots see, `#test-world`, `#test-deaths` and `#test-guild`; tests never post in the
+players' channels. The Discord relay runs beside the status timer: on astral-bicep until the fleet
+move, then wherever #115's timer handoff places it.
 
 ## Launch provisioning — #19
 
