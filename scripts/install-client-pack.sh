@@ -16,8 +16,7 @@
 # unpublished candidate, the tests); scripts/build-client-pack.sh writes its <name>.versions.txt
 # inventory beside it, and that file must be there.
 #
-# Game folder. --game-dir, else $LEMBITU_CLIENT_DIR, else tricep's
-# /games/SteamLibrary/steamapps/common/Valheim (the default scripts/native-run.sh uses too).
+# Game folder. --game-dir, else tricep's /games/SteamLibrary/steamapps/common/Valheim.
 #
 # Clean means everything a Pack puts into the game folder leaves it: BepInEx/ whole (plugins, their
 # configs, caches and logs), the doorstop loader files and both launchers. They are moved, not
@@ -31,22 +30,21 @@
 # (tricep's GPU hangs and ValheimVisualEnhanced, 2026-10-06). Leaving out a mod the server requires
 # gets the client refused at join.
 #
-# It refuses while Valheim runs from the folder, and while a native test session holds
-# ~/lembitu-native.lock (scripts/native-run.sh), because those sessions copy this folder. A machine
-# without flock(1) runs no native sessions, so there the lock is not taken.
+# It refuses while Valheim runs from the folder.
 #
-# Steam's launch option is not touched: on Linux the Pack needs `./start_game_bepinex.sh %command%`.
+# Steam's launch option and compatibility tool are not touched. OdinOnDemand's video player exists
+# only for Windows, so a Linux player runs the game under Proton with the launch option
+# `WINEDLLOVERRIDES="winhttp=n,b" %command%` (tricep since 2026-10-11). A native Linux client loads
+# the Pack with `./start_game_bepinex.sh %command%` and plays no video.
 #
-# The environment overrides LEMBITU_PACK_CACHE, LEMBITU_PACK_BACKUPS and LEMBITU_NATIVE_LOCK exist for
-# the tests.
+# The environment overrides LEMBITU_PACK_CACHE and LEMBITU_PACK_BACKUPS exist for the tests.
 
 set -euo pipefail
 
 REPO="rakoort/valheim-lembitu"
-GAME_DIR="${LEMBITU_CLIENT_DIR:-/games/SteamLibrary/steamapps/common/Valheim}"
+GAME_DIR="/games/SteamLibrary/steamapps/common/Valheim"
 CACHE_DIR="${LEMBITU_PACK_CACHE:-$HOME/.cache/valheim-lembitu/client-packs}"
 BACKUP_ROOT="${LEMBITU_PACK_BACKUPS:-$HOME/lembitu-pack-backups}"
-LOCK_FILE="${LEMBITU_NATIVE_LOCK:-$HOME/lembitu-native.lock}"
 KEEP=3
 RELEASE=""
 ZIP=""
@@ -109,10 +107,6 @@ sha_check() {  # sha_check <inventory>, run inside the tree it describes; prints
 GAME_DIR="$(cd "$GAME_DIR" && pwd -P)"
 if pgrep -f -- "$GAME_DIR/valheim" >/dev/null 2>&1; then
   die "Valheim is running from $GAME_DIR; quit it first"
-fi
-if command -v flock >/dev/null 2>&1; then
-  exec 9>"$LOCK_FILE"
-  flock -n 9 || die "a native test session holds $LOCK_FILE; run this after it finishes"
 fi
 
 # --- the Pack -------------------------------------------------------------------------------------
@@ -271,4 +265,5 @@ else
   note "  the folder held no previous Pack"
 fi
 ((pruned == 0)) || note "  $pruned older backup(s) removed, $KEEP kept"
-note "Linux: Steam's launch option for Valheim must be ./start_game_bepinex.sh %command%"
+note "Linux under Proton (needed for video): Steam's launch option is WINEDLLOVERRIDES=\"winhttp=n,b\" %command%"
+note "Linux native (no video): Steam's launch option is ./start_game_bepinex.sh %command%"

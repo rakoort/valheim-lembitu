@@ -630,25 +630,33 @@ manages. Extract, set one launch parameter, press Play:
    folder. The archive is shaped like the game folder, so extracting it one level too high or too
    low installs nothing.
 2. **Set the launch parameter** in Steam → Valheim → Properties → Launch Options. On Windows leave
-   it empty: `winhttp.dll` beside the game binary loads the pack by itself. On Linux paste the
+   it empty: `winhttp.dll` beside the game binary loads the pack by itself. On Linux run the game
+   under Proton, because OdinOnDemand's screens ship only a Windows video player: Properties →
+   Compatibility → force Proton Experimental, then set `WINEDLLOVERRIDES="winhttp=n,b" %command%`
+   so Wine loads the Pack's `winhttp.dll` rather than its own. Steam then downloads the Windows
+   build into the same folder and leaves the Pack in place (see Linux under Proton below). A Linux
+   player who never watches videos can stay native instead: paste the
    launcher's full path followed by the game command — `<game>/start_game_bepinex.sh %command%`,
    with `<game>` replaced by the folder Browse local files opened. The short relative form, a
    dot-slash before the script name, works too: the pack ships a shim for it, as described below.
-   On macOS use the same full-path form as Linux: the Pack's launcher has a macOS branch and ships
-   `libdoorstop_x64.dylib`, but no Mac has been tested with this Pack.
+   On macOS use the same full-path form as native Linux: the Pack's launcher has a macOS branch and
+   ships `libdoorstop_x64.dylib`, but no Mac has been tested with this Pack, and screens play no
+   video there.
 
-3. **Press Play.**
+3. **Press Play.** Under Proton the first start has no saved language, so five mods start broken
+   (see Linux under Proton below): open Settings, press OK, and restart the game before joining.
 
 4. **Join** the server from the browser, or by address, with the password from the group chat.
 
 5. **Later updates install themselves.** When a new Pack is out, the main menu says it is
    downloaded; restart Valheim and it is installed (see Automatic updates below).
 
-**Why Linux needs the parameter and Windows does not.** On Windows the loader is injected by
-`winhttp.dll`, which the game itself loads from its own folder, so Play is enough. On Linux the
-loader is a preloaded shared object, which means the launcher script has to be in the command;
-pressing Play without the parameter starts a vanilla client that this server refuses at the
-handshake.
+**Why native Linux needs the parameter and Windows does not.** On Windows the loader is injected by
+`winhttp.dll`, which the game itself loads from its own folder, so Play is enough. Under Proton the
+same file does it, once the override tells Wine to prefer it over Wine's built-in `winhttp`. On
+native Linux the loader is a preloaded shared object, which means the launcher script has to be in
+the command; pressing Play without the parameter starts a vanilla client that this server refuses
+at the handshake.
 
 **The pack makes that parameter work.** Steam resolves that relative launcher path against
 `valheim_Data`, not the game root — measured on astral-tricep, 2026-09-15, where Steam ran
@@ -797,8 +805,8 @@ published `client-pack-*` release (or `--release <tag>`, or a local `--zip` cand
 - **Moved, not deleted.** The whole previous BepInEx/ (configs, saved password, logs) and the loader
   files go to `~/lembitu-pack-backups/game-<UTC stamp>.<random>/`; the newest three are kept. Game
   files and the Steam launch option are never touched.
-- **Refusals.** Valheim running from the folder, or a native test session holding
-  `~/lembitu-native.lock`, since those sessions copy this folder.
+- **Refusal.** Valheim running from the folder, natively or under Proton, whose launcher's command
+  line names the folder's `valheim.exe`.
 - **`--without <plugin>`** leaves one `BepInEx/plugins/<plugin>/` out. It exists for tricep, where
   ValheimVisualEnhanced was removed after two GPU hangs on 2026-10-06. Leaving out a mod the server
   requires gets the client refused at join: v18 on tricep was refused for exactly this on
@@ -818,6 +826,39 @@ Measured 2026-10-07 on astral-tricep with a scratch game folder: v16 downloaded 
 353 files matched with ValheimVisualEnhanced left out, the stale plugin went to the backup, the
 folder kept mode 755, and a second run reused the cached download. `test/install-client-pack.test.sh`
 covers the swap, `--without`, the refusals and backup pruning.
+
+### Linux under Proton — tricep (2026-10-11)
+
+OdinOnDemand 1.3.0 plays nothing on a native Linux client. It loads its video player only from
+`libvlc/win-x64`, which LibVLCSharp refuses on Linux. It also fetches YouTube streams through a
+bundled YoutubeDLSharp that always takes the Windows path, `cmd.exe` and `yt-dlp.exe`. Tricep's
+native log showed exactly that: it downloaded the Windows `yt-dlp.exe`, then every play failed on
+`cmd.exe`. The mod's author lists Proton as tested, so Linux players run the Windows build there
+rather than us porting the mod (owner, 2026-10-11).
+
+Tricep's Steam was shut down, Valheim mapped to `proton_experimental` and its launch option set
+to `WINEDLLOVERRIDES="winhttp=n,b" %command%`; the old `config.vdf` and `localconfig.vdf` are in
+`~/lembitu-steam-config-backup-20261011T155816Z/`. On restart Steam downloaded the Windows build of
+the same game build, 25730771 (3.6 GB), into the same folder. It removed the Linux binaries and
+left every Pack file: all 346 non-config files of v20's inventory still matched, the two absent
+ones being ValheimVisualEnhanced, which tricep leaves out.
+
+The first Proton launch loaded BepInEx 5.4.23.5 and all 73 plugins (`0 failed`). Proton keeps its
+own preferences, so this fresh profile had no saved language, and Explorer, Herbalist,
+ImpactfulSkills, AdditiveDamageModifier and DiveIn hit the known early Steamworks access at
+startup (native-testing.md, Startup order).
+
+YouTube played on a screen in that session, on the live server (owner, 2026-10-11). The log shows
+yt-dlp resolving the streams through the Windows path and the video player loading from
+`libvlc\win-x64` under Wine. An earlier paste failed with yt-dlp's `Unsupported URL`, a link it
+cannot read, not a Proton fault. No JavaScript runtime was found, so yt-dlp warned that full
+formats were unavailable; the mod's README asks for Windows `deno.exe` beside `yt-dlp.exe` under
+Proton. Pressing OK in Settings saved the language (`language` in the profile's `user.reg`); a
+clean restart without the five startup errors has not been observed yet.
+
+The native test harness can no longer copy this folder, so the native client was copied to
+`~/.cache/valheim-lembitu/client` first; `scripts/native-run.sh` no longer overrides that default,
+and the installer no longer waits on the harness lock.
 
 ### Verifying a connected player
 

@@ -50,7 +50,6 @@ if ! command -v xdotool >/dev/null 2>&1 && [[ ! -e "$TOOLS_DIR/xdotool" ]]; then
   fi
 fi
 export PATH="$TOOLS_DIR:$PATH"
-export LEMBITU_CLIENT_DIR="${LEMBITU_CLIENT_DIR:-/games/SteamLibrary/steamapps/common/Valheim}"
 
 # --- the lock -----------------------------------------------------------------------------------
 exec 9>"$HOME/lembitu-native.lock"

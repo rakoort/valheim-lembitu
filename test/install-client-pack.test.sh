@@ -75,7 +75,6 @@ fresh_game() {
 
 run() {
   LEMBITU_PACK_CACHE="$WORK/cache" LEMBITU_PACK_BACKUPS="$WORK/backups" \
-    LEMBITU_NATIVE_LOCK="$WORK/native.lock" \
     "$INSTALLER" --game-dir "$WORK/game" --zip "$WORK/pack/t.zip" "$@" >"$WORK/out" 2>&1
 }
 
@@ -148,22 +147,6 @@ if run --keep-backups 2 && run --keep-backups 2 && run --keep-backups 2 \
 else
   cat "$WORK/out" >&2
   report fail "only the newest --keep-backups backups are kept"
-fi
-
-# --- 6. a native session's lock ---------------------------------------------------------------------
-
-if command -v flock >/dev/null 2>&1; then
-  fresh_game
-  before="$(tree_of "$WORK/game")"
-  exec 8>"$WORK/native.lock"
-  flock 8
-  if ! run && grep -q 'native test session holds' "$WORK/out" && assert_eq "$before" "$(tree_of "$WORK/game")"; then
-    report ok "a held native-session lock refuses the install and nothing moves"
-  else
-    cat "$WORK/out" >&2
-    report fail "a held native-session lock refuses the install and nothing moves"
-  fi
-  exec 8>&-
 fi
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

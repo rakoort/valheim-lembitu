@@ -135,8 +135,9 @@ class Session:
         self.lifecycle_timeout = float(lifecycle_timeout)
         self.root = Path(root or Path(__file__).resolve().parent.parent)
         self.preferences = Path(preferences or Path.home() / '.cache/valheim-lembitu/client-preferences')
-        # The licensed client lives in a Steam library on some hosts (astral-tricep) and in the
-        # cache on others (astral-bicep); LEMBITU_CLIENT_DIR selects it without flags.
+        # A native Linux copy of the licensed client, in the cache on every host. astral-tricep's
+        # Steam install runs under Proton since 2026-10-11, so it has no valheim.x86_64 to copy;
+        # LEMBITU_CLIENT_DIR selects another native install without flags.
         self.client_dir = Path(client_dir or os.environ.get('LEMBITU_CLIENT_DIR')
                                or Path.home() / '.cache/valheim-lembitu/client')
         self.server_dir = Path(server_dir or os.environ.get('LEMBITU_SERVER_DIR')

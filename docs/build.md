@@ -577,8 +577,8 @@ avoid a duplicate. Inspect retained evidence/launch logs with short calls spaced
 
 `scripts/native-smoke.py` is the minimal pre-flight (server, one client, console, customData,
 key, admin, rejoin and restart); `scripts/native-demo.py` demonstrates the full-Pack lifecycle,
-Market key, mandatory Guide refusal and client Pack zip join. The runner defaults to tricep's
-licensed installation at `/games/SteamLibrary/steamapps/common/Valheim`.
+Market key, mandatory Guide refusal and client Pack zip join. The client source is the native copy
+at `~/.cache/valheim-lembitu/client`; tricep's Steam installation runs under Proton since 2026-10-11.
 The complete demo passed on 2026-10-05 in `~/lembitu-native-tests/20261005T123002Z-demo/`.
 Its native server admin reply was `Banned users`, F7 used `xdotool` and opened
 `Marketplace_Panel` with eight observed buttons, and the inspected `marketplace.png`
