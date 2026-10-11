@@ -245,7 +245,7 @@ project-specific behaviour without owning someone else's source.
 
 | Fork | Forked from | Licence | Why | Retire when | Config |
 | --- | --- | --- | --- | --- | --- |
-| ValheimWebMap | [koenhendriks/Valheim-Web-Map](https://github.com/koenhendriks/Valheim-Web-Map) v1.3.0 (`1e69163286110ecd23f596dedfd2f38fd570b6a0`) | MIT | Server-only public web map; 1.3.0 draws only ±10,240 m and this world reaches 13,250 m (ADR-0003, 2026-10-07 amendment). Our changes: the world's radius and edge read from Expand_World_Size, corrected render and cartography extents, and a hidden player's exploration held back until logout (`src/forks/ValheimWebMap/UPSTREAM.md`) | An upstream release covers larger worlds and passes this world's checks | `config/enforced/com.valheimwebmap.cfg` |
+| ValheimWebMap | [koenhendriks/Valheim-Web-Map](https://github.com/koenhendriks/Valheim-Web-Map) v1.3.0 (`1e69163286110ecd23f596dedfd2f38fd570b6a0`) | MIT | Server-only public web map; 1.3.0 draws only ±10,240 m and this world reaches 13,250 m (ADR-0003, 2026-10-07 amendment). Our changes: the world's radius and edge read from Expand_World_Size, corrected render and cartography extents, and a hidden player's exploration held back until logout (`src/forks/ValheimWebMap/UPSTREAM.md`) | Not during the Run: guild claims and the Chronicle are ours (ADR-0003, 2026-10-11 amendment; ADR-0036). An upstream larger-world release is imported into the fork | `config/enforced/com.valheimwebmap.cfg` |
 
 The MaxPlayerCount fork left on 2026-10-07: ServerManager's ten-player capacity replaced it, and
 DiscordConnector left with it (#102).

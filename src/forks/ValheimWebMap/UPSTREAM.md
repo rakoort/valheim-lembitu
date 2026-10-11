@@ -7,7 +7,7 @@
 | Licence | MIT, upstream `LICENSE` copied verbatim here |
 | Browser dependency | Vendored upstream Leaflet JavaScript/CSS; BSD-2-Clause text in `web/LEAFLET-LICENSE.txt` |
 | Identity | `com.valheimwebmap`, assembly `ValheimWebMap.dll`, version 1.3.0 |
-| Retire condition | An upstream release covering larger worlds, including edge terrain and expanded cartography coordinates, passes this world's acceptance checks. |
+| Retire condition | None for the Run: guild claims and the Chronicle never come from upstream (ADR-0003, 2026-10-11 amendment; ADR-0036). An upstream larger-world release is imported, not adopted in its place. |
 
 ## Our changes
 

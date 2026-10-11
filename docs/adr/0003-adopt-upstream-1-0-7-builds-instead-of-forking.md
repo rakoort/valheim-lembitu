@@ -72,3 +72,11 @@ One fork arrives in its place: koenhendriks/ValheimWebMap. Its 1.3.0 release dra
 build covers the world we run. The owner chose to carry the fork from the start rather than wait
 for upstream. It is retired when an upstream release covers larger worlds. The ADR-0034 fallback
 would be a plugin of ours, not a fork.
+
+## Amendment — 2026-10-11
+
+ValheimWebMap is ours for the whole Run (owner, web map grilling). ADR-0036 gives it guild claims,
+the Chronicle, event links and the Discord sender, none of which an upstream release will supply,
+so the retire condition above no longer holds. An upstream release that covers larger worlds is
+imported into the fork rather than replacing it. The map stays server-only, so its changes ship
+with a maintenance restart and never need a new Pack.

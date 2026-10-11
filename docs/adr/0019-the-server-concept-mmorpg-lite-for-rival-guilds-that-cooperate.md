@@ -9,6 +9,8 @@ Amended 2026-10-06 (owner): ADR-0033 replaces the tuning targets and month endpo
 
 Amended 2026-10-11 (owner): ADR-0035 removes parties; guild members near a kill share its XP.
 
+Amended 2026-10-11 (owner): ADR-0036 puts collaboration first. Guilds cooperate first, rivalry shows only through what guilds build and claim, and nothing public ranks guilds or players. A concept review against this is owed.
+
 ## Context
 
 On 2026-10-04 the owner added thirty mods at once, removed Clan for Northarun/Guilds, and asked for

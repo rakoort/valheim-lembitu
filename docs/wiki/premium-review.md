@@ -94,8 +94,8 @@ Generated Magic Item Names = true, including upgrading a player whose cfg still 
   members earn about 58% of a
   kill each, three 44%, four 37.5%, eight 18.75%. Fact: under the linear curve to eight a three-player
   member earned 38%, so a party needed 2.6× a soloist's kill rate to match XP per hour
-  (`src/plugins/Lembitu.Oathbound/PartyExperience.cs:157-159`; `AuditPace.md` §3). ADR-0019, ADR-0020
-  and ADR-0022 amended.
+  (`src/plugins/Lembitu.Oathbound/GuildExperience.cs:151-153` since ADR-0035 moved the same split
+  from the party to the guild; `AuditPace.md` §3). ADR-0019, ADR-0020 and ADR-0022 amended.
 - **Bosses keep up to four modifiers, without the three counter types** (owner, 2026-10-04, amended
   2026-10-05). `Boss Modifiers = Max4` stays; `levels.yml` sets `Boss.modifiers` chameleon, vortex and
   adaptive to chance 0; applied 2026-10-05 (#87). The first answer kept every type; the owner reopened it after the

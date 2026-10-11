@@ -191,6 +191,18 @@ Two-player checks in #101, #106 and #109 run in one owner session with two separ
 Steam accounts before the release, from a checklist prepared at the end of the build. The Tickets
 are tracked on `master` without the `nt` readiness gate.
 
+### Decisions of 2026-10-11: the web map and the Chronicle
+
+The owner grilled the web map and Discord around guilds, one question at a time; ADR-0036 records
+the result and amends ADR-0019's framing and ADR-0003's retire condition for the fork. The server
+puts collaboration first: nothing public ranks or counts guilds or players, and colour on the map
+means a claim or something a guild's members built. The Chronicle, drawn in neutral ink with a link
+per entry, records what happened. In Discord, `#world` and `#deaths` carry it as typed cards; guild
+channels get their own notices; `#status` keeps one live message. Milestone 8, "Guild web map and
+the Chronicle", holds the work in order: guild claims and cards #117, live layers #118, the
+Chronicle #119 and Discord #120. Its oracle is `oracles/guild-web-map-chronicle.sh`. A concept
+review of guilds at the centre and of the advantage that free time gives is still owed.
+
 ## Launch provisioning — #19
 
 **Admission is by password alone; there is no whitelist.** The owner's decision on 2026-09-15 is a

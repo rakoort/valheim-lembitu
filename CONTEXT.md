@@ -40,8 +40,9 @@ A named group of three to five players with ranks, a shared vault, guild chat, t
 claims and land it claims. Founded in game; at most three hold a start region. The membership that
 owns things: land, vault, wards and guild progress. It is also who hunts together: the killer's
 guild members within 100 m of a kill split its class XP, with nothing to form first, and members
-always see each other on screen and on the map. Guilds are rivals and cooperators at once
-(ADR-0019, ADR-0028, ADR-0035).
+always see each other on screen and on the map. Guilds are the server's central grouping and
+cooperate first; rivalry shows only through what they build and claim (ADR-0019, ADR-0028,
+ADR-0035, ADR-0036).
 _Avoid_: clan, tribe, team, faction, party
 
 **Guild rank**:
@@ -187,8 +188,9 @@ It protects progress from death; it never raises a skill, so it is not a catch-u
 
 ### Conflict
 
-There is no PvP on this server (ADR-0019). Players never damage each other, and rivalry between
-guilds plays out through progress, territory and the Market.
+There is no PvP on this server (ADR-0019). Players never damage each other. Guilds cooperate first;
+what rivalry remains shows through what each guild builds and claims and through the Market, and
+nothing public ranks guilds or players (ADR-0036).
 
 **Tombstone**:
 The container a character's death leaves behind, holding whatever vanilla death rules take. Getting
@@ -282,12 +284,22 @@ for a deploy.
 _Avoid_: reboot, bounce, maintenance mode
 
 **Discord server**:
-The Run's own Discord: status, activity, announcements, support, a channel per guild and a private
-admin channel. Discord calls it a guild; in this project a Guild is only the in-game group.
+The Run's own Discord: status, the Chronicle's `#world` and `#deaths`, announcements, support, a
+channel per guild and a private admin channel. Discord calls it a guild; in this project a Guild is
+only the in-game group.
 _Avoid_: guild (for the Discord), Discord guild, community
 
 **Web map**:
-The public web page showing every online player's live position, heading and guild, and the Run's
-world as explored by all players together, with cartography-table pins, deaths and play sessions.
+The public web page of the Run's world as explored by all players together: every online player's
+live position, heading and guild; the guilds' claims and what their members built, in each guild's
+colour; ships, carts, portals and tombstones; cartography-table pins; and the Chronicle (ADR-0036).
 It is not the in-game map, which stays personal; its public-position toggle does not hide web positions.
 _Avoid_: live map, online map, atlas
+
+**Chronicle**:
+The Run's record of what happened in the world: boss falls with who was present and who gained a
+key, first entries into landmarks, Sieges held, guild milestones and deaths. Drawn in neutral ink on
+the web map and posted to `#world` and `#deaths`; it names guilds and players but never ranks or
+counts them, and never colours ground, which only a claim does. Every entry has a link that opens
+the web map on it (ADR-0036).
+_Avoid_: saga, world log, feed, leaderboard

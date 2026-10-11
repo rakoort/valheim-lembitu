@@ -3,7 +3,8 @@
 One directory per forked mod, named after the mod (`src/forks/ValheimWebMap/`). Our own plugins
 live in `src/plugins/` instead; the split makes code ownership and licensing visible.
 ValheimWebMap covers this world's expanded radius and edge (ADR-0003, 2026-10-07 amendment).
-It replaces the retired MaxPlayerCount fork; its retire condition is an upstream larger-world release.
+It replaces the retired MaxPlayerCount fork and is ours for the whole Run (ADR-0003, 2026-10-11
+amendment; ADR-0036).
 
 Prefer official working 1.0.7 builds (ADR-0003). Retain a fork when it carries project-specific
 behavior that upstream does not provide; import applicable official updates without losing that
