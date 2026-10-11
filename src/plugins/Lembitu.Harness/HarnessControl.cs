@@ -396,7 +396,35 @@ internal sealed class HarnessControl
                     }
                     Menu.instance.Hide();
                 }
-                else throw new ArgumentException("settings target must be open or ok");
+                else if (command.target == "back")
+                {
+                    // Escape and the Back button: every tab restores what it showed at open.
+                    if (Settings.instance == null) throw new InvalidOperationException("settings are not open");
+                    Settings.instance.OnBack();
+                    float closed = Time.realtimeSinceStartup + 10f;
+                    while (Settings.instance != null)
+                    {
+                        if (Time.realtimeSinceStartup >= closed) throw new InvalidOperationException("settings stayed open after Back");
+                        yield return null;
+                    }
+                    Menu.instance.Hide();
+                }
+                else throw new ArgumentException("settings target must be open, ok or back");
+                yield return null;
+                break;
+            }
+            case "audio":
+            {
+                // Moves the settings window's three volume sliders the way dragging them does
+                // (x master, y sound effects, z music, each 0..1); the window must be open.
+                if (command.target != "set") throw new ArgumentException("audio target must be set");
+                if (Settings.instance == null) throw new InvalidOperationException("settings are not open");
+                Valheim.SettingsGui.AudioSettings sliders = Settings.instance.GetComponentInChildren<Valheim.SettingsGui.AudioSettings>(true)
+                    ?? throw new InvalidOperationException("audio settings tab not found");
+                sliders.m_volumeSlider.value = command.x;
+                sliders.m_sfxVolumeSlider.value = command.y;
+                sliders.m_musicVolumeSlider.value = command.z;
+                yield return null;
                 yield return null;
                 break;
             }
@@ -859,6 +887,7 @@ internal sealed class HarnessControl
             platformUserId = PlatformUserId(),
             steamId = SteamId(),
             console = consoleLines,
+            audio = Audio(),
             keyPress = keyResult,
             connection = ZNet.instance == null ? "absent" : ZNet.GetConnectionStatus().ToString(),
             fixtureSpawned = fixtureSpawned,
@@ -882,6 +911,46 @@ internal sealed class HarnessControl
                     requiredLevel = (int)level.GetValue(t), x = t.transform.position.x, y = t.transform.position.y, z = t.transform.position.z }).ToArray();
         }
         catch { return Array.Empty<ExplorerTrackerState>(); }
+    }
+
+    // What the player hears is set by the master mixer's SfxVol/GuiVol (sound effects and UI),
+    // MusicMan's master music volume and AudioListener.volume. A playing source routed to no
+    // mixer group, or to another mixer, ignores the sound-effects slider.
+    private static AudioState Audio()
+    {
+        AudioState state = new()
+        {
+            prefMaster = PlatformPrefs.GetFloat("MasterVolume", -1f),
+            prefSfx = PlatformPrefs.GetFloat("SfxVolume", -1f),
+            prefMusic = PlatformPrefs.GetFloat("MusicVolume", -1f),
+            listenerVolume = AudioListener.volume,
+            listenerPaused = AudioListener.pause,
+            masterMusic = MusicMan.m_masterMusicVolume,
+            musicSource = MusicMan.instance != null && MusicMan.instance.m_musicSource != null ? MusicMan.instance.m_musicSource.volume : -1f,
+            outputSampleRate = UnityEngine.AudioSettings.outputSampleRate,
+            speakerMode = UnityEngine.AudioSettings.speakerMode.ToString()
+        };
+        UnityEngine.Audio.AudioMixer? master = AudioMan.instance != null ? AudioMan.instance.m_masterMixer : null;
+        if (master != null)
+        {
+            master.GetFloat("SfxVol", out state.mixerSfxDb);
+            master.GetFloat("GuiVol", out state.mixerGuiDb);
+        }
+        float[] samples = new float[1024];
+        AudioListener.GetOutputData(samples, 0);
+        state.outputRms = Mathf.Sqrt(samples.Sum(s => s * s) / samples.Length);
+        List<SourceState> bypass = new();
+        foreach (AudioSource source in UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None))
+        {
+            if (!source.isPlaying) continue;
+            state.playing++;
+            UnityEngine.Audio.AudioMixerGroup group = source.outputAudioMixerGroup;
+            if (group != null && group.audioMixer == master) continue;
+            bypass.Add(new SourceState { name = source.gameObject.name, clip = source.clip != null ? source.clip.name : "",
+                group = group == null ? "" : group.audioMixer.name + "/" + group.name, volume = source.volume });
+        }
+        state.unmixed = bypass.ToArray();
+        return state;
     }
 
     /// <summary>The local platform user ID, "steam_7656…" on the test client; empty before platform sign-in.</summary>
@@ -991,6 +1060,7 @@ internal sealed class HarnessControl
         public string[] adminList = Array.Empty<string>();
         public string localUserId = "";
         public ConsoleState? console;
+        public AudioState? audio;
         public HarnessKeys.KeyResult? keyPress;
         public string connection = "", fixtureSpawned = "", fixtureZdo = "";
         public string[]? fixturePrivateKeys;
@@ -1015,6 +1085,15 @@ internal sealed class HarnessControl
     private sealed class RecentLine { public string where = "", text = ""; public float unscaled; public string time = ""; }
     private sealed class WindowState { public string canvas = "", name = ""; public int order; public bool custom; public string[] texts = null!; public ButtonState[] buttons = null!; }
     private sealed class ConsoleState { public string command = ""; public string[] lines = null!; }
+    private sealed class AudioState
+    {
+        public float prefMaster, prefSfx, prefMusic, listenerVolume, masterMusic, musicSource, mixerSfxDb = float.NaN, mixerGuiDb = float.NaN, outputRms;
+        public bool listenerPaused;
+        public int playing, outputSampleRate;
+        public string speakerMode = "";
+        public SourceState[] unmixed = Array.Empty<SourceState>();
+    }
+    private sealed class SourceState { public string name = "", clip = "", group = ""; public float volume; }
     private sealed class UiState { public bool inventory, map, crafting, craftEnabled; public string[] recipes = null!; public ButtonState[] buttons = null!; }
     private sealed class ButtonState { public string id = "", text = ""; public bool active, interactable; }
 }

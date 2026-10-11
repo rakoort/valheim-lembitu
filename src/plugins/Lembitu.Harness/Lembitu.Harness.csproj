@@ -18,6 +18,8 @@
     <Reference Include="UnityEngine.UI" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath></Reference>
     <Reference Include="UnityEngine.ScreenCaptureModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.ScreenCaptureModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.PhysicsModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.PhysicsModule.dll</HintPath></Reference>
+    <!-- Audio snapshot: mixer levels, listener output and source routing. -->
+    <Reference Include="UnityEngine.AudioModule" Private="false"><HintPath>$(ValheimRefDir)UnityEngine.AudioModule.dll</HintPath></Reference>
     <!-- The key action queues InputSystem state events; ZInput reads Keyboard.current itself. -->
     <Reference Include="Unity.InputSystem" Private="false">
       <HintPath>$(ValheimRefDir)Unity.InputSystem.dll</HintPath>
