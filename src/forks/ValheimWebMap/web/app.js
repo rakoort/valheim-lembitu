@@ -4,12 +4,12 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {
     world: $('world-name'), clock: $('clock'), render: $('render'), renderText: $('render-text'),
-    renderBar: $('render-bar'), panel: $('panel'), toggle: $('panel-toggle'), count: $('panel-count'),
+    renderBar: $('render-bar'), panel: $('panel'), toggle: $('panel-toggle'),
     players: $('players'), noPlayers: $('no-players'), explored: $('explored'), coords: $('coords'),
-    history: $('history'), noHistory: $('no-history')
+    card: $('guild-card')
   };
-  var activeTab = 'online';
-  var expanded = {};
+  var selectedGuild = null;
+  var claimLayers = [];
 
   // Cartography table markers and death markers.
   var pins = { owners: [], pins: [], traders: [], deaths: [] };
@@ -68,20 +68,7 @@
     map.on('mouseout', function () { el.coords.textContent = ''; });
 
     el.toggle.addEventListener('click', function () { el.panel.classList.toggle('open'); });
-    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (btn) {
-      btn.addEventListener('click', function () { showTab(btn.getAttribute('data-tab')); });
-    });
-    var showMarkersTab = features.pins !== false || features.deathMarkers !== false || features.traders !== false;
-    if (features.history === false) document.querySelector('.tab[data-tab="history"]').style.display = 'none';
-    if (!showMarkersTab) document.querySelector('.tab[data-tab="markers"]').style.display = 'none';
-    if (features.history === false && !showMarkersTab) {
-      document.querySelector('.tabs').style.display = 'none';
-      $('tab-online').insertAdjacentHTML('afterbegin', '<h1 class="panel-title">Players</h1>');
-    }
-    if (features.history !== false) {
-      pollHistory();
-      setInterval(pollHistory, 15000);
-    }
+    $('guild-close').addEventListener('click', function () { selectedGuild = null; el.card.classList.add('hidden'); });
     setupMarkerFilters();
     window.addEventListener('hashchange', function () { if (!suppressHash) applyHash(); });
 
@@ -141,6 +128,8 @@
       state = s;
       renderStatus(s);
       ensureTiles(s);
+      renderClaims();
+      renderGuildCard();
       renderPlayers(s.players || []);
       if ((features.pins !== false || features.deathMarkers !== false || features.traders !== false) && s.pinsVersion !== lastPinsVersion) {
         fetchPins(s.pinsVersion);
@@ -179,19 +168,30 @@
 
   function renderPlayers(players) {
     var seen = {};
-    el.count.textContent = players.length;
     el.noPlayers.classList.toggle('hidden', players.length > 0);
 
-    players.sort(function (a, b) {
+    players = players.slice().sort(function (a, b) {
+      if (!!a.guildId !== !!b.guildId) return a.guildId ? -1 : 1;
+      if (a.guildId !== b.guildId) return (a.guild || '').localeCompare(b.guild || '') || String(a.guildId).localeCompare(String(b.guildId));
       if (a.visible !== b.visible) return a.visible ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
-
     var frag = document.createDocumentFragment();
+    var previousGuild = '';
     players.forEach(function (p) {
+      if (previousGuild !== p.guildId) {
+        previousGuild = p.guildId;
+        var heading = document.createElement('li');
+        heading.className = 'guild-heading';
+        var guild = guildById(p.guildId);
+        heading.style.setProperty('--c', guild ? guild.color : '#888781');
+        heading.textContent = guild ? '[' + guild.tag + '] ' + guild.name : p.guild || 'Wanderers · no guild';
+        if (guild) heading.addEventListener('click', function () { openGuild(guild.id); });
+        frag.appendChild(heading);
+      }
       var key = String(p.id) + ':' + p.name;
       seen[key] = true;
-      var color = colorFor(p.name);
+      var color = p.color || '#888781';
       var li = document.createElement('li');
       li.style.setProperty('--c', color);
       li.className = (p.visible ? '' : 'hidden-pos') + (key === followId ? ' following' : '');
@@ -202,8 +202,6 @@
         if (p.biome) parts.push(p.biome);
         if (features.coordinates !== false && typeof p.x === 'number') parts.push(Math.round(p.x) + ', ' + Math.round(p.z));
       }
-      if (p.since) parts.push('online ' + duration((Date.now() - Date.parse(p.since)) / 1000));
-      if (typeof p.deaths === 'number' && p.deaths > 0) parts.push(p.deaths + (p.deaths === 1 ? ' death' : ' deaths'));
       li.innerHTML = '<span class="dot"></span><span class="name"></span>' +
         '<span class="follow">' + (key === followId ? 'following' : p.dead ? '<span class="skull">☠</span>' : '') + '</span>' +
         '<span class="sub"></span>';
@@ -269,82 +267,96 @@
     }
   }
 
-  // --- history -----------------------------------------------------------
-
-  function showTab(name) {
-    activeTab = name;
-    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (b) {
-      b.classList.toggle('active', b.getAttribute('data-tab') === name);
-    });
-    Array.prototype.forEach.call(document.querySelectorAll('.tab-page'), function (pg) {
-      pg.classList.toggle('active', pg.id === 'tab-' + name);
-    });
-    if (name === 'history') pollHistory();
+  // Guild snapshots are replaced on every poll, including an open public card.
+  function guildById(id) {
+    return (state.guilds || []).find(function (g) { return g.id === id; });
   }
 
-  function pollHistory() {
-    if (activeTab !== 'history' && el.history.childElementCount > 0) return;
-    fetch('api/history', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (h) {
-      renderHistory(h.players || []);
-    }).catch(function () {});
+  function openGuild(id) {
+    selectedGuild = id;
+    el.panel.classList.add('open');
+    renderGuildCard();
   }
 
-  function renderHistory(players) {
-    el.noHistory.classList.toggle('hidden', players.length > 0);
-    var frag = document.createDocumentFragment();
-    players.forEach(function (p) {
-      var li = document.createElement('li');
-      li.className = 'history';
-      li.innerHTML = '<span class="name"></span><span class="online-dot" style="display:none"></span>' +
-        '<span class="stats"></span>';
-      li.querySelector('.name').textContent = p.name;
-      if (p.online) li.querySelector('.online-dot').style.display = '';
-      var stats = [];
-      if (typeof p.sessions === 'number') stats.push(p.sessions + (p.sessions === 1 ? ' session' : ' sessions'));
-      if (typeof p.playSeconds === 'number') stats.push(duration(p.playSeconds) + ' played');
-      if (typeof p.deaths === 'number') stats.push(p.deaths + (p.deaths === 1 ? ' death' : ' deaths'));
-      if (p.online) stats.push('online now');
-      else if (p.lastSeen) stats.push('last seen ' + relative(p.lastSeen));
-      li.querySelector('.stats').textContent = stats.join(' · ');
-      if (expanded[p.name] && p.recent && p.recent.length) {
-        var ul = document.createElement('ul');
-        ul.className = 'sessions';
-        p.recent.forEach(function (s) {
-          var row = document.createElement('li');
-          row.innerHTML = '<span class="date"></span><span class="dur"></span><span class="d"></span>';
-          row.querySelector('.date').textContent = formatDate(s.start) + (s.character !== p.name ? ' (' + s.character + ')' : '');
-          row.querySelector('.dur').textContent = typeof s.seconds === 'number' ? duration(s.seconds) : '';
-          row.querySelector('.d').textContent = s.deaths ? '☠ ' + s.deaths : '';
-          ul.appendChild(row);
-        });
-        li.appendChild(ul);
+  function textNode(tag, text, cls) {
+    var node = document.createElement(tag);
+    node.textContent = text;
+    if (cls) node.className = cls;
+    return node;
+  }
+
+  function renderGuildCard() {
+    var g = state.guildsEnabled && guildById(selectedGuild);
+    el.card.classList.toggle('hidden', !g);
+    if (!g) return;
+    el.card.style.setProperty('--c', g.color);
+    var body = $('guild-details');
+    body.replaceChildren();
+    body.appendChild(textNode('h2', '[' + g.tag + '] ' + g.name));
+    body.appendChild(textNode('p', 'Emblem · ' + g.emblem));
+    body.appendChild(textNode('p', g.description));
+    body.appendChild(textNode('p', 'Leader · ' + (g.leader ? g.leader.name : '—')));
+    body.appendChild(textNode('p', 'Start region · ' + (g.startRegion || '—')));
+    body.appendChild(textNode('p', 'Level · ' + g.level));
+    body.appendChild(textNode('p', 'Banner · ' + (g.banner ? 'x ' + Math.round(g.banner.x) + ', z ' + Math.round(g.banner.z) : '—')));
+    body.appendChild(textNode('p', 'Territory half-side · ' + g.territoryHalfSide + ' m'));
+    function section(title, rows) {
+      body.appendChild(textNode('h3', title));
+      var list = document.createElement('ul');
+      rows.forEach(function (row) { list.appendChild(textNode('li', row)); });
+      if (!rows.length) list.appendChild(textNode('li', '—'));
+      body.appendChild(list);
+    }
+    section('Members', (g.members || []).map(function (m) { return m.name + ' · ' + (m.online ? 'online' : 'offline'); }));
+    section('Upgrades', (g.upgrades || []).map(function (u) { return u.name + ' · tier ' + u.tier; }));
+    section('Buildings', (g.buildings || []).map(function (b) { return b.name; }));
+    section('Allies and wars', (g.relations || []).map(function (r) { return r.name + ' · ' + r.relation; }));
+  }
+
+  function renderClaims() {
+    claimLayers.forEach(function (layer) { map.removeLayer(layer); });
+    claimLayers = [];
+    ['territories', 'wards', 'regions', 'outposts'].forEach(function (kind) { $('f-' + kind).parentNode.classList.toggle('hidden', !state.guildsEnabled); });
+    if (!state.guildsEnabled) return;
+    function add(layer, guildId, label) {
+      layer.bindTooltip(textNode('span', label));
+      if (guildId) layer.on('click', function () { openGuild(guildId); });
+      layer.addTo(map);
+      claimLayers.push(layer);
+    }
+    (state.claims || []).forEach(function (c) {
+      var kind = { territory: 'territories', ward: 'wards', region: 'regions', outpost: 'outposts' }[c.kind];
+      if (!kind || !markerPrefs[kind]) return;
+      var guild = guildById(c.guildId);
+      var color = c.guildId ? c.color : '#888781';
+      var label = (c.name || c.kind) + ' · ' + (guild ? guild.name : 'Unclaimed');
+      if (c.claimedDay) label += ' · Claimed ' + c.claimedDay;
+      if (c.siege) label += ' · Siege: ' + c.siege.stage;
+      var layer;
+      var options = { color: color, fillColor: color, fillOpacity: 0.13, weight: 2 };
+      if (c.kind === 'outpost') {
+        var icon = textNode('div', '⚑', 'claim-banner outpost' + (c.siege ? ' siege-live' : ''));
+        icon.style.setProperty('--c', color);
+        if (c.siege) icon.appendChild(textNode('span', c.siege.stage, 'siege-stage'));
+        layer = L.marker([c.z, c.x], { icon: L.divIcon({ className: 'claim-marker', html: icon, iconSize: [24, 30], iconAnchor: [12, 30] }) });
+      } else if (typeof c.halfSide === 'number') {
+        layer = L.rectangle([[c.z - c.halfSide, c.x - c.halfSide], [c.z + c.halfSide, c.x + c.halfSide]], options);
+      } else if (typeof c.radius === 'number') {
+        options.radius = c.radius;
+        layer = L.circle([c.z, c.x], options);
+      } else if (c.kind === 'region') {
+        var region = textNode('div', '◇', 'claim-banner region');
+        region.style.setProperty('--c', color);
+        layer = L.marker([c.z, c.x], { icon: L.divIcon({ className: 'claim-marker', html: region, iconSize: [24, 30], iconAnchor: [12, 15] }) });
       }
-      li.addEventListener('click', function () {
-        expanded[p.name] = !expanded[p.name];
-        renderHistory(players);
-      });
-      frag.appendChild(li);
+      if (layer) add(layer, c.guildId, label);
     });
-    el.history.innerHTML = '';
-    el.history.appendChild(frag);
-  }
-
-  function duration(seconds) {
-    seconds = Math.max(0, Math.floor(seconds || 0));
-    var h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60);
-    if (h >= 24) { var d = Math.floor(h / 24); return d + 'd ' + (h % 24) + 'h'; }
-    if (h > 0) return h + 'h ' + m + 'm';
-    if (m > 0) return m + 'm';
-    return seconds + 's';
-  }
-
-  function relative(iso) {
-    var s = (Date.now() - Date.parse(iso)) / 1000;
-    if (s < 60) return 'just now';
-    if (s < 3600) return Math.floor(s / 60) + ' min ago';
-    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
-    var d = Math.floor(s / 86400);
-    return d === 1 ? 'yesterday' : d + ' days ago';
+    if (markerPrefs.territories) (state.guilds || []).forEach(function (g) {
+      if (!g.banner) return;
+      var banner = textNode('div', '⚑', 'claim-banner');
+      banner.style.setProperty('--c', g.color);
+      add(L.marker([g.banner.z, g.banner.x], { icon: L.divIcon({ className: 'claim-marker', html: banner, iconSize: [24, 30], iconAnchor: [12, 30] }) }), g.id, '[' + g.tag + '] ' + g.name);
+    });
   }
 
   function formatDate(iso) {
@@ -356,23 +368,22 @@
   // --- cartography table markers ---------------------------------------------
 
   function loadMarkerPrefs() {
-    var prefs = { hiddenOwners: {}, pins: true, checked: true, traders: true, deaths: true };
+    var prefs = { pins: true, checked: true, traders: true, deaths: true, territories: true, wards: true, regions: true, outposts: true };
     try {
-      var saved = JSON.parse(localStorage.getItem('vwm.markers') || '{}');
+      var saved = JSON.parse(localStorage.getItem('vwm.layers') || '{}');
       if (saved && typeof saved === 'object') {
-        if (saved.hiddenOwners && typeof saved.hiddenOwners === 'object') prefs.hiddenOwners = saved.hiddenOwners;
-        ['pins', 'checked', 'traders', 'deaths'].forEach(function (k) { if (typeof saved[k] === 'boolean') prefs[k] = saved[k]; });
+        Object.keys(prefs).forEach(function (k) { if (typeof saved[k] === 'boolean') prefs[k] = saved[k]; });
       }
     } catch (e) { /* storage unavailable: defaults */ }
     return prefs;
   }
 
   function saveMarkerPrefs() {
-    try { localStorage.setItem('vwm.markers', JSON.stringify(markerPrefs)); } catch (e) { /* ignore */ }
+    try { localStorage.setItem('vwm.layers', JSON.stringify(markerPrefs)); } catch (e) { /* ignore */ }
   }
 
   function setupMarkerFilters() {
-    var map_ = { 'f-pins': 'pins', 'f-checked': 'checked', 'f-traders': 'traders', 'f-deaths': 'deaths' };
+    var map_ = { 'f-pins': 'pins', 'f-checked': 'checked', 'f-traders': 'traders', 'f-deaths': 'deaths', 'f-territories': 'territories', 'f-wards': 'wards', 'f-regions': 'regions', 'f-outposts': 'outposts' };
     Object.keys(map_).forEach(function (id) {
       var box = $(id);
       box.checked = markerPrefs[map_[id]];
@@ -380,6 +391,7 @@
         markerPrefs[map_[id]] = box.checked;
         saveMarkerPrefs();
         renderPinMarkers();
+        renderClaims();
       });
     });
     if (features.pins === false) { $('f-pins').parentNode.classList.add('hidden'); $('f-checked-wrap').classList.add('hidden'); }
@@ -392,45 +404,12 @@
     fetch('api/pins', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (p) {
       pins = { owners: p.owners || [], pins: p.pins || [], traders: p.traders || [], deaths: p.deaths || [] };
       lastPinsVersion = version;
-      renderOwners();
       renderPinMarkers();
     }).catch(function () {});
   }
 
   function ownerLabel(o) { return o.name || 'Unknown owner'; }
 
-  function renderOwners() {
-    var list = $('pin-owners');
-    var owners = pins.owners.slice().sort(function (a, b) {
-      if (a.online !== b.online) return a.online ? -1 : 1;
-      if (!!a.name !== !!b.name) return a.name ? -1 : 1;
-      return b.pins - a.pins;
-    });
-    $('no-pins').classList.toggle('hidden', owners.length > 0 || pins.deaths.length > 0 || pins.traders.length > 0);
-    var frag = document.createDocumentFragment();
-    owners.forEach(function (o) {
-      var li = document.createElement('li');
-      li.className = 'owner' + (o.name ? '' : ' unknown');
-      li.style.setProperty('--c', colorFor(o.name || 'owner:' + o.id));
-      li.innerHTML = '<input type="checkbox"><span class="dot"></span><span class="name"></span><span class="count"></span>';
-      var box = li.querySelector('input');
-      box.checked = !markerPrefs.hiddenOwners[o.id];
-      li.querySelector('.name').textContent = ownerLabel(o);
-      if (o.online) li.querySelector('.name').insertAdjacentHTML('beforeend', '<span class="online-dot" title="online"></span>');
-      li.querySelector('.count').textContent = o.pins + (o.pins === 1 ? ' marker' : ' markers');
-      var toggle = function (checked) {
-        if (checked) delete markerPrefs.hiddenOwners[o.id]; else markerPrefs.hiddenOwners[o.id] = true;
-        box.checked = checked;
-        saveMarkerPrefs();
-        renderPinMarkers();
-      };
-      box.addEventListener('click', function (e) { e.stopPropagation(); toggle(box.checked); });
-      li.addEventListener('click', function () { toggle(!box.checked); });
-      frag.appendChild(li);
-    });
-    list.innerHTML = '';
-    list.appendChild(frag);
-  }
 
   var bossNames = {
     '$enemy_eikthyr': 'Eikthyr', '$enemy_gdking': 'The Elder', '$enemy_bonemass': 'Bonemass', '$enemy_dragon': 'Moder',
@@ -449,7 +428,6 @@
     var wanted = {};
     if (features.pins !== false && markerPrefs.pins) {
       pins.pins.forEach(function (p) {
-        if (markerPrefs.hiddenOwners[p.owner]) return;
         if (p.checked && !markerPrefs.checked) return;
         wanted[p.id] = { x: p.x, z: p.z, cls: 'pin-' + p.type + (p.checked ? ' checked' : ''), label: prettyName(p.name), title: ownerOf(p.owner) + ' · ' + p.type };
       });
@@ -502,11 +480,6 @@
     renderPlayers(state.players || []);
   }
 
-  function colorFor(name) {
-    var h = 0;
-    for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-    return 'hsl(' + (h % 360) + ', 70%, 60%)';
-  }
 
   // --- URL hash: #x,z,zoom -------------------------------------------------
 

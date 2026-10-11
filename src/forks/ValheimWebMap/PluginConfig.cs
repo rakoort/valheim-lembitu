@@ -28,16 +28,9 @@ namespace ValheimWebMap
         public readonly ConfigEntry<bool> ShowBiome;
         public readonly ConfigEntry<bool> ShowCoordinates;
         public readonly ConfigEntry<bool> ShowHeading;
-        public readonly ConfigEntry<bool> ShowTimeOnline;
         public readonly ConfigEntry<bool> ShowDeadStatus;
-        public readonly ConfigEntry<bool> ShowDeathCounts;
         public readonly ConfigEntry<bool> ShowDayAndTime;
         public readonly ConfigEntry<bool> ShowExploredPercent;
-        public readonly ConfigEntry<bool> ShowHistory;
-        public readonly ConfigEntry<bool> ShowSessionCount;
-        public readonly ConfigEntry<bool> ShowPlayTime;
-        public readonly ConfigEntry<bool> ShowLastSeen;
-        public readonly ConfigEntry<int> RecentSessions;
 
         public readonly ConfigEntry<bool> RevealFromCartographyTable;
         public readonly ConfigEntry<float> CartographyScanInterval;
@@ -120,35 +113,19 @@ namespace ValheimWebMap
                 "Show a visible player's world coordinates as text in the player list.");
             ShowHeading = file.Bind("Display", "ShowHeading", true,
                 "Show which way a visible player is facing.");
-            ShowTimeOnline = file.Bind("Display", "ShowTimeOnline", true,
-                "Show how long each online player has been connected. Requires TrackSessions.");
             ShowDeadStatus = file.Bind("Display", "ShowDeadStatus", true,
                 "Mark players who are currently dead.");
-            ShowDeathCounts = file.Bind("Display", "ShowDeathCounts", true,
-                "Show death counts for online players and in the history. Requires TrackDeaths.");
             ShowDayAndTime = file.Bind("Display", "ShowDayAndTime", true,
                 "Show the in-game day and time of day.");
             ShowExploredPercent = file.Bind("Display", "ShowExploredPercent", true,
                 "Show how much of the world has been explored.");
-            ShowHistory = file.Bind("Display", "ShowHistory", true,
-                "Offer the History tab and the /api/history endpoint. Requires TrackSessions.");
-            ShowSessionCount = file.Bind("Display", "ShowSessionCount", true,
-                "History: show how many sessions each player has had.");
-            ShowPlayTime = file.Bind("Display", "ShowPlayTime", true,
-                "History: show each player's total play time.");
-            ShowLastSeen = file.Bind("Display", "ShowLastSeen", true,
-                "History: show when each player was last online.");
-            RecentSessions = file.Bind("Display", "RecentSessions", 30,
-                new ConfigDescription("History: how many recent sessions to list per player. 0 hides the per-session list.",
-                    new AcceptableValueRange<int>(0, 365)));
 
             ShowPins = file.Bind("Display", "ShowPins", true,
-                "Show map markers shared on cartography tables, with a Markers tab to toggle them per player.");
+                "Show map markers shared on cartography tables, controlled by the page layer switches.");
             ShowCheckedPins = file.Bind("Display", "ShowCheckedPins", true,
                 "Include markers that were crossed out on the table. The page has its own switch to hide them.");
             ShowAutomatedPins = file.Bind("Display", "ShowAutomatedPins", false,
-                "Also show markers that server-side mods (for example AutoMapTables) wrote to the table rather than " +
-                "players. They are grouped under the mod's name in the Markers tab.");
+                "Also show markers that server-side mods (for example AutoMapTables) wrote to the table rather than players.");
             HidePinsInFog = file.Bind("Display", "HidePinsInFog", true,
                 "Hide markers that lie in unexplored territory, so the map still only shows where players have been.");
             PinMergeDistance = file.Bind("Display", "PinMergeDistance", 10f,
@@ -158,7 +135,7 @@ namespace ValheimWebMap
                     "0 keeps every marker.",
                     new AcceptableValueRange<float>(0f, 100f)));
             ShowTraders = file.Bind("Display", "ShowTraders", true,
-                "Mark traders that players have found, with a larger marker and their own switch in the Markers tab. " +
+                "Mark traders that players have found, with their own layer switch. " +
                 "A trader counts as found once the game has placed it, which happens when a player comes near; " +
                 "HidePinsInFog and PinMergeDistance apply to traders as well.");
             TraderLocations = file.Bind("Display", "TraderLocations",
