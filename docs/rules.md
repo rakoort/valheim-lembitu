@@ -362,10 +362,12 @@ hover stats, skill progress, a clock and the weather forecast.
 
 **The web map is public, from Pack v17.** Anyone with the link sees everyone's live position,
 heading and guild, and the whole world as explored by every player together, with cartography-table
-pins, deaths and play sessions. Exploration appears while players are connected, not only after
-logout. Rival guilds can see where you are, where you have been and what you have pinned on a table.
-Your own in-game map stays yours, and its public-position setting remains off; that setting does not
-hide you on the web map (owner reversal, 2026-10-09; `docs/wiki/operations.md`).
+pins and death markers. Guild territories, bound wards, start region claims and outposts use muted
+guild colours; territory and banner clicks open the public guild card. Online players are grouped
+by guild. No hours played, death counts or player/guild standings appear. Exploration appears
+while players are connected, not only after logout. Guild vaults, coins, messages of the day and
+guild pins stay private. Your in-game map and its public-position setting remain unchanged; that
+setting does not hide you on the web map (ADR-0036; `docs/wiki/operations.md`).
 
 **There is no PvP.** It is held off for everyone (`config/enforced/com.orianaventure.mod.MultiplayerTweaks.cfg`).
 

@@ -63,16 +63,11 @@ namespace ValheimWebMap
         public List<PlayerRecord> Players = new List<PlayerRecord>();
     }
 
-    /// <summary>What gets recorded and what the history API hands out. Plain values so this file has no BepInEx dependency.</summary>
+    /// <summary>Server recording policy. Sessions remain on disk, never in a public history API.</summary>
     internal sealed class HistoryOptions
     {
         public bool TrackDeaths = true;
         public int RetentionDays;
-        public bool ShowSessionCount = true;
-        public bool ShowPlayTime = true;
-        public bool ShowDeaths = true;
-        public bool ShowLastSeen = true;
-        public int RecentSessions = 30;
     }
 
     /// <summary>
@@ -104,7 +99,6 @@ namespace ValheimWebMap
         private readonly Dictionary<long, CharacterRecord> _characters = new Dictionary<long, CharacterRecord>();
         private readonly Dictionary<long, Live> _live = new Dictionary<long, Live>();
         private readonly List<long> _gone = new List<long>();
-        private volatile string _json;
         private bool _dirty;
         private int _deathsVersion;
 
@@ -124,7 +118,6 @@ namespace ValheimWebMap
                 foreach (CharacterRecord c in p.Characters)
                     if (c.PlayerId != 0) _characters[c.PlayerId] = c;
             }
-            _json = BuildJson();
         }
 
         /// <summary>Changes whenever a death with a position is recorded.</summary>
@@ -144,25 +137,9 @@ namespace ValheimWebMap
             if (after != before) _dirty = true;
         }
 
-        public string Json => _json;
         public bool Dirty => _dirty;
         public int PlayerCount => _file.Players.Count;
 
-        public bool TryGetLive(long peerId, out DateTime sessionStart, out int sessionDeaths, out int totalDeaths)
-        {
-            Live live;
-            if (_live.TryGetValue(peerId, out live))
-            {
-                sessionStart = live.Session.Start;
-                sessionDeaths = live.Session.Deaths;
-                totalDeaths = live.Player.Deaths.Count;
-                return true;
-            }
-            sessionStart = DateTime.MinValue;
-            sessionDeaths = 0;
-            totalDeaths = 0;
-            return false;
-        }
 
         public void Update(List<PlayerEntry> players, DateTime now, int day)
         {
@@ -216,7 +193,6 @@ namespace ValheimWebMap
             if (changed || _live.Count > 0)
             {
                 _dirty = true;
-                _json = BuildJson();
             }
         }
 
@@ -316,49 +292,6 @@ namespace ValheimWebMap
             return record;
         }
 
-        private string BuildJson()
-        {
-            var sorted = new List<PlayerRecord>(_file.Players);
-            sorted.Sort((a, b) => b.LastSeen.CompareTo(a.LastSeen));
-
-            var j = new JsonWriter(512 + sorted.Count * 400);
-            j.BeginObject();
-            j.Key("players").BeginArray();
-            foreach (PlayerRecord p in sorted)
-            {
-                bool online = false;
-                foreach (Live live in _live.Values)
-                    if (live.Player == p) { online = true; break; }
-
-                j.BeginObject();
-                j.Prop("name", p.Name);
-                j.Prop("online", online);
-                if (_options.ShowSessionCount) j.Prop("sessions", p.Sessions.Count);
-                if (_options.ShowPlayTime) j.Prop("playSeconds", (long)p.TotalSeconds);
-                if (_options.ShowDeaths && _options.TrackDeaths) j.Prop("deaths", p.Deaths.Count);
-                if (_options.ShowLastSeen) j.Prop("lastSeen", p.LastSeen == DateTime.MinValue ? null : Iso(p.LastSeen));
-                if (_options.RecentSessions > 0)
-                {
-                    j.Key("recent").BeginArray();
-                    for (int i = p.Sessions.Count - 1, n = 0; i >= 0 && n < _options.RecentSessions; i--, n++)
-                    {
-                        SessionRecord s = p.Sessions[i];
-                        j.BeginObject();
-                        j.Prop("character", s.Character);
-                        j.Prop("start", Iso(s.Start));
-                        j.Prop("end", Iso(s.End));
-                        if (_options.ShowPlayTime) j.Prop("seconds", (long)s.Seconds);
-                        if (_options.ShowDeaths && _options.TrackDeaths) j.Prop("deaths", s.Deaths);
-                        j.EndObject();
-                    }
-                    j.EndArray();
-                }
-                j.EndObject();
-            }
-            j.EndArray();
-            j.EndObject();
-            return j.ToString();
-        }
 
         public static string Iso(DateTime t) => t.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
 

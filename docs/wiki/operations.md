@@ -180,7 +180,7 @@ amendment records the cap, the enforced Pack and admission. The research is in
 | Backups | One hourly archive holds the world, cache, admission lists, the character store, and the Guilds, Marketplace and region-claim files, so a restore returns all of them to the same hour |
 | Admission | Public with a password, shared in a members-only Discord channel; the owner is the only admin |
 | Host | The game stays on astral-bicep with reserved CPU and memory (CPU shares 4096, 4 GiB reservation). The other projects' containers are not capped (owner, 2026-10-09); monitoring's resource alerts decide whether that changes |
-| Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's live position, heading and guild, live combined exploration, cartography-table pins, deaths and play sessions, at `https://lembitu-map.astral.ee` through a Cloudflare Tunnel with a Cloudflare rate limit; no router port opens and the game's own port 3000 stays private. The owner reversed web-map position privacy on 2026-10-09; the in-game public-position setting stays off. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
+| Web map | koenhendriks/ValheimWebMap, public: everyone's live position, heading and guild, live combined exploration, cartography-table pins and death markers at `https://lembitu-map.astral.ee`. Guild claims and public cards use muted guild colours (ADR-0036); play sessions remain recorded privately, not shown. Cloudflare Tunnel and a rate limit expose no router port; the game's map port 3000 stays private. The in-game public-position setting stays off. Our fork draws the whole 13,250 m world (ADR-0003). |
 | Pack additions and refusals | Jumpingmushroom/Tally is required, with sharing on. nbusseneau/Better_Cartography_Table is not added: its guild pins need Smoothbrain's Guilds, not Northarun's, its settings cannot be locked, and pin privacy is checked only on the client. ValMedia/OdinOnDemand is already pinned at its latest release, 1.3.0 |
 
 Tickets: the ServerManager trial #101 and adoption #102, the maintenance restart #103, backups #104,
@@ -611,12 +611,40 @@ are public, regardless of the in-game public-position toggle, and exploration re
 connection rather than waiting for logout. The enforced `[Players] IgnorePositionPrivacy = true`
 bypasses the fork's private-exploration buffer; its default false preserves the earlier behaviour
 for other installations. The in-game map still keeps public positions off. Guild names come from
-Northarun/Guilds 1.2.3's server membership store, keyed by the character's persistent player ID,
-not a client-provided guild or a matching display name. The optional reflection lookup calls
-`GuildServer.EnsureLoaded()` and `GuildServer.GuildOf(long)`, then reads `Guild.Name`; missing or
-changed Guilds leaves the name null and logs one warning per map session. Map labels and the online
-list show the guild beside the player name. The map listens on 3000 inside the container, published
-only on `127.0.0.1`.
+Northarun/Guilds 1.5.1's server membership store, keyed by the character's persistent player ID,
+not a client-provided guild or a matching display name. The main-thread reflection lookup reads
+the server roster and calls its geometry, level and building helpers. Missing or changed APIs
+disable guild features for the map session with one warning; terrain, players and cartography
+pins keep serving. The listener remains on 3000 inside the container, published on host loopback.
+
+**Guild colour means a claim (#117, ADR-0036).** Each of Guilds' twelve palette entries has one
+fixed muted tone; players and claims without a current guild are grey. `/api/state` publishes
+every guild, including offline guilds, through an explicit public whitelist: id, tag, name, colour,
+trophy-prefab emblem, description, rank-zero leader, members and online state, start region, level,
+upgrade tiers, built building kinds, allies/wars, banner position and territory half-side.
+Building kinds carry no quantities. Vault items, coins, the message of the day and guild pins
+never enter this response. Guild and character ids are strings to preserve full 64-bit identity.
+
+Guild territories use Guilds' actual `HalfSide(guild, 0)`, centred on its banner; the card and
+claim reuse the same result within each refresh. Bound wards come from the `Guilds_WardGuild`
+ZDO index, using a loaded ward's real radius or its prefab radius.
+Start regions are point markers at SeparateSpawns' current layout positions, not invented borders.
+Their claiming guild comes from `Lembitu.Guilds/<world>.claims.json`; `claimedDay` is the UTC
+calendar date from `ClaimedTicks`, not an inferred world day. Unclaimed regions remain visible.
+Outposts come from the `oathbound.siege.state` string index and their builder's current guild.
+Oathbound stages 1–4 show warning, first wave, second wave and commander; paused Sieges retain
+their stage with a suspended label. Ended stages remove the live Siege without removing the outpost.
+
+Territory and banner clicks open the public guild card. The parchment side panel groups online
+players under guild banners, guildless last, and keeps one layer-switch list in browser storage
+(`vwm.layers`). No player or guild totals, hours played or death counts appear. The public History
+tab and `/api/history` endpoint are removed; `history.json` still records sessions and deaths
+for operations. Old History/display-statistic configuration keys no longer control public output.
+`test/webmap-guilds.test.sh` compiles the map classes against a synthetic two-guild store and a
+renamed lookup API. Its real MapSession/cartography/terrain/HTTP path proves that renamed Guilds
+leaves positions, decoded table pins and rendered terrain serving with one warning; public pin
+owners retain attribution but no pin total. The browser guard covers cards, grouping, transitions
+and persistence; the real-browser/native checks remain separate acceptance evidence.
 
 **The map is published through a Cloudflare Tunnel, not an open port (owner, 2026-10-09).** The
 first plan put Caddy on astral-bicep behind router forwards of TCP 80 and 443. The owner judged

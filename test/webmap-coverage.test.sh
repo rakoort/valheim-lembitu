@@ -21,7 +21,6 @@ cat > "$work/Coverage.csproj" <<EOF
 <Compile Include="$ROOT/src/forks/ValheimWebMap/Palette.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/PrivateExploration.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/PlayerPublishing.cs" />
-<Compile Include="$ROOT/src/forks/ValheimWebMap/GuildLookup.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/JsonWriter.cs" />
 </ItemGroup>
 </Project>
@@ -102,11 +101,6 @@ class Program
             players.Clear(); PlayerPublishing.Sample(players,ignore,100,liveMask,pending,_ => null);
             Check(liveMask.Sample(13000,0) > .99f,"exploration published after disconnect " + ignore);
         }
-        int warnings = 0;
-        var lookup = new GuildLookup(_ => warnings++);
-        Check(lookup.NameOf(42) == "Oak & Iron" && lookup.NameOf(99) == null,"reflection reads authoritative guild and guildless player");
-        Guilds.GuildServer.Broken = true;
-        Check(lookup.NameOf(42) == null && lookup.NameOf(42) == null && warnings == 1,"changed guild API fails soft with one warning");
         const int size = 2048;
         float cell = g.SharedMapHalfSize * 2 / size;
         int col = (int)Math.Round(13000/cell + size/2f);
@@ -137,7 +131,6 @@ class Program
         Console.WriteLine("webmap coverage: all checks passed");
     }
 }
-namespace Guilds { public sealed class Guild { public string Name = "Oak & Iron"; } public static class GuildServer { public static bool Broken; public static void EnsureLoaded() { if (Broken) throw new Exception("changed API"); } public static Guild GuildOf(long pid) => pid == 42 ? new Guild() : null; } }
 namespace HarmonyLib { static class AccessTools { public static bool Enabled = true; public static Type TypeByName(string name) => Enabled ? typeof(ExpandWorldSize.Configuration) : null; } }
 namespace ExpandWorldSize { static class Configuration { public static float WorldRadius => 13250; public static float WorldEdgeSize => 500; public static float MapSize => 1; public static float MapPixelSize => 0; } }
 namespace ValheimWebMap {
