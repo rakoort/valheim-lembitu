@@ -3,6 +3,7 @@
 # Guilds.dll SHA256: 1e6421079246f52aa31561adb5c6e01c971cc417cc4ca0f9d5a33c1896e4ce44.
 # Siege state comes from Oathbound 0.22.0 Warrior.Core.SiegeState (Stage 1..4 active).
 set -euo pipefail
+TEST_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="${WEBMAP_SOURCE_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -14,6 +15,21 @@ cat > "$work/Guilds.csproj" <<EOF
 <Compile Include="Program.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/Guild*.cs" />
 <Compile Include="$ROOT/src/forks/ValheimWebMap/JsonWriter.cs" />
+<Compile Include="$TEST_ROOT/test/webmap-guilds-http.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/WorldGeometry.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/SharedMapData.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/ExploredMask.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/PngEncoder.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/MapRenderer.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/MapAtlas.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/TileService.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/Palette.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/PrivateExploration.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/PlayerPublishing.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/PlayerHistory.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/CartographyTables.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/MapSession.cs" />
+<Compile Include="$ROOT/src/forks/ValheimWebMap/WebServer.cs" />
 <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
 </ItemGroup>
 </Project>
@@ -54,7 +70,7 @@ class Program {
             Check(!state.GetProperty("guildsEnabled").GetBoolean(),"renamed GuildOf disables guild features");
             Check(state.GetProperty("guilds").GetArrayLength()==0 && state.GetProperty("claims").GetArrayLength()==0,"drift removes guild snapshots");
             Check(warnings.Count==1,"API drift warns exactly once across polls");
-            Check(lookup.NameOf(42)==null && lookup.IdOf(42)==null && lookup.ColorOf(42)=="#888781","drift clears player guild identity"); return;
+            Check(lookup.NameOf(42)==null && lookup.IdOf(42)==null && lookup.ColorOf(42)=="#888781","drift clears player guild identity"); MapHttpCheck.Run(args[0],true); return;
         }
         string configRoot=args[0]; Directory.CreateDirectory(Path.Combine(configRoot,"Lembitu.Guilds"));
         File.WriteAllText(Path.Combine(configRoot,"Lembitu.Guilds","fixture.claims.json"),"{\"Version\":1,\"Claims\":[{\"Region\":\"Skadi\",\"GuildId\":9007199254740993,\"GuildTag\":\"OAK\",\"GuildName\":\"Oak & Iron\",\"ClaimedTicks\":639273599990000000,\"ClaimedBy\":\"PRIVATE_SENTINEL\"}]}");
@@ -104,7 +120,7 @@ class Program {
         using(var doc=Snapshot(lookup)) Check(Text(doc.RootElement.GetProperty("claims").EnumerateArray().Single(x=>Text(x,"kind")=="outpost").GetProperty("siege"),"stage")=="commander (suspended)","paused active siege retains stage with suspended label");
         var guildlessPost=new ZDO(4,new Vector3(100,20,200),456);guildlessPost.Set("creator",99L);guildlessPost.Set("oathbound.siege.state","{\"Version\":1,\"Stage\":0}");ZDOMan.instance.Add(guildlessPost);lookup.Refresh(players,configRoot,"fixture");
         using(var doc=Snapshot(lookup)) {var post=doc.RootElement.GetProperty("claims").EnumerateArray().Single(x=>Text(x,"kind")=="outpost"&&x.GetProperty("x").GetSingle()==100);Check(post.GetProperty("guildId").ValueKind==JsonValueKind.Null && Text(post,"color")=="#888781","guildless builder outpost is grey");}
-        PrivateArea.m_allAreas.Add(new PrivateArea {m_radius=35,View=new ZNetView {Data=ward}});
+        ZNetScene.instance.Instances.Add(ward.m_uid,new GameObject {Area=new PrivateArea {m_radius=35}});
         lookup.Refresh(players,configRoot,"fixture"); using(var doc=Snapshot(lookup)) Check(doc.RootElement.GetProperty("claims").EnumerateArray().Single(x=>Text(x,"kind")=="ward" && Text(x,"guildId")==oak.Id.ToString()).GetProperty("radius").GetSingle()==35,"loaded ward radius overrides prefab radius");
         string[] palette={"FFD27A","FF8C42","FF5A4E","D9435E","C77DFF","8A7CFF","5DA9FF","4ED6E0","55D68A","A6E05A","E8E8E8","B08D5A"};
         string[] muted={"#b6a06b","#b78059","#ae6b62","#995d6b","#977ca9","#817ba9","#7090b1","#71a2a5","#76a084","#97a76c","#b3b1a8","#998568"};
@@ -114,10 +130,10 @@ class Program {
             var state=doc.RootElement; Check(Text(Row(state.GetProperty("guilds"),"id",oak.Id.ToString()),"description")=="Changed" && lookup.IdOf(42)=="2" && lookup.ColorOf(42)=="#7090b1","guild edits and membership moves refresh together");
             Check(!state.GetProperty("claims").EnumerateArray().Any(x=>Text(x,"kind")=="territory") && state.GetProperty("claims").EnumerateArray().Where(x=>Text(x,"kind")=="region").All(x=>x.GetProperty("guildId").ValueKind==JsonValueKind.Null),"banner loss and claim release remove stale claims");
         }
+        MapHttpCheck.Run(configRoot,false);
         Console.WriteLine("webmap guild snapshots: all checks passed");
     }
 }
-namespace ValheimWebMap { internal struct PlayerEntry {public long Id,PlayerId; public string Name; public bool Visible,HasCharacter;} }
 namespace Guilds {
     public enum Relation {Neutral,Ally,War}
     public class Member {public long Pid; public string Name; public int Rank; public long WithdrawnToday=123,Contribution=456;}
@@ -149,27 +165,27 @@ namespace SeparateSpawns {
     internal class WorldLayoutData {public Dictionary<string,Vector3> GroupSpawnPositions=new();}
 }
 namespace UnityEngine {
-    public struct Vector3 {public float x,y,z; public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}}
+    public struct Vector3 {public float x,y,z; public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;} public float sqrMagnitude=>x*x+y*y+z*z; public Vector3 normalized {get {float n=MathF.Sqrt(sqrMagnitude);return new Vector3(x/n,y/n,z/n);}}}
     public class GameObject {public PrivateArea Area; public T GetComponent<T>() where T:class=>Area as T;}
 }
-public class PrivateArea {public static List<PrivateArea> m_allAreas=new(); public float m_radius; public ZNetView View; public T GetComponent<T>() where T:class=>View as T;}
-public class ZNetView {public ZDO Data; public ZDO GetZDO()=>Data;}
-public static class ZDOVars {public static int s_creator="creator".GetStableHashCode();}
+public class PrivateArea {public float m_radius;}
+public static class ZDOVars {public static int s_creator="creator".GetStableHashCode(),s_data="data".GetStableHashCode();}
 public struct ZDOID : IEquatable<ZDOID> {public long UserID; public uint ID; public static ZDOID None=>default; public ZDOID(long user,uint id){UserID=user;ID=id;} public override string ToString()=>UserID+":"+ID; public bool Equals(ZDOID b)=>UserID==b.UserID&&ID==b.ID; public override bool Equals(object b)=>b is ZDOID other&&Equals(other); public override int GetHashCode()=>HashCode.Combine(UserID,ID);}
 public class ZDO {
     public ZDOID m_uid; public Dictionary<int,long> Longs=new(); public Dictionary<int,string> Strings=new(); Vector3 pos; int prefab;
     public ZDO(uint id,Vector3 position,int prefab){m_uid=new ZDOID(100,id);pos=position;this.prefab=prefab;}
     public Vector3 GetPosition()=>pos; public int GetPrefab()=>prefab;
+    public Dictionary<int,byte[]> Bytes=new(); public byte[] GetByteArray(int key,byte[] fallback)=>Bytes.GetValueOrDefault(key,fallback);
     public long GetLong(string key,long fallback=0)=>GetLong(key.GetStableHashCode(),fallback); public long GetLong(int key,long fallback=0)=>Longs.GetValueOrDefault(key,fallback);
     public string GetString(string key,string fallback="")=>GetString(key.GetStableHashCode(),fallback); public string GetString(int key,string fallback="")=>Strings.GetValueOrDefault(key,fallback);
     public void Set(string key,long value)=>Longs[key.GetStableHashCode()]=value; public void Set(string key,string value)=>Strings[key.GetStableHashCode()]=value;
 }
-public class ZDOMan {public static ZDOMan instance=new(); public Dictionary<ZDOID,ZDO> Store=new(); public ZDO GetZDO(ZDOID id)=>Store.GetValueOrDefault(id); public void Add(ZDO z)=>Store.Add(z.m_uid,z);}
+public class ZDOMan {public static ZDOMan instance=new(); public Dictionary<ZDOID,ZDO> Store=new(); public ZDO GetZDO(ZDOID id)=>Store.GetValueOrDefault(id); public void Add(ZDO z)=>Store.Add(z.m_uid,z); public bool GetAllZDOsWithPrefabIterative(string prefab,List<ZDO> into,ref int index){into.AddRange(Store.Values.Where(z=>z.GetPrefab()==prefab.GetStableHashCode())); index=Store.Count; return true;}}
 public static class ZDOExtraData {
     public enum Type {Float,Vec3,Quaternion,Int,Long,String,ByteArray}
     public static List<ZDOID> GetAllZDOIDsWithHash(Type type,int hash)=>ZDOMan.instance.Store.Where(p=>type==Type.Long?p.Value.Longs.ContainsKey(hash):type==Type.String&&p.Value.Strings.ContainsKey(hash)).Select(p=>p.Key).ToList();
 }
-public class ZNetScene {public static ZNetScene instance=new(); public Dictionary<int,GameObject> Prefabs=new(); public GameObject GetPrefab(int hash)=>Prefabs.GetValueOrDefault(hash);}
+public class ZNetScene {public static ZNetScene instance=new(); public Dictionary<int,GameObject> Prefabs=new(); public Dictionary<ZDOID,GameObject> Instances=new(); public GameObject GetPrefab(int hash)=>Prefabs.GetValueOrDefault(hash); public GameObject FindInstance(ZDOID id)=>Instances.GetValueOrDefault(id);}
 public static class StringExtensionMethods {public static int GetStableHashCode(this string value) {unchecked {int a=5381,b=a;for(int i=0;i<value.Length && value[i]!='\0';i+=2){a=((a<<5)+a)^value[i];if(i==value.Length-1||value[i+1]=='\0')break;b=((b<<5)+b)^value[i+1];}return a+b*1566083941;}}}
 EOF
 dotnet run --project "$work/Guilds.csproj" --nologo -- "$work/config"

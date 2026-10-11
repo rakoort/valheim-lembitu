@@ -350,7 +350,6 @@ namespace ValheimWebMap
         {
             public string Name;
             public bool Online;
-            public int Pins;
         }
 
         private string BuildPins(PinSnapshot snapshot)
@@ -393,7 +392,6 @@ namespace ValheimWebMap
                         owners[ownerKey] = owner;
                         order.Add(ownerKey);
                     }
-                    owner.Pins++;
                     j.BeginObject();
                     j.Prop("id", pin.Id);
                     j.Prop("owner", ownerKey);
@@ -415,7 +413,6 @@ namespace ValheimWebMap
                 j.Prop("id", id);
                 j.Prop("name", owner.Name);
                 j.Prop("online", owner.Online);
-                j.Prop("pins", owner.Pins);
                 j.EndObject();
             }
             j.EndArray();

@@ -55,13 +55,10 @@ namespace ValheimWebMap
                     GameObject prefab = ZNetScene.instance?.GetPrefab(zdo.GetPrefab());
                     PrivateArea area = prefab != null ? prefab.GetComponent<PrivateArea>() : null;
                     if (area == null) continue;
-                    float radius = area.m_radius;
-                    // An instantiated ward may have a runtime radius override. Prefer its real area when present.
-                    foreach (PrivateArea live in PrivateArea.m_allAreas)
-                    {
-                        ZNetView view = live.GetComponent<ZNetView>();
-                        if (view != null && view.GetZDO() == zdo) { radius = live.m_radius; break; }
-                    }
+                    // Prefer the instantiated ward's runtime radius; unloaded wards use their prefab.
+                    GameObject instance = ZNetScene.instance.FindInstance(id);
+                    PrivateArea live = instance != null ? instance.GetComponent<PrivateArea>() : null;
+                    float radius = live != null ? live.m_radius : area.m_radius;
                     WriteClaim(j, "ward:" + zdo.m_uid, "ward", guildId, zdo.GetPosition(), guilds);
                     j.Prop("radius", radius, 2).EndObject();
                 }

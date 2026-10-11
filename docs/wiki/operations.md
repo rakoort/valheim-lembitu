@@ -639,8 +639,11 @@ players under guild banners, guildless last, and keeps one layer-switch list in 
 (`vwm.layers`). No player or guild totals, hours played or death counts appear. The public History
 tab and `/api/history` endpoint are removed; `history.json` still records sessions and deaths
 for operations. Old History/display-statistic configuration keys no longer control public output.
-`test/webmap-guilds.test.sh` compiles the map snapshot classes against a synthetic two-guild store
-and a renamed lookup API; its browser guard covers cards, grouping, transitions and persistence.
+`test/webmap-guilds.test.sh` compiles the map classes against a synthetic two-guild store and a
+renamed lookup API. Its real MapSession/cartography/terrain/HTTP path proves that renamed Guilds
+leaves positions, decoded table pins and rendered terrain serving with one warning; public pin
+owners retain attribution but no pin total. The browser guard covers cards, grouping, transitions
+and persistence; the real-browser/native checks remain separate acceptance evidence.
 
 **The map is published through a Cloudflare Tunnel, not an open port (owner, 2026-10-09).** The
 first plan put Caddy on astral-bicep behind router forwards of TCP 80 and 443. The owner judged
