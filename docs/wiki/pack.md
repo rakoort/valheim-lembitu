@@ -724,8 +724,15 @@ loaded. The plugin then read `upd-b` as the newest release, and the client joine
 ServerManager policy required `upd-b`'s files. No `.lembitu-old` copy, plan or staged file remained.
 The same logic, run offline against the real releases, parsed GitHub's release list and extracted
 and verified all 369 files of the v19 zip. It planned v18 to v19 as exactly the four changed Lembitu
-DLLs. Not yet verified: a Windows or macOS client, the menu notice on screen, and a real GitHub
-release (the live API and range answers were checked with curl: 302 to `release-assets`, then 206).
+DLLs.
+
+**Against the real release, 2026-10-11** (`~/lembitu-native-tests/20261011T100926Z-pack-updater-github`).
+The client ran the published v19 zip plus the updater, its patcher and a `2026-10-11-v19` version
+file, which is what a v19 player with the updater would have. It read GitHub's live list (16
+releases), found v20, and staged five files: the four Lembitu DLLs and the version file, from
+124,778 bytes of the 321 MB release zip. At the next start the patcher installed them. The client
+joined a server holding v20's ServerManager policy, and every Lembitu file matched v20's inventory.
+Not yet verified: a Windows or macOS client, and the menu notice on screen.
 
 ### Measured install — 2026-09-16 (v6)
 
