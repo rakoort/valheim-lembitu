@@ -93,34 +93,41 @@ def main():
             raise RuntimeError('maintenance requires cron.yml jobs: []; refuses to replace another schedule')
         # Twenty seconds permits settings reload; each six-field cron occurrence is date-scoped.
         start = int(time.time()) + 20
+        # Vanilla ZNet.HardSaveBlock refuses a save within 60 s of the last one, and on a dedicated
+        # server the refusal throws (it reads a null distribution platform), so ServerManager reports
+        # the save job command_failed. The world saves itself every 300 s, so a second save 70 s
+        # after the first cannot fall in the same window: one of the two runs (2026-10-11).
+        saves = (600, 670)
         events = [(0, 'announce Maintenance restart in 10 minutes.'),
                   (300, 'announce Maintenance restart in 5 minutes.'),
-                  (540, 'announce Maintenance restart in 1 minute.'), (600, 'save')]
+                  (540, 'announce Maintenance restart in 1 minute.')] + [(offset, 'save') for offset in saves]
         lines = ['timezone: UTC', 'interval: 1', 'jobs:']
-        expected = []
+        announced, saved = [], []
         for offset, command in events:
             when = dt.datetime.fromtimestamp(start + offset, dt.timezone.utc)
             schedule = f'{when.second} {when.minute} {when.hour} {when.day} {when.month} *'
-            expected.append(job_id(schedule, command))
+            (saved if command == 'save' else announced).append((start + offset, job_id(schedule, command)))
             lines += [f"  - command: '{command}'", f"    schedule: '{schedule}'", '    log: true']
         replace(cron, '\n'.join(lines) + '\n')
-        for offset, command in events[:-1]:
+        for offset, command in events[:len(announced)]:
             time.sleep(max(0, start + offset - time.time()))
             post(status, command.removeprefix('announce '))
-        save_at = start + 600
-        time.sleep(max(0, save_at - time.time()))
-        since = dt.datetime.fromtimestamp(save_at, dt.timezone.utc).isoformat()
-        deadline = time.monotonic() + int(os.environ.get('CHECKPOINT_TIMEOUT', '120'))
+        time.sleep(max(0, start + saves[0] - time.time()))
+        deadline = time.monotonic() + saves[-1] - saves[0] + int(os.environ.get('CHECKPOINT_TIMEOUT', '120'))
         while time.monotonic() < deadline:
-            logs = docker('logs', '--since', since, container)
             completed = docker('logs', '--since', dt.datetime.fromtimestamp(start, dt.timezone.utc).isoformat(), container)
             jobs = set(re.findall(r"Cron: Job '([^']+)' completed\.", completed))
-            save_done = logs.find(f"Cron: Job '{expected[-1]}' completed.")
-            # ServerScheduleRuntime:577-599 binds this job to its own save operation and
-            # fails if another operation replaces it. Its completed log (:670) follows
-            # that operation's successful retained-character checkpoint, not dispatch.
-            checkpoint = re.search(r'WorldCharacterCheckpointCompleted\b[^\n]*\bpending=0(?:\s|$)', logs[:save_done] if save_done >= 0 else '')
-            if set(expected).issubset(jobs) and checkpoint:
+            confirmed = False
+            for save_at, save_id in saved:
+                logs = docker('logs', '--since', dt.datetime.fromtimestamp(save_at, dt.timezone.utc).isoformat(), container)
+                save_done = logs.find(f"Cron: Job '{save_id}' completed.")
+                # ServerScheduleRuntime:577-599 binds this job to its own save operation and
+                # fails if another operation replaces it. Its completed log (:670) follows
+                # that operation's successful retained-character checkpoint, not dispatch.
+                if save_done >= 0 and re.search(r'WorldCharacterCheckpointCompleted\b[^\n]*\bpending=0(?:\s|$)', logs[:save_done]):
+                    confirmed = True
+                    break
+            if confirmed and {job for _, job in announced}.issubset(jobs):
                 replace(cron, original)
                 docker('stop', '--time', '120', container)
                 print('maintenance: confirmed scheduled world/character checkpoint; container stopped')

@@ -484,9 +484,14 @@ to the same two-client session as the rest of acceptance.
 **The host owns the schedule; ServerManager's cron is only the console.** A systemd user timer
 (`config/launch/lembitu-maintenance.timer`) starts `scripts/maintenance-restart.py` at 05:49:40
 Europe/Oslo. It writes one-off jobs into ServerManager's `cron.yml` for the ten-, five- and
-one-minute warnings and the `save`. It stops the container only after the `save` job's own
-completion record, with a `WorldCharacterCheckpointCompleted ... pending=0` logged after the save
-began and before that completion. ServerManager binds a scheduled save to its own operation and
+one-minute warnings and two `save` jobs, at ten minutes and 70 s later. It stops the container only
+after one `save` job's own completion record, with a `WorldCharacterCheckpointCompleted ...
+pending=0` logged after that save was scheduled and before its completion. Two saves because
+vanilla `ZNet.HardSaveBlock` refuses a save within 60 s of the last one, and on a dedicated server
+that refusal throws (null distribution platform), so ServerManager logs the job `command_failed`.
+The world saves itself every 300 s, so the second save can never fall in the same window. On
+2026-10-11 the single save landed 38 s after the world's own save and the v19 deploy stop
+aborted, leaving the server running. ServerManager binds a scheduled save to its own operation and
 logs the job complete only once that checkpoint has finished (decompiled
 `ServerScheduleRuntime.cs:577-599,670`), so an autosave or an older checkpoint cannot authorise a
 stop. Any refusal or missing confirmation aborts the restart and posts to
@@ -494,7 +499,7 @@ stop. Any refusal or missing confirmation aborts the restart and posts to
 `~/.local/state/lembitu/`, outside the backed-up save tree. `scripts/launch-server.sh restart` and
 `stop` use the same path when the container is running; on a stopped container `restart` and the
 new `start` go straight to applying the overlay, starting and verifying (ADR-0011). Proved with a
-fake Docker in `test/launch-server.test.sh` (18 checks). On the test host (#101,
+fake Docker in `test/launch-server.test.sh`, including a refused first save. On the test host (#101,
 `20261007T133035Z-ticket101-planned-orders`), progress made just before the console `save` survived
 the stop: the save made ServerManager request a fresh copy from the connected client
 (`CharacterShadowAccepted`) before the checkpoint logged `captured=1, persisted=1, pending=0`. No
@@ -669,7 +674,9 @@ A player reported a burst of Explorer XP on every portal use. The server's profe
 
 ### Settings menu would not save or close — 2026-10-10
 
-Players reported that music and sound ignored the volume sliders and that Accept left the settings menu open. Vanilla `Settings.ApplyAndClose` calls `KeyHints.ApplySettings` before `PlatformPrefs.Save` and `CloseSettings`. Zen_ModLib 1.14.21 patches `KeyHints.ApplySettings` to rewrite the dodge key hint and sets its children 2 and 3 without checking they exist. DodgeShortcut 1.4.0 removes two of those children at startup ("Destroying child key_bkg (2)…", "…plus…"), so Zen's rewrite threw "Transform child out of bounds". Accept then saved nothing and closed nothing. sins's log from 2026-10-09 shows the same stack. On a copy of the live world with Pack v18, the harness's `settings` action reproduced it (`~/lembitu-native-tests/20261010T123956Z-settings-accept`: Accept threw and the window stayed open). With `Lembitu.Callings`' `DodgeHintGuard`, which runs Zen's rewrite only on the full vanilla hint, Accept closed the window with no exception (`20261010T124611Z-settings-accept`). Volume persistence follows from `PlatformPrefs.Save` now running; audio itself was not measured on the headless test host.
+Players reported that music and sound ignored the volume sliders and that Accept left the settings menu open. Vanilla `Settings.ApplyAndClose` calls `KeyHints.ApplySettings` before `PlatformPrefs.Save` and `CloseSettings`. Zen_ModLib 1.14.21 patches `KeyHints.ApplySettings` to rewrite the dodge key hint and sets its children 2 and 3 without checking they exist. DodgeShortcut 1.4.0 removes two of those children at startup ("Destroying child key_bkg (2)…", "…plus…"), so Zen's rewrite threw "Transform child out of bounds" and Accept closed nothing. sins's log from 2026-10-09 shows the same stack. On a copy of the live world with Pack v18, the harness's `settings` action reproduced it (`~/lembitu-native-tests/20261010T123956Z-settings-accept`: Accept threw and the window stayed open). With `Lembitu.Callings`' `DodgeHintGuard`, which runs Zen's rewrite only on the full vanilla hint, Accept closed the window with no exception (`20261010T124611Z-settings-accept`).
+
+The sound itself was measured on 2026-10-11 on the test host's native Linux client, through the harness's `audio` snapshot. Every slider moved the game's mixed output on v18 as on the fix, and no playing source bypassed the master mixer. What broke was the way out: the audio tab stores the new volume before Accept throws, so the preference holds it, but the only exit left, Escape or Back, makes the tab restore the volume it showed when the window opened. On v18, moving master from 35% to 80% and then leaving by Back played at 35% while the preference read 80%, until the next launch applied it (`20261011T075906Z-audio-accept-back`). With the guard, Accept closed and the game stayed at 80% (`20261011T080449Z-audio-accept-back`).
 
 ## Exclusions
 

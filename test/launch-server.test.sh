@@ -30,9 +30,13 @@ elif args[0]=='logs':
  spec=importlib.util.spec_from_file_location('m',Path(os.environ['ROOT'])/'scripts/maintenance-restart.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
  records=[];mode=os.environ['MODE']
  cutoff=dt.datetime.fromisoformat(args[args.index('--since')+1]).timestamp() if '--since' in args else 0
+ first_save=True
  for command,schedule in pairs:
   s,mi,h,d,mo,_=schedule.split();stamp=dt.datetime(2026,int(mo),int(d),int(h),int(mi),int(s),tzinfo=dt.timezone.utc).timestamp()
   if command=='save':
+   # A save within 60 s of the world's own save throws in vanilla HardSaveBlock: no checkpoint, no completion.
+   refused=mode=='refused-first' and first_save;first_save=False
+   if refused:continue
    if mode not in ['missing','undispatched']:
     when=stamp-1 if mode=='stale' else stamp
     records.append((when,'WorldCharacterCheckpointCompleted operation=7, checkpoint=abc, captured=1, persisted=1, pending='+('1' if mode=='pending' else '0')))
@@ -68,7 +72,7 @@ class Clock:
  def monotonic(self):return self.now
  def sleep(self,seconds):self.now+=seconds
 count=0
-for mode in ['confirmed','missing','pending','undispatched','stale','autosave-only','unguarded','busy-lock','missing-cron','busy-cron','no-webhooks']:
+for mode in ['confirmed','refused-first','missing','pending','undispatched','stale','autosave-only','unguarded','busy-lock','missing-cron','busy-cron','no-webhooks']:
  store=work/mode/'save/ServerManager';store.mkdir(parents=True);cron=store/'cron.yml';cron.write_text('jobs: []\n')
  trace=work/(mode+'.jsonl');os.environ['TRACE']=str(trace);os.environ['CRON']=str(cron);os.environ['MODE']=mode;os.environ['CHECKPOINT_TIMEOUT']='3';state.write_text('true')
  lock=work/'.local/state/lembitu/maintenance.lock';lock.parent.mkdir(parents=True,exist_ok=True)
@@ -83,7 +87,7 @@ for mode in ['confirmed','missing','pending','undispatched','stale','autosave-on
  try:m.main()
  except (RuntimeError,FileNotFoundError,FileExistsError):failed=True
  calls=[json.loads(x)[0] for x in trace.read_text().splitlines()] if trace.exists() else []
- success=mode in ['confirmed','no-webhooks']
+ success=mode in ['confirmed','refused-first','no-webhooks']
  assert ('stop' in calls)==success and failed!=success,mode
  if not success:assert posted[-1][0]=='https://example.invalid/monitor',mode
  if mode not in ['busy-lock','missing-cron','busy-cron','unguarded']:
