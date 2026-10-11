@@ -40,7 +40,7 @@ namespace ValheimWebMap
                 if (!guilds.HasBanner(guild)) continue;
                 long id = guilds.GuildId(guild);
                 WriteClaim(j, "territory:" + GuildLookup.Id(id), "territory", id, guilds.Banner(guild), guilds);
-                j.Prop("halfSide", guilds.HalfSide(guild), 2).EndObject();
+                j.Prop("halfSide", guilds.HalfSide(guild, id), 2).EndObject();
             }
             WriteRegions(j, guilds);
             ZDOMan manager = ZDOMan.instance;

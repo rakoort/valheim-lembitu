@@ -625,8 +625,9 @@ upgrade tiers, built building kinds, allies/wars, banner position and territory 
 Building kinds carry no quantities. Vault items, coins, the message of the day and guild pins
 never enter this response. Guild and character ids are strings to preserve full 64-bit identity.
 
-Guild territories use Guilds' actual `HalfSide(guild, 0)`, centred on its banner. Bound wards
-come from the `Guilds_WardGuild` ZDO index, using a loaded ward's real radius or its prefab radius.
+Guild territories use Guilds' actual `HalfSide(guild, 0)`, centred on its banner; the card and
+claim reuse the same result within each refresh. Bound wards come from the `Guilds_WardGuild`
+ZDO index, using a loaded ward's real radius or its prefab radius.
 Start regions are point markers at SeparateSpawns' current layout positions, not invented borders.
 Their claiming guild comes from `Lembitu.Guilds/<world>.claims.json`; `claimedDay` is the UTC
 calendar date from `ClaimedTicks`, not an inferred world day. Unclaimed regions remain visible.

@@ -13,9 +13,11 @@ namespace ValheimWebMap
         public const string Grey = "#888781";
         private const BindingFlags Static = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
         private const BindingFlags Instance = BindingFlags.Instance | BindingFlags.Public;
+        private static readonly object NoExtraTiers = 0;
         private readonly Action<string> _warn;
         private readonly Dictionary<long, object> _guilds = new Dictionary<long, object>();
         private readonly Dictionary<long, long> _memberships = new Dictionary<long, long>();
+        private readonly Dictionary<long, float> _halfSides = new Dictionary<long, float>();
         private readonly HashSet<long> _online = new HashSet<long>();
         private readonly Dictionary<string, FieldInfo> _fields = new Dictionary<string, FieldInfo>();
         private readonly object[] _one = new object[1];
@@ -46,6 +48,7 @@ namespace ValheimWebMap
                 if (!_initialized) Initialize();
                 _ensureLoaded();
                 _guilds.Clear();
+                _halfSides.Clear();
                 _memberships.Clear();
                 _online.Clear();
                 foreach (PlayerEntry player in players) if (player.PlayerId != 0) _online.Add(player.PlayerId);
@@ -67,6 +70,7 @@ namespace ValheimWebMap
             {
                 _disabled = true;
                 _guilds.Clear();
+                _halfSides.Clear();
                 _memberships.Clear();
                 _guildsJson = _claimsJson = "[]";
                 _warn("Web map guild features unavailable: " + (error.InnerException ?? error).Message);
@@ -90,10 +94,13 @@ namespace ValheimWebMap
         internal long GuildId(object guild) => Get<long>(guild, "Id");
         internal bool HasBanner(object guild) => Get<bool>(guild, "HasBanner");
         internal Vector3 Banner(object guild) => Get<Vector3>(guild, "BannerPos");
-        internal float HalfSide(object guild)
+        internal float HalfSide(object guild, long id)
         {
-            _two[0] = guild; _two[1] = 0;
-            return (float)_halfSide.Invoke(null, _two);
+            if (_halfSides.TryGetValue(id, out float halfSide)) return halfSide;
+            _two[0] = guild; _two[1] = NoExtraTiers;
+            halfSide = (float)_halfSide.Invoke(null, _two);
+            _halfSides.Add(id, halfSide);
+            return halfSide;
         }
         internal static string Id(long id) => id.ToString(CultureInfo.InvariantCulture);
 
@@ -182,7 +189,7 @@ namespace ValheimWebMap
                 j.BeginObject().Prop("x", pos.x, 1).Prop("z", pos.z, 1).EndObject();
             }
             else j.Value((string)null);
-            j.Prop("territoryHalfSide", HasBanner(guild) ? HalfSide(guild) : 0f, 2).EndObject();
+            j.Prop("territoryHalfSide", HasBanner(guild) ? HalfSide(guild, id) : 0f, 2).EndObject();
         }
         private void WriteMember(JsonWriter j, object member, bool online)
         {
