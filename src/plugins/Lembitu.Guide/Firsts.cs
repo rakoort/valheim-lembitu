@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Bootstrap;
-using SocialSystem.Client;
-using SocialSystem.Core;
+using GuildsApi = Guilds.GuildsApi;
 using UnityEngine;
 using Warrior.Core;
 
@@ -13,8 +12,8 @@ namespace Lembitu.Guide;
 /// The pages opened on a character's firsts (ADR-0027): the first join on first-steps, and - one
 /// per character, recorded in Player.m_customData["lembitu.guide.seen"] as comma-separated ids -
 /// the first oath on oath-and-class (Oathbound's class record), the first Calling window on calling
-/// (the "lembitu.callings.window-seen" key Lembitu.Callings sets) and the first party on groups
-/// (SocialSystem's client party state). The plugins that own that state are read, never patched;
+/// (the "lembitu.callings.window-seen" key Lembitu.Callings sets) and the first guild on groups
+/// (Guilds' client membership state, ADR-0035). The plugins that own that state are read, never patched;
 /// a feature whose state cannot be found switches itself off alone at startup.
 /// </summary>
 internal static class Firsts
@@ -24,7 +23,7 @@ internal static class Firsts
     private const string CallingWindowSeenKey = "lembitu.callings.window-seen";
     private const float PollSeconds = 1f;
 
-    private static bool s_firstJoin, s_oath, s_calling, s_party;
+    private static bool s_firstJoin, s_oath, s_calling, s_guild;
     private static float s_timer;
 
     public static void VerifyFirstJoin()
@@ -51,23 +50,22 @@ internal static class Firsts
         s_calling = true;
     }
 
-    public static void VerifyParty()
+    public static void VerifyGuild()
     {
-        if (!Chainloader.PluginInfos.ContainsKey(GuidePlugin.SocialSystemGuid))
+        if (!Chainloader.PluginInfos.ContainsKey(GuidePlugin.GuildsGuid))
         {
-            throw new HookMismatch("SocialSystem is not loaded, so there are no parties to watch");
+            throw new HookMismatch("Guilds is not loaded, so there is no guild membership to watch");
         }
-        Hooks.Property(typeof(SocialClient), nameof(SocialClient.Party), typeof(PartySnapshot));
-        Hooks.Property(typeof(PartySnapshot), nameof(PartySnapshot.IsInParty), typeof(bool));
+        Hooks.Method(typeof(GuildsApi), nameof(GuildsApi.LocalInGuild), Type.EmptyTypes, typeof(bool));
         Hooks.Field(typeof(Player), nameof(Player.m_customData), typeof(Dictionary<string, string>));
-        s_party = true;
+        s_guild = true;
     }
 
     /// <summary>One page per tick at most, in the order a fresh character meets them, so a
     /// character that already has several firsts behind it is not met with a burst of windows.</summary>
     public static void Tick()
     {
-        if (!(s_firstJoin || s_oath || s_calling || s_party))
+        if (!(s_firstJoin || s_oath || s_calling || s_guild))
         {
             return;
         }
@@ -106,7 +104,7 @@ internal static class Firsts
             GuideWindow.Show("calling");
             return;
         }
-        if (s_party && !seen.Contains("groups") && SocialClient.Instance.Party.IsInParty)
+        if (s_guild && !seen.Contains("groups") && GuildsApi.LocalInGuild())
         {
             MarkSeen(player, "groups", seen);
             GuideWindow.Show("groups");

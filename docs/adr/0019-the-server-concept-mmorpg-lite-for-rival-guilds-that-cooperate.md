@@ -7,6 +7,8 @@ ADR-0018
 
 Amended 2026-10-06 (owner): ADR-0033 replaces the tuning targets and month endpoint; ADR-0031 makes class respec free. Earlier values below are historical where annotated.
 
+Amended 2026-10-11 (owner): ADR-0035 removes parties; guild members near a kill share its XP.
+
 ## Context
 
 On 2026-10-04 the owner added thirty mods at once, removed Clan for Northarun/Guilds, and asked for
@@ -60,12 +62,11 @@ death drain; it never raises a skill, so it is no catch-up.)
 **One owner per axis**, provisionally. Each pillar owns a different kind of power, and a mod that
 reaches outside its axis has those parts switched off. To be revisited once the stack is chosen.
 
-**Parties.** An intentional, invite-only group of up to eight that may mix guilds, separate from
-guild membership. Party members share kill XP and see each other's map positions, nothing else. The
-party's total XP lands above what one member would earn alone, rising from 100% for one member near
-the kill to 150% for four or more (revised the same day from 110-125%, then from "150% for eight",
-ADR-0022). Group-only bonuses count
-anyone in the party, whatever their guild.
+**Parties (removed 2026-10-11, ADR-0035).** ~~An intentional, invite-only group of up to eight that
+may mix guilds, separate from guild membership.~~ Guild members near a kill now share its XP
+automatically, by the same curve: the total rises from 100% for one member near the kill to 150%
+for four or more (revised on 2026-10-04 from 110-125%, then from "150% for eight", ADR-0022).
+Guild members see each other's map positions through Guilds.
 
 **World.** Vanilla portal rules: ore and metal travel by ship or cart, until the Ashlands' stone
 portal, which carries everything as vanilla intends (kept deliberately the same day). Maps are

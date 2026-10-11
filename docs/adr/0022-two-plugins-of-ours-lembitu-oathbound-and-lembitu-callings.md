@@ -6,6 +6,8 @@ Amends: ADR-0020 (scope of `Lembitu.Oathbound`), ADR-0021 (owner of the Callings
 
 Amended 2026-10-06 (owner): ADR-0031 drops class resets and opens the tree anywhere; ADR-0032 adds brewer grades and the Deep North personal-key rule. Earlier values below are historical where annotated.
 
+Amended 2026-10-11 (owner): ADR-0035 removes parties. Every rule below for "the killer's party" now applies to the killer's guild, read from Guilds' server store; a member is in the group by guild membership alone, with nothing to form or accept.
+
 ## Context
 
 ADR-0020 decided one patch plugin, `Lembitu.Oathbound`, for the four changes Oathbound has no
@@ -79,10 +81,11 @@ How it is built, decided from the code rather than asked:
   removes them: stock per-class XP and talents survive, with the Oathstone required for both actions.
 - **Kill XP.** Oathbound's server-side `RouteDeath` keeps its validation and its per-creature XP
   (`KillRewards.Experience`); only the send of the killer's reward is replaced, by a transpiler on its
-  one `ZRpc.Invoke` and its listen-host `ReceiveReward` call. Party membership comes from
+  one `ZRpc.Invoke` and its listen-host `ReceiveReward` call. ~~Party membership comes from
   SocialSystem's server-side party service by player ID, not from the party ID clients publish on
-  their character, which a client writes and the server cannot vouch for. Shares are rounded at
-  random so each averages exactly, and the server logs each split.
+  their character, which a client writes and the server cannot vouch for.~~ Guild membership comes
+  from Northarun/Guilds' server store by player ID (ADR-0035), never from anything a client
+  reports. Shares are rounded at random so each averages exactly, and the server logs each split.
 - **Gathering tools.** Every class check describes the item through Oathbound's `Plugin.Describe`
   and asks `Equipment.Allows` about that `EquipmentItem`, which records the rod as a two-handed
   weapon and nothing more. A postfix on `Describe` describes a fishing rod as no weapon at all, which

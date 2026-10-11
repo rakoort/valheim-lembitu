@@ -22,7 +22,7 @@ Open this guide any time with F1 or the Guide button in your inventory.
 
 No oath, no class XP: kills pay nothing toward a class until you have sworn one at the Oathstone.
 
-Keys: F1 Guide; F7 Market; F9 Guilds; O social; P party; Left Alt+E hides or shows Explorer markers.
+Keys: F1 Guide; F7 Market; F9 Guilds; Left Alt+E hides or shows Explorer markers.
 
 page oath-and-class | Oath and class
 Your class comes from Oathbound, chosen at the Oathstone. Thirteen classes exist; four unlock after a first deed - equip paired axes, a two-handed sword or a two-handed axe, or carry a dragon tear.
@@ -78,7 +78,7 @@ Trade helps, but never skips a boss. A late joiner catches up by being carried t
 
 Boss powers are passive and grow with every boss kill you attend.
 
-page groups | Guilds, parties and the Market
+page groups | Guilds and the Market
 A guild is who you belong to: ranks, guild chat, a shared vault, wards, a banner territory and guild levels. At most five members, at most three guilds. Founding one is free.
 
 A guild banner claims a square territory. Outsiders, including players without a guild, cannot walk in; members, allies and guilds at war with its owner pass. Placing the banner, and every territory upgrade, levels the ground to the banner's height and removes trees and rocks for good, so choose the spot carefully. Guild buildings - armory, warehouse, longhouse, barracks, towers and more - go up inside it from the hammer's Guild tab.
@@ -91,9 +91,11 @@ Guilds claim their start regions in game. Everyone starts at the sacrificial sto
 
 The region follows membership: joining a guild makes its region your respawn point and gives you its portal; leaving a guild sends you back to the stones; a disbanded guild frees its region. A bed you place overrides the respawn, as usual.
 
-A party is who you hunt with: invite-only, up to eight, and it may mix guilds. It shares exactly two things: map positions and kill XP.
+There are no parties. Kill XP is shared automatically with the killer's connected, alive guild members within 100 m of the creature when it dies. The killer always counts, wherever they stand. A guildless player earns their own kills in full.
 
-Kill XP goes to the killer's party, and only to members within 100 m of the creature when it dies. Being in a party never waives proximity.
+The total rises from 100% for one member to 150% at four members in range, split equally: two earn about 58% each, three about 44%, four 37.5%, five 30%.
+
+The guild HUD on the left of the screen always shows the other members with health and distance; offline members are dimmed. Guild members still see each other on the map.
 
 The Market is server-wide and works while the other side is offline: coin sales, buy orders, bounties and a bank, with a 5% fee on every payout.
 

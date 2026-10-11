@@ -12,22 +12,21 @@ namespace Lembitu.Guide;
 /// The in-game guide window (ADR-0027): chapters of short pages teaching the Run's rules, opened by
 /// a hotkey and an inventory button and shown once on a character's first join, with its text in a
 /// server-synced file the admin edits. It patches nothing: it hooks only the inventory and its own
-/// file, reads the first-oath, first-Calling and first-party state rather than patching the mods
+/// file, reads the first-oath, first-Calling and first-guild state rather than patching the mods
 /// that own it, and every feature verifies what it leans on and switches off alone.
 /// </summary>
 [BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]
 [BepInDependency(Jotunn.Main.ModGuid)]
 [BepInDependency(OathboundGuid, BepInDependency.DependencyFlags.SoftDependency)]
-[BepInDependency(SocialSystemGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(GuildsGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
 public sealed class GuidePlugin : BaseUnityPlugin
 {
     internal const string OathboundGuid = "local.warrior.rpg";
-    internal const string SocialSystemGuid = "M2Valheim.SocialSystem";
+    internal const string GuildsGuid = "adrian.valheim.guilds";
 
     /// <summary>The releases every read below was verified against (docs/modstack.md).</summary>
     private const string VerifiedOathbound = "0.22.0";
-    private const string VerifiedSocialSystem = "1.0.5";
 
     internal static ManualLogSource ClientLog = null!;
 
@@ -43,7 +42,6 @@ public sealed class GuidePlugin : BaseUnityPlugin
         GuideContent.Configure(log);
 
         WarnIfPinnedPluginMoved(log, OathboundGuid, VerifiedOathbound);
-        WarnIfPinnedPluginMoved(log, SocialSystemGuid, VerifiedSocialSystem);
 
         ContentSync.Verify(log);
         Feature(log, "Server-synced guide content", ContentSync.Enable);
@@ -52,7 +50,7 @@ public sealed class GuidePlugin : BaseUnityPlugin
         Feature(log, "First-join page", Firsts.VerifyFirstJoin);
         Feature(log, "First-oath page", Firsts.VerifyOath);
         Feature(log, "First-Calling page", Firsts.VerifyCalling);
-        Feature(log, "First-party page", Firsts.VerifyParty);
+        Feature(log, "First-guild page", Firsts.VerifyGuild);
     }
 
     /// <summary>The same wording as Hooks.Enable: a feature states why it is off or that it is on.</summary>

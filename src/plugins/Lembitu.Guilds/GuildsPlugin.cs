@@ -13,6 +13,7 @@ namespace Lembitu.Guilds;
 /// stone in the ring, after a confirmation window naming the region and where it lies; the region
 /// then follows membership — bedless respawn and portal — until the member leaves or the guild
 /// disbands, and a bed always overrides it. Membership is read from Guilds' server state only.
+/// Other guild members stay on the HUD, with server-owned membership and vitals (ADR-0035).
 /// Patches SeparateSpawns where it has no setting; reads Guilds' server store directly. Each feature
 /// verifies its own hooks at startup and switches off alone on a mismatch.
 /// </summary>
@@ -41,6 +42,7 @@ public sealed class GuildsPlugin : BaseUnityPlugin
         Claims.Configure(Logger);
         Bridge.Configure(Logger);
         ClaimPortal.Configure(Logger);
+        GuildRoster.Configure(Logger);
 
         WarnOnVersion(SeparateSpawnsGuid, VerifiedSeparateSpawns);
         WarnOnVersion(GuildsGuid, VerifiedGuilds);
@@ -49,6 +51,8 @@ public sealed class GuildsPlugin : BaseUnityPlugin
         Bridge.HoldOn = Hooks.Enable(_harmony, Logger, "Guildless players hold the stones", Bridge.HoldPlan);
         ClaimPortal.ClaimOn = Hooks.Enable(_harmony, Logger, "Leaders claim start regions at the portal stones", ClaimPortal.Plan);
         Bridge.FollowOn = Hooks.Enable(_harmony, Logger, "A guild's region follows its members", Bridge.FollowPlan);
+        GuildRoster.On = Hooks.Enable(_harmony, Logger, "Guild members stay on the HUD", GuildRoster.Plan);
+        if (!GuildRoster.On) Logger.LogError("Guild members stay on the HUD: off, guild roster hooks not verified.");
     }
 
     private void Update()
@@ -56,9 +60,10 @@ public sealed class GuildsPlugin : BaseUnityPlugin
         RegisterRpcs();
         ClaimPortal.ClientTick();
         Bridge.Tick();
+        GuildRoster.Tick();
     }
 
-    /// <summary>ZRoutedRpc is rebuilt with every world, so the claim RPCs re-register against it.</summary>
+    /// <summary>ZRoutedRpc is rebuilt with every world, so guild RPCs re-register against it.</summary>
     private static void RegisterRpcs()
     {
         ZRoutedRpc? rpc = ZRoutedRpc.instance;
@@ -67,11 +72,13 @@ public sealed class GuildsPlugin : BaseUnityPlugin
             return;
         }
         ClaimPortal.ResetHoverOwners();
+        GuildRoster.Reset();
         rpc.Register<string>("lembitu.guilds ClaimRegion", ClaimPortal.RPC_ClaimRegion);
         rpc.Register<ZPackage>("lembitu.guilds ClaimResult", ClaimPortal.RPC_ClaimResult);
         rpc.Register<string>("lembitu.guilds Claimed", ClaimPortal.RPC_Claimed);
         rpc.Register<string>("lembitu.guilds RegionOwners", ClaimPortal.RPC_RegionOwners);
         rpc.Register<ZPackage>("lembitu.guilds RegionOwnersResult", ClaimPortal.RPC_RegionOwnersResult);
+        rpc.Register<ZPackage>(GuildRoster.RpcName, GuildRoster.RPC_Roster);
         s_registeredRpc = rpc;
     }
 
@@ -88,5 +95,9 @@ public sealed class GuildsPlugin : BaseUnityPlugin
         }
     }
 
-    private void OnDestroy() => _harmony?.UnpatchSelf();
+    private void OnDestroy()
+    {
+        GuildRoster.Reset();
+        _harmony?.UnpatchSelf();
+    }
 }

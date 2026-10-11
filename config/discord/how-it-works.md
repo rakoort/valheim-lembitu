@@ -71,14 +71,16 @@ Each level needs 15% more XP than the last and gives **one guild point**. Spend 
 
 The member cap stays at five; there is no upgrade that raises it.
 ---
-## Parties, the Market and cooperation
-**Parties** are who you hunt with: invite only, up to eight people, and they may mix guilds. Press P. A party shares exactly two things:
-- **Map positions.**
-- **Kill XP:** a kill's class XP is split among the killer's party members within 100 m of the creature. A full party of four earns 150% of the kill between them.
+## Guilds, the Market and cooperation
+There are no parties. **Kill XP** is shared automatically with the killer's connected, alive guild members within 100 m of the creature when it dies. The killer always counts, wherever they stand. A guildless player earns their own kills in full.
+
+The total rises from 100% for one member to 150% at four members in range, split equally: two earn about 58% each, three about 44%, four 37.5%, five 30%.
+
+The **guild HUD** on the left of the screen always shows the other members with health and distance; offline members are dimmed. Guild members still see each other on the map.
 
 **The Market (F7)** is server-wide and works while the other side is offline: coin sales, buy orders, jobs and a bank. Every payout carries a 5% fee.
 
-**Why cooperate?** No guild can do everything well. Specialists make better goods: a smith's gear hits harder, a cook's dishes give more and keep longer, a brewer's meads last longer. Their quality survives the Market. Bosses are tuned for five players, so smaller guilds and late joiners do better in mixed parties. A late joiner catches up by being carried through a boss again; nobody skips a boss.
+**Why cooperate?** No guild can do everything well. Specialists make better goods: a smith's gear hits harder, a cook's dishes give more and keep longer, a brewer's meads last longer. Their quality survives the Market. Bosses are tuned for five players, so smaller guilds and late joiners benefit from help from other guilds. A late joiner catches up by being carried through a boss again; nobody skips a boss.
 ---
 ## Progression
 - **Boss keys (personal).** The world writes no keys. When a boss dies, everyone within 100 m gets its key, and nobody else. A key unlocks crafting, wearing, cooking and eating that biome's gear and food, plus boss powers and summons. Building, repairs, taming, boats and portals are never locked.
@@ -94,4 +96,4 @@ The member cap stays at five; there is no upgrade that raises it.
 - **Portals:** press E on a wood portal to name it and pick its destination from a list of every portal. Ore and metal never pass through.
 - **The world** is about 1.76× vanilla's area, with points of interest at the usual density.
 
-**Keys:** F1 guide · F7 Market · F9 guild · O social · P party. Questions go to #support.
+**Keys:** F1 guide · F7 Market · F9 guild. Questions go to #support.

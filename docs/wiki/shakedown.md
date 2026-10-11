@@ -42,12 +42,12 @@ on the plugins; their startup lines
 | Spoilage and storage | How much food rots per week, whether the Meadows-to-Swamp stretch before the Icebox feels punishing, whether guilds build a mountain storehouse, and whether preserved dishes see use on trips. | ADR-0029; `config/enforced/FineDining/Spoilage.yml` and `config/enforced/sighsorry.FineDining.cfg`. |
 | Fresh food and tuning | Fights at the tuning targets with fresh food (110%) and v17 graded food (up to 132%) against the 2026-10-05 measurements, which assumed vanilla food. | ADR-0019's tuning targets; `Food Stat Scale` and `levels.yml`. |
 
-## Classes and parties (*plugin*)
+## Classes and guild XP (*plugin*)
 
 | Check | Do and record | Feeds |
 | --- | --- | --- |
 | Respec, switch and tree access | Reset talents at the stone (XP kept), switch away/back (both class records kept), spend points away from the stone, refuse reset/oath away from it. Fresh character: no Classes button until first oath at the stone; unlocks unchanged. | ADR-0031; #92. |
-| Party XP | XP each member receives for one kill at party sizes 1, 2, 4 and 8, members in and out of 100 m, and a killer standing beyond 100 m (who still earns their share); the server logs every split as `Party kill XP:`. Whether partying feels worth it. | ADR-0022's 100% to 150% curve. |
+| Guild XP | XP each member receives for one kill with 1, 2, 4 and 5 guild members in range, members in and out of 100 m, a dead member, and a killer standing beyond 100 m (who still earns their share); a helper from another guild earns nothing. The server logs every split as `Guild kill XP:`. Whether sharing by default feels right. | ADR-0035; ADR-0022's 100% to 150% curve. |
 | Gathering tools | A Rogue, Monk, Berserker, Highlander and Breaker can fish; a Monk's bare-handed mining and chopping raise Mining and Wood Cutting. Time a Monk's Mining and Wood Cutting against a pickaxe or axe user: the fist raises by Oathbound's 0.25 per gathering hit. | ADR-0022; the Monk's gather pace. |
 | Wolf orders | As a Hunter, open the command window with Y and give each order: stay holds the wolf in place, heel keeps it from engaging, recall breaks a fight off. Repeat while another player stands nearer the wolf than its owner, and record whether orders still take effect. Note whether the Hunter's orders feel strong next to the Dragonsworn whelp and Warlock skeletons, which have none. | `docs/modstack.md` (Oathbound Addon, client-only); ADR-0025's class band. |
 | Oathbound at join | A client without Oathbound tries to join; record whether it is refused. | `docs/modstack.md`, "Where each mod runs". |
@@ -61,7 +61,7 @@ on the plugins; their startup lines
 | Sieges | Sieges per play-week, their tier against the outpost's biome, structure damage taken, and whether the guild monster ward starves them. | ADR-0020; `Raids less` in `config/launch/launch.env.example`. |
 | Crew sailing | Trip time on one route with one sailor and with a crew. | ADR-0024's crew bonus. |
 | Market round-trip | List, buy and withdraw one smith-made item and one EpicLoot item; relog; check durability, maker and enchantments survived. | ADR-0023; Northarun/Marketplace. |
-| Presence radius | At a boss kill, who got the key, the mastery credit and the party XP, with distances. Keys measure from the player controlling the boss, the other two from the boss. | ADR-0022; `config/enforced/MidnightsFX.ProgressivePowers.cfg`. |
+| Presence radius | At a boss kill, who got the key, the mastery credit and the guild XP, with distances. Keys measure from the player controlling the boss, the other two from the boss. | ADR-0022, ADR-0035; `config/enforced/MidnightsFX.ProgressivePowers.cfg`. |
 
 ## Accepted as configured, watched in play
 
@@ -91,7 +91,7 @@ evidence: `~/lembitu-native-tests/20261005T161006Z-guide90d/`.
 | Class band | At each biome, one player per class with the same gear tier and boss keys kills the same three creatures and one Enforcer; measure kill time, deaths and Eitr/potions spent, and observe attack effectiveness without a damage meter. | ADR-0025's ±25% band; Oathbound spell-growth and companion-damage settings. |
 | Boss margin | Every boss: attempts to the first kill, group size, average gear tier. Five average players should win with margin; a smaller skilled group can win too (ADR-0033). | The tuning target in `CONTEXT.md`; `levels.yml` boss values. |
 | Guild pace | Per guild: guild XP per member-hour by source, and guild level when each boss falls. | Guilds `LevelXpGrowth = 1.15` (#87). |
-| Solo against party XP | Class XP per hour over a session solo and in parties of two, three and four in the same biome. | `FullPartySize = 4` (#87). |
+| Solo against guild XP | Class XP per hour over a session solo and with two, three and four guild members hunting together in the same biome. | `FullBonusMembers = 4` (#87, ADR-0035). |
 | Craft pace | Raw and earned XP per play-hour for steady focus smiths, herbalists and cooks; verify v17 rate multipliers in the raw log and progress toward mastery at Kall, not an old recipe budget. | ADR-0032; #96, #100. |
 | Karma on early biomes | Highest Karma level reached during Meadows and Black Forest gathering sessions. | Karma thresholds `[90, 180]` (#87). |
 | Boss drops per player | One Bonemass and one Elder kill with two players present and one connected elsewhere: count Wishbones and swamp keys. | EpicLoot `Boss Trophy Drop Mode`; the open check in `docs/wiki/premium-review.md`. |
@@ -117,7 +117,8 @@ characters on two Steam accounts, both installed from the published Pack.
 | Join button | Start a Pack-installed client and press "Join Lembitu" on the main menu. | It connects to `lembitu.astral.ee:2456` (from Pack v17; v16 used `85.253.16.237`) and asks for the password. |
 | Acceptance gate | Two players: kill Eikthyr together; both log out and back in; build and use a ward, a portal pair and a raft. | Both hold the Eikthyr key after the reconnect; the ward refuses the other player until permitted; the portal and the raft work for both (`docs/modstack.md`, Acceptance gate). |
 | Guild flow | Both new characters wake at the stones. A founds a guild and claims a region at its portal stone. B founds a second guild, tries A's stone, claims another region, then disbands. B joins A's guild and uses a free region's stone. B dies with no bed, uses A's region portal, leaves the guild, dies again with no bed. Restart the server. | B's claim on A's stone is refused; disbanding frees B's region; as a non-leader B gets no claim window; as A's member B respawns in A's region and passes its portal; after leaving B respawns at the stones; A's claim survives the restart (`Lembitu.Guilds`, ADR-0028). |
-| Party page — owner, end of build | Use two separately licensed clients. On a character without `groups` recorded in `lembitu.guide.seen`, form a SocialSystem party through its UI. Close Guide, leave/rejoin the party, then relog. | Guilds, parties and the Market opens once on the first party; leaving/rejoining and relogging do not auto-open it again (`Lembitu.Guide`). |
+| Guild page and guild HUD — owner, end of build | Use two separately licensed clients. On B, a character without `groups` recorded in `lembitu.guide.seen`, join A's guild. Close Guide, leave and rejoin the guild, then relog. Stand 20 m apart, then 150 m; let A take damage; let A die. Kill a boar with both in range, then with B 150 m away. | Guilds and the Market opens once on B's first guild; leaving/rejoining and relogging do not auto-open it again (`Lembitu.Guide`). Each HUD lists the other member with a falling health bar and the right distance, dims them as "dead" and then "offline" when they quit (`Lembitu.Guilds`). The first boar splits its XP (`Guild kill XP:` names two members); the second pays A alone (ADR-0035). |
+| Quick stack through MultiUserChest — owner, end of build | A places two chests holding raw meat and coal and stays beside them. B stands within 10 m and presses the inventory's quick stack button carrying raw meat, coal and copper, while A has one chest open; then B quick stacks again after A walks 200 m away. Both relog. | Raw meat and coal land in A's chests, copper stays with B, and the totals in both chests and both inventories are the same after the relog (MultiUserChest requests, `docs/modstack.md`, Known interactions). |
 | Wishbone and swamp key | With both connected and one of them away from the fight, kill Bonemass and the Elder. | Count Wishbones and swamp keys: one per kill matches the decision; one per connected player means EpicLoot's mode does not reach these two drops (`docs/wiki/premium-review.md`, open check). |
 
 ## Decisions
@@ -130,7 +131,7 @@ with the pack version.
 
 Per-feature single-client scenario coverage is not part of the Shakedown; it was cancelled with the
 plugins it was written for (`docs/modstack.md`, "Acceptance gate"). Checks that code alone settles
-(the boss-power counts, the party share formula) are not repeated here.
+(the boss-power counts, the guild share formula) are not repeated here.
 
 ## Lessons
 

@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.guilds</PluginGuid>
-    <Version>0.2.0</Version>
-    <Description>Guilds form in game and claim SeparateSpawns' start regions (ADR-0028): guildless players hold the sacrificial stones, a guild leader claims one of the three regions at its portal stone after a confirmation window, and the region follows guild membership.</Description>
+    <Version>0.3.0</Version>
+    <Description>Guilds form in game and claim SeparateSpawns' start regions (ADR-0028): guildless players hold the sacrificial stones, a guild leader claims one of the three regions at its portal stone after a confirmation window, and the region follows guild membership. An always-on guild HUD shows other members, their health, distance and online status (ADR-0035).</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +35,9 @@
     </Reference>
     <Reference Include="UnityEngine.UI" Private="false">
       <HintPath>$(ValheimRefDir)UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.UIModule.dll</HintPath>
     </Reference>
     <!-- Claim store: the claim file is read and written on the server; the runtime copy ships with
          the game, so only the compile-time reference is needed. -->

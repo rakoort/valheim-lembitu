@@ -8,21 +8,21 @@ namespace Lembitu.Oathbound;
 
 /// <summary>
 /// Adapts LionAndOtter/Oathbound: oath changes stay at the Oathstone,
-/// kill XP is split within the killer's party, a poison kill pays the poisoner,
+/// kill XP is shared with the killer's guild members nearby, a poison kill pays the poisoner,
 /// and every class may use the gathering tools. Patches Oathbound at runtime; each feature verifies
 /// its own hooks first and switches off alone if an Oathbound release moved them.
 /// </summary>
 [BepInPlugin(PluginInfo.Guid, PluginInfo.Name, PluginInfo.Version)]
 [BepInDependency(Jotunn.Main.ModGuid)]
 [BepInDependency(OathboundGuid)]
-[BepInDependency(SocialSystemGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(GuildsGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(WorldAdvancementGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency(ArcheryLock.Guid, BepInDependency.DependencyFlags.SoftDependency)]
 [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
 public sealed class OathboundPlugin : BaseUnityPlugin
 {
     private const string OathboundGuid = "local.warrior.rpg";
-    internal const string SocialSystemGuid = "M2Valheim.SocialSystem";
+    internal const string GuildsGuid = "adrian.valheim.guilds";
     internal const string WorldAdvancementGuid = "com.orianaventure.mod.WorldAdvancementProgression";
 
     /// <summary>The Oathbound release every hook below was read from (docs/modstack.md).</summary>
@@ -38,7 +38,7 @@ public sealed class OathboundPlugin : BaseUnityPlugin
     private void Awake()
     {
         ManualLogSource log = Logger;
-        PartyExperience.Configure(Config, log);
+        GuildExperience.Configure(Config, log);
         CompanionDamage.Configure(Config);
         ArcheryLock.Configure(Config);
         ArcheryLock.Enable(log);
@@ -61,7 +61,7 @@ public sealed class OathboundPlugin : BaseUnityPlugin
 
         _harmony = new Harmony(PluginInfo.Guid);
         Hooks.Enable(_harmony, log, "Oaths and free respec require the Oathstone; the tree opens anywhere after the first oath", OathAccess.Plan);
-        Hooks.Enable(_harmony, log, "Kill XP is split within the killer's party", PartyExperience.Plan);
+        Hooks.Enable(_harmony, log, "Kill XP is shared with the killer's guild members nearby", GuildExperience.Plan);
         Hooks.Enable(_harmony, log, "A poison kill pays the player who poisoned", PoisonCredit.Plan);
         Hooks.Enable(_harmony, log, "Every class may equip the fishing rod", GatheringTools.FishingRodPlan);
         Hooks.Enable(_harmony, log, "A Monk's bare hands raise Mining and Wood Cutting", GatheringTools.MonkGatheringPlan);

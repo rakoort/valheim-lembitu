@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.oathbound</PluginGuid>
-    <Version>0.4.0</Version>
-    <Description>Adapts Oathbound: oath changes and free respec at the Oathstone, a portable talent tree, party kill XP, poison credit, gathering tools for every class, boss-key-capped power, and server-locked spell growth, companion damage and BetterArchery gameplay.</Description>
+    <Version>0.5.0</Version>
+    <Description>Adapts Oathbound: oath changes and free respec at the Oathstone, a portable talent tree, guild kill XP, poison credit, gathering tools for every class, boss-key-capped power, and server-locked spell growth, companion damage and BetterArchery gameplay.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <!-- Compiled against the pinned packages scripts/stage-stack.sh puts in dist/plugins/, so the
-       hooks are checked against exactly what we deploy. Oathbound and SocialSystem are publicized:
+       hooks are checked against exactly what we deploy. Oathbound and Guilds are publicized:
        every hook reaches private members, and each one is re-verified at startup. -->
   <ItemGroup>
     <Reference Include="WarriorRpg" Private="false" StagedMod="Oathbound">
@@ -22,8 +22,8 @@
       <HintPath>$(PluginDistDir)Oathbound/WarriorRpg/Warrior.Core.dll</HintPath>
       <Publicize>true</Publicize>
     </Reference>
-    <Reference Include="SocialSystem" Private="false" StagedMod="SocialSystem">
-      <HintPath>$(PluginDistDir)SocialSystem/SocialSystem.dll</HintPath>
+    <Reference Include="Guilds" Private="false" StagedMod="Guilds">
+      <HintPath>$(PluginDistDir)Guilds/Guilds.dll</HintPath>
       <Publicize>true</Publicize>
     </Reference>
     <Reference Include="VentureValheim.Progression" Private="false" StagedMod="World_Advancement_Progression">

@@ -29,7 +29,7 @@ a world that will be discarded, where the rules below are tried and corrected.
 
 The concept is **MMORPG-lite for rival guilds that must cooperate**. There is no PvP. Guilds compete
 through progress, territory and the Market. A boss is tuned for five players: a full guild can
-win alone; smaller guilds benefit from parties across guilds (ADR-0033). Trade between guilds is an advantage rather than a necessity: a guild of three can
+win alone; smaller guilds can still fight a boss together, and everyone present earns its key (ADR-0033). Trade between guilds is an advantage rather than a necessity: a guild of three can
 cover every profession, but not every hour of the day. Anyone can do anything given time;
 specialising is how you do it well.
 
@@ -41,7 +41,7 @@ are carried in game by the guide window: press **F1** or the Guide button in the
 It opens on a character's first join, its text is the server's (`config/enforced/lembitu.guide.md`),
 and a refusal names the rule it hit and the guide page that explains it.
 
-**Keys:** F1 Guide; F7 Market; F9 Guilds; O social; P party; Left Alt+E hides or shows
+**Keys:** F1 Guide; F7 Market; F9 Guilds; Left Alt+E hides or shows
 Explorer markers (`config/enforced/lembitu.guide.md` and the Pack key bindings).
 
 ## Admission
@@ -61,7 +61,7 @@ presentation mods. Reinstall the Pack whenever it changes (ADR-0034).
 the Discord server ten, five and one minutes before; everyone's character is saved first, so a
 restart costs no progress.
 
-## Guilds and parties
+## Guilds
 
 **A guild is who you belong to.** Northarun/Guilds supplies ranks, guild chat, a shared vault,
 guild-bound wards, a banner territory, guild levels, upgrades and achievements. Founding is free,
@@ -106,23 +106,28 @@ the identified character's region; a bed always overrides it, as in vanilla.
 - Register: guild, claim and move rules *Intended* (`Lembitu.Guilds`,
   `config/enforced/lembitu.guilds.cfg`).
 
-**A party is who you hunt with.** M2Valheim/SocialSystem parties are invite-only, hold up to eight
-players and may mix guilds (`config/enforced/M2Valheim.SocialSystem.cfg`). A party shares exactly two
-things: map positions, and kill XP. It never answers "who owns this".
+**A guild is also who you hunt with** (ADR-0035). There are no parties: the guild is the group.
+Members see each other on the map through Guilds, and on the **guild HUD** on the left of the screen,
+which is always on while the game HUD is shown. It lists every other member of your guild: name,
+health and distance for those online, dimmed for those dead or offline (`Lembitu.Guilds`).
 
-**Kill XP goes to the killer's party, and only to members near the kill** (ADR-0022):
+**Kill XP goes to the killer's guild, and only to members near the kill** (ADR-0022, ADR-0035):
 
 - The kill is credited to whoever landed the killing blow. Companions and burning count for their
-  owner. Others who hit the creature but are not in the killer's party earn nothing.
-- Party members within **100 m** of the creature when it dies split its XP equally. That is the same
-  distance that earns a boss key. A member further away, disconnected or dead earns nothing and does
-  not count. Being in a party never waives proximity. The killer always counts, wherever they stand,
-  so partying never costs the killer a kill.
-- The party's total rises with the members in range: 100% of the kill for one, about 117% for two,
-  about 133% for three, **150% for four and every larger party** (ADR-0022): 58% of the kill each in
-  a pair, 44% each in a trio, 37.5% each at four and 18.75% each at eight.
+  owner. Others who hit the creature but are not in the killer's guild earn nothing.
+- Guild members within **100 m** of the creature when it dies split its XP equally, automatically:
+  there is nothing to form or accept. That is the same distance that earns a boss key. A member
+  further away, disconnected or dead earns nothing and does not count. The killer always counts,
+  wherever they stand, so sharing never costs the killer a kill. A player in no guild, or with no
+  guild member near, earns the kill in full.
+- The total rises with the members in range: 100% of the kill for one, about 117% for two, about
+  133% for three, **150% for four or five** (ADR-0022): 58% of the kill each in a pair, 44% each in a
+  trio, 37.5% each at four and 30% each at five.
+- Hunting with another guild shares no XP. Two players who want to share it found a guild together;
+  founding is free.
 
-- Register: *Intended* (`Lembitu.Oathbound`, `config/enforced/lembitu.oathbound.cfg`).
+- Register: *Intended* (`Lembitu.Oathbound`, `config/enforced/lembitu.oathbound.cfg`,
+  `Lembitu.Guilds`). Two-player acceptance is still owed.
 
 ## Classes, levels and talents
 
@@ -338,8 +343,8 @@ because your client generates the ground itself.
 **Each region is its own place, and a guild claims one.** Three scored start regions, 0.5 to 1.2 km
 from the sacrificial stones and at least a kilometre apart (SeparateSpawns, ADR-0018,
 `config/dedicated/abortipus.separatespawns.cfg`). A guild claims one at that region's portal stone
-in the ring around the sacrificial stones, after the confirmation window (ADR-0028, *Guilds and
-parties*); nobody lives out there until one does, and every new character wakes at the stones.
+in the ring around the sacrificial stones, after the confirmation window (ADR-0028, *Guilds*);
+nobody lives out there until one does, and every new character wakes at the stones.
 Meeting another guild is meant to be an event rather than the first thing that happens.
 
 **Ore does not teleport, until the Ashlands.** Ordinary portals refuse ore and metal, so they travel
@@ -348,7 +353,7 @@ carries everything, metal included, and that late reward is kept. XPortal only l
 destination.
 
 **Maps are personal in game.** You share what you have explored at a cartography table, and guilds
-share pins. Party members see each other on the map. There is no creature radar. Explorer
+share pins. Guild members see each other on the map. There is no creature radar. Explorer
 shows temporary resource and dungeon markers near you as its skill unlocks them;
 BetterMap makes no automatic resource pins. Everyone's public position is off
 (`config/enforced/xtav1m.BetterMap.cfg`, `config/enforced/blacks7ar.Explorer.cfg`,
@@ -434,6 +439,18 @@ surplus and time saved, not relief from a profession craft block (ADR-0032).
 container within 20 m (AzuCraftyBoxes, `config/enforced/Azumatt.AzuCraftyBoxes.cfg`). A client without
 the mod is refused at join.
 
+**Cooking takes food from your inventory, never from a chest** (owner, 2026-10-11). Cooking
+stations, ovens and the food smelter cook only what you carry; their wood or coal still comes from
+chests nearby. Cauldron recipes are crafting and still pull from chests
+(`config/enforced/Azumatt.AzuCraftyBoxes.yml`).
+
+**Quick stack reaches every chest within 10 m** (owner, 2026-10-11). The quick stack button in the
+inventory, or Ctrl+U, puts each stackable item into a nearby chest that already holds it. It uses
+only chests players built, and skips another player's private chest and a chest inside a ward that
+does not admit you. MultiUserChest lets several players use one chest at once: each item you stack
+travels as a request to whichever game manages that chest, which accepts or refuses it
+(`config/enforced/goldenrevolver.quick_stack_store.cfg`).
+
 **Every piece costs full materials at its station.** PlanBuild's plans, Extra Snap Points and the
 building-piece mods help you plan and place precisely, but PlanBuild's direct build and terrain tools
 are off for players, so a plan is finished with real materials (`config/enforced/marcopogo.PlanBuild.cfg`).
@@ -461,7 +478,7 @@ These are stated to players rather than discovered by them (#23).
 
 **Our two plugins are new.** `Lembitu.Oathbound` and `Lembitu.Callings` exist and were checked in a
 real client on 2026-10-04 (`docs/build.md`, "Plugin native checks" and "Full-pack native
-acceptance"). The kill XP split within a party of two or more has not yet been seen in play; the
+acceptance"). The kill XP split between two or more guild members has not yet been seen in play; the
 Shakedown measures it and the rest of their numbers.
 
 **Your character lives on the server, from Pack v17.** The server keeps the character of record;

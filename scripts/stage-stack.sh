@@ -266,6 +266,7 @@ if [[ "$MODSTACK" == "$REPO_ROOT/docs/modstack.md" ]]; then
   # 71 with FineDining's spoilage (ADR-0029).
   # Pack v17 swaps the profession-gate package for BetterArchery; the pin count stays 71.
   # The Hexium re-pins, Guilds 1.2.3 and Explorer replacement change versions, not the count.
+  # 2026-10-11 swaps SocialSystem for MultiUserChest (ADR-0035); the count stays 71.
   [[ "$(wc -l < "$PINS" | tr -d ' ')" -ge 71 ]] \
     || die "only $(wc -l < "$PINS" | tr -d ' ') pins parsed from $MODSTACK - expected the whole stack"
 fi

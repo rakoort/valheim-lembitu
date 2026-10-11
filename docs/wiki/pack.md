@@ -364,7 +364,8 @@ what shipped:
 
 **Rejected, with the reason kept.** `MSchmoecker/MultiUserChest` 0.6.2 is the one candidate that
 changes networked item movement, where duplication and item loss live, and the vanilla
-"someone is in the chest" wait is an annoyance rather than a problem. `Crystal/BetterChat` 1.6.4
+"someone is in the chest" wait is an annoyance rather than a problem. (Adopted on 2026-10-11 after
+all, as the transport for area quick stack; see the dated section at the end.) `Crystal/BetterChat` 1.6.4
 rewrites the chat input and visibility that Clan already patches, risking the clan channel's
 prefixes, and would add `shudnal/ConditionalConfigSync` 1.0.6 to the closure purely to make its own
 settings enforceable. `RustyMods/Seasonality` 3.8.3 sets world global keys, which this server
@@ -1058,3 +1059,38 @@ server, an unlit fire under the cauldron (the player was wet; rain is the likely
 station (mead bases are made at the mead ketill in 1.0), and a player killed between checks. Not covered
 natively: the fermenter carrying a grade (managed smoke only), a second client, the Market round
 trip, and a client editing a locked BetterArchery key while connected.
+
+## Cooking, area quick stack and guilds without parties — 2026-10-11
+
+The owner asked for three changes. Cooking takes food only from the player's inventory: the
+AzuCraftyBoxes restriction file names the Pack's five cookers, found by scanning the vanilla
+prefabs and every mod's asset bundles for `CookingStation` and food `Smelter` components. Area quick
+stack is on at 10 m, carried by the newly adopted `MSchmoecker/MultiUserChest` 0.6.2, the
+transport both mods' authors pair. The only server-only candidate, `ArgusMagnus/ServersideQoL_AutoStore`,
+has no inventory button (an emote triggers it) and needs the preloader patcher our container still
+cannot deploy. SocialSystem left: guild members share kill XP by proximity and `Lembitu.Guilds`
+shows them on an always-on HUD (ADR-0035). The pin count stays 71.
+
+One native full-Pack session on astral-tricep, one client, passed every check
+(`~/lembitu-native-tests/20261011T180111Z-guild-qs/`):
+
+- the server and client logs show `Kill XP is shared with the killer's guild members nearby: on`,
+  `Guild members stay on the HUD: on`, `First-guild page: on` and MultiUserChest loading;
+- with no wood carried, CraftyBoxes fuelled a fire (fuel 1 to 2) and an oven (0 to 1) from a nearby
+  chest holding raw meat and wood, while the cooking station over that fire took nothing ("You
+  don't have any cookable items") and then cooked the raw meat the player carried;
+- with no chest open, the inventory's Q button moved 4 raw meat and 9 coal into the two chests
+  that held them ("Stacked 2 items") and left 10 copper, which no chest held;
+- founding a guild opened the guide's Guilds and the Market page once and recorded `groups`;
+- after an offline member was added on the server, the HUD showed "Testmate · offline" from the
+  server's roster; a synthetic roster held on the client rendered a 55% health bar at 50 m, a
+  dimmed "dead" row and a dimmed "offline" row (`hud-synthetic.png`);
+- a guild member's boar kill ran the server reward path with no exception and no split, as a guild
+  with one member online should.
+
+Test-only scaffolding, removed after the run: a probe plugin founded the guild, added the offline
+member and held the synthetic roster, and marked the fixture chests as player-built, because
+CraftyBoxes and Quick Stack both ignore creatorless chests as dungeon chests. A fresh test world
+also needs ServerManager's policy seeded before a join (`docs/wiki/native-testing.md`). Not covered:
+a second client, so a real split, a live member's health and a MultiUserChest request remain the
+owner's two-player checks (`docs/wiki/shakedown.md`).

@@ -22,5 +22,5 @@ says which rule blocked it (personal boss key, profession rung, class equipment 
 which guide page explains it. Each message is written where the refusal is decided: World Advancement
 Progression's and Item_Requirement's message settings where they have them, `Lembitu.Oathbound` for
 Oathbound's equipment rule, `Lembitu.Callings` for the tonic key. The first oath, the first opening of
-the Calling window and the first party open the matching guide page once; `Lembitu.Guide` reads that
-state rather than patching the mods that own it.
+the Calling window and the first ~~party~~ guild (ADR-0035, 2026-10-11) open the matching guide page
+once; `Lembitu.Guide` reads that state rather than patching the mods that own it.

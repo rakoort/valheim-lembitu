@@ -1,0 +1,32 @@
+# Cooking takes food from the player's own inventory only (owner, 2026-10-11). With no entry here,
+# pressing E on a cooker the player has nothing for pulls raw food out of a chest within
+# `Container Range`. A station's entry is checked before any container, and `All` is the package's
+# predefined group of every item, so each cooker below refuses every input. Fuel goes through the
+# same check and fuel is not food, so each fuelled cooker lets its own fuel through.
+#
+# These are every cooker in the Pack, read from the vanilla prefabs and the mods' asset bundles on
+# 2026-10-11: the three vanilla CookingStations, OdinsKingdom's GB_Oven (a CookingStation fuelled by
+# Wood) and OdinArchitect's food_smelter (a Smelter that cooks meat, fuelled by Coal). A new mod that
+# adds a cooker needs its prefab here. Crafting at the cauldron is crafting, not this, and still
+# pulls from chests like every other crafting station.
+piece_cookingstation:
+  exclude:
+    - All
+piece_cookingstation_iron:
+  exclude:
+    - All
+piece_oven:
+  exclude:
+    - All
+  includeOverride:
+    - Wood
+GB_Oven:
+  exclude:
+    - All
+  includeOverride:
+    - Wood
+food_smelter:
+  exclude:
+    - All
+  includeOverride:
+    - Coal

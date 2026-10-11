@@ -33,14 +33,16 @@ acceptance it is frozen for the run. The server refuses a client whose mods diff
 except for leaving out its optional presentation mods.
 _Avoid_: modpack, profile, loadout
 
-### Guilds and parties
+### Guilds
 
 **Guild**:
 A named group of three to five players with ranks, a shared vault, guild chat, the start region it
 claims and land it claims. Founded in game; at most three hold a start region. The membership that
-owns things: land, vault, wards and guild progress. Guilds are rivals and cooperators at once
-(ADR-0019, ADR-0028).
-_Avoid_: clan, tribe, team, faction
+owns things: land, vault, wards and guild progress. It is also who hunts together: the killer's
+guild members within 100 m of a kill split its class XP, with nothing to form first, and members
+always see each other on screen and on the map. Guilds are rivals and cooperators at once
+(ADR-0019, ADR-0028, ADR-0035).
+_Avoid_: clan, tribe, team, faction, party
 
 **Guild rank**:
 A named tier inside a guild that carries permissions such as ward access, vault access and inviting.
@@ -49,13 +51,6 @@ A named tier inside a guild that carries permissions such as ward access, vault 
 One of three scored places 0.5 to 1.2 km from the sacrificial stones, each reached through its own
 portal in a ring around the stones. A founded guild claims one as its members' home (ADR-0028).
 _Avoid_: spawn group, base, guild start
-
-**Party**:
-An intentional, invite-only group of up to eight players that may mix guilds. It exists to share a
-hunt: the killer's party members within 100 m of a kill split its XP, and members see each other on
-the map, nothing else. Being in a party never waives that proximity. Temporary by nature, and never
-the answer to "who owns this".
-_Avoid_: group, squad, raid group
 
 **Ward**:
 A buildable claim that controls who may build, open and use things inside its radius, resolved

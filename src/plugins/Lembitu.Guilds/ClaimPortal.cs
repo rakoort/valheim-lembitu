@@ -25,7 +25,7 @@ internal static class ClaimPortal
     private const string ClaimRpc = "lembitu.guilds ClaimRegion";
     private const string ResultRpc = "lembitu.guilds ClaimResult";
     private const string AnnounceRpc = "lembitu.guilds Claimed";
-    private const string Guide = " Guide: Guilds, parties and the Market (groups).";
+    private const string Guide = " Guide: Guilds and the Market (groups).";
 
     /// <summary>Whether the claim feature's patch is on (verified at startup).</summary>
     public static bool ClaimOn;

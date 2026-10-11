@@ -44,8 +44,9 @@ cap: Kall adds no class power. ADR-0032 sets profession mastery targets against 
 
 ## Consequences
 
-- A full guild can win a boss alone. Inter-guild cooperation now rests on the Market, parties and
-  smaller guilds, not a numeric requirement for every boss fight.
+- A full guild can win a boss alone. Inter-guild cooperation now rests on the Market, ~~parties~~
+  and smaller guilds (parties removed 2026-10-11, ADR-0035), not a numeric requirement for every
+  boss fight.
 - Five-player boss fights must be measured with biome gear: party size, minutes, deaths and
   rolled modifiers. The first evening cannot establish the balance of later biomes.
 - Native acceptance verifies boss level 1 across biomes, fixed health despite headcount, 75% star

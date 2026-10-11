@@ -6,6 +6,8 @@ Amends: ADR-0010 (adopt rather than write plugins), ADR-0019 (one owner per axis
 
 Amended 2026-10-06 (owner): ADR-0031 drops the respec and class-switch resets. Earlier values below are historical where annotated.
 
+Amended 2026-10-11 (owner): ADR-0035 removes SocialSystem; kill XP goes to the killer's guild members near the kill.
+
 ## Context
 
 ADR-0019 asks for a character level, a talent tree with limited points, costly respec, parties
@@ -31,8 +33,8 @@ so the boss-key skill floor and the professions keep working.
 - **Oathbound is the class-level, talent and magic pillar.** WackyEpicMMOSystem and MagicPlugin
   leave the stack: two level systems would stack on the same stats, and Mage and Warlock are the
   magic schools.
-- **SocialSystem supplies parties**: invite-only, capped at eight, across guilds, with positions
-  on the map.
+- ~~**SocialSystem supplies parties**: invite-only, capped at eight, across guilds, with positions
+  on the map.~~ Removed 2026-10-11 (ADR-0035): there are no parties.
 - **Overlap is allowed** where a mod is well built and its overlap can be tuned. ADR-0019's
   one-owner-per-axis rule becomes a preference, not a gate.
 - **Four changes Oathbound has no settings for are made by our own plugin, `Lembitu.Oathbound`**,
@@ -40,11 +42,11 @@ so the boss-key skill floor and the professions keep working.
   replaces their files without losing ours:
   1. ~~Respec resets the active class to level 1. Cheap early, expensive late.~~ Dropped 2026-10-06 (ADR-0031): free talent reset at the Oathstone, XP kept.
   2. ~~Switching class also starts over at level 1: one levelled class at a time.~~ Dropped 2026-10-06 (ADR-0031): each class keeps its progress.
-  3. Kill XP goes to the killer's party members near the kill, split so the party's total rises
-     from 100% of the kill for one member to 150% for four or more (ADR-0022; first written as
-     110-125%, then 150% for eight),
-     using SocialSystem's server-side party membership. Oathbound's server-side kill routing is the
-     one place this happens.
+  3. Kill XP goes to the killer's ~~party~~ guild members near the kill (ADR-0035, 2026-10-11),
+     split so the group's total rises from 100% of the kill for one member to 150% for four or
+     more (ADR-0022; first written as 110-125%, then 150% for eight), using ~~SocialSystem's
+     server-side party membership~~ Guilds' server-side membership. Oathbound's server-side kill
+     routing is the one place this happens.
   4. ~~A cap on talent points~~ Dropped the same day (ADR-0022): no cap and Oathbound's stock XP
      pace. If level 80 comes too fast, that is revisited after it is observed.
   5. Added the same day (ADR-0022): every class may use the gathering tools of every profession —

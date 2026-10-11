@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.guide</PluginGuid>
-    <Version>0.3.0</Version>
-    <Description>Guide (ADR-0027): an in-game rulebook window - chapters of short pages, opened by a hotkey and an inventory button, shown once on a character's first join, with its text in a server-synced file the admin edits. Reads the first-oath, first-Calling and first-party state to open matching pages; patches nothing.</Description>
+    <Version>0.4.0</Version>
+    <Description>Guide (ADR-0027): an in-game rulebook window - chapters of short pages, opened by a hotkey and an inventory button, shown once on a character's first join, with its text in a server-synced file the admin edits. Reads the first-oath, first-Calling and first-guild state to open matching pages; patches nothing.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,15 +11,14 @@
   </ItemGroup>
 
   <!-- Compiled against the pinned packages scripts/stage-stack.sh puts in dist/plugins/. Oathbound's
-       Warrior.Core is read for the class record, SocialSystem for the client party state; both are
-       publicized so the private and internal members we read are visible (the build adds an
-       IgnoresAccessChecksTo attribute, which the game's Mono honours). We never patch either. -->
+       Warrior.Core is read for the class record, Guilds for client membership (ADR-0035).
+       We never patch either. -->
   <ItemGroup>
     <Reference Include="Warrior.Core" Private="false" StagedMod="Oathbound">
       <HintPath>$(PluginDistDir)Oathbound/WarriorRpg/Warrior.Core.dll</HintPath>
     </Reference>
-    <Reference Include="SocialSystem" Private="false" StagedMod="SocialSystem">
-      <HintPath>$(PluginDistDir)SocialSystem/SocialSystem.dll</HintPath>
+    <Reference Include="Guilds" Private="false" StagedMod="Guilds">
+      <HintPath>$(PluginDistDir)Guilds/Guilds.dll</HintPath>
       <Publicize>true</Publicize>
     </Reference>
     <Reference Include="Jotunn" Private="false" StagedMod="Jotunn">
