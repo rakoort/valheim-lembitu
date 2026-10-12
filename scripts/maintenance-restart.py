@@ -76,7 +76,6 @@ def main():
             if line.startswith('DISCORD_WEBHOOK_') and '=' in line:
                 key, value = line.split('=', 1)
                 values[key] = value
-    status = values.get('DISCORD_WEBHOOK_STATUS')
     alert = values.get('DISCORD_WEBHOOK_MONITOR')
     original = None
     locked = False
@@ -109,9 +108,6 @@ def main():
             (saved if command == 'save' else announced).append((start + offset, job_id(schedule, command)))
             lines += [f"  - command: '{command}'", f"    schedule: '{schedule}'", '    log: true']
         replace(cron, '\n'.join(lines) + '\n')
-        for offset, command in events[:len(announced)]:
-            time.sleep(max(0, start + offset - time.time()))
-            post(status, command.removeprefix('announce '))
         time.sleep(max(0, start + saves[0] - time.time()))
         deadline = time.monotonic() + saves[-1] - saves[0] + int(os.environ.get('CHECKPOINT_TIMEOUT', '120'))
         while time.monotonic() < deadline:

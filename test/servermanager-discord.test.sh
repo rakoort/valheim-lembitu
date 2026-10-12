@@ -33,10 +33,12 @@ check('bot uses the guild, owner, admin-console and chat IDs, and no token',
       data['bot'] == {'enabled': True, 'token': '', 'guild_ids': [111111111111111111], 'admin_user_ids': [222222222222222222],
                       'admin_channel_ids': [333333333333333333], 'chat_channel_ids': [444444444444444444]})
 by = {w['name']: w for w in data['webhooks']}
-check('four ServerManager routes; monitor and Pack-release routes stay ours', sorted(by) == ['Activity', 'Admin alerts', 'Chat', 'Server status'])
+check('three ServerManager routes; #status and the monitor and Pack-release routes stay ours', sorted(by) == ['Activity', 'Admin alerts', 'Chat'])
+check('server status and announcements reach the admins, not #status',
+      {'server.status', 'server.announcement'} <= set(by['Admin alerts']['events']))
 check('admin alerts carry the security and character events with Steam IDs',
       'security.alert' in by['Admin alerts']['events'] and 'character.validation' in by['Admin alerts']['events'] and by['Admin alerts']['include_steam_id'] is True)
-check('public routes never include Steam IDs', all('include_steam_id' not in by[n] for n in ['Activity', 'Chat', 'Server status']))
+check('public routes never include Steam IDs', all('include_steam_id' not in by[n] for n in ['Activity', 'Chat']))
 check('output prints no webhook secret', 'secret' not in r.stdout + r.stderr)
 (cfg / 'discord.env').write_text('DISCORD_GUILD_ID=111111111111111111\n')
 r = run()

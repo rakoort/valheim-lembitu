@@ -675,7 +675,7 @@ its addon and World Edit Commands on top of the Pack; any other player stands in
 | 3 | Both fight the same creatures for two minutes; one heals the other | Each Tally window (F10) shows both players' damage and healing and does not cover the inventory | #109 |
 | 4 | Both play ten minutes in one area | Server CPU and tick times are recorded beside the one-player figures in [Character store](character-store.md) | #101 |
 | 5 | Each writes in the Discord `#chat` and in game chat | Messages cross both ways through the Lembitu Server bot | #106 |
-| 6 | A runs `scripts/launch-server.sh restart` with B online | B sees the 10-, 5- and 1-minute warnings in game and in `#status`; after rejoining, B has the progress made just before the save | #103 |
+| 6 | A runs `scripts/launch-server.sh restart` with B online | B sees the 10-, 5- and 1-minute warnings in game, and `#status` shows the server restarting; after rejoining, B has the progress made just before the save | #103 |
 
 ### First-evening finding: the portal panel near the spawn stones — #110
 
@@ -685,7 +685,7 @@ A Windows player reported that pressing E on a wood portal crashed the game. Ser
 
 Pack v18 (every mod at its latest release, XPortal's fix included) went live at 23:39 EEST with nobody online. ServerManager's policy was regenerated from `~/lembitu/pack/2026-10-09-v18`, the enforced config was verified at 448 entries, and 68 plugins loaded. The same run was first proven on a copy of the live world on the test host (`~/lembitu-native-tests/20261009T201218Z-update-live`): all 128,551 world objects loaded under Expand World Size 1.44, and the world saved and reloaded. No hook of ours switched off, and the near-spawn portal panel worked.
 
-The deploy restart showed that `scripts/maintenance-restart.py` had never delivered its 10-, 5- and 1-minute warnings to `#status`. Discord's Cloudflare answers Python's default `Python-urllib` agent with HTTP 403 (error 1010), and the script only logs "Discord delivery failed". It now sends the same `DiscordBot (...)` agent as the shell scripts. `test/launch-server.test.sh` checks the agent the real `post()` sends. Check 6 above remains open until a restart with a player online shows the warnings in `#status`.
+The deploy restart showed that `scripts/maintenance-restart.py` had never delivered its 10-, 5- and 1-minute warnings to `#status`. Discord's Cloudflare answers Python's default `Python-urllib` agent with HTTP 403 (error 1010), and the script only logs "Discord delivery failed". It now sends the same `DiscordBot (...)` agent as the shell scripts. `test/launch-server.test.sh` checks the agent the real `post()` sends. Since 2026-10-12 the warnings no longer go to `#status` at all: they doubled ServerManager's own announcement posts there (owner). They stay in game, and the live status message shows the restart.
 
 **Test servers posted to the players' Discord.** The live-world copies used for the v18 checks came from a backup, and backups include ServerManager's discord.yml (in the save directory) with the real bot token and webhooks. Eight test sessions on 2026-10-09 (19:03–20:19 UTC) therefore posted their test characters' joins, chat greetings and admin alerts, plus their own restarts, into `#activity`, `#chat`, `#admin-alerts` and `#status`. The 56 posts were deleted through the webhooks that sent them on 2026-10-10. `scripts/native_session.py` now deletes that file from any save directory a test server adopts.
 

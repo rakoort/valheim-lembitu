@@ -91,7 +91,7 @@ for mode in ['confirmed','refused-first','missing','pending','undispatched','sta
  assert ('stop' in calls)==success and failed!=success,mode
  if not success:assert posted[-1][0]=='https://example.invalid/monitor',mode
  if mode not in ['busy-lock','missing-cron','busy-cron','unguarded']:
-  assert [x[2]-1791320000 for x in posted[:3]]==[20,320,560]
+  assert not any(x[0]=='https://example.invalid/status' for x in posted),'restart warnings stay in game, never in #status'
   assert cron.read_text()=='jobs: []\n'
  if mode=='busy-lock':assert lock.exists();lock.rmdir()
  else:assert not lock.exists()

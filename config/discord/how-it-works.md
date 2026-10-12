@@ -16,7 +16,7 @@ Read the posts below once; the in-game guide (F1) has the same rules in more det
 
 - **One character per Steam account.** The server keeps your character and saves it every five minutes, so a crash costs a few minutes at most.
 - Up to **10 players** at once. Keyboard and mouse only.
-- **Daily restart at 06:00 Oslo time**, with warnings 10, 5 and 1 minute ahead in game and in #status.
+- **Daily restart at 06:00 Oslo time**, with warnings 10, 5 and 1 minute ahead in game; #status shows when the server is restarting.
 - **Live web map:** https://lembitu-map.astral.ee shows the world, everyone's position and their guild.
 - **Voice:** proximity voice chat is built into the Pack; nearby players hear you, quieter with distance.
 ---
