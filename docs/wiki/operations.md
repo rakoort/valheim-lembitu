@@ -711,6 +711,14 @@ Pack v19 (`client-pack-2026-10-11-v19`) carries the Explorer, settings, dodge-ch
 
 Pack v20 (`client-pack-2026-10-11-v20`) adds `Lembitu.Updater`, its patcher and the Pack's version file; nothing in the game changes. Our four plugin DLLs differ from v19 only because the build is not byte-reproducible. The owner approved the release with nobody online. The two-save stop confirmed its checkpoint on the first try. Then: backups `lembitu-all-worlds-20261011T095150Z.tar.gz` and `lembitu-bepinex-state-20261011-pre-v20.tar.gz`, `scripts/install-plugins.sh` (which withheld the updater and its patcher; the container's `BepInEx/patchers` stays empty), `LEMBITU_PACK_ROOT` set to `~/lembitu/pack/2026-10-11-v20`, and `scripts/launch-server.sh start`. It logged `ServerManager policy verified: 78 required DLLs, 8 optional` (the updater DLL is the new required file), `enforced config verified: 447 entries match`, `68 loaded, 1 skipped, 0 failed`, no feature off, `ZNet.LoadWorld: LembituRun … save number 676` and `Opened Steam server` at 13:05 EEST. Published with `scripts/publish-pack.sh --reinstall`, since v19 has no updater; the announcement was read back from `#announcements` at 10:07 UTC. From v21 on, releases are published without `--reinstall`.
 
+### Quieter `#status` — 2026-10-12
+
+The owner found the restart warnings doubled in `#status`: our script posted each one and ServerManager echoed the same in-game announcement as an embed, then posted "Server shutdown" and "Server ready". Since commit `91e7e2c` the warnings stay in game, and ServerManager's `server.status` and `server.announcement` go to `#admin-alerts`. Regenerating `discord.yml` on astral-bicep took effect without a restart: ServerManager logged "Discord webhook routes reloaded".
+
+**astral-bicep's checkout runs a local branch until the next Pack deploy.** `~/code/valheim-lembitu` is on `live/2026-10-12-status`: the v20 deploy `a9875a3` plus only the two changed scripts. `master` was not pulled, because it also carries ADR-0035's enforced configs for the next Pack, which the next restart and the hourly drift check would apply to the v20 plugins. The next Pack deploy switches the checkout back to `master` before pulling.
+
+**One `#how-it-works` edit waits for that deploy.** Section 2 of `config/discord/how-it-works.md` now says the warnings are in game only. `scripts/discord-layout.sh apply` also edits sections 7 and 9 to ADR-0035's rules, which players do not have yet, so it runs with the next Pack.
+
 ## Exclusions
 
 - The overlay does not own every setting. PvP and death now follow vanilla rules. No biome-forced flag, flagged-player retention or special tombstone-looting rule replaces the removed mod.
