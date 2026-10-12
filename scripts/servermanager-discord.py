@@ -15,16 +15,17 @@ import sys
 
 CONFIG = pathlib.Path(os.environ.get('LEMBITU_DISCORD_CONFIG', pathlib.Path.home() / '.config/lembitu'))
 
-# route -> ServerManager events, per the layout table in docs/wiki/discord.md
+# route -> ServerManager events, per the layout table in docs/wiki/discord.md. #status carries only the
+# live status message, so server status and announcements go to the admins (ADR-0036).
 ROUTES = {
-    'STATUS': ['server.status', 'server.announcement'],
     'ACTIVITY': ['player.connection', 'player.death', 'boss.killed', 'raid.status'],
     'CHAT': ['chat.shout'],
     'ADMIN_ALERTS': ['security.alert', 'security.admin_bypass', 'character.validation',
                      'character.shadow_stalled', 'character.revision_observed', 'connection.rejected',
-                     'moderation.action', 'command.executed', 'cron.executed'],
+                     'moderation.action', 'command.executed', 'cron.executed',
+                     'server.status', 'server.announcement'],
 }
-NAMES = {'STATUS': 'Server status', 'ACTIVITY': 'Activity', 'CHAT': 'Chat', 'ADMIN_ALERTS': 'Admin alerts'}
+NAMES = {'ACTIVITY': 'Activity', 'CHAT': 'Chat', 'ADMIN_ALERTS': 'Admin alerts'}
 
 
 def read_env(path):
