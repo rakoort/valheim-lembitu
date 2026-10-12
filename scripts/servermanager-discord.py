@@ -16,14 +16,15 @@ import sys
 CONFIG = pathlib.Path(os.environ.get('LEMBITU_DISCORD_CONFIG', pathlib.Path.home() / '.config/lembitu'))
 
 # route -> ServerManager events, per the layout table in docs/wiki/discord.md. #status carries only the
-# live status message, so server status and announcements go to the admins (ADR-0036).
+# live status message, so restarts (server.status) go to the admins. Joins and leaves, announcements
+# and cron echoes are not posted: the live message lists who is online, announcements are in game,
+# and maintenance-restart.py alerts the admins itself when a restart fails (ADR-0036).
 ROUTES = {
-    'ACTIVITY': ['player.connection', 'player.death', 'boss.killed', 'raid.status'],
+    'ACTIVITY': ['player.death', 'boss.killed', 'raid.status'],
     'CHAT': ['chat.shout'],
     'ADMIN_ALERTS': ['security.alert', 'security.admin_bypass', 'character.validation',
                      'character.shadow_stalled', 'character.revision_observed', 'connection.rejected',
-                     'moderation.action', 'command.executed', 'cron.executed',
-                     'server.status', 'server.announcement'],
+                     'moderation.action', 'command.executed', 'server.status'],
 }
 NAMES = {'ACTIVITY': 'Activity', 'CHAT': 'Chat', 'ADMIN_ALERTS': 'Admin alerts'}
 
