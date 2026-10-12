@@ -63,6 +63,7 @@ public sealed class CallingsPlugin : BaseUnityPlugin
         Hooks.Enable(_harmony, log, "Explorer pays new-biome XP once per biome, not per crossing", BiomeDiscovery.Plan);
         Hooks.Enable(_harmony, log, "Settings save and close despite Zen's dodge key hint rewrite", DodgeHintGuard.Plan);
         Hooks.Enable(_harmony, log, "The dodge key works while chat is shown but not typed in", DodgeChatFocus.Plan);
+        Hooks.Enable(_harmony, log, "No automatic arrival shout, so #chat carries only what players write", ArrivalShout.Plan);
         Hooks.Enable(_harmony, log, "Dishes carry the cook's grade", CooksGrade.CraftPlan);
         Hooks.Enable(_harmony, log, "The cook's grade through cooking stations", StationGrade.Plan);
         CooksGrade.FoodOn = Hooks.Enable(_harmony, log, $"The cook's grade in food stats and shelf life ({Pinned.Loaded(CooksGrade.FineDiningGuid, "FineDining")})", CooksGrade.FoodPlan);

@@ -82,12 +82,13 @@ layout:
   achievement tiers, buildings) and member changes.
 - `#status`: only the live status message, which names the next restart and shows restarting during
   it. (Revised 2026-10-12, owner: restart countdowns stay in game rather than being edited in; this
-  part and ServerManager's move to `#admin-alerts` shipped ahead of the rest.)
+  part, the end of joins and leaves, and ServerManager's restart notices moving to `#admin-alerts`
+  shipped ahead of the rest.)
 
 A card carries a mini-map image of the spot rendered by the map server, and the event link. Texts
 are short, factual and a little Norse. Joins and leaves are no longer posted, because the live
-status message lists who is online. ServerManager keeps its server events, moved to
-`#admin-alerts`; its activity events stop.
+status message lists who is online. ServerManager's restart notices move to `#admin-alerts`; its
+announcements, cron results and activity events stop.
 
 **Who writes what.** The map plugin records the Chronicle and a delivery journal on its data mount.
 A host-side relay posts and edits the webhook messages, as `scripts/discord-status.py` does, so

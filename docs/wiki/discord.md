@@ -22,12 +22,12 @@ The agent builds and keeps this layout; changes go through this page first.
 | Info | `#announcements` | Everyone; only the owner and the bots post | Owner, and a Pack-release webhook |
 | Info | `#rules` | Everyone, read-only | Owner |
 | Info | `#password` | Player role, read-only | Owner |
-| Server | `#status` | Everyone | Only the live status message through STATUS. It names the next restart and shows restarting from the first warning; since 2026-10-12 the restart warnings stay in game and ServerManager's server events go to `#admin-alerts` |
-| Server | `#activity` | Everyone | ServerManager webhook: `player.connection`, `player.death`, `boss.killed`, `raid.status` |
-| Server | `#chat` | Player role | ServerManager bot (chat channel) and webhook `chat.shout` |
+| Server | `#status` | Everyone | Only the live status message through STATUS. It names the next restart and shows restarting from the first warning; since 2026-10-12 the restart warnings stay in game and ServerManager's restart notices (`server.status`) go to `#admin-alerts` |
+| Server | `#activity` | Everyone | ServerManager webhook: `player.death`, `boss.killed`, `raid.status`. Joins and leaves stopped on 2026-10-12: the live status message lists who is online |
+| Server | `#chat` | Player role | ServerManager bot (chat channel) and webhook `chat.shout`. From the Pack after v20, `Lembitu.Callings` skips Valheim's automatic "I have arrived!" shout, which was most of the channel |
 | Help | `#support` | Everyone | Players and the owner |
 | Guilds | per Guild: a text channel (`#ing`, `#fenrir`, `#muninn`) and a voice channel (`🔊 ING`, `🔊 Fenrir`, `🔊 Muninn`) | That Guild's role, the owner and the bots; members may write, connect, speak and stream | Declared under `guilds` in `config/discord/layout.json` (2026-10-10, owner): ING is the in-game guild [ING] ILVAR NARKO GAMING, while Fenrir and Muninn are named after unclaimed start regions until those guilds form. The owner gives each member their **Guild · name** role. Channels are matched by name, so renaming a Guild in the layout creates new channels and leaves the old ones for the owner to delete |
-| Admin | `#admin-alerts` | Owner and bots | ServerManager webhook: `security.alert`, `security.admin_bypass`, `character.validation`, `character.shadow_stalled`, `character.revision_observed`, `connection.rejected`, `moderation.action`, `command.executed`, `cron.executed`, `server.status` and `server.announcement`; and the monitor |
+| Admin | `#admin-alerts` | Owner and bots | ServerManager webhook: `security.alert`, `security.admin_bypass`, `character.validation`, `character.shadow_stalled`, `character.revision_observed`, `connection.rejected`, `moderation.action`, `command.executed` and `server.status`; and the monitor. ServerManager's announcements and cron results are not posted (2026-10-12): the warnings are in game, and `maintenance-restart.py` alerts through the monitor when a restart fails |
 | Admin | `#admin-console` | Owner and bots | ServerManager bot (admin channel for slash commands) |
 
 Roles, highest first: the owner's own, **Lembitu Ops**, **Lembitu Server**, **Player** (given by the
