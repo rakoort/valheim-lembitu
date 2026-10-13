@@ -1,7 +1,7 @@
 # ADR-0035: Guild members share kill XP, and parties are gone
 
 Date: 2026-10-11
-Status: Accepted (owner); ships with the next Pack, two-player acceptance still required
+Status: Accepted (owner); shipped in Pack v21 (2026-10-13), two-player acceptance still required
 Amends: ADR-0019 (parties), ADR-0020 (SocialSystem supplies parties), ADR-0022 (a kill pays the
 killer's party), ADR-0027 (the first party opens the guide's groups page)
 

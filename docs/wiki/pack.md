@@ -742,7 +742,17 @@ file, which is what a v19 player with the updater would have. It read GitHub's l
 releases), found v20, and staged five files: the four Lembitu DLLs and the version file, from
 124,778 bytes of the 321 MB release zip. At the next start the patcher installed them. The client
 joined a server holding v20's ServerManager policy, and every Lembitu file matched v20's inventory.
-Not yet verified: a Windows or macOS client, and the menu notice on screen.
+
+**v20 to v21 through the real release, 2026-10-13** (`~/lembitu-native-tests/20261013T131821Z-pack-updater-v21`).
+The client ran the published v20 zip unchanged, against a test server holding v21's plugins and
+ServerManager policy. The first start was refused at join with `ErrorVersion`, as a v20 player is,
+and meanwhile read GitHub's list (17 releases), found v21 and staged 10 files and one removal from
+197,392 bytes of the zip. At the next start the patcher installed them, its own DLL included
+(`Pack updated to 2026-10-13-v21: 10 file(s) written, 1 removed`); SocialSystem was gone,
+MultiUserChest loaded, `75 loaded, 0 skipped, 0 failed`, and the client joined. Every changed file
+matched v21's inventory except `goldenrevolver.quick_stack_store.cfg`, which Quick Stack rewrites at
+every start. Not yet verified: a Windows or macOS client, where the patcher replacing itself is
+the untested step (see the second limit above), and the menu notice on screen.
 
 ### Measured install — 2026-09-16 (v6)
 
@@ -816,12 +826,13 @@ published `client-pack-*` release (or `--release <tag>`, or a local `--zip` cand
   folder in a left-out.txt in the updater's staging folder, because the updater otherwise restores every Pack
   file a folder lacks: planned from v19 to v20, an install without ValheimVisualEnhanced got its two
   files back without the list and none with it. Updaters before the one after v20 do not read the
-  list, so tricep's first in-game update after v20 brings the mod back once; re-run this script
-  with `--without` after it.
+  list, so an in-game update from v20 brings the mod back once; re-run this script with `--without`
+  after it.
 
-Tricep was moved to v20 this way on 2026-10-11, with the list written. A clean install also moves
-the old BepInEx/ aside, saved server passwords included; AutoServerPassword's `passwords.json` was
-copied back from that backup.
+Tricep was moved to v20 this way on 2026-10-11, with the list written, and straight to v21 on
+2026-10-13 before its v20 updater could restore the mod. A clean install also moves the old
+BepInEx/ aside, saved server passwords included; both times AutoServerPassword's `passwords.json`
+was copied back from that backup.
 
 Measured 2026-10-07 on astral-tricep with a scratch game folder: v16 downloaded and digest-checked,
 353 files matched with ValheimVisualEnhanced left out, the stale plugin went to the backup, the
