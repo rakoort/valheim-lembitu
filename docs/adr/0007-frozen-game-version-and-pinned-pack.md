@@ -98,3 +98,22 @@ recovery is still rollback from the proven backup, and the Run still has an anno
 - **Every planned restart is a maintenance restart**, daily at 06:00 Europe/Oslo with warnings at
   ten, five and one minutes. A restart never runs the container's updater: the freeze above still
   requires that the accepted game version does not drift.
+
+## Amendment — 2026-10-17: the game follows Steam's public build
+
+The freeze above cannot hold on the client side. Steam updates every player's game, and no Steam
+setting keeps a client on an older build: the `default_old` branch keeps the previous build only
+until the next patch. Valheim 1.0.20 raised the network version from 40 to 41 on 2026-10-15, so the
+server, still frozen at 1.0.17, refused every player for two days.
+
+- **A network-version change on Steam's public branch is breakage, by definition.** It meets the
+  bar above: a newer release that fixes something actually broken, adopted after renewed acceptance
+  on the test host.
+- **The owner moved the Run to 1.0.20 and every mod's latest release on 2026-10-17** (Pack v22).
+  ServerManager 1.1.7 could not run on 1.0.20 at all, so the game and the Pack had to move together.
+- **What stays frozen** is everything this project controls between patches: the server does not
+  update itself on a restart, and the Pack does not move without acceptance. The update is still a
+  deliberate act; only its trigger now comes from Steam rather than from us.
+- **Going back is a restore, not a downgrade.** 1.0.20 rewrites the world in its own format at the
+  first save and ServerManager rewrites each character at its next save, so returning to 1.0.17
+  means restoring the pre-update backup and losing play since then.
