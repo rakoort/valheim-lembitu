@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Lembitu.Callings;
 
 /// <summary>
-/// Zen_ModLib 1.14.21's FixShowDodgeKeyHint rewrites the dodge key hint after
+/// Zen_ModLib's FixShowDodgeKeyHint (1.14.21, unchanged in 1.14.22) rewrites the dodge key hint after
 /// <c>KeyHints.ApplySettings</c> and sets its children 2 and 3 without checking they exist.
 /// DodgeShortcut 1.4.0 rebuilds that hint with fewer children at <c>KeyHints.Awake</c>, so Zen's
 /// rewrite throws. Vanilla calls <c>KeyHints.ApplySettings</c> from <c>Settings.ApplyAndClose</c>

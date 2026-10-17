@@ -15,7 +15,7 @@ namespace Lembitu.Oathbound;
 internal static class ArcheryLock
 {
     internal const string Guid = "ishid4.mods.betterarchery";
-    internal const string RetrieveList = "ArrowWood=0.2;ArrowFlint=0.3;ArrowBronze=0.5;ArrowIron=0.7;ArrowObsidian=0.7;ArrowNeedle=0.1;ArrowFire=0;ArrowPoison=0.7>ArrowObsidian;ArrowSilver=0.5;ArrowFrost=0.7>ArrowObsidian;ArrowCarapace=0.7;ArrowCharred=0.7;BoltBone=0.3;BoltIron=0.5;BoltBlackmetal=0.7;BoltCarapace=0.7;BoltCharred=0.7";
+    internal const string RetrieveList = "ArrowWood=0.2;ArrowFlint=0.3;ArrowBronze=0.5;ArrowIron=0.7;ArrowObsidian=0.7;ArrowNeedle=0.1;ArrowFire=0;ArrowPoison=0.7>ArrowObsidian;ArrowSilver=0.5;ArrowFrost=0.7>ArrowObsidian;ArrowCarapace=0.7;ArrowCharred=0.7;ArrowBloodGold=0;BoltBone=0.3;BoltIron=0.5;BoltBlackmetal=0.7;BoltCarapace=0.7;BoltCharred=0.7";
     private static readonly List<Action<ConfigFile>> Bindings = new();
     private static readonly List<Action> Apply = new();
     private static readonly List<Action> Disconnect = new();
@@ -30,18 +30,20 @@ internal static class ArcheryLock
         Add(config, "Other", "Enable Bow Draw Movement Speed Reduction", true);
         Add(config, "Other", "Enable Crouch Bow Draw", true);
         Add(config, "Other", "Enable Crafting Wooden Arrow Everywhere", true);
+        Add(config, "Other", "Enable Bow Kick", true);
         Add(config, "Retrievable Arrows", "Enable Retrievable Arrows", true);
         Add(config, "Retrievable Arrows", "Arrow Disappear Time", 60f);
         Add(config, "Retrievable Arrows", "Arrow Disappear On Hit", false);
         Add(config, "Retrievable Arrows", "Retrievable Arrow Solid Collider", false);
         Add(config, "Retrievable Arrows", "Arrow Auto Pickup", false);
         Add(config, "Retrievable Arrows", "Arrow Retrieve List", RetrieveList);
+        Add(config, "Retrievable Arrows", "Unlisted Ammo Retrieve Chance", 0f);
     }
 
     private static void Add<T>(ConfigFile config, string section, string key, T value)
     {
         ConfigEntry<T> ours = config.Bind("BetterArchery " + section, key, value,
-            new ConfigDescription("Server gameplay rule; BetterArchery 2.0.2 default (2026-10-06, owner).", null, OathboundPlugin.AdminOnly()));
+            new ConfigDescription("Server gameplay rule; BetterArchery 2.0.5 default (2026-10-06, owner).", null, OathboundPlugin.AdminOnly()));
         Bindings.Add(target =>
         {
             if (!target.TryGetEntry(new ConfigDefinition(section, key), out ConfigEntry<T> theirs))
@@ -69,12 +71,12 @@ internal static class ArcheryLock
         {
             if (!Chainloader.PluginInfos.TryGetValue(Guid, out BepInEx.PluginInfo info) || !info.Instance.enabled)
                 throw new HookMismatch("BetterArchery is not loaded or enabled");
-            if (info.Metadata.Version.ToString() != "2.0.2")
-                throw new HookMismatch($"BetterArchery {info.Metadata.Version}; verified release is 2.0.2");
+            if (info.Metadata.Version.ToString() != "2.0.5")
+                throw new HookMismatch($"BetterArchery {info.Metadata.Version}; verified release is 2.0.5");
             foreach (Action<ConfigFile> bind in Bindings) bind(info.Instance.Config);
             foreach (Action apply in Apply) apply();
             SynchronizationManager.OnConfigurationSynchronized += Synced;
-            log.LogInfo($"{feature}: on (BetterArchery 2.0.2)");
+            log.LogInfo($"{feature}: on (BetterArchery 2.0.5)");
         }
         catch (Exception error)
         {

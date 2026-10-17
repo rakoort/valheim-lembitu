@@ -26,7 +26,7 @@ public sealed class GuidePlugin : BaseUnityPlugin
     internal const string GuildsGuid = "adrian.valheim.guilds";
 
     /// <summary>The releases every read below was verified against (docs/modstack.md).</summary>
-    private const string VerifiedOathbound = "0.22.0";
+    private const string VerifiedOathbound = "0.22.1";
 
     internal static ManualLogSource ClientLog = null!;
 

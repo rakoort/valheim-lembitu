@@ -68,10 +68,10 @@ CACHE_DIR="${VALHEIM_TEST_CACHE:-$HOME/.cache/valheim-lembitu}/thunderstore"
 #   - Jotunn is pinned at 2.30.2, overriding the 2.29.0 Guilds and Marketplace declare, the 2.29.2
 #     EpicLoot declares, the 2.30.0 that World Advancement Progression, ProgressivePowers and
 #     others declare, and PlanBuild's 2.30.1 (docs/modstack.md),
-#   - Zen_ModLib is pinned at its latest release, overriding the older minimum ZenRaids declares
-#     (2026-10-04),
-#   - Oathbound is pinned at 0.22.0, overriding the 0.21.6 minimum Oathbound Addon declares
-#     (2026-10-06, re-checked at 0.22.0 on 2026-10-09); every Oathbound bump re-checks the addon
+#   - Zen_ModLib is pinned at its latest release, overriding the older 1.14.21 ZenRaids 1.2.4
+#     declares (2026-10-17),
+#   - Oathbound is pinned at 0.22.1, overriding the 0.21.6 minimum Oathbound Addon declares
+#     (2026-10-06, re-checked at 0.22.1 on 2026-10-17); every Oathbound bump re-checks the addon
 #     as it does Lembitu.Oathbound,
 #   - ConditionalConfigSync is pinned at its latest release, overriding the 1.0.6 BetterChat
 #     declares (2026-10-09).
@@ -84,7 +84,7 @@ ValheimModding-Jotunn-2.29.0
 ValheimModding-Jotunn-2.29.2
 ValheimModding-Jotunn-2.30.0
 ValheimModding-Jotunn-2.30.1
-ZenDragon-Zen_ModLib-1.14.14
+ZenDragon-Zen_ModLib-1.14.21
 LionAndOtter-Oathbound-0.21.6
 shudnal-ConditionalConfigSync-1.0.6"
 

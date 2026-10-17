@@ -924,15 +924,16 @@ start-only replacement over `/usr/local/bin/valheim-updater`. Empty image update
 do not block the startup update pass. Existing containers without this read-only mount refuse
 maintenance; recreate them only in a controlled deployment, preserving both data mounts.
 
-`restart` and `stop` use ServerManager 1.1.7's documented six-field cron commands as the server
+`restart` and `stop` use ServerManager 1.2.3's documented six-field cron commands as the server
 console transport. The image has no documented dedicated-console input, and Server Devcommands
 does not supply a host command inbox. The host temporarily replaces an idle `cron.yml`, announces
 at ten/five/one minutes and schedules `save`. It derives exact job IDs as
 `ServerScheduleSettings.CreateId` does and requires their successful completion records, plus
 `WorldCharacterCheckpointCompleted ... pending=0` after the save time and before the save job's
-completion record. `ServerScheduleRuntime.cs:577-599` binds that job to its own save operation,
-refuses a replacing operation and requires a successful retained-character checkpoint; line 670
-logs completion afterwards. No confirmation means no stop. The idle schedule is restored and
+completion record. `ServerScheduleRuntime.cs:588-616` binds that job to its own save operation,
+refuses a replacing operation and requires a successful retained-character checkpoint; line 681
+logs completion afterwards. Every job is written with `log: true`, so 1.2.1's `logJobs: false`
+default does not silence these records. No confirmation means no stop. The idle schedule is restored and
 `cron_last.yml` untouched. Keep all other cron jobs disabled and do not edit during maintenance.
 The lock is outside the archive at `~/.local/state/lembitu/maintenance.lock`. A host crash or
 SIGKILL can leave it and the temporary schedule: inspect logs, restore the idle seed and remove

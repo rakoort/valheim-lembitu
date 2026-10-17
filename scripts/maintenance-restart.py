@@ -46,7 +46,7 @@ def replace(path, text):
 
 
 def job_id(schedule, command):
-    # ServerScheduleSettings.CreateId:287-311: .NET BinaryWriter UTF-8 strings,
+    # ServerManager 1.2.3 ServerScheduleSettings.CreateId:308: .NET BinaryWriter UTF-8 strings,
     # chance=1 double, gameTime=false, timezone UTC, then three counted lists.
     def string(value):
         data = value.encode()
@@ -117,8 +117,8 @@ def main():
             for save_at, save_id in saved:
                 logs = docker('logs', '--since', dt.datetime.fromtimestamp(save_at, dt.timezone.utc).isoformat(), container)
                 save_done = logs.find(f"Cron: Job '{save_id}' completed.")
-                # ServerScheduleRuntime:577-599 binds this job to its own save operation and
-                # fails if another operation replaces it. Its completed log (:670) follows
+                # ServerManager 1.2.3 ServerScheduleRuntime:588-616 binds this job to its own save
+                # operation and fails if another operation replaces it. Its completed log (:681) follows
                 # that operation's successful retained-character checkpoint, not dispatch.
                 if save_done >= 0 and re.search(r'WorldCharacterCheckpointCompleted\b[^\n]*\bpending=0(?:\s|$)', logs[:save_done]):
                     confirmed = True

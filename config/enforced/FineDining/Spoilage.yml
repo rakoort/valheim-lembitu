@@ -1,6 +1,6 @@
 # FineDining spoilage policy (2026-10-06, ADR-0029). The package default with five preserved foods
 # added: jerky, sausages and the smoked dishes keep forever, beside the package's own overrides,
-# which follow FineDining 1.1.4 (owner, 2026-10-09). They are the
+# which follow FineDining 1.1.5 (owner, 2026-10-09). They are the
 # cook's provisions for trips and stores; fresh dishes give more and spoil. Replaced wholesale by
 # scripts/apply-enforced-config.sh.
 #
