@@ -100,11 +100,6 @@ namespace ValheimWebMap
                 {
                     TrackDeaths = cfg.TrackDeaths.Value,
                     RetentionDays = cfg.HistoryRetentionDays.Value,
-                    ShowSessionCount = cfg.ShowSessionCount.Value,
-                    ShowPlayTime = cfg.ShowPlayTime.Value,
-                    ShowDeaths = cfg.ShowDeathCounts.Value,
-                    ShowLastSeen = cfg.ShowLastSeen.Value,
-                    RecentSessions = cfg.RecentSessions.Value,
                 };
                 string historyPath = Path.Combine(_dataDir, "history.json");
                 try
@@ -255,6 +250,7 @@ namespace ValheimWebMap
             ZNet znet = ZNet.instance;
             if (znet == null) return;
             PlayerTracker.Collect(znet, _players);
+            _guilds.Refresh(_players, BepInEx.Paths.ConfigPath, _world.m_name);
             PlayerPublishing.Sample(_players, _cfg.IgnorePositionPrivacy.Value, _cfg.ExploreRadius.Value,
                 _mask, _privateExploration, _guildName);
             if (_history != null)
@@ -354,7 +350,6 @@ namespace ValheimWebMap
         {
             public string Name;
             public bool Online;
-            public int Pins;
         }
 
         private string BuildPins(PinSnapshot snapshot)
@@ -397,7 +392,6 @@ namespace ValheimWebMap
                         owners[ownerKey] = owner;
                         order.Add(ownerKey);
                     }
-                    owner.Pins++;
                     j.BeginObject();
                     j.Prop("id", pin.Id);
                     j.Prop("owner", ownerKey);
@@ -419,7 +413,6 @@ namespace ValheimWebMap
                 j.Prop("id", id);
                 j.Prop("name", owner.Name);
                 j.Prop("online", owner.Online);
-                j.Prop("pins", owner.Pins);
                 j.EndObject();
             }
             j.EndArray();
@@ -496,28 +489,19 @@ namespace ValheimWebMap
                 if (!p.Visible && !_cfg.ShowHiddenPlayers.Value) continue;
                 j.BeginObject();
                 PlayerPublishing.WriteIdentity(j, p);
+                j.Prop("guildId", _guilds.IdOf(p.PlayerId));
+                j.Prop("color", _guilds.ColorOf(p.PlayerId));
                 if (_cfg.ShowDeadStatus.Value) j.Prop("dead", p.Dead);
-                DateTime since;
-                int sessionDeaths, totalDeaths;
-                if (_history != null && _history.TryGetLive(p.Id, out since, out sessionDeaths, out totalDeaths))
-                {
-                    if (_cfg.ShowTimeOnline.Value) j.Prop("since", PlayerHistory.Iso(since));
-                    if (_cfg.ShowDeathCounts.Value && _cfg.TrackDeaths.Value)
-                    {
-                        j.Prop("sessionDeaths", sessionDeaths);
-                        j.Prop("deaths", totalDeaths);
-                    }
-                }
                 PlayerPublishing.WritePosition(j, p, _cfg.ShowHeading.Value, _cfg.ShowBiome.Value);
                 j.EndObject();
             }
             j.EndArray();
+            _guilds.Write(j);
             j.EndObject();
             return j.ToString();
         }
 
         public string StateJson => _stateJson;
-        public string HistoryJson => _history != null && _cfg.ShowHistory.Value ? _history.Json : "{\"players\":[]}";
         public string PinsJson => _pinsJson;
 
         public void SaveIfDirty()

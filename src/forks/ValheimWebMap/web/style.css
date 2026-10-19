@@ -1,13 +1,13 @@
 :root {
   --bg: #12141a; /* same as the server-side fog colour */
-  --panel: rgba(24, 26, 32, 0.92);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --text: #e6e6e6;
-  --muted: #9aa0a8;
-  --accent: #e0b35a;
-  --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-  --radius: 10px;
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --panel: rgba(239, 232, 211, 0.96);
+  --panel-border: rgba(100, 83, 49, 0.3);
+  --text: #39382f;
+  --muted: #6d6a5d;
+  --accent: #8d7139;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  --radius: 5px;
+  --font: Georgia, 'Palatino Linotype', serif;
 }
 
 * { box-sizing: border-box; }
@@ -33,14 +33,14 @@ html, body {
 .leaflet-container { font-family: var(--font); }
 .leaflet-tile { image-rendering: auto; }
 
-/* Zoom buttons styled dark */
+/* Parchment and muted heraldry */
 .leaflet-bar { border: 1px solid var(--panel-border) !important; box-shadow: var(--shadow) !important; }
 .leaflet-bar a {
   background: var(--panel) !important;
   color: var(--text) !important;
   border-bottom-color: var(--panel-border) !important;
 }
-.leaflet-bar a:hover { background: #2a2d35 !important; }
+ .leaflet-bar a:hover { background: #e5d9ba !important; }
 .leaflet-bar a.leaflet-disabled { color: #555 !important; }
 .leaflet-control-scale-line {
   background: var(--panel) !important;
@@ -100,21 +100,23 @@ html, body {
   padding: 10px 14px 6px;
 }
 .panel header #explored { margin-left: auto; white-space: nowrap; }
-.tabs { display: flex; gap: 4px; }
-.panel-title { margin: 0; padding: 10px 14px 4px; font-size: 14px; font-weight: 600; }
-.tab {
-  border: none;
-  background: none;
-  color: var(--muted);
-  font: 600 13px var(--font);
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--text); background: rgba(255,255,255,0.08); }
-.tab-page { display: none; flex-direction: column; min-height: 0; }
-.tab-page.active { display: flex; }
+.panel-title { margin: 0; padding: 6px 0; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.panel-scroll { overflow-y: auto; min-height: 0; }
+.panel section > .panel-title { padding: 10px 14px; }
+.hidden { display: none !important; }
+.panel .guild-heading { display: block; border-left: 4px solid var(--c, #888781); margin-top: 8px; background: rgba(100, 83, 49, 0.08); font-weight: bold; }
+.guild-card { padding: 10px 14px; border-bottom: 2px solid var(--c); overflow-wrap: anywhere; }
+.guild-card h2 { font-size: 18px; margin: 8px 0; }
+.guild-card h3 { font-size: 13px; margin: 12px 0 4px; }
+.guild-card p { margin: 6px 0; font-size: 12px; }
+.guild-card button { float: right; border: 1px solid var(--panel-border); background: transparent; color: var(--text); cursor: pointer; }
+.panel .guild-card ul { padding: 0; }
+.panel .guild-card li { display: block; padding: 3px 0; font-size: 12px; cursor: default; }
+.claim-marker { background: none; border: none; }
+.claim-banner { color: var(--c); font-size: 29px; text-shadow: 0 1px 2px #fff, 0 0 2px #222; }
+.claim-banner.outpost { font-size: 25px; }
+.claim-banner.siege-live { outline: 2px dashed var(--c); border-radius: 3px; }
+.siege-stage { position: absolute; left: 50%; top: 32px; transform: translateX(-50%); padding: 2px 6px; background: var(--panel); color: var(--text); border: 1px solid var(--c); font: 12px var(--font); white-space: nowrap; text-shadow: none; }
 .panel ul { list-style: none; margin: 0; padding: 0 6px; overflow-y: auto; }
 .panel li {
   display: grid;
@@ -125,7 +127,7 @@ html, body {
   border-radius: 7px;
   cursor: pointer;
 }
-.panel li:hover { background: rgba(255,255,255,0.06); }
+.panel li:hover { background: rgba(100,83,49,0.08); }
 .panel li.following { background: rgba(224, 179, 90, 0.16); }
 .panel li.hidden-pos { cursor: default; opacity: 0.6; }
 .panel li .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c, #fff); box-shadow: 0 0 0 2px rgba(0,0,0,0.5); }
@@ -134,26 +136,10 @@ html, body {
 .panel li .sub { grid-column: 2 / span 2; color: var(--muted); font-size: 12px; margin-top: -2px; }
 .panel li .follow { color: var(--accent); font-size: 12px; }
 .panel li .skull { color: #e06060; font-size: 12px; }
-.panel li.history { grid-template-columns: 1fr auto; }
-.panel li.history .stats { grid-column: 1 / span 2; color: var(--muted); font-size: 12px; }
-.panel li.history .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #5fd27a; }
-.panel li.history .sessions { grid-column: 1 / span 2; margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }
-.panel li.history .sessions li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 3px 0; cursor: default; color: var(--muted); }
-.panel li.history .sessions li:hover { background: none; }
-.panel li.history .sessions .dur { color: var(--text); font-variant-numeric: tabular-nums; }
-.panel #no-history { margin: 0; padding: 4px 14px 12px; }
-.panel #no-history.hidden { display: none; }
-.panel #no-pins { margin: 0; padding: 4px 14px 12px; }
-.panel #no-pins.hidden { display: none; }
-.marker-filters { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 2px 14px 8px; font-size: 12px; color: var(--muted); }
+.marker-filters { display: flex; flex-direction: column; gap: 7px; padding: 2px 14px 12px; font-size: 12px; color: var(--muted); }
 .marker-filters label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .marker-filters label.hidden { display: none; }
-.marker-filters input, .panel li.owner input { accent-color: var(--accent); margin: 0; }
-.panel li.owner { grid-template-columns: auto 12px 1fr auto; cursor: pointer; }
-.panel li.owner .dot { width: 10px; height: 10px; }
-.panel li.owner .count { color: var(--muted); font-size: 12px; }
-.panel li.owner .online-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #5fd27a; margin-left: 6px; vertical-align: middle; }
-.panel li.owner.unknown .name { color: var(--muted); font-style: italic; }
+.marker-filters input { accent-color: var(--accent); margin: 0; }
 .panel footer { padding: 8px 14px 10px; font-size: 11px; line-height: 1.4; border-top: 1px solid var(--panel-border); }
 .panel #no-players { margin: 0; padding: 4px 14px 12px; }
 .panel #no-players.hidden { display: none; }

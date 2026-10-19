@@ -91,6 +91,15 @@ namespace ValheimWebMap
         public JsonWriter Prop(string key, long value) => Key(key).Value(value);
         public JsonWriter Prop(string key, double value, int decimals) => Key(key).Value(value, decimals);
 
+        // Only immutable snapshots built by this plugin, never free text or raw mod objects.
+        internal JsonWriter ValueJson(string snapshot)
+        {
+            Separator();
+            _sb.Append(snapshot);
+            _needsComma = true;
+            return this;
+        }
+
         private void Separator()
         {
             if (_needsComma) _sb.Append(',');
