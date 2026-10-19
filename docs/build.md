@@ -424,12 +424,15 @@ even with BepInEx disabled, while OpenGL reached the menu and rendered native ga
 does not establish compatibility of every mod’s bundled shaders; the full-pack attempt below
 reported unavailable shader platforms.
 
-Update the licensed Steam installation on the public branch, then copy that current installation
-into `~/.cache/valheim-lembitu/client` for disposable testing. On astral-bicep its source is
-`/home/ra/.local/share/Steam/steamapps/common/Valheim`. Both the launcher and native runner default
-to the version-neutral cache path; `VALHEIM_CLIENT_DIR` can select another current test copy.
-Refresh that copy after Steam updates, update the dedicated server with `scripts/test-server.sh install`,
-and rebuild against fresh references. Keep the live server and historical evidence untouched.
+Tests run their own native Linux copy of the licensed client at `~/.cache/valheim-lembitu/client`,
+separate from the Steam installation, which on astral-tricep stays on Proton (owner, 2026-10-19) and
+so holds the Windows build. `scripts/refresh-test-client.sh` downloads the public branch's Linux
+depots into that path with DepotDownloader: the first run takes `--username <Steam account>` and a
+QR approval in the Steam mobile app, later runs need no interaction, and the copy it replaces stays
+as `client.previous`. Both the launcher and native runner default to that version-neutral cache
+path; `VALHEIM_CLIENT_DIR` can select another current test copy. After every game update, refresh
+the copy, update the dedicated server with `scripts/test-server.sh install`, and rebuild against
+fresh references. Keep the live server and historical evidence untouched.
 
 Before loading mods on a fresh Linux profile, complete the native first-run settings setup:
 launch the current client without gameplay mods, open **Settings**, choose the language, press
@@ -915,6 +918,39 @@ Calling stars, the hit's damage number and the Clubs skill-up render. Getting he
 changes for the pack's rules, recorded in `docs/wiki/native-testing.md`. Evidence:
 `/home/ra/lembitu-native-tests/20261004T165744Z-full-pack-a3d33296/` on astral-tricep. One repetition
 only, and not a two-client or party check.
+
+### Balance native checks and full-pack acceptance — 2026-10-19 (#123)
+
+Pack v23's balance changes were exercised on astral-tricep with public server **1.0.20**, the native
+Linux client from `scripts/refresh-test-client.sh` (depot 892971, manifest 3697849816338933525), the
+full Pack from `dist/`, the enforced overlay, the launch modifiers of
+`config/launch/launch.env.example` and ServerManager's policy seeded for the fresh world. A throwaway
+scenario on `scripts/native_session.py` arranged the scene with fixtures (a Calling record saved
+through an admin `save` and a relaunch, skill levels, two private boss keys, a lethal hit, spawns);
+every gain went through `Player.RaiseSkill`. Evidence:
+`/home/ra/lembitu-native-tests/20261019T114046Z-balance-123/`.
+
+| Check | Observed |
+| --- | --- |
+| Steep curve | One raise of non-focus Farming gave 0.675 at levels 15 and 19, 0.3375 at 20 and 79, 0.225 at 80: full speed, half, a third |
+| Focus rate | Wood Cutting at 30 gained 3.8 and its shadow 0.95 (raw 1.9, ×2 and ×½); Mining at 85 gained 3.8 and its shadow 0.633 (×2 and ×⅓) |
+| Death | Wood Cutting (focus) kept level 30 and progress 5; Farming 40 fell to 39.0; Fishing 15 stayed below the floor of 20; the focus shadow drained 2.5%. The message read "Skills above 20 lost 2.5%; your Calling kept Wood Cutting, Pickaxes, Blacksmithing, Hauling." and no "Skills lowered" appeared |
+| Creatures | A spawned Boar at 15 maximum health (1.5× vanilla 10), Eikthyr at 2000 (4× vanilla 500) |
+| World rule | `Setting world modifier: DeathPenalty->easy` in the server log |
+
+`scripts/test-native.py --mode full-pack --repeat 1 --display :1` then passed every check on the same
+builds: generated configs and the overlay, fixture refusal, `ErrorPassword`, movement, PvP held off,
+F1 closing the first-join guide, UI and the Skills click, pickup, crafting and equipping, a club hit,
+natural death, respawn and quit. It needed two runner fixes recorded in
+`docs/wiki/native-testing.md` (ServerManager's policy seeded for a fresh world; one character per
+account), and display `:1`, the host's headless Weston: on the desktop display with the laptop lid
+closed, F1 never reached the game. `skills.png` and `combat.png` were inspected: Calling stars in the
+Skills panel, the hit's damage number and the Clubs skill-up render. Evidence:
+`/home/ra/.local/state/lembitu/native-tests/20261019T122222Z-full-pack-e134c333/`.
+
+Not covered natively: class XP. `ExperienceMultiplier = 2` and `DeathLossFraction = 0` are Oathbound's
+server-controlled settings, pinned and verified by the overlay rather than observed through a kill.
+Boss damage was not measured.
 
 ## Maintenance and public map provisioning — #103, #107, #108
 

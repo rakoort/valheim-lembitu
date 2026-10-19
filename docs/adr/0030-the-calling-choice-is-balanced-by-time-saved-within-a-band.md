@@ -7,6 +7,8 @@ smith and herbalist XP)
 
 Amended 2026-10-06 (owner): ADR-0032 replaces the initial pace and mastery settings; the profession band and steep curve stay. Earlier values below are historical where annotated.
 
+Amended 2026-10-19 (owner): ADR-0037 eases the steep curve to full speed below 20, half below 80 and a third beyond, and doubles a focus's XP; the profession band stays.
+
 ## Context
 
 The owner set the balancing goal for professions: choosing a Calling should be hard from an

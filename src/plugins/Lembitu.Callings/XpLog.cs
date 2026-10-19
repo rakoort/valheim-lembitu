@@ -10,8 +10,9 @@ namespace Lembitu.Callings;
 /// Measures the Calling (ADR-0030): every client sums the profession XP it earns and, every
 /// ReportMinutes of play, sends the server one report that the server writes to its log. Each line
 /// names the player and, per profession, the real level, whether it is a focus, the raw XP (after
-/// every mod's rate, before the steep curve) and the XP the curve let through. Admin-facing only; no
-/// player sees it. A logout loses at most one unsent window.
+/// every mod's rate, before the Calling's) and the XP kept after the Calling's rate: the focus
+/// multiplier or the steep curve. Admin-facing only; no player sees it. A logout loses at most one
+/// unsent window.
 /// </summary>
 internal static class XpLog
 {
@@ -40,7 +41,7 @@ internal static class XpLog
         return Enumerable.Empty<PatchPlan>();
     }
 
-    /// <summary>One gain of the local player's profession: raw before the steep curve, earned after it.</summary>
+    /// <summary>One gain of the local player's profession: raw before the Calling's rate, earned after it.</summary>
     public static void Record(Skills.SkillType type, float raw, float earned)
     {
         if (!On)

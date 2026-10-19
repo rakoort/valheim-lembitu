@@ -37,7 +37,7 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 require_client() {
   [[ -x "$CLIENT_DIR/valheim.x86_64" ]] || die "no executable game client in $CLIENT_DIR
-Copy the latest public Steam client as described in docs/build.md, or set
+Refresh it with scripts/refresh-test-client.sh (docs/build.md), or set
 VALHEIM_CLIENT_DIR to an isolated current installation matching the test server."
 }
 

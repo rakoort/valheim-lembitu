@@ -67,6 +67,9 @@ class Run:
             root=ROOT)
         self.session.report.update({'visual_review_required': ['skills.png', 'combat.png']})
         self.current = None
+        # ServerManager holds one character per Steam account (ADR-0034) and refuses a second one
+        # with CharacterTransferFailed, so every client of a repetition plays the same character.
+        self.character = 'N' + uuid.uuid4().hex[:12]
 
     # ---- historical surface over the engine ---------------------------------------------------
 
@@ -94,7 +97,7 @@ class Run:
 
     def start_client(self, game, name, password, fixtures):
         client = native_session.Client(
-            name=name, character='N' + uuid.uuid4().hex[:12], install=game,
+            name=name, character=self.character, install=game,
             saves=self.work / (name + '-saves'), control=self.directory / (name + '-control'),
             fixtures=fixtures)
         (client.saves).mkdir(parents=True, exist_ok=True)
@@ -280,8 +283,11 @@ class Run:
         self.session.server_saves = self.work / 'server-saves'
         self.session.server_saves.mkdir(parents=True, exist_ok=True)
         self.start_server(server_game, password, 'server')
-        # Permission checks precede hostile fixtures so a dead player cannot cause
-        # a misleading refusal, and a later fresh character cannot inherit combat.
+        if self.args.mode == 'full-pack':
+            # A fresh world's ServerManager refuses every client plugin it does not list.
+            self.session.seed_servermanager_policy(server_game)
+        # Permission checks precede hostile fixtures so a dead player cannot cause a misleading
+        # refusal; this client only spawns, so the gameplay client inherits nothing from it.
         self.start_client(client_game, 'no-fixtures', password, False)
         self.wait_ready()
         player = self.command('snapshot')['player']

@@ -8,6 +8,8 @@ Amended 2026-10-06 (owner): ADR-0031 drops the respec and class-switch resets. E
 
 Amended 2026-10-11 (owner): ADR-0035 removes SocialSystem; kill XP goes to the killer's guild members near the kill.
 
+Amended 2026-10-19 (owner): ADR-0037 sets Oathbound's death penalty to nothing (`DeathLossFraction = 0`) and doubles class XP (`ExperienceMultiplier = 2`).
+
 ## Context
 
 ADR-0019 asks for a character level, a talent tree with limited points, costly respec, parties

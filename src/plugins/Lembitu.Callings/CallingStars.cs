@@ -105,7 +105,7 @@ internal static class CallingStars
         string group = Professions.Describe(profession.Group);
         string topic = focus ? $"In your Calling ({group})" : $"{group} profession";
         string state = focus
-            ? "Levels at full speed and keeps its progress when you die."
+            ? $"Gains at x{Settings.FocusRate:0.##} and keeps its progress when you die."
             : $"Not in your Calling: gains at x{Settings.Rate(player.GetSkills().GetSkill(profession.Type).m_level):0.##} at its level.";
         string action;
         if (!CallingStore.IsReadable(player))

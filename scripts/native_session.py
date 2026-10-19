@@ -136,7 +136,8 @@ class Session:
         self.root = Path(root or Path(__file__).resolve().parent.parent)
         self.preferences = Path(preferences or Path.home() / '.cache/valheim-lembitu/client-preferences')
         # A native Linux copy of the licensed client, in the cache on every host. astral-tricep's
-        # Steam install runs under Proton since 2026-10-11, so it has no valheim.x86_64 to copy;
+        # Steam install stays on Proton (owner, 2026-10-19), so it has no valheim.x86_64 to copy;
+        # scripts/refresh-test-client.sh keeps this copy current from Steam's Linux depots, and
         # LEMBITU_CLIENT_DIR selects another native install without flags.
         self.client_dir = Path(client_dir or os.environ.get('LEMBITU_CLIENT_DIR')
                                or Path.home() / '.cache/valheim-lembitu/client')
@@ -380,7 +381,10 @@ class Session:
                 self.write_adminlist(known)
             else:
                 self.event('admin-deferred', reason='no cached Steam ID yet; call make_admin() after the first join')
+        fresh_policy = not (self.server_saves / 'ServerManager/required').exists()
         self._start_server(server_game, 'server')
+        if self.mode == 'full-pack' and fresh_policy:
+            self.seed_servermanager_policy(server_game)
         self.checked('server ready with the enforced overlay' if self.mode == 'full-pack'
                      else 'server ready')
         return self.server_password
@@ -482,6 +486,36 @@ class Session:
                 return
             time.sleep(1)
         raise RuntimeError('server did not open its Steam listener after world generation')
+
+    def seed_servermanager_policy(self, server_game):
+        """A fresh ServerManager store refuses every client plugin it does not list, so a full-pack
+        join on a fresh world ends in ErrorConnectFailed (docs/wiki/native-testing.md). Builds the
+        policy from the running server's game, adds the assemblies the test client carries beyond
+        the Pack (it is installed from all of dist/), and waits for ServerManager to reload it."""
+        store = self.server_saves / 'ServerManager'
+        with (self.directory / 'servermanager-policy.log').open('wb') as log:
+            subprocess.run([str(self.root / 'scripts/servermanager-policy.sh'), 'apply',
+                            '--pack', str(server_game), '--store', str(store),
+                            '--load-server-character', 'true'], stdout=log, stderr=subprocess.STDOUT,
+                           check=True)
+        dist = self.root / 'dist/plugins'
+        extras = [dist / 'Lembitu.Harness.dll', dist / 'ValheimWebMap.dll']
+        extras += sorted((dist / 'Server_devcommands').glob('*.dll')) + sorted((dist / 'OdinEye').glob('*.dll'))
+        extras = [source for source in extras if source.is_file()]
+        for source in extras:
+            target = store / 'required' / source.relative_to(dist)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        logs = [server_game / 'BepInEx/LogOutput.log', self.directory / 'server-unity.log']
+        deadline = time.monotonic() + self.startup_timeout
+        while time.monotonic() < deadline:
+            self.alive()
+            if any(log.exists() and 'Reloaded mod folder policy' in log.read_text(errors='replace')
+                   for log in logs):
+                self.event('servermanager-policy-seeded', extras=[str(e.relative_to(dist)) for e in extras])
+                return
+            time.sleep(1)
+        raise RuntimeError('ServerManager did not reload its mod folder policy')
 
     def restart_server(self, *, keep_world=True):
         """Stop the server and start it again. keep_world=True reuses the same save dir and world

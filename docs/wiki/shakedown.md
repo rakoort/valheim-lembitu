@@ -16,10 +16,10 @@ on the plugins; their startup lines
 
 | Check | Do and record | Feeds |
 | --- | --- | --- |
-| Class level pace | Each player's Oathbound class level at the end of every session, and which bosses are down. | ADR-0022: no talent cap and stock XP; revisit only if level 80 arrives well before Fader. |
+| Class level pace | Each player's Oathbound class level at the end of every session, and which bosses are down. | ADR-0022 and ADR-0037: no talent cap; double XP from #123, so class levels keep up with the 10-per-key power cap. |
 | Focus pace by group | Read real level, focus, raw and earned XP after every session; Land masters a little before Fader, Road at Fader, Craft at Kall. Correct toward each group weekly, keeping its 1.25× band. | ADR-0032; #100. |
-| Non-focus pace | A non-focus profession some player uses anyway: level reached and hours spent, from the `Profession XP:` lines (raw against earned). | ADR-0021's steep curve (full to 10, half to 60, quarter to 80, a tenth beyond). |
-| Skill XP rows | Whether LiveExperienceTracker's rows above the health bar show a non-focus profession earning visibly less than a focus once past 10, and whether players read them. | ADR-0021's steep curve; the Pack's readouts. |
+| Non-focus pace | A non-focus profession some player uses anyway: level reached and hours spent, from the `Profession XP:` lines (raw against earned). | ADR-0037's steep curve (full to 20, half to 80, a third beyond). |
+| Skill XP rows | Whether LiveExperienceTracker's rows above the health bar show a focus earning double and a non-focus profession earning less once past 20, and whether players read them. | ADR-0037's focus rate and steep curve; the Pack's readouts. |
 | Profession band | Per profession, raw XP per hour of play from the `Profession XP:` lines, and the time a standard task takes at levels 10, 30, 50 and 70 (timed on the test host). Within Land and within Road, the best pick may save at most 1.25 times the time of the worst; Craft is judged by how much its goods are wanted. Correct an outlier by perks first, both ends toward the middle. | ADR-0030's profession band. |
 | XP lost before the Oathstone | Whether new players noticed that kills before choosing a class pay no class XP. | Player guidance in `docs/rules.md`. |
 
@@ -57,7 +57,7 @@ on the plugins; their startup lines
 
 | Check | Do and record | Feeds |
 | --- | --- | --- |
-| Tuning targets | Every boss kill: party size, minutes, deaths. Ordinary fights: whether about three players handle a biome's creatures. | ADR-0033: bosses for five, creatures for about three in practice; `config/enforced/CreatureManager/levels.yml`; the `Combat hard` launch modifier. |
+| Tuning targets | Every boss kill: party size, minutes, deaths. Ordinary fights: whether two players handle a biome's creatures. | ADR-0037: bosses for four, creatures for two; `config/enforced/CreatureManager/levels.yml`; the `Combat hard` launch modifier. |
 | Sieges | Sieges per play-week, their tier against the outpost's biome, structure damage taken, and whether the guild monster ward starves them. | ADR-0020; `Raids less` in `config/launch/launch.env.example`. |
 | Crew sailing | Trip time on one route with one sailor and with a crew. | ADR-0024's crew bonus. |
 | Market round-trip | List, buy and withdraw one smith-made item and one EpicLoot item; relog; check durability, maker and enchantments survived. | ADR-0023; Northarun/Marketplace. |
@@ -179,3 +179,37 @@ star growth; later-biome outcomes remain unobserved.
 
 The table grounds ADR-0032's toned pace jump, not proof that mastery targets have been met.
 Pack v17 native acceptance and later session records must supply that proof.
+
+### Balance review — 2026-10-19, Packs v17 to v22 (#123)
+
+Source: the live server's `docker logs lembitu` since the v17 cutover on 2026-10-09 (102,139 lines)
+and the character store (`/config/save/ServerManager/characters`), both read-only. Four players in
+one guild; 63 player-hours of `Profession XP:` reports (sins 24.7, mr donk 22.5, Trilby god 9.2,
+Whitest Man 6.7).
+
+| Measure | Value |
+| --- | --- |
+| Players online at sleep time | two 18 times of 37, one 11, three 6, four 2 |
+| Deaths per play-hour | 1.6 overall; mr donk 2.3, sins 1.5, Whitest Man 0.9, Trilby god 0.4 |
+| Boss keys | Eikthyr and the Elder for all four |
+| Elder fight, Oct 14 | 55 minutes with four players, 14 deaths, one shared kill worth 325 |
+| Class level (talents spent) | Breaker 19, Shieldbearer 18, Ranger 12, Monk 6, against a power cap of 30 |
+| Top focus professions | Wood Cutting 51, Mining 49, Blacksmithing 51 (sins); Farming 57 (mr donk) |
+| Best raw focus XP per play-hour held | Exploration 516, Farming 219, Blacksmithing 169, Mining 148, Herbalist 126, Wood Cutting 119, Hauling 115, Sailing 61, Cooking 41, Animal Handling 19 |
+| Karma Enforcers | five: three poison skeletons in a dungeon, a bear, a greydwarf brute |
+
+**The Calling worked but could not be seen.** For non-focus skills above 10, every interval that
+could tell the two apart showed level-ups following the earned XP: the raw XP alone passed the level
+cost without a level-up. On the Oct 11 boat trip all three players earned about 300 raw Sailing XP;
+the focus helmsman kept 297 and the non-focus players 158 and 197, yet Trilby god, starting at 0,
+gained 14 levels to the helmsman's 11. A focus earned the normal rate, so nothing ever showed a focus
+earning more. No focus skill lost a level in 277 death windows, 80 of them after Valheim 1.0.20,
+while non-focus skills drained 5%; every death still showed World Advancement Progression's generic
+`$msg_skills_lowered`.
+
+**Decided (#123, ADR-0037):** focus ×2; steep curve full to 20, half to 80, a third after; no class
+XP lost on death, a 2.5% skill drain and the corpse run kept, with a death message naming what the
+Calling kept; creatures for two players (health 1.5) and bosses for four (health 4, damage 1.2),
+with Combat hard, stars, modifiers and Karma unchanged; Kall near 100 hours of play; class XP ×2;
+profession rates unchanged for a week of measurement; no catch-up. The per-session watch continues
+against Land mastery near 85 hours, Road near 88 and Craft near 100.

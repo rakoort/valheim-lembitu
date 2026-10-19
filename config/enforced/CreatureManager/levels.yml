@@ -1,8 +1,8 @@
-# Enforced CreatureManager table: fixed difficulty (2026-10-06, owner).
-# Global health 2, damage 1; health grows by 0.75 per level above 1.
-# Hard biome levels remain for ordinary creatures; bosses do not follow them.
-# Boss health 5, damage 1.5: every regular boss is level 1, tuned for five players.
-# Combat hard stays: boss damage is 2.25x vanilla; headcount scaling is off.
+# Enforced CreatureManager table: fixed difficulty (2026-10-06, owner; retuned 2026-10-19, #123).
+# Global health 1.5, damage 1: ordinary creatures tuned for two players (health 2 until #123).
+# Health grows by 0.75 per level above 1; Hard biome levels remain; bosses do not follow them.
+# Boss health 4, damage 1.2: every regular boss is level 1, tuned for four players (5 and 1.5 until #123).
+# Combat hard stays: boss damage is 1.8x vanilla; headcount scaling is off.
 # Kall phase 2 is exempt in the mod; Karma and Enforcers are unchanged.
 # Modifier rolls: one independent draw per group, uniform [0,max(100,total)].
 # (CreatureManager RollConfiguredMask:22412-22458, 1.2.5 decompile.)
@@ -27,7 +27,7 @@ Global:
   scalePerLevel: 0.1                    # Visual scale per level above 1; skipped in dungeons.
   damage: 1.0                          # Level-1 damage multiplier.
   damagePerLevel: 0.15                 # Replaces vanilla growth: damage * (1 + (level - 1) * value).
-  health: 2                            # Level-1 max-health multiplier.
+  health: 1.5                          # Level-1 max-health multiplier: two players (#123; 2 until then).
   healthPerLevel: 0.75                 # Gentler stars (2026-10-06, owner).
 #   distanceScaling: [0.03, 0.08, 1000, 5] # damageStep, healthStep, stepMeters, maxSteps (0 = unlimited).
 #   modifierDistanceScaling: [0.03, 1000, 8] # chanceStep, stepMeters, maxSteps; 20% -> 20.6% at 1000m, 24.8% at 8000m+.
@@ -72,9 +72,9 @@ Global:
 Boss:                                  # Regular bosses only; Enforcers use non-boss rules.
   # level omitted: level 1 with Bosses Follow Biome Level Preset Off.
   scalePerLevel: 0.1
-  damage: 1.5
+  damage: 1.2                          # Four-player boss target (#123, 2026-10-19; 1.5 until then).
   damagePerLevel: 0.05
-  health: 5                            # Five-player boss target (2026-10-06, owner).
+  health: 4                            # Four-player boss target (#123, 2026-10-19; 5 until then).
   healthPerLevel: 0.5
   modifiers:                           # One per group; totals below 100 allow none, above 100 are weights.
     # Offense: Enraged to Undodgeable

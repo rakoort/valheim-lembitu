@@ -47,10 +47,20 @@ internal static class SkillRules
         ? "World Advancement Progression's skill manager"
         : "vanilla skill rules";
 
+    /// <summary>Whether a death lowers skills at all.</summary>
+    public static bool DrainsOnDeath => !(s_wapLoaded && Wap.ManagesSkills) || Wap.AllowsDrain;
+
+    /// <summary>The level at or below which a death leaves a skill alone: 0 under vanilla rules.</summary>
+    public static float DrainFloor => s_wapLoaded && Wap.ManagesSkills ? Wap.Floor : 0f;
+
     /// <summary>Only touched when World Advancement Progression is loaded.</summary>
     private static class Wap
     {
         public static bool ManagesSkills => ProgressionConfiguration.Instance.GetEnableSkillManager();
+
+        public static bool AllowsDrain => ProgressionConfiguration.Instance.GetAllowSkillDrain();
+
+        public static float Floor => SkillsManager.Instance.GetSkillDrainFloor();
 
         /// <summary>SkillsManager.Patch_Skills_Skill_Raise.</summary>
         public static void Raise(Shadow shadow, float increase)

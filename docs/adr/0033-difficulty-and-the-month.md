@@ -4,6 +4,8 @@ Date: 2026-10-06
 Status: Accepted; ships with Pack v17, native acceptance still required (#97, #99)
 Amends: ADR-0019 (tuning targets and the month), ADR-0025 (the last boss, not the class cap)
 
+Amended 2026-10-19 (owner): ADR-0037 tunes ordinary creatures for two players and bosses for four (`Global.health` 1.5, `Boss.health` 4, `Boss.damage` 1.2) and moves Kall to about 100 hours of play. Earlier values below are historical.
+
 ## Context
 
 On the first evening three players died eleven times in about two and a half hours in the Meadows.

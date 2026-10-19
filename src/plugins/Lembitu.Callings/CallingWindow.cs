@@ -124,7 +124,7 @@ internal static class CallingWindow
         close.GetComponent<Button>().onClick.AddListener(() => _window!.SetActive(false));
 
         Label(window.transform,
-            "Your Calling is two Land professions, one Craft and one Road. A focus levels at full speed and keeps its"
+            $"Your Calling is two Land professions, one Craft and one Road. A focus gains at x{Settings.FocusRate:0.##} and keeps its"
             + " level when you die; its shadow level is what it would be without the focus. Dropping a focus sets the"
             + " skill to its shadow.",
             16f, 54f, 528f, 76f, 14, GUIManager.Instance.ValheimBeige);

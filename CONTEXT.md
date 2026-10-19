@@ -11,8 +11,8 @@ player-facing text. The stack itself is in [docs/modstack.md](docs/modstack.md);
 
 **Run**:
 The period the server is open for play, from an announced start date. Open-ended, but every system
-is sized for an actively playing group to kill Kall Fimbulbringer, the last boss, in about one
-month (ADR-0033).
+is sized for an actively playing group to kill Kall Fimbulbringer, the last boss, in about 100 hours
+of play (ADR-0037).
 _Avoid_: season, wipe cycle, campaign
 
 **Shakedown**:
@@ -91,9 +91,9 @@ for free and changes their Calling. After the first oath, the tree can be read a
 spent anywhere (ADR-0031). Every new character wakes beside it.
 
 **Class level**:
-The active class's XP ladder, earned from kills, which grants one talent point per level. Death
-costs half the progress into the current level, never a level, in the active class only. Each class
-keeps its own XP and talents through switches; a talent reset keeps XP (ADR-0031).
+The active class's XP ladder, earned from kills, which grants one talent point per level. A death
+costs no class XP (ADR-0037). Each class keeps its own XP and talents through switches; a talent
+reset keeps XP (ADR-0031).
 _Avoid_: character level, MMO level, rank, XP level
 
 **Talent**:
@@ -129,9 +129,9 @@ is a supply chain the player builds, and the way a guild divides its work.
 _Avoid_: class, role, build
 
 **Focus**:
-A profession inside a character's Calling. It levels at full speed to 100, while every other
+A profession inside a character's Calling. It earns double XP at every level, while every other
 profession follows the steep curve, and it keeps its XP when the character dies. Dropping a focus
-sets that skill to what it would have been without the focus, deaths included.
+sets that skill to what it would have been without the focus, deaths included (ADR-0037).
 _Avoid_: specialisation, main, primary
 
 **Shadow level**:
@@ -227,11 +227,11 @@ An extra trait a creature can spawn with, such as armoured, enraged or an elemen
 main knob for fine-tuning difficulty.
 
 **Tuning target**:
-The number of players a fight is balanced for: five for bosses, about three for ordinary creatures
-in practice. At the
-target, average players with gear of that biome win with margin, so class mix never decides who is
-invited; a smaller skilled group can still win a boss. Fixed, never scaled by how many players are
-online or nearby, so grouping up is what makes a fight easier (ADR-0019, ADR-0033).
+The number of players a fight is balanced for: four for bosses, two for ordinary creatures
+(ADR-0037). At the target, average players with gear of that biome win with margin, so class mix
+never decides who is invited; a smaller skilled group can still win a boss. Fixed, never scaled by
+how many players are online or nearby, so grouping up is what makes a fight easier (ADR-0019,
+ADR-0033, ADR-0037).
 _Avoid_: player scaling, headcount
 
 **Enforced config**:

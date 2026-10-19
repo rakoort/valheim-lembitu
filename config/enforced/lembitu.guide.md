@@ -27,7 +27,7 @@ Keys: F1 Guide; F7 Market; F9 Guilds; Left Alt+E hides or shows Explorer markers
 page oath-and-class | Oath and class
 Your class comes from Oathbound, chosen at the Oathstone. Thirteen classes exist; four unlock after a first deed - equip paired axes, a two-handed sword or a two-handed axe, or carry a dragon tear.
 
-Kills earn class XP only once you have taken an oath. A kill pays about twice the square root of its maximum health, four times that from a boss. Every level grants a talent point, to level 80.
+Kills earn class XP only once you have taken an oath. A kill pays about four times the square root of its maximum health on this server, and a boss four times that. Every level grants a talent point, to level 80.
 
 Take your first oath, switch class or Reset talents at the Oathstone. After your first oath the inventory Classes button opens the talent tree anywhere, and you may spend points there. Your Calling still changes only at the stone.
 
@@ -44,9 +44,9 @@ Your Calling is four focus professions: two Land, one Craft, one Road.
 
 Open the Calling window from the Calling button in the skills window. Read it anywhere; choose or change focuses only at the Oathstone. The stars on the profession rows are read-only markers. Dropping a focus asks first and names the level the skill falls to.
 
-A focus levels at full speed to 100. Every other profession levels at full speed to 10, at half speed to 60, a quarter to 80 and a tenth beyond. Nothing is capped: a non-focus skill needs about twice the work to reach 20 to 60 and six times to reach 100.
+A focus earns double XP at every level. Every other profession levels at full speed to 20, at half speed to 80 and a third beyond. Nothing is capped: a non-focus skill needs about four times a focus's work to reach 80 and five times to reach 100.
 
-Until you choose, every profession follows the slow curve, which changes nothing below 10.
+Until you choose, every profession follows the slow curve, which changes nothing below 20.
 
 A focus keeps its XP when you die. Dropping a focus costs what it gave: the skill falls to its hidden, slower level.
 
@@ -102,9 +102,9 @@ The Market is server-wide and works while the other side is offline: coin sales,
 page death | Death
 Deaths are meant to cost something.
 
-Class XP: you lose half your progress into the current class level, never a level.
+Class XP: a death costs none.
 
-Skills: each non-focus skill loses 5% of its level, but only above your skill floor. The floor rises by 10 for every personal boss key you hold and never raises a skill. Focus professions lose nothing.
+Skills: each non-focus skill loses 2.5% of its level, but only above your skill floor. The floor rises by 10 for every personal boss key you hold and never raises a skill. Focus professions lose nothing, and the message after a death names the drain and the focus skills your Calling kept.
 
 Your tombstone holds what vanilla death rules take; you go back for it. Carried items and durability are otherwise untouched.
 

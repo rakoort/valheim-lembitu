@@ -8,6 +8,8 @@ Amended 2026-10-06 (owner): ADR-0031 drops class resets and opens the tree anywh
 
 Amended 2026-10-11 (owner): ADR-0035 removes parties. Every rule below for "the killer's party" now applies to the killer's guild, read from Guilds' server store; a member is in the group by guild membership alone, with nothing to form or accept.
 
+Amended 2026-10-19 (owner): ADR-0037 pins `ExperienceMultiplier = 2` and `DeathLossFraction = 0`, and `Lembitu.Callings` gains the focus multiplier and a death message naming what the Calling kept.
+
 ## Context
 
 ADR-0020 decided one patch plugin, `Lembitu.Oathbound`, for the four changes Oathbound has no

@@ -4,6 +4,8 @@ Date: 2026-10-06
 Status: Accepted; ships with Pack v17, native acceptance still required (#92, #99)
 Amends: ADR-0020 and ADR-0022 (respec and class switch)
 
+Amended 2026-10-19 (owner): ADR-0037 removes the class XP a death cost; the death rule below is historical.
+
 ## Context
 
 The Run's first evening made the cost of experimenting real: our reset hooks erased class XP on a

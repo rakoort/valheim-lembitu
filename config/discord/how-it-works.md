@@ -1,11 +1,11 @@
 # How Lembitu works
 Lembitu is a modded Valheim server for a small group: **MMORPG-lite Valheim for rival guilds that need each other.**
 
-- **Harder than vanilla, no PvP at all.** Bosses fight like a five-player raid; ordinary creatures have twice the health and sometimes roll modifiers.
+- **Harder than vanilla, no PvP at all.** Bosses are tuned for a guild of four and ordinary creatures for a pair: creatures have 1.5× the health, hit harder and sometimes roll modifiers.
 - **Guilds are rivals and partners at once.** Each guild holds its own start region, territory and vault, and trades with the others through the Market.
 - **Progress is personal.** Boss unlocks belong to the players who were there, not to the world or the guild.
 - **Seven ways to grow:** class level, a talent tree, professions, gear tiers, boss powers, guild levels and magic.
-- **Pace:** an active group should reach the last boss in about a month. Playing alone is possible but slow; time alone pays best in building, gathering, crafting and the guild.
+- **Pace:** an active group should reach the last boss in about 100 hours of play. Playing alone is possible but slow; time alone pays best in building, gathering, crafting and the guild.
 
 Read the posts below once; the in-game guide (F1) has the same rules in more detail.
 ---
@@ -80,17 +80,17 @@ The **guild HUD** on the left of the screen always shows the other members with 
 
 **The Market (F7)** is server-wide and works while the other side is offline: coin sales, buy orders, jobs and a bank. Every payout carries a 5% fee.
 
-**Why cooperate?** No guild can do everything well. Specialists make better goods: a smith's gear hits harder, a cook's dishes give more and keep longer, a brewer's meads last longer. Their quality survives the Market. Bosses are tuned for five players, so smaller guilds and late joiners benefit from help from other guilds. A late joiner catches up by being carried through a boss again; nobody skips a boss.
+**Why cooperate?** No guild can do everything well. Specialists make better goods: a smith's gear hits harder, a cook's dishes give more and keep longer, a brewer's meads last longer. Their quality survives the Market. Bosses are tuned for four players, so smaller guilds and late joiners benefit from help from other guilds. A late joiner catches up by being carried through a boss again; nobody skips a boss.
 ---
 ## Progression
 - **Boss keys (personal).** The world writes no keys. When a boss dies, everyone within 100 m gets its key, and nobody else. A key unlocks crafting, wearing, cooking and eating that biome's gear and food, plus boss powers and summons. Building, repairs, taming, boats and portals are never locked.
-- **Class (Oathbound).** Thirteen classes, chosen at the Oathstone. Kills give class XP and every level gives a talent point, up to level 80. Each class keeps its own progress, and respec is free at the Oathstone. A class's power counts at most level 10, plus 10 for every boss key you hold, so grinding kills never outruns the bosses.
-- **Calling and professions.** Your four focus professions (two Land, one Craft, one Road) level at full speed and keep their XP when you die. Every other profession slows down past level 10. Professions give perks, never crafting blocks: anyone may craft what they know.
+- **Class (Oathbound).** Thirteen classes, chosen at the Oathstone. Kills give class XP, double the usual rate here, and every level gives a talent point, up to level 80. Each class keeps its own progress, and respec is free at the Oathstone. A class's power counts at most level 10, plus 10 for every boss key you hold, so grinding kills never outruns the bosses.
+- **Calling and professions.** Your four focus professions (two Land, one Craft, one Road) earn double XP and keep their XP when you die. Every other profession slows down past level 20. Professions give perks, never crafting blocks: anyone may craft what they know.
 - **Gear (Epic Loot).** Magic drops, enchanting and rarities on top of each biome's gear.
 - **Boss powers** are passive and grow with every boss kill you attend.
 ---
 ## Danger, death and the world
-- **Death costs something.** You lose half your progress toward the next class level (never a level). Each non-focus skill loses 5%, but never below your floor, which rises by 10 per boss key. Your tombstone holds what vanilla takes, so go back for it.
+- **Death costs something.** Class XP is never lost. Each non-focus skill loses 2.5%, but never below your floor, which rises by 10 per boss key, and the death message names what your Calling kept. Your tombstone holds what vanilla takes, so go back for it.
 - **Food spoils.** Most dishes keep 2–4 days of server time. Fresh food gives 10% more and stale food less. Jerky, sausages, smoked fish, smoked moose meat and honey never spoil. Nothing spoils in the Mountains or the Deep North, and an Icebox stops the clock at home.
 - **Raids** come less often than in vanilla, as Oathbound sieges. Lit fires keep spawns out of a base, and the guild monster ward protects a whole territory.
 - **Portals:** press E on a wood portal to name it and pick its destination from a list of every portal. Ore and metal never pass through.

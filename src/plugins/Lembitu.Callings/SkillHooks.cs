@@ -7,7 +7,7 @@ using HarmonyLib;
 namespace Lembitu.Callings;
 
 /// <summary>
-/// The steep curve, shadow levels and focus protection on death (ADR-0021, ADR-0022).
+/// Focus XP, the steep curve, shadow levels and focus protection on death (ADR-0021, ADR-0022, #123).
 /// </summary>
 internal static class SkillHooks
 {
@@ -80,7 +80,8 @@ internal static class SkillHooks
         {
             SkillRules.Raise(shadow, raw * Settings.Rate(shadow.Level));
             CallingStore.Save(player);
-            XpLog.Record(skillType, raw, raw);
+            factor *= Settings.FocusRate;
+            XpLog.Record(skillType, raw, raw * Settings.FocusRate);
         }
         else
         {
@@ -106,6 +107,7 @@ internal static class SkillHooks
             return;
         }
         __state = new List<Kept>();
+        DeathMessage.Hold();
         Calling calling = CallingStore.Of(player);
         foreach (Skills.SkillType type in calling.Focuses.Select(f => f.Key).Union(new[] { Professions.Blacksmithing, Professions.Herbalist, Professions.Explorer }))
         {
@@ -152,6 +154,7 @@ internal static class SkillHooks
         }
         CallingStore.Save(player);
         s_log.LogInfo($"Death: kept {calling.Focuses.Count()} focus skill(s); shadows {string.Join(", ", calling.Focuses.Select(f => f.Value.Level.ToString("0.##")))}; drained {(drained.Count == 0 ? "no bundled skill" : string.Join(", ", drained))}");
+        DeathMessage.Show(player, calling, factor);
         return __exception;
     }
 }

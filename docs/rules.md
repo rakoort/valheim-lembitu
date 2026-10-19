@@ -24,12 +24,12 @@ Almost everything below is therefore *Intended* or *Planned*; the Shakedown is w
 
 A private, modded Valheim server for one group of about eight active players, organised into
 guilds of three to five (ADR-0019). The **Run** is open-ended, but every system is sized for an
-actively playing group to kill Kall Fimbulbringer in about one month (ADR-0033). Before it comes the **Shakedown**, played on
+actively playing group to kill Kall Fimbulbringer in about 100 hours of play (ADR-0037). Before it comes the **Shakedown**, played on
 a world that will be discarded, where the rules below are tried and corrected.
 
 The concept is **MMORPG-lite for rival guilds that must cooperate**. There is no PvP. Guilds compete
-through progress, territory and the Market. A boss is tuned for five players: a full guild can
-win alone; smaller guilds can still fight a boss together, and everyone present earns its key (ADR-0033). Trade between guilds is an advantage rather than a necessity: a guild of three can
+through progress, territory and the Market. A boss is tuned for four players: a full guild can
+win alone; smaller guilds can still fight a boss together, and everyone present earns its key (ADR-0037). Trade between guilds is an advantage rather than a necessity: a guild of three can
 cover every profession, but not every hour of the day. Anyone can do anything given time;
 specialising is how you do it well.
 
@@ -147,9 +147,9 @@ The button is hidden before that first oath.
 
 **Class level.** Kills earn XP for your active class, up to level 80. A kill pays about
 2·√(its maximum health), between 10 and 80, four times that for a boss, plus up to 5 for creatures
-that hit hard. Each level gives one talent point. There is no cap on points and no change to
-Oathbound's XP pace, so a level-80 character owns all 79 nodes; level 80 needs about 2,500 to 3,000
-kills (ADR-0022).
+that hit hard, and this server doubles it (`ExperienceMultiplier = 2`, ADR-0037). Each level gives
+one talent point. There is no cap on points, so a level-80 character owns all 79 nodes; level 80
+needs about 1,500 to 1,750 kills.
 
 **Class power follows boss keys.** Everything that grows with class level — spells, Warlock summons,
 wards and Wither, Monk fists, class abilities, the Hunter's wolf and the Dragonsworn whelp, and the
@@ -187,10 +187,11 @@ A refused item names the rule and points at the guide: "Guide: Oath and class (o
 Combat skills (weapons, magic, blocking, dodge) and body skills (run, jump, swim, sneak, ride) are
 not professions and are not affected by anything in this section.
 
-**Your Calling is four focus professions: two Land, one Craft, one Road.** A focus levels at full
-speed to 100. Every other profession levels at full speed to 10, half speed to 60, a quarter to 80
-and a tenth beyond (ADR-0030). Nothing is capped, so anyone can master anything given time.
-Until you choose, every profession follows the steep curve, which changes nothing below 10.
+**Your Calling is four focus professions: two Land, one Craft, one Road.** A focus earns double XP
+at every level. Every other profession levels at full speed to 20, half speed to 80 and a third
+beyond (ADR-0037). Nothing is capped, so anyone can master anything given time; a non-focus skill
+needs about four times a focus's work to reach 80. Until you choose, every profession follows the
+steep curve, which changes nothing below 20.
 
 **You choose your focuses in the Calling window**, opened from the Calling button in the skills
 window. It can be read anywhere; a change takes effect only while standing at the Oathstone, and
@@ -319,13 +320,13 @@ seven mastery levels as you are present (within 100 m) at boss kills, later boss
 
 Deaths are meant to cost something (ADR-0019):
 
-- **Class XP:** you lose half your progress into the current class level, never a level
-  (Oathbound).
-- **Skills:** each non-focus skill loses 5% of its level, but only while it is above your skill
-  floor, which rises by 10 for every personal boss key you hold
-  (`config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). The floor never raises a
-  skill; it only stops the drain. A skill just above it can end a little below after one death.
-  Focus professions lose nothing. Blacksmithing and Herbalist follow the same rule as every other
+- **Class XP:** a death costs none (ADR-0037).
+- **Skills:** each non-focus skill loses 2.5% of its level, but only while it is above your skill
+  floor, which rises by 10 for every personal boss key you hold (Valheim's Easy death penalty,
+  ADR-0037; `config/enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg`). The floor
+  never raises a skill; it only stops the drain. A skill just above it can end a little below after
+  one death. Focus professions lose nothing, and the death message names the drain and the focus
+  skills your Calling kept. Blacksmithing and Herbalist follow the same rule as every other
   profession (ADR-0022).
 - **The corpse run:** your tombstone holds what vanilla death rules take, and you go back for it.
   Carried items and durability are otherwise untouched.
@@ -372,14 +373,14 @@ hide you on the web map (owner reversal, 2026-10-09; `docs/wiki/operations.md`).
 ## Difficulty
 
 **Harder than vanilla, and the same fight whoever turns up** (ADR-0019). Nothing scales with the
-number of players nearby. Bosses are tuned for five players; ordinary creatures for about three
-in practice (ADR-0033):
+number of players nearby. Bosses are tuned for four players and ordinary creatures for two
+(ADR-0037):
 
-- Ordinary creatures keep twice vanilla base health and unchanged damage, with +75% health per
-  star. Their levels still follow CreatureManager's Hard biome preset.
-- Every boss stays at level 1, independent of the biome preset, with 5× vanilla health and 1.5×
-  damage before Combat hard. Combat hard stays: boss damage is effectively 2.25× vanilla and
-  effective health about 5.9× because players deal 85% damage.
+- Ordinary creatures have 1.5× vanilla health and deal 1.5× vanilla damage through Combat hard,
+  with +75% health per star. Their levels still follow CreatureManager's Hard biome preset.
+- Every boss stays at level 1, independent of the biome preset, with 4× vanilla health and 1.2×
+  damage before Combat hard. Combat hard stays: boss damage is effectively 1.8× vanilla and
+  effective health about 4.7× because players deal 85% damage.
 - About 20 in 100 ordinary creatures carry a modifier. Bosses carry 1–4: offence always rolls,
   defence, on-hit and utility each about 33%. Deathward, regenerating, omen and blamer stay off;
   bosses and Enforcers never roll vortex, adaptive or chameleon. Kall's second phase retains

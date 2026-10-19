@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <PluginGuid>lembitu.callings</PluginGuid>
-    <Version>0.6.0</Version>
-    <Description>Callings: four focus professions, the steep curve, shadow levels, focus protection, profession perks and XP logging. Maker grades on dishes and potions; brewer grades survive fermentation and replace drinker skill scaling, without a mead-duration floor. Personal Fader-key locks on generated Deep North gear. SeedBed soil rules, Herbalist tonic keys, Explorer marker range and BlacksmithingExpanded settings lock.</Description>
+    <Version>0.7.0</Version>
+    <Description>Callings: four focus professions earning double XP, the steep curve, shadow levels, focus protection, a death message naming what the Calling kept, profession perks and XP logging. Maker grades on dishes and potions; brewer grades survive fermentation and replace drinker skill scaling, without a mead-duration floor. Personal Fader-key locks on generated Deep North gear. SeedBed soil rules, Herbalist tonic keys, Explorer marker range and BlacksmithingExpanded settings lock.</Description>
   </PropertyGroup>
 
   <ItemGroup>

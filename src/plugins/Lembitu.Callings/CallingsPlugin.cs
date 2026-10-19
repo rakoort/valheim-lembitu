@@ -7,8 +7,9 @@ namespace Lembitu.Callings;
 
 /// <summary>
 /// Professions and the Calling (ADR-0021, ADR-0022): four focus professions chosen in the Calling
-/// window at the Oathstone, the steep curve for every other profession, shadow levels, focus
-/// protection on death, one death drain for every profession skill, and the Herbalist and Fishing
+/// window at the Oathstone, double XP for a focus and the steep curve for every other profession,
+/// shadow levels, focus protection on death, one death drain for every profession skill, a death
+/// message naming what the Calling kept, and the Herbalist and Fishing
 /// bonus output. Beyond its own skills it follows soil's rules for SeedBed's beds, refuses Herbalist
 /// tonics whose biome's boss key the drinker lacks, and locks BlacksmithingExpanded's settings. It
 /// grows Explorer's live marker range with its skill. The cook (ADR-0029): dishes carry the cook's
@@ -43,8 +44,9 @@ public sealed class CallingsPlugin : BaseUnityPlugin
 
         _harmony = new Harmony(PluginInfo.Guid);
         Hooks.Enable(_harmony, log, "The Calling record follows the character", SkillHooks.RecordPlan);
-        Hooks.Enable(_harmony, log, "Steep curve and shadow levels", SkillHooks.GainPlan);
+        Hooks.Enable(_harmony, log, "Focus XP, steep curve and shadow levels", SkillHooks.GainPlan);
         Hooks.Enable(_harmony, log, "Focus protection and profession drain on death", SkillHooks.DeathPlan);
+        DeathMessage.On = Hooks.Enable(_harmony, log, "The death message names the drain and the skills the Calling kept", DeathMessage.Plan);
         Hooks.Enable(_harmony, log, "The skills window survives skills created while it opens", SkillsWindowRebuild.Plan);
         Hooks.Enable(_harmony, log, "Calling stars in the skills window", CallingStars.Plan);
         Hooks.Enable(_harmony, log, "Calling window in the skills dialog", CallingWindow.Plan);

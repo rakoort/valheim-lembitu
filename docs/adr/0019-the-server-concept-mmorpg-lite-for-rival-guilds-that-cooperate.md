@@ -11,6 +11,8 @@ Amended 2026-10-11 (owner): ADR-0035 removes parties; guild members near a kill 
 
 Amended 2026-10-11 (owner): ADR-0036 puts collaboration first. Guilds cooperate first, rivalry shows only through what guilds build and claim, and nothing public ranks guilds or players. A concept review against this is owed.
 
+Amended 2026-10-19 (owner): ADR-0037 tunes ordinary creatures for two players and bosses for four, aims the pace at Kall near 100 hours of play, and drops the class-level XP loss on death.
+
 ## Context
 
 On 2026-10-04 the owner added thirty mods at once, removed Clan for Northarun/Guilds, and asked for
@@ -35,20 +37,20 @@ there, and a founded guild claims one of the three start regions as its members'
 2026-10-05; first written as "agreed before launch", and before that "does not cap how many guilds
 exist").
 
-**Difficulty (amended 2026-10-06, ADR-0033).** Harder than vanilla. Bosses are tuned for five
-players, fixed at level 1 with 5× health; ordinary creatures keep 2× health, gain 75% per star
+**Difficulty (amended 2026-10-06, ADR-0033; 2026-10-19, ADR-0037).** Harder than vanilla. Bosses are tuned for ~~five~~ four
+players, fixed at level 1 with ~~5×~~ 4× health; ordinary creatures keep ~~2×~~ 1.5× health, tuned for two, gain 75% per star
 and roll modifiers on about 20% of spawns. Combat hard stays. A full guild can win alone;
 inter-guild cooperation rests on the Market, parties and smaller guilds rather than forcing
 every guild to borrow boss fighters. These replace the eight-player boss and two-player creature
 targets. Nothing scales health, damage or raid chance with headcount. Biome levels, Karma,
-modifiers and outpost-biome sieges still matter; party XP and crew sailing rewards are allowed. Deaths are costly: class-level XP loss, skill drain down to the boss-key floor (focus
+modifiers and outpost-biome sieges still matter; party XP and crew sailing rewards are allowed. Deaths are costly: ~~class-level XP loss,~~ skill drain down to the boss-key floor (2.5% since ADR-0037; focus
 professions excepted, ADR-0022) and a corpse run. Carried items and durability are not touched. (A
 timed debuff after respawn was dropped the same day: no well-built mod provides one, and the other
 three costs are enough.)
 
-**Pace.** An actively playing group should kill ~~Fader~~ Kall Fimbulbringer in about one month
-(ADR-0033, amended 2026-10-06). The server is open-ended
-after that, but systems are sized for that month, not for a long endgame.
+**Pace.** An actively playing group should kill ~~Fader~~ Kall Fimbulbringer in ~~about one month~~ about 100 hours of play
+(ADR-0033, amended 2026-10-06; ADR-0037, 2026-10-19). The server is open-ended
+after that, but systems are sized for that pace, not for a long endgame.
 
 **Solo play.** Possible, much harder, and steered away from progression. A boss key goes only to the
 players present at the kill, and guilds do not share keys, so a solo kill advances only that player.

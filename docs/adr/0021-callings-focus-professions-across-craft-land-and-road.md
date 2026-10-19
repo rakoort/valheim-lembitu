@@ -10,6 +10,8 @@ Amends: ADR-0019 (professions), ADR-0020 (scope of our own plugin code)
 
 Amended 2026-10-06 (owner): ADR-0032 retires craft level gates in favour of maker benefits and group pace targets. Earlier values below are historical where annotated.
 
+Amended 2026-10-19 (owner): ADR-0037 doubles a focus's XP at every level and eases the steep curve to full speed below 20, half below 80 and a third beyond. Earlier values below are historical.
+
 ## Context
 
 ADR-0019 asks for soft specialisation: anyone can do anything given enough time, but specialists
