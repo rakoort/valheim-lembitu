@@ -1,6 +1,6 @@
 [Unit]
 Description=Capture the Lembitu world save and mirror one copy off-host
-Documentation=https://github.com/rakoort/valheim-lembitu/blob/master/docs/wiki/operations.md
+Documentation=https://github.com/rakoort/valheim-lembitu/blob/main/docs/wiki/operations.md
 # The capture is read-only with respect to the server: it copies the live save tree and compares
 # the .ok marker set before and after, so it never needs the container stopped or paused.
 
