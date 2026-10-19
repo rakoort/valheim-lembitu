@@ -20,7 +20,7 @@ Single-context: `CONTEXT.md` plus `docs/adr/` at the repo root. See `docs/agents
 ## Branches
 
 - **`dev`** is the integration branch and the GitHub default. Branch from `dev`, open the PR against `dev`, and merge it yourself once reviewed: `gh pr merge <n> --merge`.
-- **`staging` and `master`** take only promotion PRs, `dev → staging` then `staging → master`. Open the promotion PR, then wait for ra's explicit go in this session; merge only after it.
-- **Merge commits only.** Squash and rebase merges are off, and so is auto-delete of head branches (it would delete `staging` when a `staging → master` PR merges). Merge commits keep the three branches on one history, so promotions need no sync PRs.
-- **Break-glass** belongs to ra alone: a commit straight to `master` to store or rotate a Secret value, or to fix an outage that stops every team. `master` is then merged back into `dev` at once through a reviewed PR.
-- **`master` is the live server's branch.** astral-bicep's checkout at `~/code/valheim-lembitu` tracks `origin/master`; a deploy fast-forwards it, and the hourly backup's drift check and the maintenance restart read it (`docs/wiki/operations.md`). It keeps the name `master` until that checkout is repointed.
+- **`staging` and `main`** take only promotion PRs, `dev → staging` then `staging → main`. Open the promotion PR, then wait for ra's explicit go in this session; merge only after it.
+- **Merge commits only.** Squash and rebase merges are off, and so is auto-delete of head branches (it would delete `staging` when a `staging → main` PR merges). Merge commits keep the three branches on one history, so promotions need no sync PRs.
+- **Break-glass** belongs to ra alone: a commit straight to `main` to store or rotate a Secret value, or to fix an outage that stops every team. `main` is then merged back into `dev` at once through a reviewed PR.
+- **`main` is the live server's branch.** astral-bicep's checkout at `~/code/valheim-lembitu` tracks `origin/main` (renamed from `master` on 2026-10-19); a deploy fast-forwards it, and the hourly backup's drift check and the maintenance restart read it (`docs/wiki/operations.md`).
