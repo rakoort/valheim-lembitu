@@ -12,5 +12,4 @@ The five canonical triage roles map directly to labels in
 | `wontfix` | `wontfix` | Will not be actioned |
 
 The additional `kind:decision` label marks decisions, not implementation work.
-Decision Tickets remain native GitHub blockers until closed. Existing label
-colors and descriptions belong to the repository and are not reset by initialization.
+Decision Tickets remain native GitHub blockers until closed.

@@ -65,24 +65,6 @@ One measurement from the StoneOutlook work is worth carrying: a location a mod r
 missing from the mod's own definitions rather than from an operator setting, and a shipped
 soft-reference manifest is the place to check that before assuming a configuration mistake.
 
-## Capture integrity instrument (#56)
-
-Use `scripts/retain-pair.js` for new paired-log captures; the old [.nt/evidence/retain-pair.js](https://github.com/rakoort/valheim-lembitu/blob/2a91e6d7bb869ebf830b65ef2ed3ea996341de25/.nt/evidence/retain-pair.js)
-at #38 candidate `2a91e6d7bb869ebf830b65ef2ed3ea996341de25` is historical evidence, not the maintained tool.
-After the owned server exits, run `bun /absolute/repo/scripts/retain-pair.js SOURCE_SHA RUN_NAME`
-from its workspace. Supply the measured source commit and a new run name. Inputs retain the original layout:
-Runtime inputs are [Unity .nt/review-fix-raw/server-unity.log and BepInEx .nt/server/BepInEx/LogOutput.log](../../scripts/retain-pair.js#L27-L30),
-and server binaries/config under `.nt/server/`. Bun is required.
-
-The instrument creates a new `.nt/evidence/` directory and refuses an existing one; it never rewrites
-old captures. Full-read integrity compares byte length with source sizes before/after reading and checks
-file identity and modification metadata. This detects observed source changes, not arbitrary concurrent
-rewrites; capture only stopped servers. The other flags measure newline preservation, retained-byte
-equality and absence of reader framing. Failed integrity or lifecycle checks produce the capture report
-before a nonzero exit; input decoding or I/O failures may abort without a complete report.
-`test/retain-pair.test.sh` exercises successful retention, reader framing, real redaction line loss and
-refusal to overwrite an earlier bundle. These fixtures prove the instrument, not game rendering.
-
 ## EpicLoot Graphic dictionary warnings (#36, 2026-09-15)
 
 Retain these three Jotunn warnings without suppressing them or forking either mod.

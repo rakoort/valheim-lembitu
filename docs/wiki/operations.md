@@ -188,8 +188,7 @@ monitoring #105, the Discord server #106, host resources #107, the web map #108 
 The owner decided the next release waits for all nine: Pack v17 (#99) ships only once #101 to #109
 are done.
 Two-player checks in #101, #106 and #109 run in one owner session with two separately licensed
-Steam accounts before the release, from a checklist prepared at the end of the build. The Tickets
-are tracked on `master` without the `nt` readiness gate.
+Steam accounts before the release, from a checklist prepared at the end of the build.
 
 ### Decisions of 2026-10-11: the web map and the Chronicle
 
@@ -200,7 +199,7 @@ means a claim or something a guild's members built. The Chronicle, drawn in neut
 per entry, records what happened. In Discord, `#world` and `#deaths` carry it as typed cards; guild
 channels get their own notices; `#status` keeps one live message. Milestone 8, "Guild web map and
 the Chronicle", holds the work in order: guild claims and cards #117, live layers #118, the
-Chronicle #119 and Discord #120. Its oracle is `oracles/guild-web-map-chronicle.sh`. A concept
+Chronicle #119 and Discord #120. A concept
 review of guilds at the centre and of the advantage that free time gives is still owed.
 
 Release and testing, decided the same day. Each Milestone 8 Ticket deploys in a maintenance restart
