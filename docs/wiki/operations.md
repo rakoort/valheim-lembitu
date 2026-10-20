@@ -492,6 +492,22 @@ with an identical SHA-256 on both hosts (`1412b996…8e931`). Restoring that arc
 directory reproduced all ten files of the live world with matching MD5s, and the restore moved
 nothing aside in the live save because it was never pointed at it.
 
+**Retention: lembitu's backups are kept for at most 30 days (ra, 2026-10-20).** This covers the
+hourly archives on both hosts and the hand-made captures under `~/lembitu/keep/`. The local
+rotation is already inside the window: `--keep 48` is two days. The off-host copy is not:
+`backup-world.sh` mirrors each new archive to astral-tricep and never rotates that directory. Since
+the LembituRun world (about 2026-10-07), an archive is about 261 MB, not 11 MB. That is 6.3 GB a
+day, so 30 days of hourly copies would hold about 190 GB.
+
+On 2026-10-20 the window was applied by hand:
+- 113 archives older than 30 days were removed from astral-tricep's `/home/ra/lembitu-backups`;
+- the `~/lembitu/keep/` entries older than 30 days were removed on astral-bicep, among them the
+  2026-09-16 captures named in [pack.md](pack.md).
+
+The fleet's own restic backup (nixos-config's backup design) is to replace or rotate the off-host
+copy before about 2026-11-06, when the 261 MB archives start passing 30 days. Until then, prune
+archives older than 30 days by hand.
+
 **What the restore proof does not cover: Clan membership.** The restore was verified by a byte
 comparison of the captured files and by a server loading the restored world (`ZNet.LoadWorld`, then
 `Opened Steam server`). No client connected and no Clan registry was observed, so #20's "verified to
