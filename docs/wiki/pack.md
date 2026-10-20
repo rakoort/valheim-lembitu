@@ -391,8 +391,8 @@ container mod back. What happened, on astral-bicep:
 - The live world was captured by `scripts/backup-world.sh` (11 MB, `lembitu-all-worlds-20260916T135726Z.tar.gz`)
   and that archive was copied to `~/lembitu/keep/` so the hourly rotation cannot reap it. The whole
   old save tree — `worlds_local/` and the biome `cache/` — was moved to `~/lembitu/keep/old-save-20260916T135824Z/`
-  rather than deleted. The Clan registry, the admin list and the ban list were kept. Both copies were
-  removed on 2026-10-20 under the 30-day backup window ([operations.md](operations.md#backups--20)).
+  rather than deleted. The Clan registry, the admin list and the ban list were kept. The archive and the
+  moved save tree in `~/lembitu/keep/` were removed on 2026-10-20 under the 30-day backup window ([operations.md](operations.md#backups--20)).
 - Staging verified all twenty-six package hashes against the committed lock on the host.
   `scripts/install-plugins.sh` deployed twenty-three adopted packages plus the fork and the
   harness, and **withheld AzuHoverStats, AzuClock and MouseTweaks** — the mechanism working on a
