@@ -333,7 +333,7 @@ Generated Magic Item Names = true, including upgrading a player whose cfg still 
   and Shieldbearer/Valkyrie bow refusals named their melee rule and the Oath and class page in
   `/home/ra/lembitu-native-tests/20261005T161527Z-oathbound88-final/acceptance88.json`; the
   Shieldbearer screenshot visibly shows the full message. A retained level-30 Mage with no keys
-  had 29 available talent points in `20261005T135909Z-oathbound88` (removed 2026-10-20) (`step-0012.json`). Class-power
+  had 29 available talent points in `20261005T135909Z-oathbound88` (`step-0012.json`; removed 2026-10-20). Class-power
   and companion ratios, and spell-growth/client-override behaviour remain **unproven**: the final
   scene teleport was refused before taking Mage, and the Hunter picker did not expose its button.
   These are Shakedown checks, not claims that startup or one spell hit proved the balance formulas.

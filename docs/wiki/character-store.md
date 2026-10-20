@@ -98,8 +98,10 @@ The Pack's `.versions.txt` already lists a SHA-256 for every file, which is what
 ### The trial, 2026-10-07 (#101)
 
 ServerManager 1.1.7 ran with the full Pack on the test host, server and client both on Valheim
-1.0.17, one Steam account. Run directories are under `~/lembitu-native-tests/` on astral-tricep;
-the per-criterion disposition is the file ticket101-final-disposition.json in the planned-orders run.
+1.0.17, one Steam account. Run directories were under `~/lembitu-native-tests/` on astral-tricep,
+and the per-criterion disposition was the file ticket101-final-disposition.json in the planned-orders
+run. All seven runs, and that file with them, were removed on 2026-10-20
+([native-testing.md](native-testing.md)).
 Kill tests used the native processes, not `docker kill`.
 
 | Criterion | Result | Run |

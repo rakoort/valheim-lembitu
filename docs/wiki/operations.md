@@ -505,9 +505,10 @@ On 2026-10-20 the window was applied by hand:
 - the `~/lembitu/keep/` entries older than 30 days were removed on astral-bicep, among them the
   2026-09-16 captures named in [pack.md](pack.md#pack-v8--five-quality-of-life-mods-78).
 
-The fleet's own restic backup (nixos-config's [backup inventory](https://github.com/rakoort/nixos-config/pull/484)) is to replace or rotate the off-host
-copy before about 2026-11-06, when the 261 MB archives start passing 30 days. Until then, prune
-archives older than 30 days by hand.
+nixos-config's [backup inventory](https://github.com/rakoort/nixos-config/pull/484) (item 14) records
+that the tricep mirror never prunes and needs a bound; the fleet's backup design has not settled it
+yet. Until it does, prune archives older than 30 days by hand; from about 2026-11-06 those are the
+261 MB archives.
 
 **What the restore proof does not cover: Clan membership.** The restore was verified by a byte
 comparison of the captured files and by a server loading the restored world (`ZNet.LoadWorld`, then
