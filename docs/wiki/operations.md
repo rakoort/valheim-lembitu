@@ -475,9 +475,10 @@ container's bind-mounted save directory with `--keep 48` and
 `--offhost astral-tricep:/home/ra/lembitu-backups`.
 
 Hourly, because the server autosaves every thirty minutes, so at most two autosaves are ever at
-risk. Forty-eight archives, because that is two days of play at roughly 11 MB an archive — trivial
-against the host's free space, and long enough that a corruption noticed the next evening is still
-recoverable. astral-tricep, because #20 requires that a copy leave the host and it is the project's
+risk. Forty-eight archives, because that is two days of play, and long enough that a corruption
+noticed the next evening is still recoverable. An archive was roughly 11 MB then; since about
+2026-10-07 it is about 261 MB, so 48 of them hold about 12.5 GB on astral-bicep (see Retention
+below). astral-tricep, because #20 requires that a copy leave the host and it is the project's
 second machine, already trusted for ssh and running continuously.
 
 The units are installed for the `ra` user on astral-bicep, which has `Linger=yes`, so the timer runs
@@ -491,6 +492,23 @@ holding world generation `_main.6` plus the three admission lists, and mirrored 
 with an identical SHA-256 on both hosts (`1412b996…8e931`). Restoring that archive into a disposable
 directory reproduced all ten files of the live world with matching MD5s, and the restore moved
 nothing aside in the live save because it was never pointed at it.
+
+**Retention: lembitu's backups are kept for at most 30 days (ra, 2026-10-20).** This covers the
+hourly archives on both hosts and the hand-made captures under `~/lembitu/keep/`. The local
+rotation is already inside the window: `--keep 48` is two days. The off-host copy is not:
+`backup-world.sh` mirrors each new archive to astral-tricep and never rotates that directory. Since
+about 2026-10-07, an archive is about 261 MB, not 11 MB. That is 6.3 GB a
+day, so 30 days of hourly copies would hold about 190 GB.
+
+On 2026-10-20 the window was applied by hand:
+- 113 archives older than 30 days were removed from astral-tricep's `/home/ra/lembitu-backups`;
+- the `~/lembitu/keep/` entries older than 30 days were removed on astral-bicep, among them the
+  2026-09-16 captures named in [pack.md](pack.md#pack-v8--five-quality-of-life-mods-78).
+
+nixos-config's [backup inventory](https://github.com/rakoort/nixos-config/pull/484) (item 14) records
+that the tricep mirror never prunes and needs a bound; the fleet's backup design has not settled it
+yet. Until it does, prune archives older than 30 days by hand; from about 2026-11-06 those are the
+261 MB archives.
 
 **What the restore proof does not cover: Clan membership.** The restore was verified by a byte
 comparison of the captured files and by a server loading the restored world (`ZNet.LoadWorld`, then
@@ -520,7 +538,7 @@ stop. Any refusal or missing confirmation aborts the restart and posts to
 `stop` use the same path when the container is running; on a stopped container `restart` and the
 new `start` go straight to applying the overlay, starting and verifying (ADR-0011). Proved with a
 fake Docker in `test/launch-server.test.sh`, including a refused first save. On the test host (#101,
-`20261007T133035Z-ticket101-planned-orders`), progress made just before the console `save` survived
+`20261007T133035Z-ticket101-planned-orders` (removed 2026-10-20)), progress made just before the console `save` survived
 the stop: the save made ServerManager request a fresh copy from the connected client
 (`CharacterShadowAccepted`) before the checkpoint logged `captured=1, persisted=1, pending=0`. No
 disconnect step is needed before the save.
@@ -690,13 +708,13 @@ The deploy restart showed that `scripts/maintenance-restart.py` had never delive
 
 ### Explorer XP on every portal trip — 2026-10-10
 
-A player reported a burst of Explorer XP on every portal use. The server's profession log showed Trilby god's Explorer going from 14.9 to 18.9 in ten minutes (152.8 raw XP, against 1.7 in the window before), with the level-ups between the Meadows base by the stones and the BF1 portal in the Black Forest. Valheim 1.0.17 calls `Player.AddKnownBiome` with a `BiomeSector` at every biome change. Explorer 1.1.7 still patches it as if it took the old `Heightmap.Biome`, so its "already known" check never matches and it pays the 10-XP new-biome reward at every crossing. On a copy of the live world (`~/lembitu-native-tests/20261010T114240Z-explorer-biome`), a fresh character's Explorer rose from 6 to 12 over eight base-to-BF1 crossings. With `Lembitu.Callings`' `BiomeDiscovery` fix (`20261010T115148Z-explorer-biome`), only the first Black Forest arrival paid (6 to 7) and the next seven paid nothing. The fix is client-side, so it reaches players with the next Pack. Explorer levels already gained this way stay unless corrected by hand.
+A player reported a burst of Explorer XP on every portal use. The server's profession log showed Trilby god's Explorer going from 14.9 to 18.9 in ten minutes (152.8 raw XP, against 1.7 in the window before), with the level-ups between the Meadows base by the stones and the BF1 portal in the Black Forest. Valheim 1.0.17 calls `Player.AddKnownBiome` with a `BiomeSector` at every biome change. Explorer 1.1.7 still patches it as if it took the old `Heightmap.Biome`, so its "already known" check never matches and it pays the 10-XP new-biome reward at every crossing. On a copy of the live world (`~/lembitu-native-tests/20261010T114240Z-explorer-biome`), a fresh character's Explorer rose from 6 to 12 over eight base-to-BF1 crossings. With `Lembitu.Callings`' `BiomeDiscovery` fix (`20261010T115148Z-explorer-biome` (removed 2026-10-20)), only the first Black Forest arrival paid (6 to 7) and the next seven paid nothing. The fix is client-side, so it reaches players with the next Pack. Explorer levels already gained this way stay unless corrected by hand.
 
 ### Settings menu would not save or close — 2026-10-10
 
-Players reported that music and sound ignored the volume sliders and that Accept left the settings menu open. Vanilla `Settings.ApplyAndClose` calls `KeyHints.ApplySettings` before `PlatformPrefs.Save` and `CloseSettings`. Zen_ModLib 1.14.21 patches `KeyHints.ApplySettings` to rewrite the dodge key hint and sets its children 2 and 3 without checking they exist. DodgeShortcut 1.4.0 removes two of those children at startup ("Destroying child key_bkg (2)…", "…plus…"), so Zen's rewrite threw "Transform child out of bounds" and Accept closed nothing. sins's log from 2026-10-09 shows the same stack. On a copy of the live world with Pack v18, the harness's `settings` action reproduced it (`~/lembitu-native-tests/20261010T123956Z-settings-accept`: Accept threw and the window stayed open). With `Lembitu.Callings`' `DodgeHintGuard`, which runs Zen's rewrite only on the full vanilla hint, Accept closed the window with no exception (`20261010T124611Z-settings-accept`).
+Players reported that music and sound ignored the volume sliders and that Accept left the settings menu open. Vanilla `Settings.ApplyAndClose` calls `KeyHints.ApplySettings` before `PlatformPrefs.Save` and `CloseSettings`. Zen_ModLib 1.14.21 patches `KeyHints.ApplySettings` to rewrite the dodge key hint and sets its children 2 and 3 without checking they exist. DodgeShortcut 1.4.0 removes two of those children at startup ("Destroying child key_bkg (2)…", "…plus…"), so Zen's rewrite threw "Transform child out of bounds" and Accept closed nothing. sins's log from 2026-10-09 shows the same stack. On a copy of the live world with Pack v18, the harness's `settings` action reproduced it (`~/lembitu-native-tests/20261010T123956Z-settings-accept`: Accept threw and the window stayed open). With `Lembitu.Callings`' `DodgeHintGuard`, which runs Zen's rewrite only on the full vanilla hint, Accept closed the window with no exception (`20261010T124611Z-settings-accept` (removed 2026-10-20)).
 
-The sound itself was measured on 2026-10-11 on the test host's native Linux client, through the harness's `audio` snapshot. Every slider moved the game's mixed output on v18 as on the fix, and no playing source bypassed the master mixer. What broke was the way out: the audio tab stores the new volume before Accept throws, so the preference holds it, but the only exit left, Escape or Back, makes the tab restore the volume it showed when the window opened. On v18, moving master from 35% to 80% and then leaving by Back played at 35% while the preference read 80%, until the next launch applied it (`20261011T075906Z-audio-accept-back`). With the guard, Accept closed and the game stayed at 80% (`20261011T080449Z-audio-accept-back`).
+The sound itself was measured on 2026-10-11 on the test host's native Linux client, through the harness's `audio` snapshot. Every slider moved the game's mixed output on v18 as on the fix, and no playing source bypassed the master mixer. What broke was the way out: the audio tab stores the new volume before Accept throws, so the preference holds it, but the only exit left, Escape or Back, makes the tab restore the volume it showed when the window opened. On v18, moving master from 35% to 80% and then leaving by Back played at 35% while the preference read 80%, until the next launch applied it (`20261011T075906Z-audio-accept-back` (removed 2026-10-20)). With the guard, Accept closed and the game stayed at 80% (`20261011T080449Z-audio-accept-back` (removed 2026-10-20)).
 
 ### Extra inventory rows — 2026-10-10
 
