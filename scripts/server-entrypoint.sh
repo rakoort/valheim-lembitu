@@ -3,7 +3,7 @@
 # writable runtime tree, then execs valheim_server.x86_64 under BepInEx's doorstop. There is no
 # updater, no supervisor and no sleep: the server is the only long-running process, and the
 # image's PID 1 (dumb-init) only forwards signals to it. Its stdout goes through lembitu-logmark,
-# which marks "Game server connected" for the readiness check (scripts/server-ready.sh).
+# which marks "Opened Steam server" for the readiness check (scripts/server-ready.sh).
 #
 # The image's store paths are read-only, and BepInEx and the mods write beside their own files. So
 # at every start the runtime tree is rebuilt from nothing on an emptyDir:
@@ -19,7 +19,7 @@
 #                                  $DATA/bepinex
 #   $RUNTIME/BepInEx/cache/, DumpedAssemblies/, patchers/, LogOutput.log
 #                                  written by BepInEx, gone at the next start
-#   $RUNTIME/.game-server-connected    lembitu-logmark's readiness marker
+#   $RUNTIME/.steam-server-opened  lembitu-logmark's readiness marker
 #
 # and the state that must outlive the Pod is on the volume: the world and ServerManager's store
 # under $DATA/save (the game's -savedir), and the plugins' stores under $DATA/bepinex.
@@ -132,7 +132,7 @@ cd "$RUNTIME"
 # server is dumb-init's child, and lembitu-logmark ignores the stop signal dumb-init sends the
 # process group and exits when the server closes its stdout. stderr is left as it is.
 # The trap ignores the signals before the exec too, so there is no instant in which they kill it.
-exec > >(trap '' INT TERM HUP; exec lembitu-logmark "$RUNTIME/.game-server-connected")
+exec > >(trap '' INT TERM HUP; exec lembitu-logmark "$RUNTIME/.steam-server-opened" "Opened Steam server")
 export DOORSTOP_ENABLED=1
 export DOORSTOP_TARGET_ASSEMBLY=./BepInEx/core/BepInEx.Preloader.dll
 export LD_LIBRARY_PATH="$RUNTIME/linux64:$RUNTIME/doorstop_libs:$LEMBITU_LIBRARY_PATH"

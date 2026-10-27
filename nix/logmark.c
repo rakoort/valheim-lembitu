@@ -1,11 +1,13 @@
 /* lembitu-logmark: pass the server's stdout through unchanged, and create a marker file the first
  * time a line contains a given text.
  *
- *   lembitu-logmark <marker-file> [text]      text defaults to "Game server connected"
+ *   lembitu-logmark <marker-file> [text]      text defaults to "Opened Steam server"
  *
- * The readiness check (lembitu-ready) needs to know the Unity log said "Game server connected".
- * That line goes to stdout only, so the entrypoint points the server's stdout at this filter and
- * the container log still gets every byte, in order, as it arrives.
+ * The readiness check (lembitu-ready) needs to know the Unity log said "Opened Steam server": the
+ * world is loaded and the game's listen socket is open (docs/build.md, native testing: "Game
+ * server connected" is only the Steam registration, before both). That line goes to stdout only,
+ * so the entrypoint points the server's stdout at this filter and the container log still gets
+ * every byte, in order, as it arrives.
  *
  * It must never be the reason the server stops. A dead filter would break the server's stdout pipe,
  * and the server would die of SIGPIPE on its next log line, perhaps mid-save. So it ignores SIGINT,
@@ -39,7 +41,7 @@ int main(int argc, char **argv) {
     return 2;
   }
   const char *marker = argv[1];
-  const char *text = argc > 2 ? argv[2] : "Game server connected";
+  const char *text = argc > 2 ? argv[2] : "Opened Steam server";
   size_t text_length = strlen(text);
   if (text_length == 0 || text_length > 1024) {
     fprintf(stderr, "lembitu-logmark: the text must be 1 to 1024 bytes\n");

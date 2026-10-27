@@ -10,11 +10,14 @@
 #   - the entrypoint execs the server (same PID), so no shell sits between it and its signals;
 #   - the launch arguments, the password from the Secret's file, and the library path;
 #   - the writable runtime tree, rebuilt at every start;
-#   - lembitu-logmark: the server's stdout reaches the log byte for byte, it marks "Game server
-#     connected", and it outlives the stop signal sent to the whole process group;
-#   - the readiness check, red before that line and green after.
-# It needs lembitu-logmark: from LEMBITU_TOOLS, else built through nix, else compiled with cc. With
-# none of them it says "skip" and passes nothing.
+#   - lembitu-logmark: the server's stdout reaches the log byte for byte, it marks "Opened Steam
+#     server", and it outlives the stop signal sent to the whole process group;
+#   - the readiness check: red before "Opened Steam server" (after "Game server connected" too),
+#     red with it but the game port unbound or silent, and green with the line, the port bound and
+#     a NoConnection answer from a fake server that answers as SteamNetworkingSockets does.
+# It needs lembitu-logmark (from LEMBITU_TOOLS, else built through nix, else compiled with cc) and
+# python3 for the fake server (on PATH, else from nix). Without them it says "skip" and passes
+# nothing.
 #
 # The image tier runs the real server, so it is opt-in: LEMBITU_IMAGE_TEST=1. It needs nix, rootless
 # docker and about 4 GB of memory, and takes about fifteen minutes on a warm store. Set
@@ -23,7 +26,8 @@
 #   - the image's files are the locked inputs: the server and redistributable depots by the
 #     verifier, BepInEx's core by the pack, the plugin tree by the deploy path, and no config, world
 #     or Secret;
-#   - the readiness check is red at the start and green once the server is up;
+#   - the readiness check is red at the start, stays red until the log says "Opened Steam server",
+#     and turns green after it;
 #   - the chainloader loads every plugin GUID the lock lists, skips only the lock's process-filter
 #     skips, and fails none;
 #   - SIGTERM saves the world (a fresh .db2 and .fwl2 generation) and the server exits 0 within
@@ -40,8 +44,10 @@ READY="$REPO_ROOT/scripts/server-ready.sh"
 WORK="$(mktemp -d)"
 cleanup() {
   local status=$?
-  # Stop anything this test started: fake servers by their process group, containers by name.
+  # Stop anything this test started: fake servers by their process group, the fake game socket by
+  # its PID, containers by name.
   [[ -f "$WORK/pgids" ]] && while read -r pgid; do kill -KILL -- "-$pgid" 2>/dev/null || true; done < "$WORK/pgids"
+  [[ -f "$WORK/pids" ]] && while read -r pid; do kill -KILL "$pid" 2>/dev/null || true; done < "$WORK/pids"
   if [[ -f "$WORK/containers" ]]; then
     while read -r name; do docker rm -f "$name" >/dev/null 2>&1 || true; done < "$WORK/containers"
   fi
@@ -87,16 +93,18 @@ LOGMARK="$TOOLS/bin/lembitu-logmark"
 
 # Byte for byte, binary included, and no marker without the text.
 head -c 300000 /dev/urandom > "$WORK/noise"
-LC_ALL=C sed -i 's/Game server connected/Game server xonnected/g' "$WORK/noise"
+LC_ALL=C sed -i 's/Opened Steam server/Opened Steam xerver/g' "$WORK/noise"
 "$LOGMARK" "$WORK/m1" < "$WORK/noise" > "$WORK/noise.out"
 check "lembitu-logmark passes 300 kB of binary through unchanged" cmp -s "$WORK/noise" "$WORK/noise.out"
 check "lembitu-logmark makes no marker when the text never appears" test ! -e "$WORK/m1"
 
 # The text split across two reads still counts.
-{ printf 'boot\n10/27 12:06:12: Game ser'; sleep 0.3; printf 'ver connected\nmore\n'; } \
+{ printf 'boot\n10/27 12:06:52: Opened Steam ser'; sleep 0.3; printf 'ver\nmore\n'; } \
   | "$LOGMARK" "$WORK/m2" > "$WORK/split.out"
 check "lembitu-logmark marks a line whose text arrives in two reads" test -e "$WORK/m2"
-check "lembitu-logmark keeps that line whole in the log" grep -qx '10/27 12:06:12: Game server connected' "$WORK/split.out"
+check "lembitu-logmark keeps that line whole in the log" grep -qx '10/27 12:06:52: Opened Steam server' "$WORK/split.out"
+printf '10/27 12:06:12: Game server connected\n' | "$LOGMARK" "$WORK/m3" > /dev/null
+check "lembitu-logmark's default text is \"Opened Steam server\", not \"Game server connected\"" test ! -e "$WORK/m3"
 
 # The stop signal reaches the filter too (dumb-init signals the whole process group). It must keep
 # passing the server's last lines and exit only at end of input. Its own signal handling is tested
@@ -154,7 +162,8 @@ env > "$FAKE_OUT/env"
 pwd > "$FAKE_OUT/cwd"
 trap 'echo "World save (5/5) done after SIGINT"; echo saved > "$FAKE_OUT/saved"; exit 0' INT
 echo "Loading world"
-[[ -n "${FAKE_NO_CONNECT:-}" ]] || echo "10/27/2026 12:06:12: Game server connected"
+echo "10/27/2026 12:06:12: Game server connected"
+[[ -n "${FAKE_NO_OPEN:-}" ]] || echo "10/27/2026 12:06:52: Opened Steam server"
 : > "$FAKE_OUT/running"
 while :; do sleep 0.1; done
 FAKE
@@ -186,11 +195,63 @@ mkdir -p "$PROC_NET"
 printf '  sl  local_address rem_address   st\n' > "$PROC_NET/udp"
 printf '  sl  local_address rem_address   st\n' > "$PROC_NET/udp6"
 
-ready() {  # ready: run the readiness check against this test's runtime and fake /proc/net
-  LEMBITU_RUNTIME="$RUNTIME" LEMBITU_PROC_NET="$PROC_NET" "$READY" > "$WORK/ready.out" 2>&1
+# A fake game socket: a UDP server on 127.0.0.1 that answers as SteamNetworkingSockets does
+# (GameNetworkingSockets, steamnetworkingsockets_udp.cpp). It answers a ConnectionClosed (36) padded
+# to at least 512 bytes with NoConnection (37), the IDs echoed, and ignores anything else. Its mode
+# file decides: "sns" answers, "silent" ignores everything, "wrong" answers with a NoConnection of
+# the same length whose IDs are not the ones sent.
+cat > "$WORK/fake-sns.py" <<'PY'
+import socket, struct, sys
+mode_file, port_file = sys.argv[1], sys.argv[2]
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.bind(("127.0.0.1", 0))
+open(port_file, "w").write(str(s.getsockname()[1]))
+def fixed32(body, tag):
+    i = 0
+    while i < len(body):
+        key = body[i]; i += 1
+        if key & 7 == 5:
+            if key == tag: return body[i:i + 4]
+            i += 4
+        else:
+            return None
+    return None
+while True:
+    pkt, peer = s.recvfrom(65536)
+    mode = open(mode_file).read().strip()
+    if mode == "silent" or len(pkt) < 512 or pkt[0] != 36:
+        continue
+    body = pkt[3:3 + struct.unpack_from("<H", pkt, 1)[0]]
+    to, frm = fixed32(body, 0x25), fixed32(body, 0x2d)
+    if mode == "wrong":
+        s.sendto(b"\x25\x15" + b"XXXX" + b"\x1d" + b"YYYY", peer)
+    elif to and frm:
+        s.sendto(b"\x25\x15" + to + b"\x1d" + frm, peer)
+PY
+FAKE_PY="$(command -v python3 || true)"
+if [[ -z "$FAKE_PY" ]] && command -v nix >/dev/null 2>&1; then
+  FAKE_PY="$(nix build --no-link --print-out-paths nixpkgs#python3 2>/dev/null || true)"
+  [[ -z "$FAKE_PY" ]] || FAKE_PY="$FAKE_PY/bin/python3"
+fi
+if [[ -z "$FAKE_PY" ]]; then
+  echo "skip: the readiness tests need python3 (on PATH, or through nix) for the fake game socket"
+  finish; exit
+fi
+printf 'sns\n' > "$WORK/fake-sns.mode"
+"$FAKE_PY" "$WORK/fake-sns.py" "$WORK/fake-sns.mode" "$WORK/fake-sns.port" &
+echo "$!" >> "$WORK/pids"
+for _ in $(seq 50); do [[ -s "$WORK/fake-sns.port" ]] && break; sleep 0.1; done
+GAME_PORT="$(cat "$WORK/fake-sns.port")"
+
+ready() {  # ready: run the readiness check against this test's runtime, fake /proc/net and socket
+  LEMBITU_RUNTIME="$RUNTIME" LEMBITU_PROC_NET="$PROC_NET" LEMBITU_GAME_PORT="$GAME_PORT" \
+    "$READY" > "$WORK/ready.out" 2>&1
 }
-bind_server_port() {  # bind_server_port <udp|udp6>: 2457 is 0x0999
-  printf '14266: 00000000:0999 00000000:0000 07 00000000:00000000\n' >> "$PROC_NET/$1"
+bind_game_port() {  # bind_game_port <udp|udp6>: the fake socket's port, in /proc/net's hex
+  printf '14266: 00000000:%04X 00000000:0000 07 00000000:00000000\n' "$GAME_PORT" >> "$PROC_NET/$1"
+}
+unbind_game_port() {
+  printf '  sl  local_address rem_address   st\n' | tee "$PROC_NET/udp" > "$PROC_NET/udp6"
 }
 
 # start_entrypoint [VAR=value...]: run the entrypoint in its own process group, as dumb-init does,
@@ -260,21 +321,23 @@ stop_entrypoint
 
 # Leftovers of an earlier start, which the wipe must remove: a stale marker and a stale file.
 mkdir -p "$WORK/run/BepInEx"
-: > "$WORK/run/.game-server-connected"
+: > "$WORK/run/.steam-server-opened"
 : > "$WORK/run/BepInEx/stale.txt"
-bind_server_port udp
+bind_game_port udp6
 
-start_entrypoint FAKE_NO_CONNECT=1
+# The port is bound and answers, but the log has said only "Game server connected".
+start_entrypoint FAKE_NO_OPEN=1
 wait_for "$WORK/fake/running" 10 || true
-check "a stale marker from an earlier start is wiped" test ! -e "$RUNTIME/.game-server-connected"
+check "a stale marker from an earlier start is wiped" test ! -e "$RUNTIME/.steam-server-opened"
 not_ready() { ! ready; }
-check "readiness is red while the log has not said \"Game server connected\"" not_ready
-check "the red check says why" grep -q 'no "Game server connected"' "$WORK/ready.out"
+check "readiness is red after \"Game server connected\" but before \"Opened Steam server\"" not_ready
+check "the red check says why" grep -q 'no "Opened Steam server"' "$WORK/ready.out"
 stop_entrypoint
+unbind_game_port
 
 start_entrypoint
 wait_for "$WORK/fake/running" 10 || true
-wait_for "$RUNTIME/.game-server-connected" 5 || true
+wait_for "$RUNTIME/.steam-server-opened" 5 || true
 check "the entrypoint execs the server: one PID, no shell left between it and its signals" \
   bash -c "[[ \"\$(cat '$WORK/fake/pid')\" == $EP_PID ]]"
 check "the server runs in the runtime tree" grep -qx "$RUNTIME" "$WORK/fake/cwd"
@@ -316,13 +379,21 @@ check "config/ is real writable files: the seeds, then the ConfigMap over them" 
 check "none of the ConfigMap's ..data plumbing is copied" \
   bash -c "[[ -z \$(find '$RUNTIME/BepInEx/config' -name '..*') ]]"
 
-check "the stdout filter marked \"Game server connected\"" test -e "$RUNTIME/.game-server-connected"
-printf '  sl  local_address rem_address   st\n' > "$PROC_NET/udp"
-check "readiness is still red while the server socket, UDP 2457, is not bound" not_ready
-check "the red check names the port" grep -q 'UDP 2457 is not bound' "$WORK/ready.out"
-bind_server_port udp6
-check "readiness is green once the line is logged and UDP 2457 is bound" ready
-check "the green check says what it saw" grep -q '^ready: ' "$WORK/ready.out"
+check "the stdout filter marked \"Opened Steam server\"" test -e "$RUNTIME/.steam-server-opened"
+check "readiness is red with the line logged but the game port unbound" not_ready
+check "the red check names the port" grep -q "UDP $GAME_PORT is not bound" "$WORK/ready.out"
+bind_game_port udp6
+check "readiness is green with the line, the game port bound (udp6), and a NoConnection answer" ready
+check "the green check says what it saw" grep -q '^ready: "Opened Steam server", UDP' "$WORK/ready.out"
+unbind_game_port; bind_game_port udp
+check "readiness reads /proc/net/udp too" ready
+printf 'silent\n' > "$WORK/fake-sns.mode"
+check "readiness is red when the bound port doesn't answer" not_ready
+check "the red check says the port didn't answer" grep -q "UDP $GAME_PORT did not answer" "$WORK/ready.out"
+printf 'wrong\n' > "$WORK/fake-sns.mode"
+check "readiness is red when the port answers with anything but NoConnection" not_ready
+printf 'sns\n' > "$WORK/fake-sns.mode"
+check "readiness is green again once the port answers" ready
 
 stop_entrypoint
 check "SIGINT to the process group reaches the server, which saves and exits 0" \
@@ -330,10 +401,10 @@ check "SIGINT to the process group reaches the server, which saves and exits 0" 
 check "the log keeps the lines the server wrote after the signal: the filter outlived it" \
   grep -q 'World save (5/5) done after SIGINT' "$WORK/stdout"
 check "the log has the server's stdout, in order" \
-  bash -c "diff <(printf 'Loading world\n10/27/2026 12:06:12: Game server connected\nWorld save (5/5) done after SIGINT\n') '$WORK/stdout'"
+  bash -c "diff <(printf 'Loading world\n10/27/2026 12:06:12: Game server connected\n10/27/2026 12:06:52: Opened Steam server\nWorld save (5/5) done after SIGINT\n') '$WORK/stdout'"
 sleep 0.3
 # The bracket keeps pgrep from matching its own command line.
-filter_gone() { ! pgrep -f "lembitu-logmar[k] $RUNTIME/.game-server-connected" > /dev/null; }
+filter_gone() { ! pgrep -f "lembitu-logmar[k] $RUNTIME/.steam-server-opened" > /dev/null; }
 check "the filter exits when the server's stdout closes" filter_gone
 
 # --- the image tier ----------------------------------------------------------------------------
@@ -450,20 +521,41 @@ docker run -d --name "$NAME" --read-only \
   -v "$WORK/secret:/run/secrets/lembitu/password:ro" \
   "$TAG" > /dev/null
 
-sleep 3
-first_ready=1
-docker exec "$NAME" lembitu-ready > "$REPORT/ready-first.txt" 2>&1 || first_ready=0
-check "readiness is red right after the start" test "$first_ready" = 0
-
-ready_after=""
-for ((i = 0; i < 90; i++)); do
-  if docker exec "$NAME" lembitu-ready > "$REPORT/ready-last.txt" 2>&1; then ready_after=$((3 + i * 10)); break; fi
+# Readiness, every 2 s from the start. Before each check the server's log is read, so a green check
+# can be put after or before "Opened Steam server". The timeline goes to the report.
+started=$SECONDS
+first_ready="" connected_at="" opened_at="" ready_at="" early=0 gap_red=0
+for ((i = 0; i < 300; i++)); do
+  t=$((SECONDS - started))
+  log_now="$(docker logs "$NAME" 2>/dev/null || true)"
+  connected=0; opened=0
+  grep -q 'Game server connected' <<< "$log_now" && connected=1
+  grep -q 'Opened Steam server' <<< "$log_now" && opened=1
+  [[ -z $connected_at && $connected == 1 ]] && connected_at=$t
+  [[ -z $opened_at && $opened == 1 ]] && opened_at=$t
+  if docker exec "$NAME" lembitu-ready > "$REPORT/ready-last.txt" 2>&1; then
+    [[ -n $first_ready ]] || first_ready=green
+    (( opened )) || early=$((early + 1))
+    ready_at=$t
+    break
+  fi
+  [[ -n $first_ready ]] || { first_ready=red; cp "$REPORT/ready-last.txt" "$REPORT/ready-first.txt"; }
+  (( connected && ! opened )) && gap_red=$((gap_red + 1))
   [[ "$(docker inspect -f '{{.State.Running}}' "$NAME")" == true ]] || break
-  sleep 10
+  sleep 2
 done
-check "readiness turns green once the server is up (about ${ready_after:-never} s)" test -n "$ready_after"
-check "the log said \"Game server connected\" before readiness turned green" \
-  bash -c "docker logs '$NAME' 2>/dev/null | grep -q 'Game server connected'"
+printf 'Game server connected: ~%ss\nOpened Steam server: ~%ss\nlembitu-ready green: ~%ss\nred checks between the two lines: %s\n' \
+  "${connected_at:-never}" "${opened_at:-never}" "${ready_at:-never}" "$gap_red" > "$REPORT/ready-timeline.txt"
+check "readiness is red right after the start" test "$first_ready" = red
+check "readiness turns green (log: \"Game server connected\" ~${connected_at:-never} s, \"Opened Steam server\" ~${opened_at:-never} s; green ~${ready_at:-never} s)" \
+  test -n "$ready_at"
+check "readiness never turned green before the log said \"Opened Steam server\"" test "$early" = 0
+check "readiness stayed red between \"Game server connected\" and \"Opened Steam server\" ($gap_red checks)" \
+  test "$gap_red" -gt 0
+lines_before="$(docker logs "$NAME" 2>&1 | wc -l)"
+for ((i = 0; i < 10; i++)); do docker exec "$NAME" lembitu-ready > /dev/null 2>&1 || true; done
+printf 'server log lines added by ten more readiness checks: %s\n' \
+  "$(( $(docker logs "$NAME" 2>&1 | wc -l) - lines_before ))" >> "$REPORT/ready-timeline.txt"
 docker exec "$NAME" lembitu-a2s > "$REPORT/a2s.txt" 2>&1 || true
 
 docker exec "$NAME" cat /run/lembitu/BepInEx/LogOutput.log > "$REPORT/LogOutput.log"

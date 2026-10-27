@@ -38,7 +38,7 @@ nix shell nixpkgs#skopeo -c skopeo --insecure-policy copy \
 | The plugin tree | `BepInEx/plugins`, `patchers` and the packages' config seeds, made exactly as the live deploy path makes them: `scripts/stage-stack.sh` over the locked mod zips, our plugins added (`.#plugins`), then `scripts/install-plugins.sh`, which withholds the client-only packages. |
 | `lembitu-server` | `scripts/server-entrypoint.sh`, the entrypoint. |
 | `lembitu-ready` | `scripts/server-ready.sh`, the readiness check. |
-| `lembitu-logmark` | `nix/logmark.c`, the filter on the server's stdout that marks "Game server connected". |
+| `lembitu-logmark` | `nix/logmark.c`, the filter on the server's stdout that marks "Opened Steam server". |
 | `lembitu-a2s` | `nix/a2s-info.c`, an A2S_INFO client. Under `-public 0` the server never answers it, so it is not the readiness probe (below). |
 | The base | dumb-init as PID 1; `/lib64/ld-linux-x86-64.so.2`; glibc, libgcc, libstdc++ and zlib on the library path; the CA bundle; tzdata, with Europe/Oslo as local time; `passwd` and `group` entries for `lembitu`, uid and gid 10160. |
 
@@ -108,7 +108,7 @@ Read from the running image: the image tier's `ls -lAR` of every writable mount,
 | `/run/lembitu/BepInEx/plugins/OdinOnDemand/assetbundles/`, `radio/` | OdinOnDemand creates both beside its DLL and reads radio stations from them. The Pack ships none, so they start empty. | Each start. |
 | `/run/lembitu/BepInEx/config/` | The config copied at start; plugins add the files they create when missing, such as FineDining's `Icebox.yml`. | Each start. |
 | `/run/lembitu/BepInEx/cache/`, `DumpedAssemblies/`, `patchers/`, `LogOutput.log` | BepInEx. | Each start. |
-| `/run/lembitu/.game-server-connected` | `lembitu-logmark`, the readiness marker. | Each start. |
+| `/run/lembitu/.steam-server-opened` | `lembitu-logmark`, the readiness marker. | Each start. |
 | `/home/lembitu/.config/unity3d/IronGate/Valheim/prefs` | Unity. | The Pod. |
 | `/home/lembitu/Steam/` | `steamclient.so`: `config/config.vdf`, `logs/`, `appcache/httpcache/`. | The Pod. |
 
@@ -121,26 +121,46 @@ Two plugins needed the runtime tree's help:
 - SeparateSpawns writes `reports/` under BepInEx's plugin path. A link to the volume keeps the
   reports, as the live server keeps them.
 
+The stores must not come from the ConfigMap. A config seed for `ValheimWebMap` or
+`EpicLoot/BountySaves` stops every start with "the config carries …", on purpose: a copy there would
+hide the volume's.
+
 ### Ready
 
-`lembitu-ready` is the readiness probe's exec check. It passes when both hold:
+`lembitu-ready` is the readiness probe's exec check. It passes when all three hold:
 
-- the Unity log has said "Game server connected" since this start (the line is on stdout only, not
-  in BepInEx's `LogOutput.log`);
-- the server's UDP socket, 2457, is bound.
+- the Unity log has said "Opened Steam server" since this start. The line is on stdout only, not in
+  BepInEx's `LogOutput.log`;
+- the game port, UDP 2456, is bound, in `/proc/net/udp` or `udp6`;
+- that port answers a padded SteamNetworkingSockets ConnectionClosed, sent to `127.0.0.1:2456`,
+  with its fixed NoConnection reply, `25 15 4c 45 4d 42 1d 42 4d 45 4c`.
 
-The server binds no socket on 2456, the `-port` it is given. Its Steam game server socket is 2457:
-clients add one to the port they are given, and A2S queries land there too. Read from
-`/proc/net/udp` in the running image, 2026-10-27.
+**Why "Opened Steam server".** Valheim logs it after the world loads, when it opens the listen
+socket clients connect to. "Game server connected" is only the Steam registration (`docs/build.md`,
+"Repeatable native acceptance"). In the image's runs it came 17 to 42 seconds earlier, and
+2456 was not bound or answering until "Opened Steam server". A check on the earlier line went
+green while nobody could join.
 
-Why not A2S_INFO: under `-public 0` the server never answers it. The running image was queried for
-over ten minutes with `lembitu-a2s` and `scripts/query-server.py`, and neither got a reply, though
-2457 was bound. The same image with only `-public 1` answered within about two minutes. So a
-readiness probe built on A2S and ra's `-public 0` can't both stand. `lembitu-ready` keeps
-`-public 0`, and `lembitu-a2s` stays in the image for querying with `-public 1`.
+**Why 2456.** The game's socket is a SteamNetworkingSockets listen socket on the `-port` it is
+given, 2456, bound on the IPv6 wildcard, so it shows in `/proc/net/udp6`. Clients connect there.
+2457 is the Steam game server's query socket. Under `-public 0` it never sends a byte: not to
+A2S_INFO, and not to SteamNetworkingSockets' own packets. Both were measured on 2026-10-27 with
+tcpdump on the running image, over four starts.
 
-In the image tier, readiness was red right after the start and green 63 to 83 seconds later on a
-new world.
+**Why the probe.** A ConnectionClosed asks for no connection, no authentication and no Steam. The
+server answers it from its own networking code with NoConnection, which echoes the two connection
+IDs. The reply is the same 11 bytes every time, and ten checks added no line to the server's log.
+A padded ChallengeRequest (`20 10 00 0d 4c 45 4d 42 …`, 512 bytes) also gets an answer, a
+ChallengeReply that starts `21 0d 4c 45 4d 42 11`. Its 8 challenge bytes change every time, so the
+check uses ConnectionClosed. Both requests must be padded to 512 bytes; the server ignores them
+shorter.
+
+**Why not A2S_INFO.** Under `-public 0` the server never answers it, on 2457 or on 2456. With
+`-public 1` the same image answered on 2457 within about two minutes. `lembitu-a2s` stays in the
+image for querying with `-public 1`.
+
+In the image tier, readiness stays red through "Game server connected" and turns green on the first
+check after "Opened Steam server".
 
 ### Stopping
 

@@ -97,7 +97,7 @@ let
       cp ${pack}/BepInEx/config/BepInEx.cfg $out/config/
     '';
 
-  # The small native tools: lembitu-logmark (the stdout filter that marks "Game server connected")
+  # The small native tools: lembitu-logmark (the stdout filter that marks "Opened Steam server")
   # and lembitu-a2s (an A2S_INFO client; the server answers it only with -public 1).
   tools = runCommandCC "lembitu-tools" { } ''
     mkdir -p $out/bin
