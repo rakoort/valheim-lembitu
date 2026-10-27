@@ -222,17 +222,19 @@ each marked as live's value, in seven files:
 | `BepInEx.cfg` | `[Logging.Disk] WriteUnityLog`, `[Logging.Console] Enabled`, `ForceBepInExTTYDriver`, `PreventClose`, all `true` |
 | `adrian.valheim.guilds.cfg` | `[5 - Territory] BannerRecipe = Wood:1`, `TerritoryBaseSize = 50` |
 | `sighsorry.CreatureManager.cfg` | `[3 - Karma] Dungeon Enforcer Spawn Delay (s) = 7` |
-| `vapok.mods.adventurebackpacks.cfg` | six `Effective Quality Level` keys, and `Enable Anonymous Telemetry = true` |
+| `vapok.mods.adventurebackpacks.cfg` | six `Effective Quality Level` keys; `Enable Anonymous Telemetry` is pinned `false` instead of live's `true` (ra, 2026-10-27) |
 | `MidnightsFX.ProgressivePowers.cfg` | `[Client config] Full Power Displays = 1` |
 | `Raelaziel.OdinArchitect.cfg` (new) | the two elevators' `Crafting Costs` |
 | `Searica.Valheim.ExtraSnapPointsMadeEasy.cfg` (new) | four manual-snapping key bindings |
 
 The rest of the comparison was keys the mods no longer bind (a removed mod's, or an older
 version's), and generated reference, cache and localization files, which the mods write again.
-`scripts/verify-enforced-config.sh` passes on the live tree with these entries (`472 entries
-match`), so on the live server they are already in effect and applying them changes nothing; on
-the image's own run it finds exactly these 21 different. The ConfigMaps stay small (about 150
-KB), the entrypoint is unchanged, and drift still can't outlive a restart.
+`scripts/verify-enforced-config.sh` passed on the live tree with these entries (`472 entries
+match`), so on the live server they were already in effect. The one exception since: telemetry is
+pinned off by ra's decision, so against today's live tree the check reports that one key until the
+overlay is next applied there. On the image's own run it finds exactly these 21 different. The
+ConfigMaps stay small (about 150 KB), the entrypoint is unchanged, and drift still can't outlive a
+restart.
 
 ## The Workload
 
