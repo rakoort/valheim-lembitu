@@ -1,0 +1,22 @@
+[
+  {
+    "pname": "BepInEx.AssemblyPublicizer.MSBuild",
+    "version": "0.4.3",
+    "hash": "sha256-Xg6TAg7xJfAJL5aorb5n22/jHCtmeJuKFme+aBr8fRA="
+  },
+  {
+    "pname": "Microsoft.NETFramework.ReferenceAssemblies",
+    "version": "1.0.3",
+    "hash": "sha256-FBoJP5DHZF0QHM0xLm9yd4HJZVQOuSpSKA+VQRpphEE="
+  },
+  {
+    "pname": "Microsoft.NETFramework.ReferenceAssemblies.net472",
+    "version": "1.0.3",
+    "hash": "sha256-/6ClVwo5+RE5kWTQWB/93vmbXj37ql8iDlziKWm89Xw="
+  },
+  {
+    "pname": "Newtonsoft.Json",
+    "version": "13.0.4",
+    "hash": "sha256-8JCB1FdAW681qXP6DFDWvycu1oPyVoxaYgpJ2pUvZSk="
+  }
+]
