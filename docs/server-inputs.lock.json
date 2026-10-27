@@ -7,6 +7,13 @@
     "narHash": "sha256-7GLhPbO1FDgx2HPORAA9sLtrETQCqiY6+a4At5+PUWc=",
     "files": "docs/server-files.sha256"
   },
+  "redist": {
+    "app": 896660,
+    "depot": 1006,
+    "manifest": "4559160656493359681",
+    "narHash": "sha256-I3vbf2bQIAcymEwRVlg1pBiJzYubLPusbpPziofJazY=",
+    "files": "docs/redist-files.sha256"
+  },
   "bepinexPack": {
     "package": "denikson/BepInExPack_Valheim",
     "version": "5.4.2351",

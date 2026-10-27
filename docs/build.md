@@ -99,8 +99,9 @@ development loop above, which follows the latest public game:
 
 | File | Holds |
 | --- | --- |
-| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 4001404753685205688, build 25909431, and the NAR hash of the fetched tree. BepInExPack 5.4.2351's URL and sha256. Each adopted mod's download URL and sha256. |
+| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 4001404753685205688, build 25909431, and the NAR hash of the fetched tree. The install's second depot, the Steamworks SDK redistributable: depot 1006, manifest 4559160656493359681, and its NAR hash. BepInExPack 5.4.2351's URL and sha256. Each adopted mod's download URL and sha256. |
 | `docs/server-files.sha256` | The server's 989 files in `sha256sum` format, so a copy of an install also checks with `sha256sum -c`. |
+| `docs/redist-files.sha256` | The redistributable's 4 files, in the same format. |
 | `nix/plugins-deps.json` | The plugins' NuGet packages, with their hashes. |
 
 The flake builds from these alone, on x86_64-linux:
@@ -110,6 +111,11 @@ The flake builds from these alone, on x86_64-linux:
   output is about 2 GB, and the fetch takes under a minute on a fast line. If Steam stops serving
   that manifest anonymously, the build fails, and nothing falls back. The depot marks no file
   executable, so no file in the output is executable, `valheim_server.x86_64` included.
+- `nix build .#redist` fetches depot 1006 the same way: 111 MB, four files, among them
+  `linux64/steamclient.so`. The server's `libsteam_api.so` loads `steamclient.so` at run time,
+  and the depot's `start_server.sh` puts `./linux64` on `LD_LIBRARY_PATH` for it. The server
+  depot's own `docker/steamclient.so` is a different build. `docs/live-vs-lock-20261027.md` has
+  the evidence.
 - `nix build .#bepinexPack` and `nix build .#mods` are `fetchurl`s at the locked sha256s. `mods`
   is one directory, with each zip named the way `scripts/stage-stack.sh` names its cache.
 - `nix build .#plugins` is a `buildDotnetModule`. It runs `scripts/extract-refs.sh` against the
@@ -122,24 +128,33 @@ test. With no arguments, it checks the lock against `docs/modstack.lock.json`, t
 sources in `docs/modstack.md` and `scripts/extract-refs.sh`. Given inputs, it checks their bytes:
 
 ```sh
-scripts/verify-server-inputs.sh --server <server-dir> --bepinex <pack.zip> --mods <dir-of-zips>
+scripts/verify-server-inputs.sh --server <server-dir> --redist <redist-dir> \
+  --bepinex <pack.zip> --mods <dir-of-zips>
 ```
 
-The server tree must hold regular files only, as the depot ships it. A symlink is refused there,
+A live install holds both depots in one directory. Give that directory as both `--server` and
+`--redist`: each file is checked against its own depot's list, and nothing either list lacks may
+be in it.
+
+The depot trees must hold regular files only, as the depots ship them. A symlink is refused there,
 listed or not, and so is a fifo, socket or device. A listed path that is a symlink is refused even
 when the bytes it reaches match: they are its target's, which can sit outside the tree. The mods
 directory allows a listed zip to be a symlink, because Nix's `linkFarm` supplies every zip that
 way. Each one is judged by the bytes it reaches, and any unlisted entry is refused.
 
-Each refusal names its component (`server`, `loader`, `mod` or `lock`) and the file. A pin bump
-rewrites `docs/modstack.lock.json` through `scripts/stage-stack.sh`. The same commit updates the
-mod's entry in `docs/server-inputs.lock.json`: the URL the stager fetches, and the same sha256.
-Until it does, the verifier refuses, and so does the test run. After a `PackageReference` changes,
-regenerate the NuGet lock with
+Each refusal names its component (`server`, `redist`, `loader`, `mod` or `lock`) and the file. A
+pin bump rewrites `docs/modstack.lock.json` through `scripts/stage-stack.sh`. The same commit
+updates the mod's entry in `docs/server-inputs.lock.json`: the URL the stager fetches, and the
+same sha256. Until it does, the verifier refuses, and so does the test run. After a
+`PackageReference` changes, regenerate the NuGet lock with
 `nix build .#plugins.fetch-deps -o fetch-deps && ./fetch-deps nix/plugins-deps.json`.
 
-A plugin DLL embeds the path of its PDB. In Nix that path is always `/build/source/...`, so Nix
-builds reproduce each other byte for byte, but never match a DLL built in another checkout.
+A plugin DLL embeds the path of its PDB, the git commit of the checkout it was built in (in its
+informational version), and content-derived IDs that change with the compiler. In Nix the path
+is always `/build/source/...` and there is no commit, so Nix builds reproduce each other byte for
+byte, but never match a DLL built in another checkout. The live server's DLLs were built with a
+newer compiler than this SDK 8 build, which also changes the IL of iterator `Dispose` methods:
+`docs/live-vs-lock-20261027.md` has the comparison.
 
 ## Adding a plugin
 
