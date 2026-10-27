@@ -20,8 +20,10 @@
 #   bannedlist.txt          bans - server
 #
 # ServerManager/ holds the authoritative account-global characters (ADR-0034).
-# Guilds/, Marketplace/ and Lembitu.Guilds/ under the sibling bepinex directory
-# hold per-world state, not deployed configuration. Override with --bepinex.
+# Guilds/, Marketplace/, Lembitu.Guilds/, ValheimWebMap/ and EpicLoot/BountySaves/ under the
+# sibling bepinex directory hold per-world and per-player state, not deployed configuration
+# (BEPINEX_STORES in lib/save-format.sh). Each is optional and recorded absent until a plugin
+# writes it. Override the directory with --bepinex.
 # All these stores travel together; selecting one world is refused once installed.
 # Consistency: world generation markers and state file hashes must remain unchanged
 # across copying. This is a stable disk snapshot, not a requested checkpoint. World
@@ -128,7 +130,8 @@ capture() {
     [[ ! -d "$SAVEDIR/ServerManager" ]] || cp -a "$SAVEDIR/ServerManager" "$stage/ServerManager" || rc=$?
     mkdir -p "$stage/bepinex-state"
     for f in "${BEPINEX_STORES[@]}"; do
-      [[ ! -d "$BEPINEX/$f" ]] || cp -a "$BEPINEX/$f" "$stage/bepinex-state/$f" || rc=$?
+      # A store may be nested (EpicLoot/BountySaves) without the rest of its parent.
+      [[ ! -d "$BEPINEX/$f" ]] || { mkdir -p "$(dirname "$stage/bepinex-state/$f")" && cp -a "$BEPINEX/$f" "$stage/bepinex-state/$f"; } || rc=$?
     done
     [[ ! -d "$SAVEDIR/ServerManager" || -d "$stage/ServerManager/characters" ]] || die "character store disappeared during capture"
     after=""
@@ -177,7 +180,7 @@ capture "$stage" "${worlds[@]}"
   printf 'generations_marker_set=%s\n' "$(for d in "${worlds[@]}"; do printf '%s=%s ' "$(basename "$d")" "$(generations "$d")"; done)"
   printf 'host=%s\n' "$(hostname)"
   printf 'format=2\n'
-  printf 'contents=worlds_local,cache,admission lists,ServerManager,bepinex-state/Guilds,bepinex-state/Marketplace,bepinex-state/Lembitu.Guilds\n'
+  printf 'contents=worlds_local,cache,admission lists,ServerManager%s\n' "$(printf ',bepinex-state/%s' "${BEPINEX_STORES[@]}")"
   printf 'excluded=BepInEx deployed configuration; local character exports\n'
   printf 'consistency=stable disk files; no forced checkpoint; world and characters may differ by upload interval (300s), longer if stalled\n'
   for f in cache ServerManager "${ADMISSION_FILES[@]}" "${BEPINEX_STORES[@]/#/bepinex-state/}"; do

@@ -48,8 +48,11 @@ has_generation() {  # has_generation <world-dir>
 # Admission files that live beside the worlds in the save directory. Valheim reads all three.
 ADMISSION_FILES=(permittedlist.txt adminlist.txt bannedlist.txt)
 # Guilds/Marketplace use <World>.dat, .dat.bak and .log; claims use <World>.claims.json.
+# ValheimWebMap/<World>/ is the web map fork's explored mask, history and base map cache;
+# EpicLoot/BountySaves/ holds the players' bounty ledgers (the rest of EpicLoot/ is configuration).
+# Every store is optional: one a fresh server has not written yet is recorded absent.
 # ServerManager is account-global, so its archives restore only as a whole.
-BEPINEX_STORES=(Guilds Marketplace Lembitu.Guilds)
+BEPINEX_STORES=(Guilds Marketplace Lembitu.Guilds ValheimWebMap EpicLoot/BountySaves)
 
 # Include empty directories as well as file bytes in the archive integrity contract.
 store_inventory() {

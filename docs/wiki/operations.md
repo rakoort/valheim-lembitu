@@ -177,7 +177,7 @@ amendment records the cap, the enforced Pack and admission. The research is in
 | Player cap | Vanilla's ten; the MaxPlayerCount fork leaves |
 | Discord | The Run's own Discord server. ServerManager's webhooks post status and activity publicly and admin alerts privately, and its bot bridges chat; DiscordConnector leaves. Channels: status, activity, announcements and Pack releases, support, one per guild made by the admin when the guild forms, and a private admin channel |
 | Monitoring | Built on OdinEye plus host statistics. Alerts go to the private admin channel when the server is down or unresponsive, unreachable from outside, misses a world save, fails a backup or its off-host copy, or runs short of memory, CPU or disk |
-| Backups | One hourly archive holds the world, cache, admission lists, the character store, and the Guilds, Marketplace and region-claim files, so a restore returns all of them to the same hour |
+| Backups | One hourly archive holds the world, cache, admission lists, the character store, the Guilds, Marketplace and region-claim files, the web map's data and the bounty ledgers, so a restore returns all of them to the same hour |
 | Admission | Public with a password, shared in a members-only Discord channel; the owner is the only admin |
 | Host | The game stays on astral-bicep with reserved CPU and memory (CPU shares 4096, 4 GiB reservation). The other projects' containers are not capped (owner, 2026-10-09); monitoring's resource alerts decide whether that changes |
 | Web map | koenhendriks/ValheimWebMap, public with every layer: everyone's live position, heading and guild, live combined exploration, cartography-table pins, deaths and play sessions, at `https://lembitu-map.astral.ee` through a Cloudflare Tunnel with a Cloudflare rate limit; no router port opens and the game's own port 3000 stays private. The owner reversed web-map position privacy on 2026-10-09; the in-game public-position setting stays off. Carried as a fork so it draws the whole 13,250 m world (ADR-0003, 2026-10-07 amendment) |
@@ -464,8 +464,21 @@ archive taken during the 06:00 window cannot replay its one-off jobs. `INVENTORY
 file's SHA-256; archives are mode 0600 because they hold private player data. The capture does not
 request a checkpoint: it checks that files stay unchanged while it copies, and `STATE-TIMES.txt`
 records their disk times, so world and characters can differ by up to the five-minute character
-interval, longer if a client stalls. Proved by `test/backup-world.test.sh` (30 checks, no network);
+interval, longer if a client stalls. Proved by `test/backup-world.test.sh` (36 checks, no network);
 the test-host restore with a rejoining character is part of the v17 acceptance run.
+
+**The web map's data and the bounty ledgers are in the archive too (2026-10-27).** `ValheimWebMap/`
+(the map fork's explored mask, history and base map cache, one directory per world) and
+`EpicLoot/BountySaves/` (one bounty ledger per player) sit in the same bepinex directory as
+`Guilds/`. They are in the same list, `BEPINEX_STORES` in `scripts/lib/save-format.sh`, which both
+scripts read, so they are archived under `bepinex-state/`, hashed in `INVENTORY.txt`, watched for
+writes during the copy (the map writes every 60 s by default when its data changed) and restored
+like the others. From `EpicLoot/` only `BountySaves/` is taken; the rest is configuration. Each is
+optional, as the other bepinex stores are: a fresh server that has written neither backs up, and
+`MANIFEST.txt` records them `absent`. A restore moves existing copies aside to
+`ValheimWebMap.replaced-<stamp>` and `EpicLoot/BountySaves.replaced-<stamp>`. An archive made
+before this change holds neither store, so restoring one moves the current copies aside too; copy
+them back by hand to keep the map and the bounties current.
 
 **The schedule, the retention and the off-host copy are now chosen and installed.** The decision is
 committed as two systemd user units in `config/backup/`, which is what makes it reviewable in a diff

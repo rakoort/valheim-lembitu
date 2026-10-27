@@ -3,9 +3,10 @@
 #
 #   scripts/restore-world.sh --archive <file> --savedir <dir> [--world <name>] [--dry-run] [--force]
 #
-# Restores the world, cache, admission lists, authoritative ServerManager store and
-# Guilds/Marketplace/region-claim state together. BepInEx deployed configuration is
-# excluded. Use an isolated destination and stop the target server before restoring.
+# Restores the world, cache, admission lists, authoritative ServerManager store and the
+# BEPINEX_STORES (Guilds, Marketplace, region claims, web map data, bounty ledgers) together.
+# BepInEx deployed configuration is excluded. Use an isolated destination and stop the target
+# server before restoring.
 # Existing stores are moved aside unless --force is given. Account-global character
 # archives cannot select a single world. Integrity is checked before any target write.
 #

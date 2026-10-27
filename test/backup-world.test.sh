@@ -371,5 +371,105 @@ else
   report fail "rotation keeps the newest archives by timestamp across different world labels"
 fi
 
+# --- 17. the web map's data and the bounty ledgers travel with the other stores ----------------
+# Both sit in the live server's bepinex config directory beside Guilds/ (the 2026-10-27 read of
+# bicep). EpicLoot/BountySaves/ is a store inside a directory that is otherwise configuration, so
+# only BountySaves/ is state.
+
+PS="$WORK/plugin-stores"; PSTATE="$PS/state"
+make_world "$PS/save" Run 1
+mkdir -p "$PSTATE/Guilds" "$PSTATE/ValheimWebMap/Run" "$PSTATE/EpicLoot/BountySaves"
+printf 'guild vault\n'           > "$PSTATE/Guilds/Run.dat"
+printf 'explored mask \001\002\n' > "$PSTATE/ValheimWebMap/Run/explored.bin"
+printf '{"sessions":[]}\n'       > "$PSTATE/ValheimWebMap/Run/history.json"
+printf 'base map cache\n'        > "$PSTATE/ValheimWebMap/Run/map.png"
+printf 'ledger one\n'            > "$PSTATE/EpicLoot/BountySaves/76561198000000001.json"
+printf 'ledger two\n'            > "$PSTATE/EpicLoot/BountySaves/76561198000000002.json"
+printf 'loot tables\n'           > "$PSTATE/EpicLoot/loottables.json"
+plugin_files=(ValheimWebMap/Run/explored.bin ValheimWebMap/Run/history.json ValheimWebMap/Run/map.png
+              EpicLoot/BountySaves/76561198000000001.json EpicLoot/BountySaves/76561198000000002.json)
+
+ps_archive=""
+if "$BACKUP" --savedir "$PS/save" --bepinex "$PSTATE" --out "$PS/backups" > "$PS/archive" 2> "$WORK/out"; then
+  ps_archive="$(cat "$PS/archive")"
+fi
+captured_ok=false
+if [[ -n "$ps_archive" ]]; then
+  mkdir -p "$PS/x"
+  tar xzf "$ps_archive" -C "$PS/x"
+  captured_ok=true
+  for f in "${plugin_files[@]}"; do
+    sum="$(shasum -a 256 "$PSTATE/$f" | cut -d' ' -f1)"
+    grep -Fxq "$sum  ./bepinex-state/$f" "$PS/x/INVENTORY.txt" || captured_ok=false
+    cmp -s "$PSTATE/$f" "$PS/x/bepinex-state/$f" || captured_ok=false
+  done
+  [[ ! -e "$PS/x/bepinex-state/EpicLoot/loottables.json" ]] || captured_ok=false
+  grep -Fxq 'store_bepinex-state/ValheimWebMap=present' "$PS/x/MANIFEST.txt" || captured_ok=false
+  grep -Fxq 'store_bepinex-state/EpicLoot/BountySaves=present' "$PS/x/MANIFEST.txt" || captured_ok=false
+  grep -q '^contents=.*,bepinex-state/ValheimWebMap,bepinex-state/EpicLoot/BountySaves$' "$PS/x/MANIFEST.txt" || captured_ok=false
+fi
+if $captured_ok; then
+  report ok "captures ValheimWebMap and EpicLoot/BountySaves with their SHA-256 in INVENTORY, not EpicLoot's config"
+else report fail "captures ValheimWebMap and EpicLoot/BountySaves into the archive and INVENTORY"; fi
+
+for f in ValheimWebMap/Run/explored.bin EpicLoot/BountySaves/76561198000000001.json; do
+  rm -rf "$PS/flip" "$PS/flip.tar.gz" "$PS/no-write"
+  # One byte changed in place: same size, so only the hash can tell.
+  if [[ -f "$PS/x/bepinex-state/$f" ]] && cp -a "$PS/x" "$PS/flip" \
+     && printf 'X' | dd of="$PS/flip/bepinex-state/$f" bs=1 seek=0 conv=notrunc 2>/dev/null \
+     && (cd "$PS/flip" && tar czf "$PS/flip.tar.gz" .) \
+     && ! "$RESTORE" --archive "$PS/flip.tar.gz" --savedir "$PS/no-write/save" --bepinex "$PS/no-write/state" > "$WORK/out" 2>&1 \
+     && grep -q 'inventory mismatch' "$WORK/out" && [[ ! -e "$PS/no-write" ]]; then
+    report ok "inventory check catches a changed byte in $f before any write"
+  else report fail "inventory check catches a changed byte in $f"; fi
+done
+
+# A fresh server: the map has not written its data yet and EpicLoot has config but no bounties.
+mkdir -p "$PS/fresh/state/Guilds" "$PS/fresh/state/EpicLoot"
+printf 'guild vault\n' > "$PS/fresh/state/Guilds/Run.dat"
+printf 'loot tables\n' > "$PS/fresh/state/EpicLoot/loottables.json"
+fresh_ok=false
+if "$BACKUP" --savedir "$PS/save" --bepinex "$PS/fresh/state" --out "$PS/fresh/backups" > "$PS/fresh/archive" 2> "$WORK/out"; then
+  fresh_manifest="$(tar xzOf "$(cat "$PS/fresh/archive")" ./MANIFEST.txt)"
+  grep -Fxq 'store_bepinex-state/ValheimWebMap=absent' <<<"$fresh_manifest" \
+    && grep -Fxq 'store_bepinex-state/EpicLoot/BountySaves=absent' <<<"$fresh_manifest" \
+    && "$RESTORE" --archive "$(cat "$PS/fresh/archive")" --savedir "$PS/fresh/target/save" --bepinex "$PS/fresh/target/state" > "$WORK/out" 2>&1 \
+    && cmp -s "$PS/fresh/state/Guilds/Run.dat" "$PS/fresh/target/state/Guilds/Run.dat" \
+    && fresh_ok=true
+fi
+if $fresh_ok; then
+  report ok "a fresh server without map data or bounty ledgers backs up, records them absent and restores"
+else report fail "a missing ValheimWebMap or EpicLoot/BountySaves is tolerated"; fi
+
+# Round trip into an empty target, then over a target holding later copies of both stores.
+roundtrip_ok=false
+if [[ -n "$ps_archive" ]] && "$RESTORE" --archive "$ps_archive" --savedir "$PS/empty/save" --bepinex "$PS/empty/state" > "$WORK/out" 2>&1 \
+   && diff -r "$PSTATE/ValheimWebMap" "$PS/empty/state/ValheimWebMap" > /dev/null \
+   && diff -r "$PSTATE/EpicLoot/BountySaves" "$PS/empty/state/EpicLoot/BountySaves" > /dev/null; then
+  roundtrip_ok=true
+fi
+if $roundtrip_ok; then report ok "restores ValheimWebMap and EpicLoot/BountySaves into an empty target"
+else report fail "restores ValheimWebMap and EpicLoot/BountySaves into an empty target"; fi
+
+LATER="$PS/later/state"
+mkdir -p "$LATER/ValheimWebMap/Run" "$LATER/EpicLoot/BountySaves"
+printf 'later mask\n'         > "$LATER/ValheimWebMap/Run/explored.bin"
+printf 'later ledger\n'       > "$LATER/EpicLoot/BountySaves/76561198000000009.json"
+printf 'target loot tables\n' > "$LATER/EpicLoot/loottables.json"
+aside_ok=false
+if [[ -n "$ps_archive" ]] && "$RESTORE" --archive "$ps_archive" --savedir "$PS/later/save" --bepinex "$LATER" > "$WORK/out" 2>&1 \
+   && diff -r "$PSTATE/ValheimWebMap" "$LATER/ValheimWebMap" > /dev/null \
+   && diff -r "$PSTATE/EpicLoot/BountySaves" "$LATER/EpicLoot/BountySaves" > /dev/null \
+   && map_aside="$(find "$LATER" -maxdepth 1 -name 'ValheimWebMap.replaced-*')" \
+   && bounty_aside="$(find "$LATER/EpicLoot" -maxdepth 1 -name 'BountySaves.replaced-*')" \
+   && grep -Fxq 'later mask' "$map_aside/Run/explored.bin" \
+   && grep -Fxq 'later ledger' "$bounty_aside/76561198000000009.json" \
+   && grep -Fxq 'target loot tables' "$LATER/EpicLoot/loottables.json"; then
+  aside_ok=true
+fi
+if $aside_ok; then
+  report ok "restore over later copies moves both stores aside and leaves EpicLoot's config alone"
+else report fail "restore over later ValheimWebMap and EpicLoot/BountySaves moves them aside"; fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
