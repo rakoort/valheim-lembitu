@@ -541,5 +541,49 @@ if [[ -s "$PS/fresh/archive" ]] && "$RESTORE" --archive "$(cat "$PS/fresh/archiv
   report ok "an archive recording both stores absent still moves the live copies aside"
 else report fail "an archive recording both stores absent still moves the live copies aside"; fi
 
+# --- 19. --root: the Workload's volume ---------------------------------------------------------
+# The Pod's volume is <root>/save (the -savedir) and <root>/bepinex (the plugin stores), and on
+# astral-bicep after the cutover it is /state/lembitu/world. --root reads it with no change to the
+# archive: the same files as --savedir <root>/save --bepinex <root>/bepinex. What the volume holds
+# beside them (SeparateSpawns' root in dedicated/, its reports) is not in the archive, as before.
+
+RT="$WORK/root"; VOL="$RT/volume"
+make_world "$VOL/save" Run 1
+mkdir -p "$VOL/bepinex/Guilds" "$VOL/bepinex/ValheimWebMap/Run" "$VOL/bepinex/EpicLoot/BountySaves" \
+  "$VOL/bepinex/SeparateSpawns/reports/1" "$VOL/dedicated/SeparateSpawns/worlds"
+printf 'guild vault\n'  > "$VOL/bepinex/Guilds/Run.dat"
+printf 'mask\n'         > "$VOL/bepinex/ValheimWebMap/Run/explored.bin"
+printf 'ledger\n'       > "$VOL/bepinex/EpicLoot/BountySaves/76561198000000001.json"
+printf 'report\n'       > "$VOL/bepinex/SeparateSpawns/reports/1/summary.txt"
+printf '{}\n'           > "$VOL/dedicated/SeparateSpawns/worlds/1.json"
+listing() {  # listing <archive>: its paths, without the two files that name the capture's time
+  tar tzf "$1" | grep -v -e '^\./MANIFEST\.txt$' -e '^\./STATE-TIMES\.txt$' | LC_ALL=C sort
+}
+root_ok=false
+if "$BACKUP" --root "$VOL" --out "$RT/by-root" > "$RT/root-archive" 2> "$WORK/out" \
+   && "$BACKUP" --savedir "$VOL/save" --bepinex "$VOL/bepinex" --out "$RT/by-dirs" > "$RT/dirs-archive" 2> "$WORK/out" \
+   && diff <(listing "$(cat "$RT/root-archive")") <(listing "$(cat "$RT/dirs-archive")") > /dev/null \
+   && tar xzOf "$(cat "$RT/root-archive")" ./bepinex-state/Guilds/Run.dat | grep -Fxq 'guild vault' \
+   && tar xzOf "$(cat "$RT/root-archive")" ./bepinex-state/EpicLoot/BountySaves/76561198000000001.json | grep -Fxq 'ledger' \
+   && ! tar tzf "$(cat "$RT/root-archive")" | grep -q -e SeparateSpawns -e dedicated; then
+  root_ok=true
+fi
+if $root_ok; then report ok "--root captures the volume's save and plugin stores: the same archive as --savedir and --bepinex"
+else report fail "--root captures the volume's save and plugin stores: the same archive as --savedir and --bepinex"; fi
+
+if [[ -s "$RT/root-archive" ]] && "$RESTORE" --archive "$(cat "$RT/root-archive")" --root "$RT/restored" > "$WORK/out" 2>&1 \
+   && diff -r "$VOL/save/worlds_local" "$RT/restored/save/worlds_local" > /dev/null \
+   && cmp -s "$VOL/bepinex/Guilds/Run.dat" "$RT/restored/bepinex/Guilds/Run.dat" \
+   && diff -r "$VOL/bepinex/ValheimWebMap" "$RT/restored/bepinex/ValheimWebMap" > /dev/null; then
+  report ok "restore --root puts the world in <root>/save and the stores in <root>/bepinex"
+else report fail "restore --root puts the world in <root>/save and the stores in <root>/bepinex"; fi
+
+if ! "$BACKUP" --root "$VOL" --savedir "$VOL/save" --out "$RT/both" > "$WORK/out" 2>&1 \
+   && grep -q -- '--root replaces --savedir and --bepinex' "$WORK/out" && [[ ! -e "$RT/both" ]] \
+   && ! "$RESTORE" --archive "$(cat "$RT/root-archive")" --root "$RT/both" --bepinex "$RT/elsewhere" > "$WORK/out" 2>&1 \
+   && grep -q -- '--root replaces --savedir and --bepinex' "$WORK/out" && [[ ! -e "$RT/both" ]]; then
+  report ok "--root with --savedir or --bepinex is refused, by both scripts"
+else report fail "--root with --savedir or --bepinex is refused, by both scripts"; fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

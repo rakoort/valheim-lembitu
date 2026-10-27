@@ -437,6 +437,12 @@ flat-file backup cannot be restored into a server that will then refuse to load 
 existing world aside to `<World>.replaced-<stamp>` rather than deleting it. `--dry-run` prints the
 plan and changes nothing.
 
+**On the Pool, both scripts take the volume's root.** The Workload keeps the save in `save/` and the
+plugin stores in `bepinex/` of one volume, `/state/lembitu/world` on astral-bicep
+(`docs/server-image.md`, "The volume"). `--root <dir>` reads and restores `<dir>/save` and
+`<dir>/bepinex`, the same archive as `--savedir` and `--bepinex`; after the cutover the backup unit
+runs `scripts/backup-world.sh --root /state/lembitu/world`.
+
 Measured on astral-tricep, 2026-09-15, on a disposable server: the capture of a real 1.0 world was
 byte-identical to the source after restore (`diff` of per-file MD5s, zero differences), and a server
 started against the restored directory logged `ZNet.LoadWorld: launch (launch), save number 1`

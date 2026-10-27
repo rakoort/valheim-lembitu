@@ -1,0 +1,180 @@
+# lembitu, the game server, as valheim-lembitu's Workload on the fleet's Pool (#114; astral-fleet's
+# lembitu-cluster slice 04, item A3). docs/server-image.md, "The Workload", says why each field is
+# what it is; test/lembitu-workload.test.sh checks them in the fleet's own render.
+#
+# The fleet owns what this Pod plugs into, in astral-fleet's cluster/projects/:
+# - the Services lembitu-game (UDP 2456 and 2457 on NodePorts 32456 and 32457) and lembitu-map
+#   (TCP 3000), which select app.kubernetes.io/name: lembitu;
+# - the NetworkPolicy fleet-lembitu, which selects fleet.astral.ee/egress: lembitu;
+# - the PersistentVolume fleet-lembitu, /state/lembitu/world on astral-bicep, pre-bound to the
+#   claim world-lembitu-0 that the template `world` below makes;
+# - the priority class fleet-games, which only this namespace may name.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: lembitu
+spec:
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: lembitu
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: lembitu
+        fleet.astral.ee/egress: lembitu
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: astral-bicep
+      priorityClassName: fleet-games
+      # dumb-init turns the kubelet's SIGTERM into the SIGINT the server saves on; a full save of
+      # the live world takes seconds, the image's runs exited in 13 to 24 s.
+      terminationGracePeriodSeconds: 180
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10160
+        runAsGroup: 10160
+        fsGroup: 10160
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: server
+          image: astral-bicep.tail032eca.ts.net:30500/project/valheim-lembitu/server@sha256:a3404f9f2b5b0d93004f3e156a918d78c756f8a04c01bff4b0f88f4d55af86c7
+          ports:
+            - name: game
+              containerPort: 2456
+              protocol: UDP
+            - name: query
+              containerPort: 2457
+              protocol: UDP
+            - name: map
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # ServerManager's Discord bot reads its token from the environment, as on the live
+            # container (docs/wiki/discord.md). Empty, it starts without the bot.
+            - name: SERVERMANAGER_DISCORD_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lembitu-secrets
+                  key: discord-bot-token
+          # Guaranteed: requests equal limits, so the kernel's OOM killer takes the game last.
+          resources:
+            requests:
+              cpu: "3"
+              memory: 6Gi
+            limits:
+              cpu: "3"
+              memory: 6Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          # lembitu-ready: "Opened Steam server" in this start's log, UDP 2456 bound, and a
+          # NoConnection answer to a ConnectionClosed (scripts/server-ready.sh). The startup probe
+          # gives the world and the mods 15 minutes (90 x 10 s); the image's starts took about 110 s.
+          # No liveness probe: a restart mid-save would cost the save.
+          startupProbe:
+            exec:
+              command: [lembitu-ready]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 90
+          readinessProbe:
+            exec:
+              command: [lembitu-ready]
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: world
+              mountPath: /data
+            - name: runtime
+              mountPath: /run/lembitu
+            - name: home
+              mountPath: /home/lembitu
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /etc/lembitu/bepinex
+              readOnly: true
+            - name: dedicated
+              mountPath: /etc/lembitu/dedicated
+              readOnly: true
+            - name: secrets
+              mountPath: /run/secrets/lembitu
+              readOnly: true
+      volumes:
+        - name: runtime
+          emptyDir: {}
+        - name: home
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        # config/enforced: its top-level files, and its nested ones put back at their paths
+        # (config/kustomization.yaml).
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: lembitu-config
+              - configMap:
+                  name: lembitu-config-nested
+                  items:
+                    - key: CreatureManager.ai.yml
+                      path: CreatureManager/ai.yml
+                    - key: CreatureManager.attacks.yml
+                      path: CreatureManager/attacks.yml
+                    - key: CreatureManager.creatures.yml
+                      path: CreatureManager/creatures.yml
+                    - key: CreatureManager.karma.yml
+                      path: CreatureManager/karma.yml
+                    - key: CreatureManager.levels.yml
+                      path: CreatureManager/levels.yml
+                    - key: CreatureManager.projectile.yml
+                      path: CreatureManager/projectile.yml
+                    - key: DataForge.effects.yml
+                      path: DataForge/effects.yml
+                    - key: DataForge.items.yml
+                      path: DataForge/items.yml
+                    - key: DataForge.pieces.yml
+                      path: DataForge/pieces.yml
+                    - key: EpicLoot.patches.lembitu-seaanimals.json
+                      path: EpicLoot/patches/lembitu-seaanimals.json
+                    - key: FineDining.Spoilage.yml
+                      path: FineDining/Spoilage.yml
+        - name: dedicated
+          configMap:
+            name: lembitu-dedicated
+        # The join password as a file, read only by its owner (r2's N4); the entrypoint passes it
+        # to -password, the one place Valheim takes it.
+        - name: secrets
+          secret:
+            secretName: lembitu-secrets
+            defaultMode: 0400
+            items:
+              - key: password
+                path: password
+  volumeClaimTemplates:
+    - metadata:
+        name: world
+        labels:
+          # ra's decision of 2026-10-20 (ADR-0005, "Amendment 2026-10-20: backups"): no fleet copy;
+          # the game's own archives are the protection.
+          backup.fleet/tier: none
+        annotations:
+          backup.fleet/regeneration: >-
+            the game's own hourly archives on bicep (48) and their 30-day mirror on tricep: restore
+            the newest with scripts/restore-world.sh --archive <newest> --root /state/lembitu/world,
+            with the server stopped
+      spec:
+        storageClassName: fleet-lembitu-local
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 20Gi

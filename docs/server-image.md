@@ -83,11 +83,12 @@ can't break the server's stdout mid-save, and it exits when the server closes it
 
 | Path | What | Notes |
 | --- | --- | --- |
-| `/data` | The world volume, owned by uid 10160 (the Workload's `fsGroup`). | `save/` is the game's `-savedir`; `bepinex/` holds the plugins' stores. |
+| `/data` | The world volume, owned by uid 10160 (the Workload's `fsGroup`). | `save/` is the game's `-savedir`; `bepinex/` holds the plugins' stores; `dedicated/` is SeparateSpawns' own config root. |
 | `/run/lembitu` | An emptyDir, mounted with exec. | The runtime tree, rebuilt at every start. |
 | `/home/lembitu` | An emptyDir. | Unity's and Steam's per-user files. |
 | `/tmp` | An emptyDir. | |
-| `/etc/lembitu/bepinex` | The ConfigMap: the enforced and dedicated BepInEx config. | Read with `cp -RL`; its `..data` entries are skipped. |
+| `/etc/lembitu/bepinex` | `config/enforced`, from the ConfigMaps `lembitu-config` and `lembitu-config-nested`. | Read with `cp -RL`; its `..data` entries are skipped. |
+| `/etc/lembitu/dedicated` | `config/dedicated`, from the ConfigMap `lembitu-dedicated`. | SeparateSpawns' `.cfg`, copied fresh at every start, and its roster seed, copied only when `/data/dedicated` has none. |
 | `/run/secrets/lembitu/password` | The Secret's join password. | |
 
 The root filesystem can be read-only: the image tier runs that way, and nothing writes outside
@@ -106,6 +107,9 @@ Read from the running image: the image tier's `ls -lAR` of every writable mount,
 | `/data/bepinex/ValheimWebMap/` | The map fork's data, per world: the explored mask, history and base map cache. Its default directory is `BepInEx/config/ValheimWebMap`, linked here. | The volume. |
 | `/data/bepinex/EpicLoot/BountySaves/` | EpicLoot's bounty ledgers, one per player. They are written under `BepInEx/config/EpicLoot`, and `BountySaves/` is linked here. | The volume. |
 | `/data/bepinex/SeparateSpawns/reports/` | SeparateSpawns' layout report of each world. It writes beside its DLL; the runtime tree links `reports/` here. | The volume. |
+| `/data/dedicated/SeparateSpawns/worlds/<world uid>.json` | SeparateSpawns: each world's layout, the start regions and the Eikthyr altars it placed. Written under `<game root>/config/bepinex`, which is a link here. | The volume. |
+| `/data/dedicated/SeparateSpawns.groups.json` | SeparateSpawns: the roster, seeded from `config/dedicated` once, then written by the mod with who belongs to which region. | The volume. |
+| `/data/dedicated/abortipus.separatespawns.cfg` | The entrypoint, from `config/dedicated`, at every start. | Each start. |
 | `/run/lembitu/BepInEx/plugins/OdinOnDemand/assetbundles/`, `radio/` | OdinOnDemand creates both beside its DLL and reads radio stations from them. The Pack ships none, so they start empty. | Each start. |
 | `/run/lembitu/BepInEx/config/` | The config copied at start; plugins add the files they create when missing, such as FineDining's `Icebox.yml`. | Each start. |
 | `/run/lembitu/BepInEx/cache/`, `DumpedAssemblies/`, `patchers/`, `LogOutput.log` | BepInEx. | Each start. |
@@ -113,7 +117,7 @@ Read from the running image: the image tier's `ls -lAR` of every writable mount,
 | `/home/lembitu/.config/unity3d/IronGate/Valheim/prefs` | Unity. | The Pod. |
 | `/home/lembitu/Steam/` | `steamclient.so`: `config/config.vdf`, `logs/`, `appcache/httpcache/`. | The Pod. |
 
-Two plugins needed the runtime tree's help:
+Three plugins needed the runtime tree's help:
 
 - OdinOnDemand finds its directory by its own `Assembly.Location`, and Mono resolves a link to its
   store path. A linked DLL would try to create `assetbundles/` in the read-only store and fail
@@ -121,6 +125,16 @@ Two plugins needed the runtime tree's help:
   link.
 - SeparateSpawns writes `reports/` under BepInEx's plugin path. A link to the volume keeps the
   reports, as the live server keeps them.
+- SeparateSpawns 0.1.1 also has a root of its own on a headless server, `<game root>/config/bepinex`,
+  which it reads before `BepInEx/config` (`ModPaths.GetConfigRoots`). It keeps each world's layout
+  there, and, when the files are there, its `.cfg` and its roster. The layout is state: without it the
+  mod generates the start regions again. #130's image left that root in the emptyDir, so a restart
+  lost the layout, and the roster's assignments with it. The runtime tree now links the root to
+  `/data/dedicated`, as the live server keeps it on disk in its game tree (its BepInEx log names the
+  directory: `Dedicated config root: …`), and config/dedicated lands there the way
+  `scripts/apply-dedicated-config.sh` treats it on the live server: the `.cfg` fresh at every
+  start, the roster only when there is none. Neither the layout nor the roster is in
+  `scripts/backup-world.sh`'s archive, on the live server or here.
 
 The stores must not come from the ConfigMap. A config seed for `ValheimWebMap` or
 `EpicLoot/BountySaves` stops every start with "the config carries …", on purpose: a copy there would
@@ -175,6 +189,114 @@ check after "Opened Steam server".
 and exits 0. In the image tier the save and exit took 21 to 24 seconds. The Workload's grace period
 is 180 s.
 
+## The config
+
+The live server merges `config/enforced` into the files the mods generated on its disk, which keep
+every other value they hold (`scripts/apply-enforced-config.sh`, before every start). The image
+copies files whole: the ConfigMap's file, then the mod fills in every key it binds and the file
+lacks, at its default. So a value the live server holds outside the overlay, and not at its
+default, would change at the move.
+
+The two ways to keep those values were weighed (A3):
+
+- **(a) The ConfigMap holds the merged files.** The live server's merged files are too big for it:
+  the 53 overlay files alone are 1.64 MB as live holds them (`local.warrior.rpg.cfg` is 811 KB),
+  over a ConfigMap's 1 MiB. They would need splitting across several ConfigMaps, a committed
+  copy of the generated files beside the overlay, and keeping the two in step.
+- **(b) Apply the overlay at start.** The applier merges into files the mods have generated, and
+  refuses a missing one. A fresh runtime tree has none, so the generated files would have to live
+  on the volume, the applier and its tools would join the image, a first start would need its own
+  path, and drift would outlive restarts again, as on the live server.
+
+Chosen: (a)'s effect without its bulk. The live server's merged tree (its second read, 2026-10-27)
+was compared key by key with the tree the image's mods write from the overlay alone. Exactly 21
+keys the server's mods bind hold another value on the live server; they are now overlay entries,
+each marked as live's value, in seven files:
+
+| File | Keys |
+| --- | --- |
+| `BepInEx.cfg` | `[Logging.Disk] WriteUnityLog`, `[Logging.Console] Enabled`, `ForceBepInExTTYDriver`, `PreventClose`, all `true` |
+| `adrian.valheim.guilds.cfg` | `[5 - Territory] BannerRecipe = Wood:1`, `TerritoryBaseSize = 50` |
+| `sighsorry.CreatureManager.cfg` | `[3 - Karma] Dungeon Enforcer Spawn Delay (s) = 7` |
+| `vapok.mods.adventurebackpacks.cfg` | six `Effective Quality Level` keys, and `Enable Anonymous Telemetry = true` |
+| `MidnightsFX.ProgressivePowers.cfg` | `[Client config] Full Power Displays = 1` |
+| `Raelaziel.OdinArchitect.cfg` (new) | the two elevators' `Crafting Costs` |
+| `Searica.Valheim.ExtraSnapPointsMadeEasy.cfg` (new) | four manual-snapping key bindings |
+
+The rest of the comparison was keys the mods no longer bind (a removed mod's, or an older
+version's), and generated reference, cache and localization files, which the mods write again.
+`scripts/verify-enforced-config.sh` passes on the live tree with these entries (`472 entries
+match`), so on the live server they are already in effect and applying them changes nothing; on
+the image's own run it finds exactly these 21 different. The ConfigMaps stay small (about 150
+KB), the entrypoint is unchanged, and drift still can't outlive a restart.
+
+## The Workload
+
+`./workloads/lembitu` is the kustomization astral-fleet's registration delivers into namespace
+`project-valheim-lembitu`, from `main`, suspended until the cutover. It lists the StatefulSet and
+`config/`, whose `kustomization.yaml` makes the three ConfigMaps (kustomize reads a generator's
+files only from inside its own directory).
+
+The StatefulSet `lembitu`:
+
+- one replica, `OrderedReady`, on astral-bicep, at priority `fleet-games`;
+- a 180 s grace period, no service-account token and no service links;
+- the image by digest, `astral-bicep.tail032eca.ts.net:30500/project/valheim-lembitu/server@sha256:…`,
+  the digest `.#serverImage` builds;
+- Guaranteed QoS, 3 CPU and 6Gi for requests and limits alike;
+- Pod Security `restricted`: uid, gid and `fsGroup` 10160, the RuntimeDefault seccomp profile, no
+  privilege escalation, every capability dropped, and a read-only root;
+- ports `game` 2456/UDP, `query` 2457/UDP and `map` 3000/TCP, and the labels
+  `app.kubernetes.io/name: lembitu` (the fleet's Services) and `fleet.astral.ee/egress: lembitu` (its
+  NetworkPolicy);
+- the probes: readiness is an exec of `lembitu-ready` every 10 s; a startup probe of the same allows
+  15 minutes; there is no liveness probe, which could kill the server mid-save;
+- the Secret `lembitu-secrets`: its `password` as a file, `defaultMode` 0400, and its
+  `discord-bot-token` as `SERVERMANAGER_DISCORD_BOT_TOKEN`, which ServerManager's bot reads, as on
+  the live container;
+- the claim template `world`, so the claim is `world-lembitu-0`, which the fleet's volume
+  `fleet-lembitu` is pre-bound to: `fleet-lembitu-local`, 20Gi, `backup.fleet/tier: none` (ra's
+  decision of 2026-10-20, not #114's "off-site"), and a regeneration that names the archives and
+  `scripts/restore-world.sh --root`.
+
+### The volume
+
+The fleet's volume is `/state/lembitu/world` on astral-bicep, mounted at `/data`. The move fills it
+from the stopped live server:
+
+| On the volume | From the live server |
+| --- | --- |
+| `save/` | `~/lembitu/config/save/`, the live `-savedir`: `worlds_local/`, `cache/`, the three lists, `ServerManager/` |
+| `bepinex/Guilds/`, `Marketplace/`, `Lembitu.Guilds/`, `ValheimWebMap/`, `EpicLoot/BountySaves/` | the same directories in `~/lembitu/config/bepinex/` |
+| `bepinex/SeparateSpawns/reports/` | `SeparateSpawns/reports/` in the live plugin tree (`~/lembitu/data/bepinex/BepInEx/plugins/`; regenerated if absent) |
+| `dedicated/` | the live server's SeparateSpawns root, the directory its BepInEx log names as `Dedicated config root:`: the roster and `SeparateSpawns/worlds/` |
+
+`save/` and `bepinex/` are exactly what `scripts/backup-world.sh` captures, and its `--root` reads
+them there: `scripts/backup-world.sh --root /state/lembitu/world --out …`, with the same archive as
+`--savedir` and `--bepinex`. `scripts/restore-world.sh --root` restores into the same layout.
+
+### What the Pod does not do that `launch-server.sh` does
+
+Before every start, `scripts/launch-server.sh` also applies ServerManager's policy from the
+approved Pack and writes ServerManager's `discord.yml` from the host's Discord files, both into
+`save/ServerManager/`, and after the start it verifies the overlay. In the Pod, `save/ServerManager/`
+keeps what the move copied; a new Pack's policy or a changed webhook is written there by hand,
+with the server stopped. The overlay's verification is the ConfigMap's copy, which can't drift.
+
+### Sealing lembitu-secrets
+
+`workloads/lembitu/lembitu-secrets.sops.yaml` is a placeholder with the two keys and no value, and
+it stays out of the kustomization until it is sealed: listed as it is, it would apply an empty
+password, which the entrypoint refuses. At the lift ("Lift valheim-lembitu" in astral-fleet's
+runbook), ra's agent:
+
+1. adds a `.sops.yaml` rule for `workloads/lembitu/.*\.sops\.yaml$` with the Project's age public
+   half and `encrypted_regex: ^(data|stringData)$`;
+2. fills `password` and `discord-bot-token` and encrypts the file in place with sops;
+3. adds `- lembitu-secrets.sops.yaml` to `workloads/lembitu/kustomization.yaml`'s `resources`.
+
+`test/lembitu-workload.test.sh` fails while a sealed file is unlisted or a placeholder is listed.
+
 ## What the first boots showed
 
 - BepInEx 5.4.23.5 reports `Chainloader startup complete (68 loaded, 1 skipped, 0 failed)`, as
@@ -203,6 +325,8 @@ checks:
 - the arguments and the password;
 - the library path;
 - the runtime tree, the stores on the volume and the copied DLL;
+- SeparateSpawns' root on the volume: its `.cfg` fresh at every start, its roster seeded only when
+  absent, its layouts kept;
 - the log filter, through the stop signal;
 - the readiness check, red and green.
 
@@ -237,3 +361,14 @@ written paths.
 
 `nix flake check` also runs `server-plugin-guids`: the image's plugin tree against
 `serverPlugins`, without a game.
+
+`test/lembitu-workload.test.sh` checks the Workload. Its render tier runs with every pass: it
+renders the working tree's commit with astral-fleet's own `project-workload-delivery`
+(`LEMBITU_FLEET_FLAKE`, default its `dev`), so the fleet's Project rules apply, then checks every
+field above, rebuilds `config/enforced` and `config/dedicated` from the ConfigMaps byte for byte,
+and holds the render to the fleet's side: its Services, NetworkPolicy, volume, registration and
+priority class. Its image tier (`LEMBITU_IMAGE_TEST=1`) starts the pinned image as the render says,
+on `test/fixtures/lembitu-world`, a world this image generated on 2026-10-27 (never a copy of
+LembituRun's save), with its SeparateSpawns layout: the digest is the pin, readiness turns green,
+the stored layout loads from the volume, every overlay entry is in effect in the running config,
+the map answers, and SIGTERM saves a fresh generation.

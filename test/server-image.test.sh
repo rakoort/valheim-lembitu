@@ -211,6 +211,14 @@ ln -s ..2026_10_27 "$CONFIG/..data"
 ln -s ..data/BepInEx.cfg "$CONFIG/BepInEx.cfg"
 ln -s ..data/lembitu.guilds.cfg "$CONFIG/lembitu.guilds.cfg"
 ln -s ..data/EpicLoot "$CONFIG/EpicLoot"
+# config/dedicated's ConfigMap, the same shape: SeparateSpawns' .cfg and its roster seed.
+DEDICATED="$WORK/configmap-dedicated"
+mkdir -p "$DEDICATED/..2026_10_27"
+printf '[General]\nInnerRadius = 1200\n' > "$DEDICATED/..2026_10_27/abortipus.separatespawns.cfg"
+printf '{"seed": true}\n' > "$DEDICATED/..2026_10_27/SeparateSpawns.groups.json"
+ln -s ..2026_10_27 "$DEDICATED/..data"
+ln -s ..data/abortipus.separatespawns.cfg "$DEDICATED/abortipus.separatespawns.cfg"
+ln -s ..data/SeparateSpawns.groups.json "$DEDICATED/SeparateSpawns.groups.json"
 
 PROC_NET="$WORK/proc-net"
 mkdir -p "$PROC_NET"
@@ -285,7 +293,8 @@ start_entrypoint() {
   set -m
   env LEMBITU_GAME="$GAME" LEMBITU_BEPINEX="$BEPINEX" LEMBITU_LIBRARY_PATH=/store/lib \
     LEMBITU_RUNTIME="$RUNTIME" LEMBITU_DATA="$DATA" LEMBITU_CONFIG="$CONFIG" \
-    LEMBITU_PASSWORD_FILE="$WORK/password" FAKE_OUT="$FAKE_OUT" PATH="$TOOLS/bin:$PATH" "$@" \
+    LEMBITU_DEDICATED_CONFIG="$DEDICATED" LEMBITU_PASSWORD_FILE="$WORK/password" \
+    FAKE_OUT="$FAKE_OUT" PATH="$TOOLS/bin:$PATH" "$@" \
     bash "$ENTRYPOINT" > "$WORK/stdout" 2> "$WORK/stderr" &
   EP_PID=$!
   set +m
@@ -337,6 +346,9 @@ start_entrypoint LEMBITU_CONFIG="$WORK/configmap-empty"
 wait_for "$WORK/fake/running" 10 || true
 check "EpicLoot's bounty saves link to the volume when the ConfigMap has no EpicLoot directory" \
   bash -c "[[ \"\$(readlink '$RUNTIME/BepInEx/config/EpicLoot/BountySaves')\" == '$DATA/bepinex/EpicLoot/BountySaves' ]]"
+check "SeparateSpawns' roster is seeded from the ConfigMap when the volume has none" \
+  bash -c "cmp -s '$DATA/dedicated/SeparateSpawns.groups.json' '$DEDICATED/..data/SeparateSpawns.groups.json' \
+    && [[ ! -L '$DATA/dedicated/SeparateSpawns.groups.json' ]]"
 stop_entrypoint
 
 # --- one start, end to end ---------------------------------------------------------------------
@@ -346,6 +358,12 @@ mkdir -p "$WORK/run/BepInEx"
 : > "$WORK/run/.steam-server-opened"
 : > "$WORK/run/BepInEx/stale.txt"
 bind_game_port udp6
+# SeparateSpawns' root on the volume, as a start after play leaves it: an older .cfg, a roster with
+# assignments the server wrote, and a world's layout.
+mkdir -p "$WORK/data/dedicated/SeparateSpawns/worlds"
+printf '[General]\nInnerRadius = 9999\n' > "$WORK/data/dedicated/abortipus.separatespawns.cfg"
+printf '{"assigned": true}\n' > "$WORK/data/dedicated/SeparateSpawns.groups.json"
+printf '{"Frozen": true}\n' > "$WORK/data/dedicated/SeparateSpawns/worlds/2270623796.json"
 
 # The port is bound and answers, but the log has said only "Game server connected".
 start_entrypoint FAKE_NO_OPEN=1
@@ -400,6 +418,17 @@ check "config/ is real writable files: the seeds, then the ConfigMap over them" 
     && grep -q seed '$RUNTIME/BepInEx/config/CreatureManager/seed.yml'"
 check "none of the ConfigMap's ..data plumbing is copied" \
   bash -c "[[ -z \$(find '$RUNTIME/BepInEx/config' -name '..*') ]]"
+check "SeparateSpawns' root, <game root>/config/bepinex, is the volume's dedicated/" \
+  bash -c "[[ \"\$(readlink '$RUNTIME/config/bepinex')\" == '$DATA/dedicated' ]]"
+check "its .cfg is the ConfigMap's, fresh at every start, over the volume's older one" \
+  bash -c "cmp -s '$DATA/dedicated/abortipus.separatespawns.cfg' '$DEDICATED/..data/abortipus.separatespawns.cfg' \
+    && [[ ! -L '$DATA/dedicated/abortipus.separatespawns.cfg' ]]"
+check "its roster stays the server's: the ConfigMap's seed does not replace it" \
+  grep -qx '{"assigned": true}' "$DATA/dedicated/SeparateSpawns.groups.json"
+check "its world layouts stay on the volume" \
+  grep -qx '{"Frozen": true}' "$DATA/dedicated/SeparateSpawns/worlds/2270623796.json"
+check "none of SeparateSpawns' files is copied into BepInEx/config, where its root would shadow them" \
+  bash -c "[[ ! -e '$RUNTIME/BepInEx/config/abortipus.separatespawns.cfg' && ! -e '$RUNTIME/BepInEx/config/SeparateSpawns.groups.json' ]]"
 
 check "the stdout filter marked \"Opened Steam server\"" test -e "$RUNTIME/.steam-server-opened"
 check "readiness is red with the line logged but the game port unbound" not_ready
@@ -531,16 +560,17 @@ docker volume create "$VOLUME" > /dev/null
 # The volume belongs to the server's uid, as the Workload's fsGroup makes it. The image has no
 # chown, so a throwaway busybox does it.
 docker run --rm -v "$VOLUME:/data" busybox:1.37 chown 10160:10160 /data
-mkdir -p "$WORK/config"
-cp -R "$REPO_ROOT/config/enforced/." "$REPO_ROOT/config/dedicated/." "$WORK/config/"
+mkdir -p "$WORK/config" "$WORK/dedicated"
+cp -R "$REPO_ROOT/config/enforced/." "$WORK/config/"
+cp -R "$REPO_ROOT/config/dedicated/." "$WORK/dedicated/"
 printf 'fixture pass\n' > "$WORK/secret"
-chmod 0444 "$WORK/secret"; chmod -R a+rX "$WORK/config"
+chmod 0444 "$WORK/secret"; chmod -R a+rX "$WORK/config" "$WORK/dedicated"
 echo "$NAME" >> "$WORK/containers"
 docker run -d --name "$NAME" --read-only \
   --tmpfs /run/lembitu:rw,exec,size=1g,mode=1777 --tmpfs /home/lembitu:rw,size=512m,mode=1777 \
   --tmpfs /tmp:rw,size=512m,mode=1777 \
   -v "$VOLUME:/data:nocopy" -v "$WORK/config:/etc/lembitu/bepinex:ro" \
-  -v "$WORK/secret:/run/secrets/lembitu/password:ro" \
+  -v "$WORK/dedicated:/etc/lembitu/dedicated:ro" -v "$WORK/secret:/run/secrets/lembitu/password:ro" \
   "$TAG" > /dev/null
 
 # Readiness, every 2 s from the start. Before each check the server's log is read, so a green check

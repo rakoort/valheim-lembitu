@@ -2,6 +2,9 @@
 # Restore a backup produced by scripts/backup-world.sh into a server's save directory (#20).
 #
 #   scripts/restore-world.sh --archive <file> --savedir <dir> [--world <name>] [--dry-run] [--force]
+#   scripts/restore-world.sh --archive <file> --root <dir> [...]
+#
+# --root names the Workload's volume, as for scripts/backup-world.sh: <dir>/save and <dir>/bepinex.
 #
 # Restores the world, cache, admission lists, authoritative ServerManager store and the
 # BEPINEX_STORES (Guilds, Marketplace, region claims, web map data, bounty ledgers) together.
@@ -23,6 +26,7 @@ ARCHIVE=""
 SAVEDIR=""
 WORLD=""
 BEPINEX=""
+ROOT=""
 DRY_RUN=false
 FORCE=false
 
@@ -32,9 +36,12 @@ note() { printf '%s\n' "$*" >&2; }
 usage() {
   cat >&2 <<'EOF'
 usage: scripts/restore-world.sh --archive <file> --savedir <dir> [options]
+       scripts/restore-world.sh --archive <file> --root <dir> [options]
 
   --archive <file>  a lembitu-*.tar.gz produced by scripts/backup-world.sh
   --savedir <dir>   the save directory to restore into (the game's -savedir)
+  --root <dir>      the Workload's volume: <dir>/save and <dir>/bepinex (instead of --savedir
+                    and --bepinex)
   --bepinex <dir>   state destination (default: sibling bepinex beside savedir)
   --world <name>    restore only this world from a multi-world archive
   --dry-run         print what would change, change nothing
@@ -46,6 +53,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --archive) ARCHIVE=${2:?}; shift 2 ;;
     --savedir) SAVEDIR=${2:?}; shift 2 ;;
+    --root) ROOT=${2:?}; shift 2 ;;
     --bepinex) BEPINEX=${2:?}; shift 2 ;;
     --world) WORLD=${2:?}; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
@@ -56,7 +64,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$ARCHIVE" ]] || die "--archive is required"
-[[ -n "$SAVEDIR" ]] || die "--savedir is required"
+if [[ -n "$ROOT" ]]; then
+  [[ -z "$SAVEDIR" && -z "$BEPINEX" ]] || die "--root replaces --savedir and --bepinex; give one or the other"
+  SAVEDIR="$ROOT/save" BEPINEX="$ROOT/bepinex"
+fi
+[[ -n "$SAVEDIR" ]] || die "--savedir or --root is required"
 [[ -f "$ARCHIVE" ]] || die "no such archive: $ARCHIVE"
 BEPINEX=${BEPINEX:-$(dirname "$SAVEDIR")/bepinex}
 

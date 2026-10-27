@@ -2,6 +2,11 @@
 # Capture one consistent set of the server's live save stores (#20).
 #
 #   scripts/backup-world.sh --savedir <dir> --out <dir> [--world <name>] [--keep <n>] [--offhost <spec>]
+#   scripts/backup-world.sh --root <dir> --out <dir> [...]
+#
+# --root names the Workload's volume (docs/server-image.md, "The volume"): <dir>/save is the game's
+# -savedir and <dir>/bepinex holds the plugin stores, so on astral-bicep after the cutover it is
+# /state/lembitu/world. It reads exactly what --savedir <dir>/save --bepinex <dir>/bepinex reads.
 #
 # The measured pack writes per-world directories, not flat files: a world is
 # `worlds_local/<World>/_main.<n>.fwl2` with `.db2`, `.chunks`, `.chunk` siblings and an `.ok`
@@ -46,6 +51,7 @@ KEEP=14
 OFFHOST=""
 ATTEMPTS=3
 BEPINEX=""
+ROOT=""
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 note() { printf '%s\n' "$*" >&2; }
@@ -53,8 +59,11 @@ note() { printf '%s\n' "$*" >&2; }
 usage() {
   cat >&2 <<'EOF'
 usage: scripts/backup-world.sh --savedir <dir> --out <dir> [options]
+       scripts/backup-world.sh --root <dir> --out <dir> [options]
 
   --savedir <dir>   the server's save directory (the game's -savedir, e.g. /config/save)
+  --root <dir>      the Workload's volume: <dir>/save and <dir>/bepinex (instead of --savedir
+                    and --bepinex)
   --out <dir>       where backup archives are written
   --bepinex <dir>   state source (default: sibling bepinex beside savedir)
   --world <name>    world to capture; default: every world directory found
@@ -69,6 +78,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --savedir) SAVEDIR=${2:?}; shift 2 ;;
+    --root) ROOT=${2:?}; shift 2 ;;
     --out) OUT=${2:?}; shift 2 ;;
     --bepinex) BEPINEX=${2:?}; shift 2 ;;
     --world) WORLD=${2:?}; shift 2 ;;
@@ -80,7 +90,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$SAVEDIR" ]] || die "--savedir is required"
+if [[ -n "$ROOT" ]]; then
+  [[ -z "$SAVEDIR" && -z "$BEPINEX" ]] || die "--root replaces --savedir and --bepinex; give one or the other"
+  SAVEDIR="$ROOT/save" BEPINEX="$ROOT/bepinex"
+fi
+[[ -n "$SAVEDIR" ]] || die "--savedir or --root is required"
 [[ -n "$OUT" ]] || die "--out is required"
 [[ -d "$SAVEDIR" ]] || die "no such save directory: $SAVEDIR"
 [[ "$KEEP" =~ ^[0-9]+$ ]] || die "--keep must be a non-negative integer"

@@ -17,19 +17,23 @@
 #   $RUNTIME/BepInEx/config/       real files, copied fresh at every start: the packages' seeds,
 #                                  then the ConfigMap; the plugins' stores in it link to
 #                                  $DATA/bepinex
+#   $RUNTIME/config/bepinex        a link to $DATA/dedicated: SeparateSpawns' own config root (below)
 #   $RUNTIME/BepInEx/cache/, DumpedAssemblies/, patchers/, LogOutput.log
 #                                  written by BepInEx, gone at the next start
 #   $RUNTIME/.steam-server-opened  lembitu-logmark's readiness marker
 #
 # and the state that must outlive the Pod is on the volume: the world and ServerManager's store
-# under $DATA/save (the game's -savedir), and the plugins' stores under $DATA/bepinex.
+# under $DATA/save (the game's -savedir), the plugins' stores under $DATA/bepinex, and
+# SeparateSpawns' config root under $DATA/dedicated.
 #
 # Environment (the image sets the first three; the rest default to the Workload's mounts):
 #   LEMBITU_GAME, LEMBITU_BEPINEX, LEMBITU_LIBRARY_PATH   store paths
-#   LEMBITU_RUNTIME         the runtime tree, an emptyDir       (default /run/lembitu)
-#   LEMBITU_DATA            the world volume                    (default /data)
-#   LEMBITU_CONFIG          the ConfigMap's BepInEx config      (default /etc/lembitu/bepinex)
-#   LEMBITU_PASSWORD_FILE   the Secret's join password          (default /run/secrets/lembitu/password)
+#   LEMBITU_RUNTIME           the runtime tree, an emptyDir     (default /run/lembitu)
+#   LEMBITU_DATA              the world volume                  (default /data)
+#   LEMBITU_CONFIG            the ConfigMap's BepInEx config    (default /etc/lembitu/bepinex)
+#   LEMBITU_DEDICATED_CONFIG  the ConfigMap's SeparateSpawns    (default /etc/lembitu/dedicated)
+#                             config, config/dedicated
+#   LEMBITU_PASSWORD_FILE     the Secret's join password        (default /run/secrets/lembitu/password)
 
 set -euo pipefail
 
@@ -39,6 +43,7 @@ set -euo pipefail
 RUNTIME=${LEMBITU_RUNTIME:-/run/lembitu}
 DATA=${LEMBITU_DATA:-/data}
 CONFIG=${LEMBITU_CONFIG:-/etc/lembitu/bepinex}
+DEDICATED_CONFIG=${LEMBITU_DEDICATED_CONFIG:-/etc/lembitu/dedicated}
 PASSWORD_FILE=${LEMBITU_PASSWORD_FILE:-/run/secrets/lembitu/password}
 
 # Plugin stores that live in BepInEx/config on the live server. scripts/backup-world.sh captures the
@@ -69,7 +74,7 @@ password="${password%$'\r'}"
 
 # --- the volume --------------------------------------------------------------------------------
 [[ -d "$DATA" && -w "$DATA" ]] || die "$DATA is not a writable directory"
-mkdir -p "$DATA/save" "$DATA/bepinex"
+mkdir -p "$DATA/save" "$DATA/bepinex" "$DATA/dedicated"
 for store in "${CONFIG_STORES[@]}" "${PLUGIN_STATE[@]}"; do mkdir -p "$DATA/bepinex/$store"; done
 
 # --- the runtime tree --------------------------------------------------------------------------
@@ -123,6 +128,30 @@ for store in "${CONFIG_STORES[@]}"; do
   mkdir -p "$(dirname "$RUNTIME/BepInEx/config/$store")"
   ln -s "$DATA/bepinex/$store" "$RUNTIME/BepInEx/config/$store"
 done
+
+# SeparateSpawns' own config root. On a headless server it looks in <game root>/config/bepinex
+# before BepInEx/config, and keeps two kinds of state there: the group roster,
+# SeparateSpawns.groups.json, into which it writes who belongs to which region, and each world's
+# layout, SeparateSpawns/worlds/<world uid>.json, which records the start regions and the Eikthyr
+# altars it placed. Without the layout it generates the regions again. So the root is on the
+# volume, as the live server keeps it in its game tree. config/dedicated arrives as its own
+# ConfigMap and lands the way scripts/apply-dedicated-config.sh treats it on the live server: a .cfg
+# is configuration, copied fresh at every start like the rest; anything else is a seed, copied
+# only when the volume has none, because from the first start on the server owns it.
+[[ ! -e "$RUNTIME/config" ]] || die "the game tree carries config/, where SeparateSpawns' root goes"
+mkdir "$RUNTIME/config"
+ln -s "$DATA/dedicated" "$RUNTIME/config/bepinex"
+if [[ -d "$DEDICATED_CONFIG" ]]; then
+  while IFS= read -r -d '' file; do
+    relative=${file#"$DEDICATED_CONFIG"/}
+    target="$DATA/dedicated/$relative"
+    [[ "$relative" == *.cfg || ! -e "$target" ]] || continue
+    mkdir -p "$(dirname "$target")"
+    cp -L --no-preserve=mode,ownership "$file" "$target"
+  done < <(find -L "$DEDICATED_CONFIG" -mindepth 1 -name '..*' -prune -o -type f -print0)
+else
+  printf 'lembitu-server: no SeparateSpawns config at %s; its root keeps what it has\n' "$DEDICATED_CONFIG" >&2
+fi
 
 # --- the server --------------------------------------------------------------------------------
 cd "$RUNTIME"
