@@ -471,5 +471,75 @@ if $aside_ok; then
   report ok "restore over later copies moves both stores aside and leaves EpicLoot's config alone"
 else report fail "restore over later ValheimWebMap and EpicLoot/BountySaves moves them aside"; fi
 
+# --- 18. an archive made before the two stores existed leaves the live copies alone -------------
+# Every archive taken before #131 lacks ValheimWebMap and EpicLoot/BountySaves and has no MANIFEST
+# line for them: the backup never looked. Restoring one (even with --force) must not move aside or
+# remove the live map data and ledgers. Only a recorded `=absent` replaces a target with nothing.
+
+# shellcheck source=../scripts/lib/save-format.sh
+. "$REPO_ROOT/scripts/lib/save-format.sh"
+
+# The pre-#131 shape, from section 17's archive: the two stores, their MANIFEST lines and their
+# `contents=` entries gone, and INVENTORY.txt recomputed, as the restore checks it.
+OLD="$PS/old"; old_archive=""
+if [[ -n "$ps_archive" ]]; then
+  mkdir -p "$OLD"
+  cp -a "$PS/x" "$OLD/tree"
+  rm -rf "$OLD/tree/bepinex-state/ValheimWebMap" "$OLD/tree/bepinex-state/EpicLoot"
+  grep -v -e '^store_bepinex-state/ValheimWebMap=' -e '^store_bepinex-state/EpicLoot/BountySaves=' "$PS/x/MANIFEST.txt" \
+    | sed 's|,bepinex-state/ValheimWebMap,bepinex-state/EpicLoot/BountySaves$||' > "$OLD/tree/MANIFEST.txt"
+  store_inventory "$OLD/tree" > "$OLD/inventory"
+  mv "$OLD/inventory" "$OLD/tree/INVENTORY.txt"
+  (cd "$OLD/tree" && tar czf "$OLD/old.tar.gz" .) && old_archive="$OLD/old.tar.gz"
+fi
+
+make_live_state() {  # make_live_state <bepinex dir>: later copies of both stores and of Guilds
+  mkdir -p "$1/ValheimWebMap/Run" "$1/EpicLoot/BountySaves" "$1/Guilds"
+  printf 'live mask\n'   > "$1/ValheimWebMap/Run/explored.bin"
+  printf 'live ledger\n' > "$1/EpicLoot/BountySaves/76561198000000009.json"
+  printf 'later guild\n' > "$1/Guilds/Run.dat"
+}
+# Both live stores are exactly as they were, nothing of them moved aside, and Guilds came from the archive.
+live_stores_kept() {  # live_stores_kept <bepinex dir>
+  grep -Fxq 'live mask' "$1/ValheimWebMap/Run/explored.bin" \
+    && grep -Fxq 'live ledger' "$1/EpicLoot/BountySaves/76561198000000009.json" \
+    && [[ "$(find "$1/ValheimWebMap" "$1/EpicLoot/BountySaves" -type f | wc -l)" -eq 2 ]] \
+    && [[ -z "$(find "$1" -name 'ValheimWebMap.replaced-*' -o -name 'BountySaves.replaced-*')" ]] \
+    && grep -Fxq 'guild vault' "$1/Guilds/Run.dat"
+}
+
+OT="$OLD/target"; make_live_state "$OT/state"
+if [[ -n "$old_archive" ]] && ! grep -q 'ValheimWebMap\|BountySaves' "$OLD/tree/MANIFEST.txt" \
+   && "$RESTORE" --archive "$old_archive" --savedir "$OT/save" --bepinex "$OT/state" --dry-run > "$WORK/out" 2>&1 \
+   && grep -Fxq "not in this archive (older format): would leave as is: $OT/state/ValheimWebMap" "$WORK/out" \
+   && grep -Fxq "not in this archive (older format): would leave as is: $OT/state/EpicLoot/BountySaves" "$WORK/out" \
+   && ! grep -Fq -e "would move aside: $OT/state/ValheimWebMap" -e "would move aside: $OT/state/EpicLoot/BountySaves" "$WORK/out" \
+   && grep -Fq "would move aside: $OT/state/Guilds" "$WORK/out"; then
+  report ok "dry run of an archive older than the two stores says it leaves them as is"
+else report fail "dry run of an archive older than the two stores says it leaves them as is"; fi
+
+if [[ -n "$old_archive" ]] && "$RESTORE" --archive "$old_archive" --savedir "$OT/save" --bepinex "$OT/state" > "$WORK/out" 2>&1 \
+   && grep -Fxq "not in this archive (older format): left as is: $OT/state/ValheimWebMap" "$WORK/out" \
+   && grep -Fxq "not in this archive (older format): left as is: $OT/state/EpicLoot/BountySaves" "$WORK/out" \
+   && live_stores_kept "$OT/state"; then
+  report ok "restoring an archive older than the two stores leaves the live map data and ledgers in place"
+else report fail "restoring an archive older than the two stores leaves the live map data and ledgers in place"; fi
+
+OF="$OLD/forced"; make_live_state "$OF/state"
+if [[ -n "$old_archive" ]] && "$RESTORE" --archive "$old_archive" --savedir "$OF/save" --bepinex "$OF/state" --force > "$WORK/out" 2>&1 \
+   && live_stores_kept "$OF/state"; then
+  report ok "a forced restore of an archive older than the two stores leaves them in place"
+else report fail "a forced restore of an archive older than the two stores leaves them in place"; fi
+
+# The contrast: section 17's fresh-server archive records both `=absent`, so a restore replaces the
+# live copies with nothing, moving them aside.
+OA="$OLD/recorded-absent"; make_live_state "$OA/state"
+if [[ -s "$PS/fresh/archive" ]] && "$RESTORE" --archive "$(cat "$PS/fresh/archive")" --savedir "$OA/save" --bepinex "$OA/state" > "$WORK/out" 2>&1 \
+   && [[ ! -e "$OA/state/ValheimWebMap" && ! -e "$OA/state/EpicLoot/BountySaves" ]] \
+   && [[ -n "$(find "$OA/state" -maxdepth 1 -name 'ValheimWebMap.replaced-*')" ]] \
+   && [[ -n "$(find "$OA/state/EpicLoot" -maxdepth 1 -name 'BountySaves.replaced-*')" ]]; then
+  report ok "an archive recording both stores absent still moves the live copies aside"
+else report fail "an archive recording both stores absent still moves the live copies aside"; fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

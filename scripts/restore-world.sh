@@ -106,6 +106,15 @@ if [[ -f "$work/MANIFEST.txt" ]]; then
   sed 's/^/  /' "$work/MANIFEST.txt" >&2
 fi
 
+# MANIFEST.txt names every store the backup looked for, as `store_<path>=present|absent`. A store with
+# no line is newer than the archive (ValheimWebMap and EpicLoot/BountySaves before #131): the backup
+# never looked, so its absence says nothing about the target's copy, which stays, even with --force.
+# Only a recorded `=absent` replaces a target with nothing.
+unrecorded() {  # unrecorded <archive-relative store path>
+  [[ ! -e "$work/$1" && -f "$work/MANIFEST.txt" ]] \
+    && ! grep -Fxq -e "store_$1=present" -e "store_$1=absent" "$work/MANIFEST.txt"
+}
+
 if $DRY_RUN; then
   for w in "${worlds[@]}"; do
     if [[ -d "$SAVEDIR/worlds_local/$w" ]]; then
@@ -117,6 +126,7 @@ if $DRY_RUN; then
   done
   for f in cache ServerManager "${ADMISSION_FILES[@]}" "${BEPINEX_STORES[@]/#/bepinex-state/}"; do
     case "$f" in bepinex-state/*) target="$BEPINEX/${f#bepinex-state/}" ;; *) target="$SAVEDIR/$f" ;; esac
+    if unrecorded "$f"; then note "not in this archive (older format): would leave as is: $target"; continue; fi
     if [[ -e "$target" ]]; then
       if $FORCE; then note "would replace: $target"; else note "would move aside: $target -> $target.replaced-$stamp"; fi
     elif [[ -e "$work/$f" ]]; then note "would create: $target"; fi
@@ -145,8 +155,12 @@ for w in "${worlds[@]}"; do
 done
 
 # Replace every archived store, including admission and cache; never merge later state.
-restore_store() {
-  local source=$1 target=$2
+restore_store() {  # restore_store <archive-relative store path> <target>
+  local key=$1 source="$work/$1" target=$2
+  if unrecorded "$key"; then
+    note "not in this archive (older format): left as is: $target"
+    return 0
+  fi
   if [[ -e "$target" ]]; then
     if $FORCE; then rm -rf -- "$target"; else mv -- "$target" "$target.replaced-$stamp"; fi
   fi
@@ -159,10 +173,10 @@ restore_store() {
   fi
 }
 for f in cache ServerManager "${ADMISSION_FILES[@]}"; do
-  restore_store "$work/$f" "$SAVEDIR/$f"
+  restore_store "$f" "$SAVEDIR/$f"
 done
 for f in "${BEPINEX_STORES[@]}"; do
-  restore_store "$work/bepinex-state/$f" "$BEPINEX/$f"
+  restore_store "bepinex-state/$f" "$BEPINEX/$f"
 done
 if [[ -d "$SAVEDIR/ServerManager" ]]; then
   cp "$REPO_ROOT/config/launch/servermanager-cron.yml" "$SAVEDIR/ServerManager/cron.yml"

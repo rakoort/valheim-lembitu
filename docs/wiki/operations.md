@@ -464,7 +464,7 @@ archive taken during the 06:00 window cannot replay its one-off jobs. `INVENTORY
 file's SHA-256; archives are mode 0600 because they hold private player data. The capture does not
 request a checkpoint: it checks that files stay unchanged while it copies, and `STATE-TIMES.txt`
 records their disk times, so world and characters can differ by up to the five-minute character
-interval, longer if a client stalls. Proved by `test/backup-world.test.sh` (36 checks, no network);
+interval, longer if a client stalls. Proved by `test/backup-world.test.sh` (40 checks, no network);
 the test-host restore with a rejoining character is part of the v17 acceptance run.
 
 **The web map's data and the bounty ledgers are in the archive too (2026-10-27).** `ValheimWebMap/`
@@ -476,9 +476,14 @@ writes during the copy (the map writes every 60 s by default when its data chang
 like the others. From `EpicLoot/` only `BountySaves/` is taken; the rest is configuration. Each is
 optional, as the other bepinex stores are: a fresh server that has written neither backs up, and
 `MANIFEST.txt` records them `absent`. A restore moves existing copies aside to
-`ValheimWebMap.replaced-<stamp>` and `EpicLoot/BountySaves.replaced-<stamp>`. An archive made
-before this change holds neither store, so restoring one moves the current copies aside too; copy
-them back by hand to keep the map and the bounties current.
+`ValheimWebMap.replaced-<stamp>` and `EpicLoot/BountySaves.replaced-<stamp>` (with `--force`, removes
+them), so an archive recording them `absent` leaves the target without them. An archive made before
+this change (#131) never looked for them, and its `MANIFEST.txt` has no line for either. A restore
+of such an archive leaves the target's `ValheimWebMap/` and `EpicLoot/BountySaves/` as they are,
+with `--force` too, and says so: "not in this archive (older format): left as is", and in a dry run
+"would leave as is". The rule holds for every store: only a store the manifest records `absent`
+is replaced with nothing; a store it doesn't name is left alone. So a restored world can sit beside
+a map and ledgers newer than it; move them aside by hand if that matters.
 
 **The schedule, the retention and the off-host copy are now chosen and installed.** The decision is
 committed as two systemd user units in `config/backup/`, which is what makes it reviewable in a diff
