@@ -15,9 +15,11 @@
       plugins = linux.callPackage ./nix/plugins.nix {
         inherit (inputs) server bepinexPack mods;
         bepinexVersion = lock.bepinexPack.version;
+        stamp = lock.plugins;
       };
-      # Our own DLLs reach the image through `plugins` alone: ra's choice of their bytes
-      # (docs/live-vs-lock-20261027.md, decision 3) swaps this one input.
+      # Our own DLLs reach the image through `plugins` alone. ra chose decision 3 (b)
+      # (docs/live-vs-lock-20261027.md): built from source, with the live build's SDK line, path
+      # and commit stamp.
       serverImage = linux.callPackage ./nix/server-image.nix {
         inherit (inputs) server redist bepinexPack mods;
         inherit plugins;

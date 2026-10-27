@@ -118,6 +118,26 @@ wait "$filter_pid" || filter_status=$?
 check "lembitu-logmark ignores SIGINT, SIGTERM and SIGHUP, and exits 0 at end of input" \
   bash -c "[[ $filter_status -eq 0 ]] && diff <(printf 'before\nafter the signals\n') '$WORK/signals.out'"
 
+# --- the plugins' compiler -----------------------------------------------------------------------
+
+# nix/plugins.nix builds with the SDK the lock's `plugins` names, and refuses another: the build IDs
+# follow the compiler's exact version (docs/live-vs-lock-20261027.md, section 4).
+plugins_drv() {  # plugins_drv <sdk>: evaluate nix/plugins.nix with that SDK in the stamp
+  nix eval --impure --raw --expr "let r = \"$REPO_ROOT\";
+    pkgs = (builtins.getFlake \"path:\${r}\").inputs.nixpkgs.legacyPackages.x86_64-linux;
+    in (pkgs.callPackage (r + \"/nix/plugins.nix\") { server = \"/s\"; bepinexPack = \"/p\";
+      bepinexVersion = \"5\"; mods = \"/m\";
+      stamp = { sdk = \"$1\"; pathMap = \"/x/\"; sourceRevisionId = \"0\"; }; }).drvPath" > "$WORK/eval.out" 2>&1
+}
+if command -v nix >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+  locked_sdk="$(jq -r '.plugins.sdk' "$REPO_ROOT/docs/server-inputs.lock.json")"
+  check "the plugins evaluate with the lock's SDK, $locked_sdk" plugins_drv "$locked_sdk"
+  wrong_sdk() { ! plugins_drv 10.0.999 && grep -q "the lock's plugins.sdk is 10.0.999" "$WORK/eval.out"; }
+  check "the plugins refuse an SDK the lock doesn't name" wrong_sdk
+else
+  echo "skip: the plugins' SDK guard needs nix and jq"
+fi
+
 # --- a fake game for the entrypoint -------------------------------------------------------------
 
 GAME="$WORK/game"
@@ -152,12 +172,14 @@ chmod -R a-w "$GAME" "$BEPINEX"
 
 # The ConfigMap's shape: files that are links into a ..data directory.
 CONFIG="$WORK/configmap"
-mkdir -p "$CONFIG/..2026_10_27/CreatureManager"
+mkdir -p "$CONFIG/..2026_10_27/CreatureManager" "$CONFIG/..2026_10_27/EpicLoot/patches"
 printf '[Seed]\nKey = enforced\n' > "$CONFIG/..2026_10_27/BepInEx.cfg"
 printf 'enforced\n' > "$CONFIG/..2026_10_27/lembitu.guilds.cfg"
+printf '{}\n' > "$CONFIG/..2026_10_27/EpicLoot/patches/lembitu.json"
 ln -s ..2026_10_27 "$CONFIG/..data"
 ln -s ..data/BepInEx.cfg "$CONFIG/BepInEx.cfg"
 ln -s ..data/lembitu.guilds.cfg "$CONFIG/lembitu.guilds.cfg"
+ln -s ..data/EpicLoot "$CONFIG/EpicLoot"
 
 PROC_NET="$WORK/proc-net"
 mkdir -p "$PROC_NET"
@@ -218,7 +240,21 @@ start_entrypoint; finish_entrypoint 5
 check "a password shorter than Valheim's 5 characters is refused" \
   bash -c "[[ $EP_STATUS -ne 0 && $EP_STATUS -ne 124 ]] && grep -q 'shorter than the 5 characters' '$WORK/stderr' && [[ ! -e '$WORK/fake/pid' ]]"
 
+# A ConfigMap that carries a plugin store would hide the volume's copy under its own.
+mkdir -p "$WORK/configmap-store/ValheimWebMap"
+printf 'map\n' > "$WORK/configmap-store/ValheimWebMap/history.json"
 printf 'fixture pass\n' > "$WORK/password"
+start_entrypoint LEMBITU_CONFIG="$WORK/configmap-store"; finish_entrypoint 5
+check "a ConfigMap carrying a plugin store is refused" \
+  bash -c "[[ $EP_STATUS -ne 0 && $EP_STATUS -ne 124 ]] && grep -q 'the config carries ValheimWebMap' '$WORK/stderr' && [[ ! -e '$WORK/fake/pid' ]]"
+
+# With no EpicLoot directory in the ConfigMap, the bounty saves' parent is made for the link.
+mkdir -p "$WORK/configmap-empty"
+start_entrypoint LEMBITU_CONFIG="$WORK/configmap-empty"
+wait_for "$WORK/fake/running" 10 || true
+check "EpicLoot's bounty saves link to the volume when the ConfigMap has no EpicLoot directory" \
+  bash -c "[[ \"\$(readlink '$RUNTIME/BepInEx/config/EpicLoot/BountySaves')\" == '$DATA/bepinex/EpicLoot/BountySaves' ]]"
+stop_entrypoint
 
 # --- one start, end to end ---------------------------------------------------------------------
 
@@ -267,8 +303,11 @@ check "OdinOnDemand.dll is a real copy, so its Assembly.Location is in the writa
   bash -c "p='$RUNTIME/BepInEx/plugins/OdinOnDemand/OdinOnDemand.dll'; [[ -f \$p && ! -L \$p ]] \
     && cmp -s \$p '$BEPINEX/plugins/OdinOnDemand/OdinOnDemand.dll'"
 check "the plugin stores in config/ link to the volume" \
-  bash -c "for s in Guilds Marketplace Lembitu.Guilds; do \
+  bash -c "for s in Guilds Marketplace Lembitu.Guilds ValheimWebMap EpicLoot/BountySaves; do \
     [[ \"\$(readlink '$RUNTIME/BepInEx/config/'\$s)\" == '$DATA/bepinex/'\$s && -d '$DATA/bepinex/'\$s ]] || exit 1; done"
+check "EpicLoot's bounty saves link to the volume beside the ConfigMap's EpicLoot/patches" \
+  bash -c "[[ -d '$RUNTIME/BepInEx/config/EpicLoot' && ! -L '$RUNTIME/BepInEx/config/EpicLoot' \
+    && -f '$RUNTIME/BepInEx/config/EpicLoot/patches/lembitu.json' ]]"
 check "config/ is real writable files: the seeds, then the ConfigMap over them" \
   bash -c "[[ ! -L '$RUNTIME/BepInEx/config/BepInEx.cfg' && -w '$RUNTIME/BepInEx/config/BepInEx.cfg' ]] \
     && grep -q 'Key = enforced' '$RUNTIME/BepInEx/config/BepInEx.cfg' \
@@ -382,6 +421,15 @@ check "no world, no Secret and no enforced config in the image" no_state
 in_nix nixpkgs#ilspycmd -c "$REPO_ROOT/scripts/list-plugin-guids.sh" "$ROOTFS$bepinex/plugins" > "$WORK/guids.tsv"
 check "the image's plugin GUIDs are the lock's serverPlugins" \
   bash -c "diff <(jq -r '.serverPlugins | (.load[] | . + \"\tload\"), (.skip | to_entries[] | .key + \"\t\" + .value)' '$LOCK' | LC_ALL=C sort) '$WORK/guids.tsv'"
+# Our DLLs carry the live build's PDB path and commit stamp (the lock's `plugins`).
+stamped() {
+  local dll path stamp
+  path="$(jq -r '.plugins.pathMap' "$LOCK")"; stamp="$(jq -r '.plugins.sourceRevisionId' "$LOCK")"
+  for dll in Lembitu.Callings Lembitu.Guide Lembitu.Guilds Lembitu.Harness Lembitu.Oathbound ValheimWebMap; do
+    grep -qaF "$path" "$ROOTFS$bepinex/plugins/$dll.dll" && grep -qaF "+$stamp" "$ROOTFS$bepinex/plugins/$dll.dll" || return 1
+  done
+}
+check "our six server DLLs carry the lock's PathMap and commit stamp" stamped
 
 # --- the server ---
 VOLUME="$NAME-data"

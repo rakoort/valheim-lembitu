@@ -47,8 +47,9 @@ libraries through `LD_LIBRARY_PATH`, so its bytes stay the depot's.
 
 Not in it: the enforced and dedicated config (a ConfigMap), the world, and the Secrets.
 
-`plugins` is the one input that decides our own DLLs' bytes. `docs/live-vs-lock-20261027.md`,
-decision 3, chooses which bytes those are; whichever is chosen swaps that input and nothing else.
+`plugins` is the one input that decides our own DLLs' bytes. Following ra's choice (b)
+(`docs/live-vs-lock-20261027.md`, decision 3), `.#plugins` builds them from source with SDK
+10.0.400, the live build's path and its commit stamp. They are IL-identical to the live DLLs.
 
 ## How it starts
 
@@ -101,6 +102,8 @@ Read from the running image: the image tier's `ls -lAR` of every writable mount,
 | `/data/save/adminlist.txt`, `bannedlist.txt`, `permittedlist.txt` | The game, empty when absent. | The volume. |
 | `/data/save/ServerManager/` | ServerManager: its character store and per-player activity logs. | The volume. |
 | `/data/bepinex/Guilds/`, `Marketplace/`, `Lembitu.Guilds/` | The guild and market plugins. On the live server these live in `BepInEx/config`; the runtime tree links them here. | The volume. |
+| `/data/bepinex/ValheimWebMap/` | The map fork's data, per world: the explored mask, history and base map cache. Its default directory is `BepInEx/config/ValheimWebMap`, linked here. | The volume. |
+| `/data/bepinex/EpicLoot/BountySaves/` | EpicLoot's bounty ledgers, one per player. They are written under `BepInEx/config/EpicLoot`, and `BountySaves/` is linked here. | The volume. |
 | `/data/bepinex/SeparateSpawns/reports/` | SeparateSpawns' layout report of each world. It writes beside its DLL; the runtime tree links `reports/` here. | The volume. |
 | `/run/lembitu/BepInEx/plugins/OdinOnDemand/assetbundles/`, `radio/` | OdinOnDemand creates both beside its DLL and reads radio stations from them. The Pack ships none, so they start empty. | Each start. |
 | `/run/lembitu/BepInEx/config/` | The config copied at start; plugins add the files they create when missing, such as FineDining's `Icebox.yml`. | Each start. |

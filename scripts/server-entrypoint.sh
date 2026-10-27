@@ -41,9 +41,11 @@ DATA=${LEMBITU_DATA:-/data}
 CONFIG=${LEMBITU_CONFIG:-/etc/lembitu/bepinex}
 PASSWORD_FILE=${LEMBITU_PASSWORD_FILE:-/run/secrets/lembitu/password}
 
-# Plugin stores that live in BepInEx/config on the live server (scripts/backup-world.sh captures
-# them as bepinex-state/).
-CONFIG_STORES=(Guilds Marketplace Lembitu.Guilds)
+# Plugin stores that live in BepInEx/config on the live server. scripts/backup-world.sh captures the
+# first three as bepinex-state/. The live config read of 2026-10-27 (docs/live-vs-lock-20261027.md,
+# section 7) found two more: ValheimWebMap's per-world explored map and history, and EpicLoot's
+# per-player bounty ledgers.
+CONFIG_STORES=(Guilds Marketplace Lembitu.Guilds ValheimWebMap EpicLoot/BountySaves)
 # Directories plugins create inside their own plugin directory at run time, found by running the
 # image (docs/server-image.md, "What the server writes"). PLUGIN_STATE persists on the volume:
 # SeparateSpawns' reports of each world's spawn regions. PLUGIN_SCRATCH starts empty at every
@@ -118,6 +120,7 @@ else
 fi
 for store in "${CONFIG_STORES[@]}"; do
   [[ ! -e "$RUNTIME/BepInEx/config/$store" ]] || die "the config carries $store, which is a plugin store on $DATA"
+  mkdir -p "$(dirname "$RUNTIME/BepInEx/config/$store")"
   ln -s "$DATA/bepinex/$store" "$RUNTIME/BepInEx/config/$store"
 done
 
