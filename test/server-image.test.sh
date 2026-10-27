@@ -351,6 +351,16 @@ check "SeparateSpawns' roster is seeded from the ConfigMap when the volume has n
     && [[ ! -L '$DATA/dedicated/SeparateSpawns.groups.json' ]]"
 stop_entrypoint
 
+# With no SeparateSpawns ConfigMap mounted, its root is still the volume's dedicated/, made empty,
+# so the mod writes its roster and layouts onto the volume and not through a dangling link.
+rm -rf "${DATA:?}/dedicated"
+start_entrypoint LEMBITU_DEDICATED_CONFIG="$WORK/no-dedicated-configmap"
+wait_for "$WORK/fake/running" 10 || true
+check "with no SeparateSpawns ConfigMap, config/bepinex links to the volume's dedicated/, made empty" \
+  bash -c "[[ -d '$DATA/dedicated' && -z \"\$(ls -A '$DATA/dedicated')\" && -e '$WORK/fake/running' \
+    && \"\$(readlink -f '$RUNTIME/config/bepinex')\" == \"\$(readlink -f '$DATA/dedicated')\" ]]"
+stop_entrypoint
+
 # --- one start, end to end ---------------------------------------------------------------------
 
 # Leftovers of an earlier start, which the wipe must remove: a stale marker and a stale file.

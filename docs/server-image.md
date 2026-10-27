@@ -131,10 +131,14 @@ Three plugins needed the runtime tree's help:
   mod generates the start regions again. #130's image left that root in the emptyDir, so a restart
   lost the layout, and the roster's assignments with it. The runtime tree now links the root to
   `/data/dedicated`, as the live server keeps it on disk in its game tree (its BepInEx log names the
-  directory: `Dedicated config root: …`), and config/dedicated lands there the way
-  `scripts/apply-dedicated-config.sh` treats it on the live server: the `.cfg` fresh at every
-  start, the roster only when there is none. Neither the layout nor the roster is in
-  `scripts/backup-world.sh`'s archive, on the live server or here.
+  directory: `Dedicated config root: …`). config/dedicated lands there at every start: the `.cfg`
+  whole, and the roster only when there is none. The roster is what `scripts/apply-dedicated-config.sh`
+  does on the live server; the `.cfg` is not: the live applier merges the overlay's keys into the
+  live file one by one, and the Pod copies the file whole. The two agree only while the live file
+  holds no key outside the overlay at a value other than the default, which the cutover checks
+  (its first step diffs the live `.cfg` against `config/dedicated/abortipus.separatespawns.cfg`).
+  `scripts/backup-world.sh` archives the layout and the roster under `dedicated/`, and the reports,
+  but not the `.cfg` (docs/wiki/operations.md, the backup).
 
 The stores must not come from the ConfigMap. A config seed for `ValheimWebMap` or
 `EpicLoot/BountySaves` stops every start with "the config carries …", on purpose: a copy there would
@@ -251,7 +255,8 @@ The StatefulSet `lembitu`:
   NetworkPolicy);
 - the probes: readiness is an exec of `lembitu-ready` every 10 s; a startup probe of the same allows
   15 minutes; there is no liveness probe, which could kill the server mid-save;
-- the Secret `lembitu-secrets`: its `password` as a file, `defaultMode` 0400, and its
+- the Secret `lembitu-secrets`: its `password` as a file, `defaultMode` 0400, which the kubelet
+  widens with the group's read because of `fsGroup`, so it is readable by the server's uid; and its
   `discord-bot-token` as `SERVERMANAGER_DISCORD_BOT_TOKEN`, which ServerManager's bot reads, as on
   the live container;
 - the claim template `world`, so the claim is `world-lembitu-0`, which the fleet's volume
@@ -269,11 +274,14 @@ from the stopped live server:
 | `save/` | `~/lembitu/config/save/`, the live `-savedir`: `worlds_local/`, `cache/`, the three lists, `ServerManager/` |
 | `bepinex/Guilds/`, `Marketplace/`, `Lembitu.Guilds/`, `ValheimWebMap/`, `EpicLoot/BountySaves/` | the same directories in `~/lembitu/config/bepinex/` |
 | `bepinex/SeparateSpawns/reports/` | `SeparateSpawns/reports/` in the live plugin tree (`~/lembitu/data/bepinex/BepInEx/plugins/`; regenerated if absent) |
-| `dedicated/` | the live server's SeparateSpawns root, the directory its BepInEx log names as `Dedicated config root:`: the roster and `SeparateSpawns/worlds/` |
+| `dedicated/` | the live server's SeparateSpawns root, the directory its BepInEx log names as `Dedicated config root:` (the game tree's `config/bepinex`, `~/lembitu/data/bepinex/config/bepinex` on the host): the roster and `SeparateSpawns/worlds/` |
 
-`save/` and `bepinex/` are exactly what `scripts/backup-world.sh` captures, and its `--root` reads
-them there: `scripts/backup-world.sh --root /state/lembitu/world --out …`, with the same archive as
-`--savedir` and `--bepinex`. `scripts/restore-world.sh --root` restores into the same layout.
+`scripts/backup-world.sh --root /state/lembitu/world --out …` captures the volume: `save/`,
+`bepinex/`'s stores, SeparateSpawns' roster and `SeparateSpawns/worlds/` in `dedicated/`, and
+`bepinex/SeparateSpawns/reports/`, the same archive as `--savedir`, `--bepinex`, `--dedicated` and
+`--reports` name. `dedicated/`'s `.cfg` is configuration, from the ConfigMap, and not archived.
+`scripts/restore-world.sh --root` restores into the same layout, and, run as root, gives what it
+restored to the volume's owner.
 
 ### What the Pod does not do that `launch-server.sh` does
 
@@ -292,7 +300,10 @@ runbook), ra's agent:
 
 1. adds a `.sops.yaml` rule for `workloads/lembitu/.*\.sops\.yaml$` with the Project's age public
    half and `encrypted_regex: ^(data|stringData)$`;
-2. fills `password` and `discord-bot-token` and encrypts the file in place with sops;
+2. fills `password` and `discord-bot-token` and encrypts the file in place with sops. Both keys must
+   be there, the token empty if there is no bot: the container's environment names the token key,
+   not optionally, so a Secret without it stops the Pod in `CreateContainerConfigError`, not a
+   start without the bot;
 3. adds `- lembitu-secrets.sops.yaml` to `workloads/lembitu/kustomization.yaml`'s `resources`.
 
 `test/lembitu-workload.test.sh` fails while a sealed file is unlisted or a placeholder is listed.

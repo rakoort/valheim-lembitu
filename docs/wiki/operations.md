@@ -422,8 +422,11 @@ actually writes, and it refuses the failure above by construction:
 | other `worlds_local/` directories | server | so a promoted playtest world is not lost |
 | `cache/` | server | biome data cache, regenerable but cheap |
 | `permittedlist.txt`, `adminlist.txt`, `bannedlist.txt` | server | admission |
+| `SeparateSpawns.groups.json`, `SeparateSpawns/worlds/` (under `dedicated/`) | server | SeparateSpawns' roster and each world's layout, from its own root; with `--dedicated` or `--root` |
+| `SeparateSpawns/reports/` (under `bepinex-state/`) | server | each world's layout report; with `--reports` or `--root` |
 | **not** `characters/` | client | personal keys live in the player's own file (ADR-0010) |
 | **not** BepInEx config | repo | deployed from `config/enforced/` and `dist/` |
+| **not** `abortipus.separatespawns.cfg` | repo | SeparateSpawns' configuration, from `config/dedicated/` |
 
 **Consistency is observed, not assumed.** The game writes `_main.<n>.ok` last and only then reaps
 generation `<n-1>`, so the script records the `.ok` marker set before and after the copy and retries
@@ -437,11 +440,27 @@ flat-file backup cannot be restored into a server that will then refuse to load 
 existing world aside to `<World>.replaced-<stamp>` rather than deleting it. `--dry-run` prints the
 plan and changes nothing.
 
-**On the Pool, both scripts take the volume's root.** The Workload keeps the save in `save/` and the
-plugin stores in `bepinex/` of one volume, `/state/lembitu/world` on astral-bicep
-(`docs/server-image.md`, "The volume"). `--root <dir>` reads and restores `<dir>/save` and
-`<dir>/bepinex`, the same archive as `--savedir` and `--bepinex`; after the cutover the backup unit
-runs `scripts/backup-world.sh --root /state/lembitu/world`.
+**SeparateSpawns' state is outside both directories.** Its roster and each world's layout live in
+its own root, `<game root>/config/bepinex` (on today's container
+`~/lembitu/data/bepinex/config/bepinex`, the directory its BepInEx log names as `Dedicated config
+root:`), and its reports beside its plugin (`~/lembitu/data/bepinex/BepInEx/plugins/SeparateSpawns/reports`).
+`--dedicated <dir>` and `--reports <dir>` capture them, under `dedicated/` and
+`bepinex-state/SeparateSpawns/reports/`. Without them the archive records them as not captured
+(`not_captured=` in its MANIFEST, no `store_` line), and a restore leaves the target's copies as they
+are, as for any store an archive never looked for. Losing the layout matters: the mod lays out new
+start regions and altars on a world that already has the old ones. A restore without `--dedicated`
+or `--reports` leaves an archive's copies out and says which option restores them.
+
+**On the Pool, both scripts take the volume's root.** The Workload keeps the save in `save/`, the
+plugin stores in `bepinex/`, SeparateSpawns' root in `dedicated/` and its reports in
+`bepinex/SeparateSpawns/reports/` of one volume, `/state/lembitu/world` on astral-bicep
+(`docs/server-image.md`, "The volume"). `--root <dir>` reads and restores those four, the same
+archive as `--savedir`, `--bepinex`, `--dedicated` and `--reports`; after the cutover the backup
+unit runs `scripts/backup-world.sh --root /state/lembitu/world`. The volume belongs to the server's
+uid, 10160, so a restore there runs as root, and `restore-world.sh --root` run as root gives
+`save/`, `bepinex/` and `dedicated/` back to the owner of `<dir>` afterwards: the archive records
+its files as the backup's user's, and a server that can't write its world directory fails its next
+save.
 
 Measured on astral-tricep, 2026-09-15, on a disposable server: the capture of a real 1.0 world was
 byte-identical to the source after restore (`diff` of per-file MD5s, zero differences), and a server

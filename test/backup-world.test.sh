@@ -542,10 +542,9 @@ if [[ -s "$PS/fresh/archive" ]] && "$RESTORE" --archive "$(cat "$PS/fresh/archiv
 else report fail "an archive recording both stores absent still moves the live copies aside"; fi
 
 # --- 19. --root: the Workload's volume ---------------------------------------------------------
-# The Pod's volume is <root>/save (the -savedir) and <root>/bepinex (the plugin stores), and on
-# astral-bicep after the cutover it is /state/lembitu/world. --root reads it with no change to the
-# archive: the same files as --savedir <root>/save --bepinex <root>/bepinex. What the volume holds
-# beside them (SeparateSpawns' root in dedicated/, its reports) is not in the archive, as before.
+# The Pod's volume is <root>/save (the -savedir), <root>/bepinex (the plugin stores), <root>/dedicated
+# (SeparateSpawns' root) and <root>/bepinex/SeparateSpawns/reports, and on astral-bicep after the
+# cutover it is /state/lembitu/world. --root reads exactly what the four options name.
 
 RT="$WORK/root"; VOL="$RT/volume"
 make_world "$VOL/save" Run 1
@@ -561,15 +560,17 @@ listing() {  # listing <archive>: its paths, without the two files that name the
 }
 root_ok=false
 if "$BACKUP" --root "$VOL" --out "$RT/by-root" > "$RT/root-archive" 2> "$WORK/out" \
-   && "$BACKUP" --savedir "$VOL/save" --bepinex "$VOL/bepinex" --out "$RT/by-dirs" > "$RT/dirs-archive" 2> "$WORK/out" \
+   && "$BACKUP" --savedir "$VOL/save" --bepinex "$VOL/bepinex" --dedicated "$VOL/dedicated" \
+        --reports "$VOL/bepinex/SeparateSpawns/reports" --out "$RT/by-dirs" > "$RT/dirs-archive" 2> "$WORK/out" \
    && diff <(listing "$(cat "$RT/root-archive")") <(listing "$(cat "$RT/dirs-archive")") > /dev/null \
    && tar xzOf "$(cat "$RT/root-archive")" ./bepinex-state/Guilds/Run.dat | grep -Fxq 'guild vault' \
    && tar xzOf "$(cat "$RT/root-archive")" ./bepinex-state/EpicLoot/BountySaves/76561198000000001.json | grep -Fxq 'ledger' \
-   && ! tar tzf "$(cat "$RT/root-archive")" | grep -q -e SeparateSpawns -e dedicated; then
+   && tar xzOf "$(cat "$RT/root-archive")" ./dedicated/SeparateSpawns/worlds/1.json | grep -Fxq '{}' \
+   && tar xzOf "$(cat "$RT/root-archive")" ./bepinex-state/SeparateSpawns/reports/1/summary.txt | grep -Fxq 'report'; then
   root_ok=true
 fi
-if $root_ok; then report ok "--root captures the volume's save and plugin stores: the same archive as --savedir and --bepinex"
-else report fail "--root captures the volume's save and plugin stores: the same archive as --savedir and --bepinex"; fi
+if $root_ok; then report ok "--root captures the volume's save, plugin and SeparateSpawns stores: the same archive as the four options"
+else report fail "--root captures the volume's save, plugin and SeparateSpawns stores: the same archive as the four options"; fi
 
 if [[ -s "$RT/root-archive" ]] && "$RESTORE" --archive "$(cat "$RT/root-archive")" --root "$RT/restored" > "$WORK/out" 2>&1 \
    && diff -r "$VOL/save/worlds_local" "$RT/restored/save/worlds_local" > /dev/null \
@@ -578,12 +579,243 @@ if [[ -s "$RT/root-archive" ]] && "$RESTORE" --archive "$(cat "$RT/root-archive"
   report ok "restore --root puts the world in <root>/save and the stores in <root>/bepinex"
 else report fail "restore --root puts the world in <root>/save and the stores in <root>/bepinex"; fi
 
-if ! "$BACKUP" --root "$VOL" --savedir "$VOL/save" --out "$RT/both" > "$WORK/out" 2>&1 \
-   && grep -q -- '--root replaces --savedir and --bepinex' "$WORK/out" && [[ ! -e "$RT/both" ]] \
-   && ! "$RESTORE" --archive "$(cat "$RT/root-archive")" --root "$RT/both" --bepinex "$RT/elsewhere" > "$WORK/out" 2>&1 \
-   && grep -q -- '--root replaces --savedir and --bepinex' "$WORK/out" && [[ ! -e "$RT/both" ]]; then
-  report ok "--root with --savedir or --bepinex is refused, by both scripts"
-else report fail "--root with --savedir or --bepinex is refused, by both scripts"; fi
+refused_both() {  # refused_both <extra option> <its value>: --root with it is refused by both scripts
+  ! "$BACKUP" --root "$VOL" "$1" "$2" --out "$RT/both" > "$WORK/out" 2>&1 \
+    && grep -q -- '--root replaces --savedir, --bepinex, --dedicated and --reports' "$WORK/out" && [[ ! -e "$RT/both" ]] \
+    && ! "$RESTORE" --archive "$(cat "$RT/root-archive")" --root "$RT/both" "$1" "$2" > "$WORK/out" 2>&1 \
+    && grep -q -- '--root replaces --savedir, --bepinex, --dedicated and --reports' "$WORK/out" && [[ ! -e "$RT/both" ]]
+}
+if refused_both --savedir "$VOL/save" && refused_both --bepinex "$RT/elsewhere" \
+   && refused_both --dedicated "$RT/elsewhere" && refused_both --reports "$RT/elsewhere"; then
+  report ok "--root with --savedir, --bepinex, --dedicated or --reports is refused, by both scripts"
+else report fail "--root with --savedir, --bepinex, --dedicated or --reports is refused, by both scripts"; fi
+
+# --- 20. SeparateSpawns' roster, world layouts and reports (#133) ------------------------------
+# Its root holds the roster (who belongs to which start region) and each world's layout (the start
+# regions and Eikthyr altars; without it the mod lays out new ones), and its reports sit beside its
+# plugin. On today's container both are in the game tree (~/lembitu/data/bepinex/config/bepinex and
+# .../BepInEx/plugins/SeparateSpawns/reports), named by --dedicated and --reports; on the Pool they
+# are <root>/dedicated and <root>/bepinex/SeparateSpawns/reports. The root's .cfg is configuration
+# and stays out.
+
+SP="$WORK/spawns"
+make_spawns() {  # make_spawns <dedicated dir> <reports dir> <tag>
+  mkdir -p "$1/SeparateSpawns/worlds" "$2/2270623796"
+  printf '{"Skadi": ["%s"]}\n' "$3"        > "$1/SeparateSpawns.groups.json"
+  printf '{"Frozen": true, "tag": "%s"}\n' "$3" > "$1/SeparateSpawns/worlds/2270623796.json"
+  printf 'layout report %s\n' "$3"          > "$2/2270623796/summary.txt"
+  printf '[General]\nInnerRadius = 1200\n'  > "$1/abortipus.separatespawns.cfg"
+}
+spawn_files=(dedicated/SeparateSpawns.groups.json dedicated/SeparateSpawns/worlds/2270623796.json
+             bepinex-state/SeparateSpawns/reports/2270623796/summary.txt)
+spawn_lines=(store_dedicated/SeparateSpawns.groups.json store_dedicated/SeparateSpawns/worlds
+             store_bepinex-state/SeparateSpawns/reports)
+# Today's container: the save and plugin stores under ~/lembitu/config, SeparateSpawns in the game tree.
+LIVE="$SP/live"; LIVE_DED="$LIVE/data/bepinex/config/bepinex"; LIVE_REP="$LIVE/data/bepinex/BepInEx/plugins/SeparateSpawns/reports"
+make_world "$LIVE/config/save" Run 1
+mkdir -p "$LIVE/config/bepinex/Guilds"; printf 'guild vault\n' > "$LIVE/config/bepinex/Guilds/Run.dat"
+make_spawns "$LIVE_DED" "$LIVE_REP" live
+live_source() {  # live_source <archive path>: where the live tree keeps it
+  case "$1" in
+    dedicated/*) printf '%s/%s\n' "$LIVE_DED" "${1#dedicated/}" ;;
+    bepinex-state/SeparateSpawns/reports/*) printf '%s/%s\n' "$LIVE_REP" "${1#bepinex-state/SeparateSpawns/reports/}" ;;
+  esac
+}
+sp_archive=""
+"$BACKUP" --savedir "$LIVE/config/save" --dedicated "$LIVE_DED" --reports "$LIVE_REP" --out "$SP/backups" > "$SP/archive" 2> "$WORK/out" \
+  && sp_archive="$(cat "$SP/archive")"
+captured_ok=false
+if [[ -n "$sp_archive" ]]; then
+  mkdir -p "$SP/x"; tar xzf "$sp_archive" -C "$SP/x"
+  captured_ok=true
+  for f in "${spawn_files[@]}"; do
+    sum="$(shasum -a 256 "$(live_source "$f")" | cut -d' ' -f1)"
+    grep -Fxq "$sum  ./$f" "$SP/x/INVENTORY.txt" || captured_ok=false
+    cmp -s "$(live_source "$f")" "$SP/x/$f" || captured_ok=false
+  done
+  for l in "${spawn_lines[@]}"; do grep -Fxq "$l=present" "$SP/x/MANIFEST.txt" || captured_ok=false; done
+  [[ -z "$(find "$SP/x" -name '*.cfg')" ]] || captured_ok=false
+  grep -q '^contents=.*,dedicated/SeparateSpawns.groups.json,dedicated/SeparateSpawns/worlds,bepinex-state/SeparateSpawns/reports$' "$SP/x/MANIFEST.txt" || captured_ok=false
+  ! grep -q '^not_captured=' "$SP/x/MANIFEST.txt" || captured_ok=false
+fi
+if $captured_ok; then
+  report ok "captures today's SeparateSpawns roster, layout and reports with their SHA-256 in INVENTORY and MANIFEST, not its .cfg"
+else report fail "captures today's SeparateSpawns roster, layout and reports into the archive, INVENTORY and MANIFEST"; fi
+
+for f in dedicated/SeparateSpawns.groups.json dedicated/SeparateSpawns/worlds/2270623796.json \
+         bepinex-state/SeparateSpawns/reports/2270623796/summary.txt; do
+  rm -rf "$SP/flip" "$SP/flip.tar.gz" "$SP/no-write"
+  if [[ -f "$SP/x/$f" ]] && cp -a "$SP/x" "$SP/flip" \
+     && printf 'X' | dd of="$SP/flip/$f" bs=1 seek=0 conv=notrunc 2>/dev/null \
+     && (cd "$SP/flip" && tar czf "$SP/flip.tar.gz" .) \
+     && ! "$RESTORE" --archive "$SP/flip.tar.gz" --root "$SP/no-write" > "$WORK/out" 2>&1 \
+     && grep -q 'inventory mismatch' "$WORK/out" && [[ ! -e "$SP/no-write" ]]; then
+    report ok "inventory check catches a changed byte in $f before any write"
+  else report fail "inventory check catches a changed byte in $f"; fi
+done
+
+# The Pool's layout: today's archive restores into a new volume, and the volume's own archive is
+# the same stores again.
+POD="$SP/pod"
+pod_ok=false
+if [[ -n "$sp_archive" ]] && "$RESTORE" --archive "$sp_archive" --root "$POD" > "$WORK/out" 2>&1 \
+   && cmp -s "$LIVE_DED/SeparateSpawns.groups.json" "$POD/dedicated/SeparateSpawns.groups.json" \
+   && diff -r "$LIVE_DED/SeparateSpawns/worlds" "$POD/dedicated/SeparateSpawns/worlds" > /dev/null \
+   && diff -r "$LIVE_REP" "$POD/bepinex/SeparateSpawns/reports" > /dev/null \
+   && [[ ! -e "$POD/dedicated/abortipus.separatespawns.cfg" ]] \
+   && "$BACKUP" --root "$POD" --out "$SP/pod-backups" > "$SP/pod-archive" 2> "$WORK/out" \
+   && diff <(tar xzOf "$sp_archive" ./INVENTORY.txt | grep -e '  \./dedicated/' -e '  \./bepinex-state/SeparateSpawns/') \
+           <(tar xzOf "$(cat "$SP/pod-archive")" ./INVENTORY.txt | grep -e '  \./dedicated/' -e '  \./bepinex-state/SeparateSpawns/') > /dev/null; then
+  pod_ok=true
+fi
+if $pod_ok; then report ok "today's archive restores the roster, layout and reports into the Pool's layout (--root), and backs up from there the same"
+else report fail "today's archive restores the roster, layout and reports into the Pool's layout (--root), and backs up from there the same"; fi
+
+# The rollback: the Pool's archive restores into today's paths, over later copies, which move aside.
+make_spawns "$SP/back/dedicated" "$SP/back/reports" later
+make_world "$SP/back/save" Run 1
+back_ok=false
+if [[ -s "$SP/pod-archive" ]] \
+   && "$RESTORE" --archive "$(cat "$SP/pod-archive")" --savedir "$SP/back/save" --dedicated "$SP/back/dedicated" \
+        --reports "$SP/back/reports" > "$WORK/out" 2>&1 \
+   && grep -Fq '"live"' "$SP/back/dedicated/SeparateSpawns.groups.json" \
+   && grep -Fq '"live"' "$SP/back/dedicated/SeparateSpawns/worlds/2270623796.json" \
+   && grep -Fxq 'layout report live' "$SP/back/reports/2270623796/summary.txt" \
+   && grep -Fq '"later"' "$(find "$SP/back/dedicated" -maxdepth 1 -name 'SeparateSpawns.groups.json.replaced-*')" \
+   && grep -Fq '"later"' "$(find "$SP/back/dedicated/SeparateSpawns" -maxdepth 1 -name 'worlds.replaced-*')/2270623796.json" \
+   && [[ -n "$(find "$SP/back" -maxdepth 1 -name 'reports.replaced-*')" ]] \
+   && grep -Fxq 'InnerRadius = 1200' "$SP/back/dedicated/abortipus.separatespawns.cfg"; then
+  back_ok=true
+fi
+if $back_ok; then report ok "the Pool's archive restores into today's paths, moving the later roster, layout and reports aside, the .cfg untouched"
+else report fail "the Pool's archive restores into today's paths, moving the later roster, layout and reports aside"; fi
+
+# Missing: a volume where SeparateSpawns has written nothing yet backs up, records all three absent,
+# and restores.
+EMPTY="$SP/empty"; make_world "$EMPTY/save" Run 1
+absent_ok=false
+if "$BACKUP" --root "$EMPTY" --out "$SP/empty-backups" > "$SP/empty-archive" 2> "$WORK/out"; then
+  manifest="$(tar xzOf "$(cat "$SP/empty-archive")" ./MANIFEST.txt)"
+  absent_ok=true
+  for l in "${spawn_lines[@]}"; do grep -Fxq "$l=absent" <<< "$manifest" || absent_ok=false; done
+  "$RESTORE" --archive "$(cat "$SP/empty-archive")" --root "$SP/empty-target" > "$WORK/out" 2>&1 || absent_ok=false
+  [[ ! -e "$SP/empty-target/dedicated/SeparateSpawns.groups.json" ]] || absent_ok=false
+fi
+if $absent_ok; then report ok "a volume without SeparateSpawns' stores backs up, records the three absent and restores"
+else report fail "a volume without SeparateSpawns' stores backs up, records the three absent and restores"; fi
+
+# Today's unit, not told where SeparateSpawns keeps its state: the archive says so, records no store
+# line, and a restore leaves the target's copies as they are, --force included (#131's rule).
+untold_ok=false
+keep_target() {  # keep_target <dir>: a Pool volume whose SeparateSpawns stores must survive
+  make_world "$1/save" Run 1; make_spawns "$1/dedicated" "$1/bepinex/SeparateSpawns/reports" kept
+}
+kept() {  # kept <dir>: its three stores as keep_target made them, nothing moved aside
+  grep -Fq '"kept"' "$1/dedicated/SeparateSpawns.groups.json" \
+    && grep -Fq '"kept"' "$1/dedicated/SeparateSpawns/worlds/2270623796.json" \
+    && grep -Fxq 'layout report kept' "$1/bepinex/SeparateSpawns/reports/2270623796/summary.txt" \
+    && [[ -z "$(find "$1/dedicated" "$1/bepinex/SeparateSpawns" -name '*.replaced-*')" ]]
+}
+if "$BACKUP" --savedir "$LIVE/config/save" --out "$SP/untold-backups" > "$SP/untold-archive" 2> "$WORK/out"; then
+  untold="$(cat "$SP/untold-archive")"
+  manifest="$(tar xzOf "$untold" ./MANIFEST.txt)"
+  keep_target "$SP/untold-target"; keep_target "$SP/untold-forced"
+  grep -Fxq 'not_captured=dedicated (no --dedicated),bepinex-state/SeparateSpawns/reports (no --reports)' <<< "$manifest" \
+    && ! grep -q -e '^store_dedicated/' -e '^store_bepinex-state/SeparateSpawns/' <<< "$manifest" \
+    && ! tar tzf "$untold" | grep -q -e '^\./dedicated' -e 'SeparateSpawns' \
+    && "$RESTORE" --archive "$untold" --root "$SP/untold-target" > "$WORK/out" 2>&1 \
+    && grep -Fq "not in this archive (older format): left as is: $SP/untold-target/dedicated/SeparateSpawns/worlds" "$WORK/out" \
+    && kept "$SP/untold-target" \
+    && "$RESTORE" --archive "$untold" --root "$SP/untold-forced" --force > "$WORK/out" 2>&1 \
+    && kept "$SP/untold-forced" && untold_ok=true
+fi
+if $untold_ok; then report ok "an archive not told where SeparateSpawns' stores are says so, and a restore (--force too) leaves the target's copies"
+else report fail "an archive not told where SeparateSpawns' stores are says so, and a restore (--force too) leaves the target's copies"; fi
+
+# An archive from before #133 has neither the stores nor their lines.
+old_ok=false
+if [[ -n "$sp_archive" ]]; then
+  rm -rf "$SP/old"; cp -a "$SP/x" "$SP/old"
+  rm -rf "$SP/old/dedicated" "$SP/old/bepinex-state/SeparateSpawns"
+  grep -v -e '^store_dedicated/' -e '^store_bepinex-state/SeparateSpawns/' "$SP/x/MANIFEST.txt" > "$SP/old/MANIFEST.txt"
+  store_inventory "$SP/old" > "$SP/old-inventory"; mv "$SP/old-inventory" "$SP/old/INVENTORY.txt"
+  (cd "$SP/old" && tar czf "$SP/old.tar.gz" .)
+  keep_target "$SP/old-target"; keep_target "$SP/old-forced"
+  "$RESTORE" --archive "$SP/old.tar.gz" --root "$SP/old-target" --dry-run > "$WORK/out" 2>&1 \
+    && grep -Fxq "not in this archive (older format): would leave as is: $SP/old-target/dedicated/SeparateSpawns.groups.json" "$WORK/out" \
+    && "$RESTORE" --archive "$SP/old.tar.gz" --root "$SP/old-target" > "$WORK/out" 2>&1 && kept "$SP/old-target" \
+    && "$RESTORE" --archive "$SP/old.tar.gz" --root "$SP/old-forced" --force > "$WORK/out" 2>&1 && kept "$SP/old-forced" \
+    && old_ok=true
+fi
+if $old_ok; then report ok "an archive from before #133 leaves the target's roster, layout and reports in place, --force included"
+else report fail "an archive from before #133 leaves the target's roster, layout and reports in place, --force included"; fi
+
+# An archive that holds them, restored with no destination for them, leaves them out and says so.
+leftout_ok=false
+if [[ -n "$sp_archive" ]] \
+   && "$RESTORE" --archive "$sp_archive" --savedir "$SP/nodest/config/save" > "$WORK/out" 2>&1 \
+   && grep -Fq 'left out: dedicated/SeparateSpawns/worlds (the archive records it' "$WORK/out" \
+   && grep -Fq 'give --reports to restore it' "$WORK/out" \
+   && [[ -z "$(find "$SP/nodest" -path '*SeparateSpawns*')" ]]; then
+  leftout_ok=true
+fi
+if $leftout_ok; then report ok "with no --dedicated or --reports a restore leaves SeparateSpawns' stores out and names the options"
+else report fail "with no --dedicated or --reports a restore leaves SeparateSpawns' stores out and names the options"; fi
+
+# As root on the volume, the restore gives what it wrote to the volume's owner (the server's uid):
+# tar and cp -a keep the archive's owner, the backup's user. id and chown are stubbed.
+mkdir -p "$SP/stub"
+cat > "$SP/stub/id" <<EOF
+#!/usr/bin/env bash
+if [[ "\${1:-}" == -u ]]; then echo 0; else exec $(command -v id) "\$@"; fi
+EOF
+cat > "$SP/stub/chown" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$*" >> "$SP/chown.log"
+EOF
+chmod +x "$SP/stub/id" "$SP/stub/chown"
+owner_ok=false
+if [[ -n "$sp_archive" ]] \
+   && PATH="$SP/stub:$PATH" "$RESTORE" --archive "$sp_archive" --root "$SP/owned" > "$WORK/out" 2>&1 \
+   && [[ "$(cat "$SP/chown.log")" == "-R --reference=$SP/owned -- $SP/owned/save $SP/owned/bepinex $SP/owned/dedicated" ]] \
+   && rm -f "$SP/chown.log" \
+   && PATH="$SP/stub:$PATH" "$RESTORE" --archive "$sp_archive" --savedir "$SP/owned-savedir/save" > "$WORK/out" 2>&1 \
+   && [[ ! -e "$SP/chown.log" ]] \
+   && "$RESTORE" --archive "$sp_archive" --root "$SP/owned-user" > "$WORK/out" 2>&1 \
+   && ! grep -q '^gave: ' "$WORK/out"; then
+  owner_ok=true
+fi
+if $owner_ok; then report ok "as root, restore --root gives save/, bepinex/ and dedicated/ to the volume's owner; not otherwise"
+else report fail "as root, restore --root gives save/, bepinex/ and dedicated/ to the volume's owner; not otherwise"; fi
+
+# The mod writes its roster and layouts while the server runs: a change during the copy is noticed
+# and the copy taken again, as for the plugin stores. A fake cp changes the store right after
+# copying it, once.
+mkdir -p "$SP/cpstub"
+cat > "$SP/cpstub/cp" <<EOF
+#!/usr/bin/env bash
+if [[ " \$* " == *" \$SPAWN_BUMP_SRC "* && ! -e "\$SPAWN_BUMP_MARKER" ]]; then
+  rc=0; $(command -v cp) "\$@" || rc=\$?
+  : > "\$SPAWN_BUMP_MARKER"; printf 'bumped\n' >> "\$SPAWN_BUMP_FILE"
+  exit \$rc
+fi
+exec $(command -v cp) "\$@"
+EOF
+chmod +x "$SP/cpstub/cp"
+bumped() {  # bumped <source as cp is given it> <file it changes> <that file's archive path>
+  local tree="$SP/bump-$RANDOM"
+  make_world "$tree/save" Run 1; make_spawns "$tree/ded" "$tree/rep" live
+  local src="$tree/$1" file="$tree/$2"
+  SPAWN_BUMP_SRC="$src" SPAWN_BUMP_FILE="$file" SPAWN_BUMP_MARKER="$tree/bumped" PATH="$SP/cpstub:$PATH" \
+    "$BACKUP" --savedir "$tree/save" --dedicated "$tree/ded" --reports "$tree/rep" --out "$tree/out" > "$tree/archive" 2> "$WORK/out" \
+    && [[ -e "$tree/bumped" ]] && grep -q 'a save committed during the copy' "$WORK/out" \
+    && tar xzOf "$(cat "$tree/archive")" "./$3" | grep -Fxq bumped
+}
+if bumped ded/SeparateSpawns.groups.json ded/SeparateSpawns.groups.json dedicated/SeparateSpawns.groups.json \
+   && bumped ded/SeparateSpawns/worlds ded/SeparateSpawns/worlds/2270623796.json dedicated/SeparateSpawns/worlds/2270623796.json \
+   && bumped rep rep/2270623796/summary.txt bepinex-state/SeparateSpawns/reports/2270623796/summary.txt; then
+  report ok "a roster, layout or report changed during the copy is noticed, and the capture taken again"
+else report fail "a roster, layout or report changed during the copy is noticed, and the capture taken again"; fi
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

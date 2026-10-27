@@ -43,7 +43,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: server
-          image: astral-bicep.tail032eca.ts.net:30500/project/valheim-lembitu/server@sha256:a3404f9f2b5b0d93004f3e156a918d78c756f8a04c01bff4b0f88f4d55af86c7
+          image: astral-bicep.tail032eca.ts.net:30500/project/valheim-lembitu/server@sha256:f166e3a09e81769857932723a88d9b5765da90223836c1d5ae6e3843564964c2
           ports:
             - name: game
               containerPort: 2456
@@ -151,8 +151,8 @@ spec:
         - name: dedicated
           configMap:
             name: lembitu-dedicated
-        # The join password as a file, read only by its owner (r2's N4); the entrypoint passes it
-        # to -password, the one place Valheim takes it.
+        # The join password as a file, readable by the server's uid: 0400, plus the group's read the
+        # kubelet adds for fsGroup. The entrypoint passes it to -password, the one place Valheim takes it.
         - name: secrets
           secret:
             secretName: lembitu-secrets
@@ -169,9 +169,10 @@ spec:
           backup.fleet/tier: none
         annotations:
           backup.fleet/regeneration: >-
-            the game's own hourly archives on bicep (48) and their 30-day mirror on tricep: restore
-            the newest with scripts/restore-world.sh --archive <newest> --root /state/lembitu/world,
-            with the server stopped
+            the game's own hourly archives on bicep (48) and their 30-day mirror on tricep: the world,
+            the plugin stores, and SeparateSpawns' roster, world layouts and reports. Restore the newest,
+            as root with the server stopped, with scripts/restore-world.sh --archive <newest> --root
+            /state/lembitu/world, which gives the restored files back to the volume's owner (10160)
       spec:
         storageClassName: fleet-lembitu-local
         accessModes: [ReadWriteOnce]
