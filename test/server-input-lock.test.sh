@@ -294,6 +294,13 @@ missing_redist() { local rc=0; "$VERIFIER" --lock "$F/docs/server-inputs.lock.js
   --redist "$F/no-such-dir" > "$WORK/out" 2>&1 || rc=$?; [[ $rc -eq 2 ]]; }
 check "a redistributable directory that does not exist exits 2" missing_redist
 
+# #129's r2 N4: without this guard a missing list fails later, at its read, with exit 1.
+reset_fixture
+rm "$F/docs/redist-files.sha256"
+missing_redist_list() { local rc=0; run_verify || rc=$?; [[ $rc -eq 2 ]] \
+  && grep -qF "error: missing the redistributable's file list $F/docs/redist-files.sha256" "$WORK/out"; }
+check "a missing redistributable file list is a usage error, exit 2" missing_redist_list
+
 # --- 5. the lock drifting from its sources ------------------------------------------------------
 
 reset_fixture

@@ -67,8 +67,9 @@ in
 
   # The Steamworks SDK redistributable the live install carries beside the server (app 896660's
   # second depot): steamclient.so, which the server's libsteam_api.so loads at run time from
-  # linux64/ on LD_LIBRARY_PATH, as the depot's own start_server.sh sets it.
-  redist = fetchDepot "valheim-server-redist-${toString server.build}" redist;
+  # linux64/ on LD_LIBRARY_PATH, as the depot's own start_server.sh sets it. Named by its own depot
+  # and manifest: it moves independently of the server's build (#129's QA P3).
+  redist = fetchDepot "steamworks-redist-${toString redist.depot}-${redist.manifest}" redist;
 
   bepinexPack = fetchurl {
     name = "denikson-BepInExPack_Valheim-${bepinexPack.version}.zip";

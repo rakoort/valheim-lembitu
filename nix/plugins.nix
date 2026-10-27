@@ -8,6 +8,15 @@
 # The phases are the documented `dotnet build` at the root rather than buildDotnetModule's
 # defaults, which add --runtime (an x64 platform target for these AnyCPU net472 assemblies) and
 # publish each project. The output mirrors dist/: plugins/ and patchers/ hold our DLLs.
+#
+# The build matches the live server's DLLs (ra's decision 3 (b), docs/live-vs-lock-20261027.md): the
+# lock's `plugins` names the SDK, the build path the PDB records and the commit stamp of the live
+# build, and the compiler is held to that SDK version. The result is IL-identical to the live DLLs
+# and differs from them only in the content-derived build IDs, which follow the compiler's exact
+# version. ContinuousIntegrationBuild stays off: it would map the sources to /_/ and override the
+# PathMap. The PathMap also maps the hook's NuGet folder, `$TMPDIR/nuget.<random>/`, which otherwise
+# reaches the build IDs and makes two builds differ. It maps to NuGet's default on the Mac,
+# `/Users/ra/.nuget/`. That only touches the build IDs, which differ from live anyway.
 {
   lib,
   buildDotnetModule,
@@ -17,10 +26,14 @@
   bepinexPack,
   bepinexVersion,
   mods,
+  stamp,
 }:
 let
   root = ./..;
+  sdk = dotnetCorePackages."sdk_${lib.versions.major stamp.sdk}_0";
 in
+assert lib.assertMsg (sdk.version == stamp.sdk)
+  "the lock's plugins.sdk is ${stamp.sdk}, but nixpkgs supplies ${sdk.version}; the build IDs follow the compiler, so re-prove and re-lock it";
 buildDotnetModule {
   pname = "valheim-lembitu-plugins";
   version = "0";
@@ -41,13 +54,12 @@ buildDotnetModule {
   };
 
   nugetDeps = ./plugins-deps.json;
-  dotnet-sdk = dotnetCorePackages.sdk_8_0;
+  dotnet-sdk = sdk;
   nativeBuildInputs = [ unzip ];
 
   configurePhase = ''
     runHook preConfigure
-    dotnet restore Valheim.Lembitu.proj \
-      -p:ContinuousIntegrationBuild=true -p:Deterministic=true -p:NuGetAudit=false
+    dotnet restore Valheim.Lembitu.proj -p:Deterministic=true -p:NuGetAudit=false
     runHook postConfigure
   '';
 
@@ -63,8 +75,10 @@ buildDotnetModule {
     # dist/: every locked mod, hash-checked against docs/modstack.lock.json again while staging.
     scripts/stage-stack.sh --cache ${mods}
 
-    dotnet build Valheim.Lembitu.proj --no-restore \
-      -p:ContinuousIntegrationBuild=true -p:Deterministic=true
+    nuget_root=''${NUGET_PACKAGES%/packages/}/
+    dotnet build Valheim.Lembitu.proj --no-restore -p:Deterministic=true \
+      -p:PathMap="$PWD/=${stamp.pathMap}%2C$nuget_root=/Users/ra/.nuget/" \
+      -p:SourceRevisionId=${stamp.sourceRevisionId}
 
     runHook postBuild
   '';

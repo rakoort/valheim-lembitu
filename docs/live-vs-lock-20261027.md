@@ -12,22 +12,32 @@ agent's read of the live server on astral-bicep, taken at about 10:05Z on 2026-1
 The read's plugin list is intact: re-extracted, it hashes to the
 `eb608dc2…b97f` the agent recorded for `plugins.sha256` on bicep.
 
-The read has no per-file sha256s of the game install, so that comparison is still owed (row 2).
+A second read, taken at about 10:50Z the same day, copied three things, and its `MANIFEST.sha256`
+checks them:
+
+- the two DLLs that were in no release, `Lembitu.Harness.dll` and `ValheimWebMap.dll`;
+- the doorstop files;
+- the `config/bepinex` tree.
+
+Neither read has per-file sha256s of the game install; ra's agent's third read (2026-10-27, section 1) does, and it
+passed with 0 mismatches (row 2).
 
 ## Summary
 
 | # | What | Lock | Live | Result |
 | --- | --- | --- | --- | --- |
 | 1 | App 896660 build | 25909431 | `buildid` 25909431, `TargetBuildID` 25909431 | identical |
-| 2 | Depot 896661 | manifest 4001404753685205688, 2,075,353,104 bytes | manifest 4001404753685205688, `size` 2075353104 | identical; per-file sha256s not in the read |
+| 2 | Depot 896661 | manifest 4001404753685205688, 2,075,353,104 bytes | manifest 4001404753685205688, `size` 2075353104; every listed file's sha256 (third read) | identical: 0 mismatches against `server-files.sha256`, in `data/dl/server` and in `data/server` |
 | 3 | Depot 1006 | not locked before this change | manifest 4559160656493359681, `size` 111284048 | **now locked** (decision 1) |
 | 4 | Install size | 2,075,353,104 + 111,284,048 bytes | `SizeOnDisk` 2186637152 | identical (the sum) |
 | 5 | BepInEx core, 18 files | BepInExPack 5.4.2351, zip `bce63149…e29f` | 18 sha256s | identical, file for file |
 | 6 | BepInEx version | pack 5.4.2351 | the log says "BepInEx 5.4.23.5" | same thing (decision 2) |
 | 7 | Adopted mods under `plugins/` | 72 locked zips, staged and installed | 325 files in 64 package trees | 325 of 325 identical |
-| 8 | Our plugins under `plugins/` | `.#plugins`, 6 server DLLs | 6 DLLs | 6 differ: 4 proven same source, 2 unproven (decision 3) |
+| 8 | Our plugins under `plugins/` | `.#plugins`, 6 server DLLs, SDK 10 with the live path and stamp | 6 DLLs | 6 IL-identical; each differs only in 71 or 72 build-ID bytes (decision 3, (b)) |
 | 9 | Files only on the live side | — | 2 files under `SeparateSpawns/reports/` | runtime output, not an input (decision 4) |
 | 10 | Files only on the lock side | — | — | none in `plugins/` (see row 7's note) |
+| 11 | Doorstop files | the pack's | 8 files | 8 of 8 identical (decision 5) |
+| 12 | `config/bepinex`, 321 files | the image ships none; the ConfigMap is A3's | 321 files | classified; 2 more stores persist (decision 6) |
 
 **How rows 7 to 10 were made.** The lock side is not the raw `.#plugins` output. It is what the
 repository's own deploy path puts under `plugins/` from the locked inputs:
@@ -49,22 +59,44 @@ The acf names depot 896661 at manifest 4001404753685205688 with size 2075353104.
 same manifest. DepotDownloader reported exactly 2,075,353,104 uncompressed bytes for it in both
 fetches, and in the Nix build.
 
-The per-file comparison needs the live install's own hashes, which the read doesn't have. With
-this change it is one command on bicep, run from the install, in which both depots sit. The two
-lists are committed:
+The per-file comparison needs the live install's own hashes, which the read doesn't have. The acf
+was read from `~ra/lembitu/data/dl/server`, the download, which is not necessarily the tree the
+container runs (#129's review, r1 and r2). So the check names the running tree first, then hashes it.
 
-```sh
-sha256sum -c --quiet docs/server-files.sha256 docs/redist-files.sha256
-```
+1. **Which tree runs.** The container's mounts, and the server process's executable and working
+   directory inside it:
 
-The verifier does the same, and it also refuses files that neither list has:
+   ```sh
+   docker inspect lembitu --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+   docker exec lembitu sh -c 'for p in /proc/[0-9]*; do
+     case "$(readlink "$p/exe")" in *valheim_server.x86_64)
+       echo "exe=$(readlink "$p/exe") cwd=$(readlink "$p/cwd")";; esac; done'
+   ```
 
-```sh
-scripts/verify-server-inputs.sh --server <install> --redist <install>
-```
+   Map the `cwd` back to the host through the mounts (`/opt/valheim` is `~/lembitu/data`).
+2. **Its bytes.** From that directory on the host (the lists' paths are read relative to it). The
+   lists are on `dev`; bicep's checkout tracks `main`, so take them from a `dev` checkout, here
+   `<dev-checkout>`:
 
-**Pending:** ra's agent runs one of them on `~ra/lembitu/data/dl/server`. If the synced copies
-under `data/server` and `data/bepinex` are what the container runs, it runs them there too.
+   ```sh
+   sha256sum -c --quiet <dev-checkout>/docs/server-files.sha256 \
+     <dev-checkout>/docs/redist-files.sha256
+   ```
+
+   This checks every listed file and is silent about the rest, which is right here: the running
+   tree also holds BepInEx, the doorstop files and `steamapps/`, which neither depot list has.
+   `scripts/verify-server-inputs.sh --server <dir> --redist <dir>` is for a tree holding the two
+   depots alone. On the running tree or on `dl/server` it refuses those extras by design, so its
+   refusals there are not a mismatch. Exit 0 and no output from `sha256sum -c` is the pass.
+3. **The download too, optionally.** The same `sha256sum -c` in `~ra/lembitu/data/dl/server`,
+   which is what `steamcmd` fetched.
+
+**Done, 2026-10-27 (ra's agent's third read).** `sha256sum -c` of `docs/server-files.sha256` passed with 0
+mismatches in both `~ra/lembitu/data/dl/server` (the download) and `~ra/lembitu/data/server`, and of
+`docs/redist-files.sha256` at `~ra/lembitu/data/bepinex`. The read also recorded the live `Lembitu.Harness.dll`
+(`65a8d256…16133`) and `ValheimWebMap.dll` (`7c5f98a4…ce13d`), identical in both plugin directories; these are the
+bytes section 4's IL comparison used (the second read's copies hash the same). The read's files, the mounts and the
+output are on bicep at `/home/ra/lembitu/lock-20261027/reads-20261027/`.
 
 ## 2. Depot 1006: fetched and locked
 
@@ -108,7 +140,8 @@ the verifier and the tests.
   and `diff -r` found nothing between them.
 - `nix build .#redist` and `nix build --rebuild .#redist` both gave
   `/nix/store/pgrnhvc4…-valheim-server-redist-25909431`. The NAR size is 111,285,096 bytes, and each
-  fetch takes about 4 s.
+  fetch takes about 4 s. Since #129's review the derivation is named by its own depot and manifest,
+  `steamworks-redist-1006-4559160656493359681`; its content, the NAR hash, is unchanged.
 - A deliberately wrong `narHash` was refused with `hash mismatch … got: sha256-I3vbf2…JazY=`.
 - `.#server` keeps its store path (`g5693h43…-valheim-server-25909431`): the FOD's name and hash
   are unchanged.
@@ -130,63 +163,91 @@ These are two numbering schemes, not a difference. The pack's own files show it:
 
 The live log's "BepInEx 5.4.23.5" is therefore the core assembly that pack 5.4.2351 ships.
 
-## 4. Our plugins: same source, different build
+## 4. Our plugins: same source, built the live way (decision 3 (b))
 
-| DLL | Live sha256 | `.#plugins` sha256 | Classification |
+ra chose (b): `.#plugins` builds from source with an SDK 10 compiler, the live build's path and its
+commit stamp. The lock's `plugins` names all three:
+
+- `sdk` 10.0.400 (nixpkgs `dotnetCorePackages.sdk_10_0`). `nix/plugins.nix` refuses to evaluate if
+  nixpkgs supplies another version, because the build IDs follow the compiler;
+- `pathMap` `/Users/ra/code/valheim-lembitu/`;
+- `sourceRevisionId` `b3e608489924babc1dcee3de700f048fdd476778`.
+
+The build runs `dotnet build` with `-p:SourceRevisionId=<sourceRevisionId>` and a PathMap of two
+entries:
+
+- `<build dir>/=<pathMap>`;
+- the build hook's NuGet folder, `$TMPDIR/nuget.<random>/`, mapped to `/Users/ra/.nuget/`.
+
+It drops `ContinuousIntegrationBuild`, which maps the sources to `/_/` and would override the
+PathMap.
+
+Without the NuGet entry, two Nix builds differed in the build IDs: the random folder name reaches
+them. With it, `nix build --rebuild .#plugins` gives the same bytes.
+`/Users/ra/.nuget/` is NuGet's default folder on a Mac, chosen because it is the plausible live
+value. It affects only the build IDs, which differ from live anyway.
+
+| DLL | Live sha256 | `.#plugins` sha256 | Differing bytes |
 | --- | --- | --- | --- |
-| `Lembitu.Callings.dll` | `893d27a9…0778` | `7883ea68…0936` | same source; other build path, commit stamp, compiler (proven) |
-| `Lembitu.Guide.dll` | `87a66f2e…8283` | `a9f6b606…e97a` | same (proven) |
-| `Lembitu.Guilds.dll` | `79858862…d38f` | `b67ded68…3497` | same (proven) |
-| `Lembitu.Oathbound.dll` | `f6fc4015…3a7b` | `cb1ba44b…212f` | same (proven) |
-| `Lembitu.Harness.dll` | `65a8d256…6133` | `be0789a7…0f1e` | differs, cause **unproven**: no live bytes to inspect |
-| `ValheimWebMap.dll` | `7c5f98a4…e13d` | `428bd395…281d` | differs, cause **unproven**: no live bytes to inspect |
+| `Lembitu.Callings.dll` | `893d27a9…0778` | `cf03044e…d845` | 71 |
+| `Lembitu.Guide.dll` | `87a66f2e…8283` | `a640907c…ed75` | 72 |
+| `Lembitu.Guilds.dll` | `79858862…d38f` | `b82f5fd6…74d1` | 71 |
+| `Lembitu.Harness.dll` | `65a8d256…6133` | `c2220314…eeba` | 72 |
+| `Lembitu.Oathbound.dll` | `f6fc4015…3a7b` | `272cc491…0479` | 72 |
+| `ValheimWebMap.dll` | `7c5f98a4…e13d` | `e1e0e5a9…f880` | 72 |
 
-### Where the four live DLLs came from
+All six are IL-identical to live and byte-identical apart from their build IDs, Harness and
+ValheimWebMap included. Nothing ships live bytes.
 
-The published release `client-pack-2026-10-19-v23` (zip sha256 `c65cafe6…c2be0`) ships
-`Lembitu.Callings`, `Guide`, `Guilds` and `Oathbound`. Their sha256s equal the live ones exactly, so
-the live server runs the Pack v23 build of them, and its bytes can be inspected.
+### The live bytes
 
-Each embeds:
+- `Lembitu.Callings`, `Guide`, `Guilds` and `Oathbound` come from the published release
+  `client-pack-2026-10-19-v23` (zip sha256
+  `c65cafe62470fecf2a135e4a907fb386e5b21966e7970b283ed9557e283c2be0`). Their sha256s equal the live
+  ones exactly, so the live server runs the Pack v23 build of them.
+- `Lembitu.Harness.dll` and `ValheimWebMap.dll` are in no release. ra's agent copied them from
+  bicep's `~ra/lembitu/data/bepinex/BepInEx/plugins/` (the second read, about 10:50Z), and their
+  sha256s equal the first read's.
 
-- its PDB path, `/Users/ra/code/valheim-lembitu/src/plugins/<Name>/obj/Debug/<Name>.pdb`;
-- an informational version stamped with commit `+b3e608489924babc1dcee3de700f048fdd476778`.
+All six embed:
+
+- the PDB path `/Users/ra/code/valheim-lembitu/src/{plugins,forks}/<Name>/obj/Debug/<Name>.pdb`;
+- an informational version stamped `+b3e608489924babc1dcee3de700f048fdd476778`.
 
 That commit (2026-10-17, "Wiki: Pack v22 …") is on `dev`'s history, but `src/` differs from it by 9
 files. The Mac's checkout was building uncommitted changes, which became 1bd1871 (#123, Pack v23).
-No file under `src/` or the build files has changed from 1bd1871 to `dev`.
+No file under `src/` or the build files has changed from 1bd1871 to `dev`. So the stamp names the
+live build, not the source `.#plugins` compiles. Once `src/` changes, the stamp no longer describes
+the source. Re-lock it then, to the commit being built.
 
-### What was proven, by rebuilding `dev`'s sources
+### What was shown, for all six
 
-- **Exact path and commit stamp:** the root build ran with
-  `-p:PathMap=<checkout>/=/Users/ra/code/valheim-lembitu/` and
-  `-p:SourceRevisionId=b3e608489924babc1dcee3de700f048fdd476778`.
-- **With SDK 9.0.317 or 10.0.400** (nixpkgs `dotnet-sdk_9` and `dotnet-sdk_10`):
-  - each of the four DLLs has the live size;
-  - they differ from the live bytes in 69 to 72 bytes. Those bytes lie wholly in the
-    content-derived build IDs: the COFF timestamp, the module MVID, the debug directory's
-    timestamps, the CodeView GUID and the PdbChecksum hash;
-  - a small PE parser zeroed exactly those fields in both files, and the rest was then
-    byte-identical for all four DLLs, on both SDKs;
-  - the IL (`ilspycmd -il`, ignoring RVA and MVID comments) is identical to live.
+- **Same size** as live.
+- **Where the bytes differ.** A PE reader located every differing byte, in each of the six. All of
+  them lie in the content-derived build IDs, and none outside:
 
-  SDK 9.0.317 and 10.0.400 also differ from each other in exactly those fields. The IDs follow the
-  compiler version, and the DLL does not record which version ra's Mac used. So exact bytes are
-  out of reach without that SDK.
-- **With `.#plugins`** (SDK 8.0.424, as the dev shell and `nix/plugins.nix` use):
-  - the IL differs from live **only inside iterator state machines'
-    `System.IDisposable.Dispose()`**. That is Guide 4 diff hunks, Guilds 6, Callings 66 and
-    Oathbound 22, with no hunk anywhere else;
-  - the newer compiler's `Dispose` clears the hoisted locals and sets the state to −2. SDK 8's
-    `Dispose` is a bare `ret`;
-  - the method-header and size changes that follow from that are the only other differences.
+  | Field | Bytes |
+  | --- | --- |
+  | COFF header `TimeDateStamp` | 4 |
+  | Metadata `#GUID` heap: the module MVID | 16 |
+  | Debug directory entry `TimeDateStamp` | 4 |
+  | CodeView entry: PDB GUID and age | 15 or 16 |
+  | PdbChecksum entry: the SHA-256 of the PDB | 31 or 32 |
 
-### What stays unproven
+  The 15s and 31s are bytes that happen to match. With those fields zeroed in both files, all six
+  are byte-identical.
+- **IL.** `ilspycmd -il` output is identical, line for line, for all six (7,492 to 33,874 lines
+  each).
+- **Why the IDs differ.** A deterministic compiler derives these IDs from a hash of its whole
+  output, PDB included. The PDB records the compiler's exact version, so the IDs follow it. SDK
+  9.0.317 and 10.0.400 each give IDs different from live and from each other. Exact bytes would need
+  the Mac's SDK version, which the DLLs don't record.
+- **With SDK 8** (the old `.#plugins`), the IL differed inside iterator state machines'
+  `System.IDisposable.Dispose()`. The newer compiler's `Dispose` clears the hoisted locals and sets
+  the state to −2; SDK 8's is a bare `ret`. That difference is gone with SDK 10.
 
-`Lembitu.Harness.dll` and `ValheimWebMap.dll` aren't in any release: Harness is a test client
-plugin, and the map is server-only. Only their live hashes are known. They differ from `.#plugins`,
-and the same mechanism is likely, but that is **not shown**. Proving it needs the two files'
-bytes from bicep, `~ra/lembitu/data/bepinex/BepInEx/plugins/{Lembitu.Harness,ValheimWebMap}.dll`.
+`Lembitu.Updater.dll` and `Lembitu.Updater.Patcher.dll` are client-only. The installer withholds
+them, and neither side has them on the server.
 
 ## 5. The two live-only files
 
@@ -198,6 +259,74 @@ directory.
 They are state, not inputs, and the lock is right not to have them. **What A2 takes from this:**
 the image's plugins tree is read-only, so this write needs a writable path, which A2's writable
 paths list must name. `scripts/backup-world.sh` doesn't capture the reports today.
+
+The image links `reports/` to `/data/bepinex/SeparateSpawns/reports` (`docs/server-image.md`).
+
+## 6. The doorstop files
+
+The second read copied the doorstop files from `~ra/lembitu/data/bepinex/`, the directory the
+container mounts as `/opt/valheim/bepinex` and runs. All eight are byte-identical to the locked pack's
+`BepInExPack_Valheim/` files:
+
+- `.doorstop_version`;
+- `changelog.txt`;
+- `doorstop_config.ini`;
+- `doorstop_libs/libdoorstop_x64.so` and `libdoorstop_x64.dylib`;
+- `start_game_bepinex.sh` and `start_server_bepinex.sh`;
+- `winhttp.dll`.
+
+The image's game root links each of them from that same pack, so the image runs these bytes. On
+Linux only `libdoorstop_x64.so` loads, through `LD_PRELOAD`. The entrypoint sets the `DOORSTOP_*`
+variables itself, as the pack's `start_server_bepinex.sh` does, so `doorstop_config.ini` is not
+read. Nothing to re-lock.
+
+## 7. The config tree
+
+The second read copied `~ra/lembitu/config/bepinex/`, which the container mounts as
+`/config/bepinex` and copies into `BepInEx/config`. It left out `plugins/`, logs and
+`config-dump.json`. That is 321 files, and the image ships none of them: its config comes from a
+ConfigMap (A3), and its only seeds are the packages' own (`BepInEx.cfg` and CreatureManager's 11
+textures).
+
+| Files | What they are | In the image |
+| --- | --- | --- |
+| 53 | `config/enforced/`, every file of it. `scripts/apply-enforced-config.sh` over a copy of the tree reports "enforced config already in effect: nothing to do". The 15 non-`.cfg` files are byte-identical to the repository's. | The ConfigMap's to carry (A3) |
+| 140 | Files the mods in the stack generate when missing: their `.cfg`s, localizations and references. The image's own run created every one of these paths. | Generated at start |
+| 30 | Mods in the stack, files the image run did not create: DataForge's and FineDining's `*.reference.yml`, FineDining's `Icebox.yml` (the image's log shows it created at start), DodgeShortcut's `.cfg` (a client-side mod), `BepInEx.cfg.default`, and CreatureManager's textures twice over (below) | Generated, or not needed |
+| 5 | `Guilds/`, `Marketplace/`, `Lembitu.Guilds/`: the guild and market plugins' stores | `/data/bepinex`, as before |
+| 12 | **State the image would have lost:** `ValheimWebMap/LembituRun/` (the explored mask, history and base map cache) and `EpicLoot/BountySaves/` (9 bounty ledgers, one per player) | **Now** `/data/bepinex` stores |
+| 3 | `.lembitu-installed`, `.lembitu-pack-version`, `.lembitu-removed`: the deploy scripts' markers | Not needed |
+| 78 | Files of 20 mods no longer in the stack: EpicMMOSystem, PortalRules, STUWard, Seasonality, InventorySlots, ItemRequirement, AdminQoL, Clan, MaxPlayerCount, MaxDungeonRooms, CrewStats, DmgMeter, DiscordConnector, SocialSystem, PvPBiomeDominions, BoneMod, ExpertExplorer, DynamicLocations, ValheimRAFT and ZdoWatcher | Deliberately not shipped |
+
+**What changed in the image.** The entrypoint's stores gain `ValheimWebMap` (the map fork's default
+data directory, `BepInEx/config/ValheimWebMap/<world>`) and `EpicLoot/BountySaves`. Both now link to
+`/data/bepinex`, as `Guilds/` does. `scripts/backup-world.sh` captures neither today; that is for
+the backup slice. The migration must copy both onto the volume with the other stores.
+
+**`BepInEx.cfg`.** Live's `BepInEx.cfg.default` is byte-identical to the image's seed, the pack's
+`BepInEx.cfg`. Live's `BepInEx.cfg` is that file with the enforced keys applied, which the ConfigMap
+carries.
+
+**CreatureManager's textures.** The package ships 11 `cm_*.png` seeds under
+`config/CreatureManager/textures/`. Live has them twice:
+
+- under `config/CreatureManager/textures/`, with an extra `config/` level from the old installer's
+  placement;
+- under `CreatureManager/textures/` without the `cm_` prefix.
+
+The image has them once, as `CreatureManager/textures/cm_*.png`. All three copies are the same
+bytes. Textures are used only when `creatures.yml` names them, and the enforced `creatures.yml` is
+comments only. So the names change nothing at run time.
+
+**For A3: the overlay is a merge.** `config/enforced/*.cfg` hold only the keys we set, and live
+merges them into the files the mods generate. The entrypoint copies the ConfigMap's files whole,
+and a mod then adds the keys a file lacks, at their defaults. So a ConfigMap of the overlay alone
+would reset every key live holds at a non-default value outside the overlay. A ConfigMap of the
+merged files would carry those values too. Which keys those are needs the defaults, which this read
+doesn't have. A3 chooses between:
+
+- the merged files, taken from this read with the 78 removed-mod files and the state left out;
+- the overlay, applied by `scripts/apply-enforced-config.sh` at start.
 
 ## Decisions
 
@@ -213,29 +342,21 @@ paths list must name. `scripts/backup-world.sh` doesn't capture the reports toda
    - `test/server-input-lock.test.sh` has 11 new cases. Against `dev`'s verifier, 33 cases fail,
      and each of the 8 checks added was disabled in turn and made the test fail.
 2. **BepInEx: no difference** (section 3). Nothing changes.
-3. **Our plugins: a difference, recorded, not decided here.** The lock builds them from the same
-   source, but `.#plugins` is not byte-identical to live, and with the compiler it uses it is not
-   IL-identical either. #112 and #113 ask for the live bytes ("Reuse the modstack lock; do not
-   rebuild own DLLs into different bytes"; byte identity of every own-plugin file). Which way to
-   go is ra's call, through the lead:
-   - **(a)** Lock the live DLLs by sha256 and ship those bytes:
-     - the four player plugins come from the `client-pack-2026-10-19-v23` release asset, by its
-       sha256;
-     - `Lembitu.Harness.dll` and `ValheimWebMap.dll` need a hashed archive from bicep, as for the
-       server's `requireFile` fallback.
-
-     This gives byte identity, but these DLLs are not built from source in Nix.
-   - **(b)** Build in Nix with an SDK 9 or 10 compiler, the PathMap and the commit stamp. That
-     makes the four IL-identical to live and byte-identical apart from 72 build-ID bytes. Exact
-     identity would need the Mac's SDK version, which nothing records.
-   - **(c)** Keep SDK 8 and accept the `Dispose` differences as a recorded change from live.
+3. **Our plugins: (b), ra's choice** (section 4). `.#plugins` builds with SDK 10.0.400, the live
+   PathMap and the live commit stamp, all named in the lock's `plugins`. All six server DLLs are
+   IL-identical to live and differ only in 71 or 72 build-ID bytes. No live bytes are shipped. The
+   other options were:
+   - (a) lock the live DLLs by sha256;
+   - (c) keep SDK 8 and its `Dispose` differences.
 4. **The SeparateSpawns reports are runtime state**, not a difference in inputs (section 5). They go
    to A2's writable paths.
-5. **Still owed from bicep:**
-   - the per-file check of the live install (section 1);
-   - the bytes of `Lembitu.Harness.dll` and `ValheimWebMap.dll` (section 4);
-   - [not part of the read] the doorstop files and `config/` seeds, which weren't read and so aren't
-     compared.
+5. **The doorstop: no difference** (section 6). Nothing changes.
+6. **Config** (section 7):
+   - two more stores, `ValheimWebMap` and `EpicLoot/BountySaves`, persist on `/data`;
+   - the 78 files of removed mods and the 3 deploy markers are deliberately not shipped;
+   - the ConfigMap's form, the merged files or the overlay, is A3's.
+7. **The per-file check of the live install** (section 1) is done: ra's agent's third read passed with 0
+   mismatches against both depot lists. (The second read's `MANIFEST.sha256` listed only the read's own 332 files.)
 
 ## Appendix: all 333 live files under `BepInEx/plugins`
 
@@ -334,11 +455,11 @@ were made"). "—" means the lock side has no such file.
 | `JsonDotNET/LICENSE.md` | identical | `d7f83bbea3264a8e23d7739e44d9db1a4994b357274df6f00876eb2e623827ad` | `d7f83bbea3264a8e23d7739e44d9db1a4994b357274df6f00876eb2e623827ad` |
 | `JsonDotNET/Newtonsoft.Json.dll` | identical | `d134937ec381729074694490e81983b08ec7991b31550eabafb9202e5b404f89` | `d134937ec381729074694490e81983b08ec7991b31550eabafb9202e5b404f89` |
 | `JsonDotNET/NewtonsoftJsonDetector.dll` | identical | `513f2b88dfea6b96336a63d4120cdfc05011391ab45d981989e88844722d84b7` | `513f2b88dfea6b96336a63d4120cdfc05011391ab45d981989e88844722d84b7` |
-| `Lembitu.Callings.dll` | differs: same source, other build path, commit stamp and compiler (proven, section 4) | `893d27a9cda7a03729cd9e0593d14c72d43bad9c33bd224214f044f490680778` | `7883ea68d1577f5dca8ecb861a71fddc8ef3432c2a25caaedfcd091b72f20936` |
-| `Lembitu.Guide.dll` | differs: same source, other build path, commit stamp and compiler (proven, section 4) | `87a66f2e317c64bd67ce72e992509595d8424930ed667b8f7fdd23d557088283` | `a9f6b6069610788e380069158fba275aa575c6fb9b0b35e40535dafd328be97a` |
-| `Lembitu.Guilds.dll` | differs: same source, other build path, commit stamp and compiler (proven, section 4) | `798588625912cca1597bf5dc5081202faa5f0b4a1a376d94041ba61b5156d38f` | `b67ded6893f86105a6df80b1409c2441f60398f54b9952910e00f50f197c3497` |
-| `Lembitu.Harness.dll` | differs: cause unproven (section 4) | `65a8d25619daa4214e32adc334351b338982fc45c31ea217f9851de6e4e16133` | `be0789a7b45a7ca26a90f3d51626fcc616901bca542d1c14c1e4f7d5ffab0f1e` |
-| `Lembitu.Oathbound.dll` | differs: same source, other build path, commit stamp and compiler (proven, section 4) | `f6fc4015619368b0269d1d2f6ad5ac1aa018a83b0b795503660103c5c75e3a7b` | `cb1ba44b1191501d333c192fda38f248a7d01a4e06ae3dca6423c19fe77d212f` |
+| `Lembitu.Callings.dll` | differs only in build IDs: IL-identical (section 4) | `893d27a9cda7a03729cd9e0593d14c72d43bad9c33bd224214f044f490680778` | `cf03044ee512a6eebea185d0809ea1c1c83ee40f5bb93e6c401263fcf191d845` |
+| `Lembitu.Guide.dll` | differs only in build IDs: IL-identical (section 4) | `87a66f2e317c64bd67ce72e992509595d8424930ed667b8f7fdd23d557088283` | `a640907c65f4dc8014829f556641b88cdc03695efc091c08457877d87650ed75` |
+| `Lembitu.Guilds.dll` | differs only in build IDs: IL-identical (section 4) | `798588625912cca1597bf5dc5081202faa5f0b4a1a376d94041ba61b5156d38f` | `b82f5fd6b0561098bddaf9c76e3a69c5f83669545b9bb82ce88c52655f9274d1` |
+| `Lembitu.Harness.dll` | differs only in build IDs: IL-identical (section 4) | `65a8d25619daa4214e32adc334351b338982fc45c31ea217f9851de6e4e16133` | `c22203145154e5265c41b17abfe2286f8cf603c06e8a74eaaa97aca58b31eeba` |
+| `Lembitu.Oathbound.dll` | differs only in build IDs: IL-identical (section 4) | `f6fc4015619368b0269d1d2f6ad5ac1aa018a83b0b795503660103c5c75e3a7b` | `272cc491795b2cb29986587ced1f9606520b6a8da2bd281ad2faa982fe5d0479` |
 | `Marketplace/Marketplace.dll` | identical | `af0ab0a17e3c22f1ccf9def1330f8a0b7ddc4118d4ab64f00e94c7041e426a96` | `af0ab0a17e3c22f1ccf9def1330f8a0b7ddc4118d4ab64f00e94c7041e426a96` |
 | `MultiUserChest/MultiUserChest.dll` | identical | `afe0d6b437495fb6624a049ba72c2393572c8c02e1221ac090f16c0d99914514` | `afe0d6b437495fb6624a049ba72c2393572c8c02e1221ac090f16c0d99914514` |
 | `MultiUserChest/MultiUserChest.dll.mdb` | identical | `2da69a97c2e4f8a303860f39f379851ca467584e3eb5e14374d4db6103272939` | `2da69a97c2e4f8a303860f39f379851ca467584e3eb5e14374d4db6103272939` |
@@ -551,7 +672,7 @@ were made"). "—" means the lock side has no such file.
 | `TheFisher/TheFisher/translations/TheFisher.Spanish.yml` | identical | `c52c7d0296315c059d9b55dd01b48f649c7ecb165573037a25604bc0a6a616da` | `c52c7d0296315c059d9b55dd01b48f649c7ecb165573037a25604bc0a6a616da` |
 | `ValheimVisualEnhanced/ValheimVisualEnhanced/ValheimVisualEnhanced.dll` | identical | `e1f611ad5d1b3a59a79dd9926cd5fd813c4e24265f0626554db52ab51bb25f2e` | `e1f611ad5d1b3a59a79dd9926cd5fd813c4e24265f0626554db52ab51bb25f2e` |
 | `ValheimVisualEnhanced/ValheimVisualEnhanced/assets/valheimvisualenhanced` | identical | `5cf578e009c69e8afca6091b7012ba5e56d3a20fbaa41a7d2965db36834b5ae0` | `5cf578e009c69e8afca6091b7012ba5e56d3a20fbaa41a7d2965db36834b5ae0` |
-| `ValheimWebMap.dll` | differs: cause unproven (section 4) | `7c5f98a44c43d06346d702f9c6039cbd6a2dca47fde0d38954751b43b38ce13d` | `428bd3956e54e662a6603ee900e52d5f69f4f014fa01ad689698134e934c281d` |
+| `ValheimWebMap.dll` | differs only in build IDs: IL-identical (section 4) | `7c5f98a44c43d06346d702f9c6039cbd6a2dca47fde0d38954751b43b38ce13d` | `e1e0e5a9d129a51e11fbe165fcb499d1c967d20cb7a701e990767feec7b8f880` |
 | `Venture_Logout_Tweaks/Plugins/VentureValheim.LogoutTweaks.dll` | identical | `1b8ead5a9615ac4db706c0bf05063debcc429a2ab5e3ca15685a6c40d8fd7f63` | `1b8ead5a9615ac4db706c0bf05063debcc429a2ab5e3ca15685a6c40d8fd7f63` |
 | `Venture_Multiplayer_Tweaks/Plugins/VentureValheim.MultiplayerTweaks.dll` | identical | `d08aa6837ddae4bd4e6000e631a023764945a957cae249d437d7ec69425c3662` | `d08aa6837ddae4bd4e6000e631a023764945a957cae249d437d7ec69425c3662` |
 | `WhichModAddedThis/WhichModAddedThis.dll` | identical | `11700461ec7d2bdaa22502db4061b945187c5b8004fdbce03dc91dc74ef56fb8` | `11700461ec7d2bdaa22502db4061b945187c5b8004fdbce03dc91dc74ef56fb8` |
