@@ -105,10 +105,20 @@ let
     $CC -O2 -Wall -Werror -D_GNU_SOURCE -o $out/bin/lembitu-logmark ${./logmark.c}
   '';
 
+  # scripts/sns-probe.sh, the game port probe the readiness check and the monitor share.
+  snsProbe = writeShellApplication {
+    name = "lembitu-sns-probe";
+    runtimeInputs = [ coreutils ];
+    text = builtins.readFile ../scripts/sns-probe.sh;
+  };
+
   ready = writeShellApplication {
     name = "lembitu-ready";
     runtimeInputs = [ coreutils ];
-    text = builtins.readFile ../scripts/server-ready.sh;
+    text = ''
+      export LEMBITU_SNS_PROBE=${snsProbe}/bin/lembitu-sns-probe
+      ${builtins.readFile ../scripts/server-ready.sh}
+    '';
   };
 
   # The game is a foreign binary: its interpreter is /lib64/ld-linux-x86-64.so.2 and it finds
@@ -130,7 +140,7 @@ let
   image = dockerTools.buildLayeredImage {
     name = "valheim-lembitu-server";
     inherit tag;
-    contents = [ entrypoint tools ready ];
+    contents = [ entrypoint tools ready snsProbe ];
     # zstd, multi-threaded: the 2 GB game layer takes minutes to gzip on one core.
     compressor = "zstd";
     # No /data: a volume mounted over an image directory would take its root ownership.
@@ -167,7 +177,7 @@ let
         "TZ=Europe/Oslo"
         "TZDIR=${tzdata}/share/zoneinfo"
         "SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt"
-        "PATH=${entrypoint}/bin:${ready}/bin:${tools}/bin:${coreutils}/bin"
+        "PATH=${entrypoint}/bin:${ready}/bin:${snsProbe}/bin:${tools}/bin:${coreutils}/bin"
       ];
       ExposedPorts = {
         "2456/udp" = { };
@@ -182,7 +192,7 @@ in
 runCommand "valheim-lembitu-server-${tag}.oci.tar"
   {
     nativeBuildInputs = [ skopeo gnutar ];
-    passthru = { inherit image gameRoot bepinex entrypoint tools ready; };
+    passthru = { inherit image gameRoot bepinex entrypoint tools ready snsProbe; };
   }
   ''
     skopeo --tmpdir "$TMPDIR" --insecure-policy copy docker-archive:${image} oci:layout:valheim-lembitu-server:${tag}
