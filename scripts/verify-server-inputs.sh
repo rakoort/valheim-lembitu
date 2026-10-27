@@ -139,19 +139,37 @@ file_count="$(wc -l < "$WORK/files" | tr -d ' ')"
 
 # --- the server's bytes ----------------------------------------------------------------------
 
+# The depot ships regular files only, and docs/server-files.sha256 lists only regular files. So
+# anything else in the tree is refused, listed or not: a symlink, or a fifo, socket or device. A
+# listed path that is a symlink is refused even when the bytes it reaches match. Its bytes are its
+# target's, which can lie outside the tree and change after this check, so a match proves nothing
+# about the tree. A symlinked directory is refused the same way, so the listed files reached
+# through it can't pass either.
 if [[ -n "$SERVER" ]]; then
   while IFS=$'\t' read -r rel hash; do
-    if [[ ! -f "$SERVER/$rel" ]]; then
+    if [[ -L "$SERVER/$rel" ]]; then
+      refuse server "$rel is a symlink (-> $(readlink "$SERVER/$rel")), not a file"
+    elif [[ ! -f "$SERVER/$rel" ]]; then
       refuse server "$rel is missing"
     elif [[ "$(sha256 "$SERVER/$rel")" != "$hash" ]]; then
       refuse server "$rel changed"
     fi
   done < "$WORK/files"
   cut -f1 "$WORK/files" | LC_ALL=C sort > "$WORK/listed"
-  (cd "$SERVER" && find . \( -type f -o -type l \) | sed 's,^\./,,' | LC_ALL=C sort) > "$WORK/present"
+  # find does not follow symlinks, so a symlinked directory shows up here as itself.
+  (cd "$SERVER" && find . -type f | sed 's,^\./,,' | LC_ALL=C sort) > "$WORK/present"
+  (cd "$SERVER" && find . ! -type d ! -type f | sed 's,^\./,,' | LC_ALL=C sort) > "$WORK/odd"
   while IFS= read -r rel; do
     refuse server "$rel is not in $(basename "$FILES")"
   done < <(LC_ALL=C comm -13 "$WORK/listed" "$WORK/present")
+  # A listed symlink was refused above; every other entry that is not a regular file is refused here.
+  while IFS= read -r rel; do
+    if [[ -L "$SERVER/$rel" ]]; then
+      refuse server "$rel is a symlink (-> $(readlink "$SERVER/$rel")), not in $(basename "$FILES")"
+    else
+      refuse server "$rel is not a regular file"
+    fi
+  done < <(LC_ALL=C comm -13 "$WORK/listed" "$WORK/odd")
 fi
 
 # --- the loader's bytes ----------------------------------------------------------------------
@@ -163,6 +181,10 @@ fi
 
 # --- the mods' bytes -------------------------------------------------------------------------
 
+# The mods directory is flat: one zip per pin. A listed name may be a symlink, because Nix's
+# linkFarm (.#mods) supplies every zip as a symlink into the store. The lock pins each zip's own
+# sha256, so a listed name is judged by the bytes it reaches. Any entry that is not a listed name
+# is refused, whatever it is, a symlink included.
 if [[ -n "$MODS" ]]; then
   : > "$WORK/mod-files"
   while IFS=$'\t' read -r key hash _; do

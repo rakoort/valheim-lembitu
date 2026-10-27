@@ -170,6 +170,51 @@ reset_fixture
 printf 'stray\n' > "$F/mods/Eve-Three-3.0.0.zip"
 check "a mod zip the lock does not name is refused" refused_with "refused: mod: Eve-Three-3.0.0.zip is not a locked mod"
 
+# --- 4b. symlinks and other non-files -------------------------------------------------------------
+# The depot ships regular files only. A symlink's bytes are its target's, which can sit outside the
+# tree and change after the check, so the server tree refuses every symlink, listed or not. The mods
+# directory is the exception: Nix's linkFarm supplies each locked zip as a symlink, so a listed name
+# is judged by the bytes it reaches, and anything unlisted is refused.
+
+reset_fixture
+printf 'payload\n' > "$F/outside.dll"
+ln -s ../../../outside.dll "$F/server/valheim_server_Data/Managed/Extra.dll"
+check "an unlisted symlink in the server tree is refused" \
+  refused_with "refused: server: valheim_server_Data/Managed/Extra.dll is a symlink (-> ../../../outside.dll), not in server-files.sha256"
+
+reset_fixture
+ln -s /nonexistent "$F/server/dangling"
+check "an unlisted dangling symlink in the server tree is refused" \
+  refused_with "refused: server: dangling is a symlink (-> /nonexistent), not in server-files.sha256"
+
+reset_fixture
+mv "$F/server/valheim_server.x86_64" "$F/outside.x86_64"
+ln -s ../outside.x86_64 "$F/server/valheim_server.x86_64"
+check "a listed file replaced by a symlink to the same bytes is refused" \
+  refused_with "refused: server: valheim_server.x86_64 is a symlink (-> ../outside.x86_64), not a file"
+
+reset_fixture
+mv "$F/server/valheim_server_Data" "$F/outside-data"
+ln -s ../outside-data "$F/server/valheim_server_Data"
+check "a directory replaced by a symlink to the same files is refused" \
+  refused_with "refused: server: valheim_server_Data is a symlink (-> ../outside-data), not in server-files.sha256"
+
+reset_fixture
+mkfifo "$F/server/pipe"
+check "a fifo in the server tree is refused" refused_with "refused: server: pipe is not a regular file"
+
+reset_fixture
+cp "$F/mods/Alice-One-1.0.0.zip" "$F/alice-copy.zip"
+ln -s ../alice-copy.zip "$F/mods/Eve-Three-3.0.0.zip"
+check "an unlisted symlink in the mods directory is refused" \
+  refused_with "refused: mod: Eve-Three-3.0.0.zip is not a locked mod"
+
+reset_fixture
+mv "$F/mods/Alice-One-1.0.0.zip" "$F/alice-store.zip"
+ln -s ../alice-store.zip "$F/mods/Alice-One-1.0.0.zip"
+linked_mod() { run_verify && grep -q '^mods verified: 2 zips' "$WORK/out"; }
+check "a listed mod supplied as a symlink to its locked bytes passes, as Nix's linkFarm supplies it" linked_mod
+
 # --- 5. the lock drifting from its sources ------------------------------------------------------
 
 reset_fixture

@@ -125,6 +125,12 @@ sources in `docs/modstack.md` and `scripts/extract-refs.sh`. Given inputs, it ch
 scripts/verify-server-inputs.sh --server <server-dir> --bepinex <pack.zip> --mods <dir-of-zips>
 ```
 
+The server tree must hold regular files only, as the depot ships it. A symlink is refused there,
+listed or not, and so is a fifo, socket or device. A listed path that is a symlink is refused even
+when the bytes it reaches match: they are its target's, which can sit outside the tree. The mods
+directory allows a listed zip to be a symlink, because Nix's `linkFarm` supplies every zip that
+way. Each one is judged by the bytes it reaches, and any unlisted entry is refused.
+
 Each refusal names its component (`server`, `loader`, `mod` or `lock`) and the file. A pin bump
 rewrites `docs/modstack.lock.json` through `scripts/stage-stack.sh`. The same commit updates the
 mod's entry in `docs/server-inputs.lock.json`: the URL the stager fetches, and the same sha256.
