@@ -1,12 +1,13 @@
-/* lembitu-a2s: one bounded Steam A2S_INFO query, for the Pod's readiness probe.
+/* lembitu-a2s: one bounded Steam A2S_INFO query.
  *
  *   lembitu-a2s [host] [port]        defaults 127.0.0.1 2457 (the query port)
  *
  * Exit 0 and one line "A2S ready: <name> players=<n>/<max>" when the server answers with a
- * well-formed A2S_INFO reply; exit 1 otherwise. Kubernetes has no UDP probe, so this runs as an
- * exec probe inside the image. It follows scripts/query-server.py: the request, the challenge
- * the server may answer first (0x41 and four bytes, resent appended to the request), then the
- * 0x49 reply, validated through its player counts. Each receive waits at most 3 s.
+ * well-formed A2S_INFO reply; exit 1 otherwise. The server answers it only with -public 1; under
+ * -public 0 its query port sends nothing, so neither the readiness check nor the monitor uses it
+ * (lembitu-sns-probe is theirs). The exchange: the request, the challenge the server may answer
+ * first (0x41 and four bytes, resent appended to the request), then the 0x49 reply, validated
+ * through its player counts. Each receive waits at most 3 s.
  */
 #include <arpa/inet.h>
 #include <stdio.h>

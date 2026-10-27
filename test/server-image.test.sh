@@ -156,6 +156,18 @@ else
   echo "skip: the plugins' SDK guard needs nix and jq"
 fi
 
+# The image's lembitu-ready runs the packaged scripts/sns-probe.sh, by store path.
+if command -v nix >/dev/null 2>&1; then
+  probe_pkg="$(nix build --no-link --print-out-paths "$REPO_ROOT#serverImage.passthru.snsProbe" 2>/dev/null || true)"
+  ready_pkg="$(nix build --no-link --print-out-paths "$REPO_ROOT#serverImage.passthru.ready" 2>/dev/null || true)"
+  check "lembitu-sns-probe is packaged from scripts/sns-probe.sh" \
+    grep -qF 'echoes the two connection IDs' "$probe_pkg/bin/lembitu-sns-probe"
+  check "lembitu-ready runs that lembitu-sns-probe" \
+    grep -qxF "export LEMBITU_SNS_PROBE=$probe_pkg/bin/lembitu-sns-probe" "$ready_pkg/bin/lembitu-ready"
+else
+  echo "skip: the probe's packaging needs nix"
+fi
+
 # --- a fake game for the entrypoint -------------------------------------------------------------
 
 GAME="$WORK/game"
@@ -567,6 +579,9 @@ for ((i = 0; i < 10; i++)); do docker exec "$NAME" lembitu-ready > /dev/null 2>&
 printf 'server log lines added by ten more readiness checks: %s\n' \
   "$(( $(docker logs "$NAME" 2>&1 | wc -l) - lines_before ))" >> "$REPORT/ready-timeline.txt"
 docker exec "$NAME" lembitu-a2s > "$REPORT/a2s.txt" 2>&1 || true
+check "the image's lembitu-sns-probe gets NoConnection from the game port" \
+  bash -c "docker exec '$NAME' lembitu-sns-probe 127.0.0.1 2456 > '$REPORT/sns-probe.txt' 2>&1 \
+    && grep -qx 'NoConnection from 127.0.0.1:2456' '$REPORT/sns-probe.txt'"
 
 docker exec "$NAME" cat /run/lembitu/BepInEx/LogOutput.log > "$REPORT/LogOutput.log"
 loaded="$(grep -oP '^\[Info   :   BepInEx\] Loading \[.*\] \(\K[^)]+(?=\)$)' "$REPORT/LogOutput.log" | LC_ALL=C sort)"

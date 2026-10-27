@@ -558,16 +558,25 @@ before any cap.
 **Monitoring runs every minute and speaks only on change (#105).** `scripts/monitor.sh`, driven by
 `config/monitor/lembitu-monitor.timer`, keeps its state under `~/.local/state/lembitu` and posts
 one fault and one recovery per condition through `DISCORD_WEBHOOK_MONITOR`. Container down,
-OdinEye unanswered and the outside query failing must last 120 s; a world save must complete
+OdinEye unanswered and the outside game port not answering must last 120 s; a world save must complete
 within 600 s. While a maintenance restart's `maintenance-until` marker is valid, those
 availability faults are held back, so planned restarts post nothing; a server still down when it
 expires alerts as usual, and resource, backup and off-host faults are watched throughout. OdinEye
-answers on `http://localhost:2469/` inside the container and is never published; the outside check
-is an A2S query sent from astral-tricep (`scripts/query-server.py`). The starting limits in
-`config/monitor/settings.json` come from one sample (the game at about 10% CPU and 1.8 GiB, the
-host at 38% memory and 55% disk) and must be tuned after a week of play. Proved by
-`test/monitor.test.sh` (26 scenarios) and a local UDP protocol smoke; the staged-fault drill on a
-disposable test container is part of the v17 acceptance run.
+answers on `http://localhost:2469/` inside the container and is never published. The outside check,
+"outside game port unreachable", runs `scripts/sns-probe.sh` on astral-tricep over BatchMode ssh
+(the script goes on stdin, so astral-tricep needs only bash and coreutils) against
+`LEMBITU_QUERY_TARGET` and the game port, `LEMBITU_GAME_PORT`, default 2456. The probe is a padded
+SteamNetworkingSockets ConnectionClosed, and the game answers it with an 11-byte NoConnection;
+`lembitu-ready` in the server image sends the same probe (`docs/server-image.md`, "Ready"). It
+replaced an A2S query to 2457, which the server never answers under `-public 0`. On 2026-10-27, the
+monitor's exact remote command, run through fish on astral-tricep, got NoConnection from today's
+container at `lembitu.astral.ee:2456` (which resolves inside the tailnet to astral-bicep), and
+nothing from 2457. After the Pool cutover the same name reaches the Pool's game port through
+astral-bicep's NodePort, so the monitor unit's drop-in then sets `LEMBITU_GAME_PORT=32456`. The
+starting limits in `config/monitor/settings.json` come from one sample (the game at about 10% CPU
+and 1.8 GiB, the host at 38% memory and 55% disk) and must be tuned after a week of play. Proved by
+`test/monitor.test.sh` (31 scenarios, the outside check end to end against a fake game port); the
+staged-fault drill on a disposable test container is part of the v17 acceptance run.
 
 **The public Discord display is a separate snapshot, not an admin alert.**
 `scripts/discord-status.sh` and `config/discord-status/lembitu-discord-status.timer` refresh one
