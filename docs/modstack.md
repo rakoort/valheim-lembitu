@@ -315,6 +315,9 @@ One question belongs to that boot rather than to argument:
 
 Package hashes are recorded in [modstack.lock.json](modstack.lock.json); `scripts/stage-stack.sh`
 verifies every download against it and refuses a re-published zip under the same version number.
+[server-inputs.lock.json](server-inputs.lock.json) repeats each pin with its download URL for the
+live server's Nix inputs; `scripts/verify-server-inputs.sh` refuses any pin the two disagree on
+(`docs/build.md`, "The locked live server inputs").
 
 ### Measured on a disposable host — 2026-09-15
 

@@ -53,6 +53,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/ledger.sh
 . "$REPO_ROOT/scripts/lib/ledger.sh"
+# shellcheck source=lib/mod-sources.sh
+. "$REPO_ROOT/scripts/lib/mod-sources.sh"
 
 MODSTACK="$REPO_ROOT/docs/modstack.md"
 LOCK_FILE="$REPO_ROOT/docs/modstack.lock.json"
@@ -116,36 +118,10 @@ parse_pins() {  # parse_pins <modstack.md>; prints "team<TAB>mod<TAB>version" pe
   ' "$1"
 }
 
-# Download-source overrides from the "### Download sources" table: "team/mod | URL" rows. The
-# URL column is rejected unless it is an https URL ending in .zip, so prose and broken rows are
-# ignored the same way parse_pins ignores non-pin rows. A source row cannot be mistaken for a
-# pin: a URL never passes parse_pins' digit-first version check.
-parse_sources() {  # parse_sources <modstack.md>; prints "team/mod<TAB>url" per row
-  awk '
-    /^## / { sources = 0; next }
-    /^### / { sources = ($0 == "### Download sources"); next }
-    !sources { next }
-    {
-      if (sub(/^\|/, "") == 0) next
-      split($0, f, "|")
-      if (length(f) < 3) next
-      gsub(/^ +| +$/, "", f[1]); gsub(/^ +| +$/, "", f[2])
-      split(f[1], id, "/")
-      if (id[1] ~ /^[A-Za-z0-9_-]+$/ && id[2] ~ /^[A-Za-z0-9_.-]+$/ && f[2] ~ /^https:\/\// && f[2] ~ /\.zip$/)
-        print id[1] "/" id[2] "\t" f[2]
-    }
-  ' "$1"
-}
-
-# The override URL for one pin, or nothing when the pin downloads from Thunderstore.
-source_url() {  # source_url <team/mod> <sources-tsv>
-  awk -F'\t' -v key="$1" '$1 == key { print $2; exit }' "$2"
-}
-
-# Dependency strings out of a package manifest.json, one per line. Hand-rolled rather than jq
-# because the dev shell has no jq, and tolerant of the UTF-8 BOM Thunderstore writes in front of
-# some manifests (Jotunn): the BOM only ever precedes the opening brace, so it never touches the
-# strings being extracted.
+# Dependency strings out of a package manifest.json, one per line. Hand-rolled rather than jq, so
+# staging needs no JSON tool (the Nix plugin build runs it too), and tolerant of the UTF-8 BOM
+# Thunderstore writes in front of some manifests (Jotunn): the BOM only ever precedes the opening
+# brace, so it never touches the strings being extracted.
 manifest_deps() {  # manifest_deps <zip>
   unzip -p "$1" manifest.json 2>/dev/null | awk '
     {
@@ -292,7 +268,7 @@ while IFS=$'\t' read -r team mod version; do
         || die "download source for $team/$mod does not name $version: $url - update the Download sources row in $MODSTACK"
       echo "fetching $team/$mod $version from $url"
     else
-      url="https://thunderstore.io/package/download/$team/$mod/$version/"
+      url="$(thunderstore_url "$team" "$mod" "$version")"
       echo "fetching $team/$mod $version"
     fi
     curl -fsSL --retry 3 -o "$zip.download" "$url" \
