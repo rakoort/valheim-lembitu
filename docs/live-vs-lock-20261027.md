@@ -49,22 +49,39 @@ The acf names depot 896661 at manifest 4001404753685205688 with size 2075353104.
 same manifest. DepotDownloader reported exactly 2,075,353,104 uncompressed bytes for it in both
 fetches, and in the Nix build.
 
-The per-file comparison needs the live install's own hashes, which the read doesn't have. With
-this change it is one command on bicep, run from the install, in which both depots sit. The two
-lists are committed:
+The per-file comparison needs the live install's own hashes, which the read doesn't have. The acf
+was read from `~ra/lembitu/data/dl/server`, the download, which is not necessarily the tree the
+container runs (#129's review, r1 and r2). So the check names the running tree first, then hashes it.
 
-```sh
-sha256sum -c --quiet docs/server-files.sha256 docs/redist-files.sha256
-```
+1. **Which tree runs.** The container's mounts, and the server process's executable and working
+   directory inside it:
 
-The verifier does the same, and it also refuses files that neither list has:
+   ```sh
+   docker inspect lembitu --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+   docker exec lembitu sh -c 'for p in /proc/[0-9]*; do
+     case "$(readlink "$p/exe")" in *valheim_server.x86_64)
+       echo "exe=$(readlink "$p/exe") cwd=$(readlink "$p/cwd")";; esac; done'
+   ```
 
-```sh
-scripts/verify-server-inputs.sh --server <install> --redist <install>
-```
+   Map the `cwd` back to the host through the mounts (`/opt/valheim` is `~/lembitu/data`).
+2. **Its bytes.** From that directory on the host (the lists' paths are read relative to it). The
+   lists are on `dev`; bicep's checkout tracks `main`, so take them from a `dev` checkout, here
+   `<dev-checkout>`:
 
-**Pending:** ra's agent runs one of them on `~ra/lembitu/data/dl/server`. If the synced copies
-under `data/server` and `data/bepinex` are what the container runs, it runs them there too.
+   ```sh
+   sha256sum -c --quiet <dev-checkout>/docs/server-files.sha256 \
+     <dev-checkout>/docs/redist-files.sha256
+   ```
+
+   This checks every listed file and is silent about the rest, which is right here: the running
+   tree also holds BepInEx, the doorstop files and `steamapps/`, which neither depot list has.
+   `scripts/verify-server-inputs.sh --server <dir> --redist <dir>` is for a tree holding the two
+   depots alone. On the running tree or on `dl/server` it refuses those extras by design, so its
+   refusals there are not a mismatch. Exit 0 and no output from `sha256sum -c` is the pass.
+3. **The download too, optionally.** The same `sha256sum -c` in `~ra/lembitu/data/dl/server`,
+   which is what `steamcmd` fetched.
+
+**Pending:** ra's agent runs steps 1 and 2, and records the mounts, the cwd and the output.
 
 ## 2. Depot 1006: fetched and locked
 
@@ -108,7 +125,8 @@ the verifier and the tests.
   and `diff -r` found nothing between them.
 - `nix build .#redist` and `nix build --rebuild .#redist` both gave
   `/nix/store/pgrnhvc4…-valheim-server-redist-25909431`. The NAR size is 111,285,096 bytes, and each
-  fetch takes about 4 s.
+  fetch takes about 4 s. Since #129's review the derivation is named by its own depot and manifest,
+  `steamworks-redist-1006-4559160656493359681`; its content, the NAR hash, is unchanged.
 - A deliberately wrong `narHash` was refused with `hash mismatch … got: sha256-I3vbf2…JazY=`.
 - `.#server` keeps its store path (`g5693h43…-valheim-server-25909431`): the FOD's name and hash
   are unchanged.

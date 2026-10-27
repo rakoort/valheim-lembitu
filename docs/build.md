@@ -99,7 +99,7 @@ development loop above, which follows the latest public game:
 
 | File | Holds |
 | --- | --- |
-| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 4001404753685205688, build 25909431, and the NAR hash of the fetched tree. The install's second depot, the Steamworks SDK redistributable: depot 1006, manifest 4559160656493359681, and its NAR hash. BepInExPack 5.4.2351's URL and sha256. Each adopted mod's download URL and sha256. |
+| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 4001404753685205688, build 25909431, and the NAR hash of the fetched tree. The install's second depot, the Steamworks SDK redistributable: depot 1006, manifest 4559160656493359681, and its NAR hash. BepInExPack 5.4.2351's URL and sha256. The server-side plugin GUIDs the chainloader must load, and the ones it skips by their own process filter (`serverPlugins`). Each adopted mod's download URL and sha256. |
 | `docs/server-files.sha256` | The server's 989 files in `sha256sum` format, so a copy of an install also checks with `sha256sum -c`. |
 | `docs/redist-files.sha256` | The redistributable's 4 files, in the same format. |
 | `nix/plugins-deps.json` | The plugins' NuGet packages, with their hashes. |
@@ -121,7 +121,10 @@ The flake builds from these alone, on x86_64-linux:
 - `nix build .#plugins` is a `buildDotnetModule`. It runs `scripts/extract-refs.sh` against the
   fetched server and pack, and `scripts/stage-stack.sh` against the fetched mods, then the root
   `dotnet build` (Debug, as above). Its `plugins/` and `patchers/` hold our DLLs.
-- `nix flake check` builds the plugins and runs the verifier over the fetched bytes.
+- `nix build .#serverImage` is the server image, an OCI archive; `projectImages."project/valheim-lembitu/server"`
+  is the same derivation, the output fleet-publish builds. `docs/server-image.md` describes it.
+- `nix flake check` builds the plugins, runs the verifier over the fetched bytes, and checks the
+  image's plugin GUIDs against `serverPlugins` (`scripts/list-plugin-guids.sh`).
 
 `scripts/verify-server-inputs.sh` is the offline check, and `test/server-input-lock.test.sh` is its
 test. With no arguments, it checks the lock against `docs/modstack.lock.json`, the download
