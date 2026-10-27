@@ -51,6 +51,9 @@ int main(int argc, char **argv) {
   signal(SIGINT, SIG_IGN);
   signal(SIGTERM, SIG_IGN);
   signal(SIGHUP, SIG_IGN);
+  /* A closed container log must not kill the filter: write() then fails with EPIPE, output_ok drops,
+   * and the server's stdout keeps draining, so the server never sees SIGPIPE either. */
+  signal(SIGPIPE, SIG_IGN);
 
   /* The last text_length - 1 bytes of the previous read, so a match split across reads counts. */
   char window[1024 + 65536];

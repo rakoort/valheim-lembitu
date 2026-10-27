@@ -98,6 +98,16 @@ LC_ALL=C sed -i 's/Opened Steam server/Opened Steam xerver/g' "$WORK/noise"
 check "lembitu-logmark passes 300 kB of binary through unchanged" cmp -s "$WORK/noise" "$WORK/noise.out"
 check "lembitu-logmark makes no marker when the text never appears" test ! -e "$WORK/m1"
 
+# A closed log (QA P3 on #130): the reader goes away, the filter keeps draining to the end and
+# still marks, rather than dying of SIGPIPE and leaving the server to die of it next.
+{ head -c 1000000 /dev/zero; printf '\n10/27 12:06:52: Opened Steam server\n'; } > "$WORK/late"
+set +e  # the mutant this pins dies of SIGPIPE: record it, do not abort the run
+"$LOGMARK" "$WORK/m-pipe" < "$WORK/late" | head -c 1 > /dev/null
+logmark_status=${PIPESTATUS[0]}
+set -e
+check "lembitu-logmark outlives a closed log (exit $logmark_status) and drains to the end" test "$logmark_status" -eq 0
+check "lembitu-logmark still marks after its log closed" test -e "$WORK/m-pipe"
+
 # The text split across two reads still counts.
 { printf 'boot\n10/27 12:06:52: Opened Steam ser'; sleep 0.3; printf 'ver\nmore\n'; } \
   | "$LOGMARK" "$WORK/m2" > "$WORK/split.out"

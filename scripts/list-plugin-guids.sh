@@ -50,7 +50,7 @@ plugins_in() {  # plugins_in <dll>
     /^[\t ]*\.class / { if (guid != "") emit(); guid = ""; procs = ""; next }
     /\.custom instance void \[BepInEx\]BepInEx\.(BepInPlugin|BepInProcess)::\.ctor/ {
       kind = ($0 ~ /BepInPlugin/) ? "plugin" : "process"; hex = ""; collecting = 1
-      sub(/.*= \(/, ""); 
+      sub(/.*= \(/, "");
     }
     collecting {
       line = $0; done = (line ~ /\)/); sub(/\).*/, "", line); hex = hex " " line
