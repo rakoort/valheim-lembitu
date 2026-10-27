@@ -54,6 +54,29 @@ ADMISSION_FILES=(permittedlist.txt adminlist.txt bannedlist.txt)
 # ServerManager is account-global, so its archives restore only as a whole.
 BEPINEX_STORES=(Guilds Marketplace Lembitu.Guilds ValheimWebMap EpicLoot/BountySaves)
 
+# SeparateSpawns keeps state outside the BepInEx config directory (docs/server-image.md, "What the
+# server writes"):
+# - in its own root, <game root>/config/bepinex: the roster SeparateSpawns.groups.json (who belongs to
+#   which start region, written by the mod) and SeparateSpawns/worlds/<world uid>.json (each world's
+#   start regions and the Eikthyr altars it placed; without it the mod generates them again). They
+#   are archived under dedicated/. The root's abortipus.separatespawns.cfg is configuration
+#   (config/dedicated), not state, and is not archived;
+# - beside its plugin: SeparateSpawns/reports/, each world's layout report, archived where the
+#   Workload's volume keeps it, bepinex-state/SeparateSpawns/reports.
+# Neither lives under the save directory or the BepInEx config directory on the live server, so a
+# backup captures them only when it is told where they are (--dedicated and --reports, or --root).
+DEDICATED_STORES=(SeparateSpawns.groups.json SeparateSpawns/worlds)
+REPORTS_STORE=bepinex-state/SeparateSpawns/reports
+
+# A fingerprint of one store, a directory or a file, so a capture can tell it changed underneath.
+path_fingerprint() {  # path_fingerprint <path>
+  if [[ -d "$1" ]]; then
+    printf '%s\n' "$1"; store_inventory "$1"
+  elif [[ -f "$1" ]]; then
+    printf '%s %s\n' "$1" "$(shasum -a 256 < "$1")"
+  fi
+}
+
 # Include empty directories as well as file bytes in the archive integrity contract.
 store_inventory() {
   (cd "$1" && find . -type d -print && find . -type f ! -name INVENTORY.txt ! -name INVENTORY.txt.part -exec shasum -a 256 {} \;) | LC_ALL=C sort

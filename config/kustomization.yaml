@@ -1,0 +1,83 @@
+# The server's config as ConfigMaps, for the Workload (workloads/lembitu lists this directory). It
+# lives here, beside the files, because kustomize reads a generator's files only from inside its own
+# directory.
+#
+# - lembitu-config: config/enforced's top-level files, mounted with lembitu-config-nested at
+#   /etc/lembitu/bepinex. The entrypoint copies them whole into BepInEx/config at every start
+#   (scripts/server-entrypoint.sh), so drift cannot outlive a restart.
+# - lembitu-config-nested: config/enforced's files in subdirectories. A ConfigMap key cannot hold
+#   a "/", so each key is the path with "/" written as "."; the StatefulSet's projected volume puts
+#   each key back at its path.
+# - lembitu-dedicated: config/dedicated, SeparateSpawns' own root, mounted at
+#   /etc/lembitu/dedicated. The entrypoint copies its .cfg fresh at every start and seeds the roster
+#   only when the volume has none.
+#
+# A file added to config/enforced or config/dedicated needs its line here, and a nested one its
+# item in workloads/lembitu/statefulset.yaml as well. test/lembitu-workload.test.sh rebuilds both
+# directories from the render and compares them byte for byte, so a missing line fails it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: lembitu-config
+    files:
+      - enforced/Azumatt.AzuCraftyBoxes.cfg
+      - enforced/Azumatt.AzuCraftyBoxes.yml
+      - enforced/Azumatt.AzuExtendedPlayerInventory.cfg
+      - enforced/Azumatt.ProximityVoiceChat.cfg
+      - enforced/BepInEx.cfg
+      - enforced/MidnightsFX.ImpactfulSkills.cfg
+      - enforced/MidnightsFX.ProgressivePowers.cfg
+      - enforced/Raelaziel.OdinArchitect.cfg
+      - enforced/Searica.Valheim.ExtraSnapPointsMadeEasy.cfg
+      - enforced/ZenDragon.ZenRaids.cfg
+      - enforced/adrian.valheim.guilds.cfg
+      - enforced/adrian.valheim.marketplace.cfg
+      - enforced/advize.PlantEverything.cfg
+      - enforced/blacks7ar.Explorer.cfg
+      - enforced/blacks7ar.GlassPieces.cfg
+      - enforced/blacks7ar.Herbalist.cfg
+      - enforced/blacks7ar.SeedBed.yml
+      - enforced/com.orianaventure.mod.MultiplayerTweaks.cfg
+      - enforced/com.orianaventure.mod.WorldAdvancementProgression.cfg
+      - enforced/com.valheimwebmap.cfg
+      - enforced/dev.crystal.betterchat.cfg
+      - enforced/expand_world_size.cfg
+      - enforced/goldenrevolver.quick_stack_store.cfg
+      - enforced/lembitu.callings.cfg
+      - enforced/lembitu.callings.deep-north.txt
+      - enforced/lembitu.guide.cfg
+      - enforced/lembitu.guide.md
+      - enforced/lembitu.guilds.cfg
+      - enforced/lembitu.oathbound.cfg
+      - enforced/local.warrior.rpg.cfg
+      - enforced/marcopogo.PlanBuild.cfg
+      - enforced/marlthon.TheFisher.cfg
+      - enforced/nekitker.saunamod.cfg
+      - enforced/org.bepinex.plugins.blacksmithingexpanded.cfg
+      - enforced/org.bepinex.plugins.odineye.cfg
+      - enforced/randyknapp.mods.epicloot.cfg
+      - enforced/sighsorry.AdditiveDamageModifier.cfg
+      - enforced/sighsorry.CreatureManager.cfg
+      - enforced/sighsorry.DataForge.cfg
+      - enforced/sighsorry.DiveIn.cfg
+      - enforced/sighsorry.FineDining.cfg
+      - enforced/sighsorry.SkadiNet.cfg
+      - enforced/vapok.mods.adventurebackpacks.cfg
+      - enforced/xtav1m.BetterMap.cfg
+  - name: lembitu-config-nested
+    files:
+      - CreatureManager.ai.yml=enforced/CreatureManager/ai.yml
+      - CreatureManager.attacks.yml=enforced/CreatureManager/attacks.yml
+      - CreatureManager.creatures.yml=enforced/CreatureManager/creatures.yml
+      - CreatureManager.karma.yml=enforced/CreatureManager/karma.yml
+      - CreatureManager.levels.yml=enforced/CreatureManager/levels.yml
+      - CreatureManager.projectile.yml=enforced/CreatureManager/projectile.yml
+      - DataForge.effects.yml=enforced/DataForge/effects.yml
+      - DataForge.items.yml=enforced/DataForge/items.yml
+      - DataForge.pieces.yml=enforced/DataForge/pieces.yml
+      - EpicLoot.patches.lembitu-seaanimals.json=enforced/EpicLoot/patches/lembitu-seaanimals.json
+      - FineDining.Spoilage.yml=enforced/FineDining/Spoilage.yml
+  - name: lembitu-dedicated
+    files:
+      - dedicated/SeparateSpawns.groups.json
+      - dedicated/abortipus.separatespawns.cfg
