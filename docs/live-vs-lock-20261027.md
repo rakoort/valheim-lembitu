@@ -19,14 +19,15 @@ checks them:
 - the doorstop files;
 - the `config/bepinex` tree.
 
-Neither read has per-file sha256s of the game install, so that comparison is still owed (row 2).
+Neither read has per-file sha256s of the game install; ra's agent's third read (2026-10-27, section 1) does, and it
+passed with 0 mismatches (row 2).
 
 ## Summary
 
 | # | What | Lock | Live | Result |
 | --- | --- | --- | --- | --- |
 | 1 | App 896660 build | 25909431 | `buildid` 25909431, `TargetBuildID` 25909431 | identical |
-| 2 | Depot 896661 | manifest 4001404753685205688, 2,075,353,104 bytes | manifest 4001404753685205688, `size` 2075353104 | identical; per-file sha256s not in the read |
+| 2 | Depot 896661 | manifest 4001404753685205688, 2,075,353,104 bytes | manifest 4001404753685205688, `size` 2075353104; every listed file's sha256 (third read) | identical: 0 mismatches against `server-files.sha256`, in `data/dl/server` and in `data/server` |
 | 3 | Depot 1006 | not locked before this change | manifest 4559160656493359681, `size` 111284048 | **now locked** (decision 1) |
 | 4 | Install size | 2,075,353,104 + 111,284,048 bytes | `SizeOnDisk` 2186637152 | identical (the sum) |
 | 5 | BepInEx core, 18 files | BepInExPack 5.4.2351, zip `bce63149…e29f` | 18 sha256s | identical, file for file |
@@ -90,7 +91,12 @@ container runs (#129's review, r1 and r2). So the check names the running tree f
 3. **The download too, optionally.** The same `sha256sum -c` in `~ra/lembitu/data/dl/server`,
    which is what `steamcmd` fetched.
 
-**Pending:** ra's agent runs steps 1 and 2, and records the mounts, the cwd and the output.
+**Done, 2026-10-27 (ra's agent's third read).** `sha256sum -c` of `docs/server-files.sha256` passed with 0
+mismatches in both `~ra/lembitu/data/dl/server` (the download) and `~ra/lembitu/data/server`, and of
+`docs/redist-files.sha256` at `~ra/lembitu/data/bepinex`. The read also recorded the live `Lembitu.Harness.dll`
+(`65a8d256…16133`) and `ValheimWebMap.dll` (`7c5f98a4…ce13d`), identical in both plugin directories; these are the
+bytes section 4's IL comparison used (the second read's copies hash the same). The read's files, the mounts and the
+output are on bicep at `/home/ra/lembitu/lock-20261027/reads-20261027/`.
 
 ## 2. Depot 1006: fetched and locked
 
@@ -349,10 +355,8 @@ doesn't have. A3 chooses between:
    - two more stores, `ValheimWebMap` and `EpicLoot/BountySaves`, persist on `/data`;
    - the 78 files of removed mods and the 3 deploy markers are deliberately not shipped;
    - the ConfigMap's form, the merged files or the overlay, is A3's.
-7. **Still owed from bicep:** the per-file check of the live install (section 1). The second read's
-   `MANIFEST.sha256` lists the read's own 332 files, and the read passes it with `sha256sum -c`. It
-   holds no game file, so it can't be compared with `server-files.sha256` or
-   `redist-files.sha256`.
+7. **The per-file check of the live install** (section 1) is done: ra's agent's third read passed with 0
+   mismatches against both depot lists. (The second read's `MANIFEST.sha256` listed only the read's own 332 files.)
 
 ## Appendix: all 333 live files under `BepInEx/plugins`
 
