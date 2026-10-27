@@ -15,7 +15,7 @@
     in
     {
       packages.x86_64-linux = {
-        inherit (inputs) server bepinexPack mods;
+        inherit (inputs) server redist bepinexPack mods;
         plugins = linux.callPackage ./nix/plugins.nix {
           inherit (inputs) server bepinexPack mods;
           bepinexVersion = lock.bepinexPack.version;
@@ -29,7 +29,8 @@
           ''
             cd ${./.}
             bash scripts/verify-server-inputs.sh \
-              --server ${inputs.server} --bepinex ${inputs.bepinexPack} --mods ${inputs.mods}
+              --server ${inputs.server} --redist ${inputs.redist} \
+              --bepinex ${inputs.bepinexPack} --mods ${inputs.mods}
             touch "$out"
           '';
         inherit (self.packages.x86_64-linux) plugins;

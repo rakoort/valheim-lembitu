@@ -41,7 +41,7 @@ F="$WORK/fixture"
 # The tree every case starts from: inputs, and a lock and sources that agree with them.
 reset_fixture() {
   rm -rf "$F"
-  mkdir -p "$F/server/valheim_server_Data/Managed" "$F/mods" "$F/docs" "$F/scripts"
+  mkdir -p "$F/server/valheim_server_Data/Managed" "$F/redist/linux64" "$F/mods" "$F/docs" "$F/scripts"
   printf 'ELF stand-in\n' > "$F/server/valheim_server.x86_64"
   head -c 4096 /dev/zero | tr '\0' 'v' > "$F/server/valheim_server_Data/Managed/assembly_valheim.dll"
   printf 'a manual\n' > "$F/server/Valheim Dedicated Server Manual.pdf"
@@ -49,6 +49,11 @@ reset_fixture() {
      valheim_server_Data/Managed/assembly_valheim.dll; do
      printf '%s  %s\n' "$(sha256 "$rel")" "$rel"
    done) > "$F/docs/server-files.sha256"
+  printf 'steamclient 64\n' > "$F/redist/linux64/steamclient.so"
+  printf 'steamclient 32\n' > "$F/redist/steamclient.so"
+  (cd "$F/redist" && for rel in linux64/steamclient.so steamclient.so; do
+     printf '%s  %s\n' "$(sha256 "$rel")" "$rel"
+   done) > "$F/docs/redist-files.sha256"
 
   printf 'loader stand-in\n' > "$F/pack.zip"
   printf 'mod one\n' > "$F/mods/Alice-One-1.0.0.zip"
@@ -86,6 +91,8 @@ EOF
 {
   "server": { "app": 896660, "depot": 896661, "manifest": "1", "build": 1,
               "narHash": "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "files": "docs/server-files.sha256" },
+  "redist": { "app": 896660, "depot": 1006, "manifest": "2",
+              "narHash": "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", "files": "docs/redist-files.sha256" },
   "bepinexPack": { "package": "denikson/BepInExPack_Valheim", "version": "5.4.2351",
                    "url": "https://thunderstore.io/package/download/denikson/BepInExPack_Valheim/5.4.2351/",
                    "sha256": "$pack" },
@@ -103,11 +110,14 @@ edit_lock() {  # edit_lock <jq-filter>
   mv "$F/lock.tmp" "$F/docs/server-inputs.lock.json"
 }
 
+# SERVER_DIR and REDIST_DIR point the run at other trees, e.g. one live-install-shaped tree for both.
 run_verify() {
   "$VERIFIER" --lock "$F/docs/server-inputs.lock.json" --files "$F/docs/server-files.sha256" \
+    --redist-files "$F/docs/redist-files.sha256" \
     --modstack-lock "$F/docs/modstack.lock.json" --modstack "$F/docs/modstack.md" \
     --extract-refs "$F/scripts/extract-refs.sh" \
-    --server "$F/server" --bepinex "$F/pack.zip" --mods "$F/mods" > "$WORK/out" 2>&1
+    --server "${SERVER_DIR:-$F/server}" --redist "${REDIST_DIR:-$F/redist}" \
+    --bepinex "$F/pack.zip" --mods "$F/mods" > "$WORK/out" 2>&1
 }
 
 # Refused with exit 1 (not a usage error) and the expected line in the output.
@@ -131,6 +141,7 @@ check "the committed lock agrees with docs/modstack.lock.json, modstack.md and e
 
 reset_fixture
 accepted() { run_verify && grep -q '^server verified: 3 files' "$WORK/out" \
+  && grep -q '^redist verified: 2 files' "$WORK/out" \
   && grep -q '^loader verified' "$WORK/out" && grep -q '^mods verified: 2 zips' "$WORK/out"; }
 check "inputs that match the lock pass, and it says what it checked" accepted
 
@@ -214,6 +225,74 @@ mv "$F/mods/Alice-One-1.0.0.zip" "$F/alice-store.zip"
 ln -s ../alice-store.zip "$F/mods/Alice-One-1.0.0.zip"
 linked_mod() { run_verify && grep -q '^mods verified: 2 zips' "$WORK/out"; }
 check "a listed mod supplied as a symlink to its locked bytes passes, as Nix's linkFarm supplies it" linked_mod
+
+# --- 4c. the Steamworks redistributable (depot 1006) --------------------------------------------
+# The live install holds two depots: the server (896661) and the redistributable whose
+# linux64/steamclient.so the server loads. Each is its own tree in Nix, checked against its own list;
+# a live install holds both in one directory, where nothing either list lacks may sit.
+
+reset_fixture
+flip_byte "$F/redist/linux64/steamclient.so" 4
+check "a redistributable file with one changed byte is refused, naming the redist and the file" \
+  refused_with "refused: redist: linux64/steamclient.so changed"
+
+reset_fixture
+rm "$F/redist/steamclient.so"
+check "a missing redistributable file is refused" refused_with "refused: redist: steamclient.so is missing"
+
+reset_fixture
+printf 'extra\n' > "$F/redist/linux64/libextra.so"
+check "a file the redistributable's list lacks is refused" \
+  refused_with "refused: redist: linux64/libextra.so is not in redist-files.sha256"
+
+reset_fixture
+mv "$F/redist/linux64/steamclient.so" "$F/outside.so"
+ln -s ../../outside.so "$F/redist/linux64/steamclient.so"
+check "a listed redistributable file replaced by a symlink is refused" \
+  refused_with "refused: redist: linux64/steamclient.so is a symlink (-> ../../outside.so), not a file"
+
+reset_fixture
+cp -R "$F/redist/." "$F/server/"
+check "a redistributable file inside a separate server tree is refused" \
+  refused_with "refused: server: linux64/steamclient.so is not in server-files.sha256"
+
+reset_fixture
+mkdir -p "$F/live"
+cp -R "$F/server/." "$F/redist/." "$F/live/"
+live_install() { SERVER_DIR="$F/live" REDIST_DIR="$F/live" run_verify \
+  && grep -q '^server verified: 3 files' "$WORK/out" && grep -q '^redist verified: 2 files' "$WORK/out"; }
+check "one tree holding both depots, as a live install does, passes as --server and --redist" live_install
+
+reset_fixture
+mkdir -p "$F/live"
+cp -R "$F/server/." "$F/redist/." "$F/live/"
+printf 'stray\n' > "$F/live/linux64/stray.so"
+live_stray() { SERVER_DIR="$F/live" REDIST_DIR="$F/live" \
+  refused_with "refused: server: linux64/stray.so is not in server-files.sha256 or redist-files.sha256"; }
+check "in one tree holding both depots, a file neither list has is refused" live_stray
+
+reset_fixture
+mkdir -p "$F/live"
+cp -R "$F/server/." "$F/redist/." "$F/live/"
+flip_byte "$F/live/linux64/steamclient.so" 4
+live_changed() { SERVER_DIR="$F/live" REDIST_DIR="$F/live" \
+  refused_with "refused: redist: linux64/steamclient.so changed"; }
+check "in one tree holding both depots, a changed redistributable byte is refused" live_changed
+
+reset_fixture
+head -n1 "$F/docs/server-files.sha256" >> "$F/docs/redist-files.sha256"
+check "a path listed in both depots' lists is refused" \
+  refused_with "refused: lock: Valheim Dedicated Server Manual.pdf is in both server-files.sha256 and redist-files.sha256"
+
+reset_fixture
+printf 'not a hash line\n' >> "$F/docs/redist-files.sha256"
+check "a malformed line in the redistributable's list is refused" \
+  refused_with "refused: lock: redist-files.sha256 line 3 is not"
+
+reset_fixture
+missing_redist() { local rc=0; "$VERIFIER" --lock "$F/docs/server-inputs.lock.json" \
+  --redist "$F/no-such-dir" > "$WORK/out" 2>&1 || rc=$?; [[ $rc -eq 2 ]]; }
+check "a redistributable directory that does not exist exits 2" missing_redist
 
 # --- 5. the lock drifting from its sources ------------------------------------------------------
 
