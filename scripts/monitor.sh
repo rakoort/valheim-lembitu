@@ -9,9 +9,9 @@ umask 077
 exec 9>"$state.lock"
 flock -n 9 || exit 0
 export LEMBITU_MONITOR_STATE="$state"
-LEMBITU_QUERY_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/query-server.py"
+LEMBITU_SNS_PROBE_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/sns-probe.sh"
 LEMBITU_MONITOR_SETTINGS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../config/monitor" && pwd)/settings.json"
-export LEMBITU_QUERY_SCRIPT LEMBITU_MONITOR_SETTINGS
+export LEMBITU_SNS_PROBE_SCRIPT LEMBITU_MONITOR_SETTINGS
 # shellcheck source=lib/python.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib/python.sh"
 run_python - <<'PY'
@@ -53,9 +53,12 @@ target = setting('QUERY_TARGET', '')
 # A LAN or overlay hostname cannot substitute for an owner-supplied public game address.
 if target and not re.fullmatch(r'[A-Za-z0-9_.:-]+', target):
     raise SystemExit('Invalid query target')
-port = int(setting('QUERY_PORT', '2457'))
+# The game port, not the Steam query port: under -public 0 the query port sends nothing, and the
+# game port answers scripts/sns-probe.sh. Inside the fabric after the Pool cutover, the target
+# resolves to astral-bicep's tailnet address, where the game port is the NodePort (32456).
+port = int(setting('GAME_PORT', '2456'))
 if not 1 <= port <= 65535:
-    raise SystemExit('Invalid query port')
+    raise SystemExit('Invalid game port')
 ok, text = run('date', '+%s')
 if not ok:
     raise SystemExit('Clock unavailable')
@@ -76,13 +79,15 @@ except ValueError:
     responsive = False
 faults['OdinEye unresponsive'] = (not responsive, 120)
 if target:
-    # ssh joins its arguments into one line for the remote login shell (fish on these hosts), so
-    # the command is a single quoted `sh -c` that every shell passes through unchanged.
-    remote = ' '.join(shlex.quote(x) for x in ['sh', '-c', os.environ['REMOTE_PYTHON'], 'sh', target, str(port)])
+    # The probe runs on the query host, outside the game host, from the script sent on stdin: the
+    # query host needs only bash and coreutils. ssh joins its arguments into one line for the remote
+    # login shell (fish on these hosts), so the command is a single quoted `sh -c` that every shell
+    # passes through unchanged.
+    remote = ' '.join(shlex.quote(x) for x in ['sh', '-c', 'exec bash -s -- "$@"', 'sh', target, str(port)])
     ok, _ = run('ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=8',
                 setting('QUERY_HOST', 'astral-tricep'), remote,
-                input=pathlib.Path(os.environ['LEMBITU_QUERY_SCRIPT']).read_text())
-    faults['outside A2S unreachable'] = (not ok, 120)
+                input=pathlib.Path(os.environ['LEMBITU_SNS_PROBE_SCRIPT']).read_text())
+    faults['outside game port unreachable'] = (not ok, 120)
 else:
     print('LEMBITU_QUERY_TARGET missing; outside reachability not checked', file=sys.stderr)
 ok, logs = run('docker', 'logs', '--timestamps', '--since', '15m', container)
@@ -156,7 +161,7 @@ except FileNotFoundError:
 except (OSError, ValueError):
     print('Invalid maintenance marker; evaluating health normally', file=sys.stderr)
     maintenance = False
-availability = {'container down', 'OdinEye unresponsive', 'outside A2S unreachable',
+availability = {'container down', 'OdinEye unresponsive', 'outside game port unreachable',
                 'world save overdue', 'container statistics unavailable'}
 failed_delivery = False
 for name, (bad, delay) in faults.items():

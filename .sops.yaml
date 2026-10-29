@@ -1,0 +1,12 @@
+# sops creation rules. lembitu-secrets is sealed to valheim-lembitu's Project age recipient, whose
+# private half is astral-fleet's flux-system Secret sops-age-project-valheim-lembitu (Flux decrypts
+# it on the Pool) and is escrowed in ra's Bitwarden ("astral / flux / sops-age-project-valheim-lembitu").
+# Only the PUBLIC recipient lives here (docs/server-image.md, "Sealing lembitu-secrets").
+keys:
+  - &project age109cvsm9fad7256npca9k343waxlgmx4pvz58264ykttglr33zyesx89kfg
+creation_rules:
+  - path_regex: workloads/lembitu/.*\.sops\.yaml$
+    encrypted_regex: ^(data|stringData)$
+    key_groups:
+      - age:
+          - *project

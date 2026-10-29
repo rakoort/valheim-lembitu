@@ -92,6 +92,87 @@ on 1.0 (issue #2). Nothing reports that skew for us any more: the probe plugin t
 compiled network version was retired with the rest of our plugins (ADR-0010), so re-extract and
 rebuild after a game update rather than expecting a runtime warning.
 
+## The locked live server inputs
+
+The live server's combination is locked for its Nix-built image (#112). This is separate from the
+development loop above, which follows the latest public game:
+
+| File | Holds |
+| --- | --- |
+| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 4001404753685205688, build 25909431, and the NAR hash of the fetched tree. The install's second depot, the Steamworks SDK redistributable: depot 1006, manifest 4559160656493359681, and its NAR hash. BepInExPack 5.4.2351's URL and sha256. The SDK, PathMap and commit stamp our plugins are built with (`plugins`). The server-side plugin GUIDs the chainloader must load, and the ones it skips by their own process filter (`serverPlugins`). Each adopted mod's download URL and sha256. |
+| `docs/server-files.sha256` | The server's 989 files in `sha256sum` format, so a copy of an install also checks with `sha256sum -c`. |
+| `docs/redist-files.sha256` | The redistributable's 4 files, in the same format. |
+| `nix/plugins-deps.json` | The plugins' NuGet packages, with their hashes. |
+
+The flake builds from these alone, on x86_64-linux:
+
+- `nix build .#server` is a fixed-output derivation. DepotDownloader (nixpkgs `depotdownloader`)
+  logs in anonymously and fetches the locked manifest. There is no SteamCMD and no updater. The
+  output is about 2 GB, and the fetch takes under a minute on a fast line. If Steam stops serving
+  that manifest anonymously, the build fails, and nothing falls back. The depot marks no file
+  executable, so no file in the output is executable, `valheim_server.x86_64` included.
+- `nix build .#redist` fetches depot 1006 the same way: 111 MB, four files, among them
+  `linux64/steamclient.so`. The server's `libsteam_api.so` loads `steamclient.so` at run time,
+  and the depot's `start_server.sh` puts `./linux64` on `LD_LIBRARY_PATH` for it. The server
+  depot's own `docker/steamclient.so` is a different build. `docs/live-vs-lock-20261027.md` has
+  the evidence.
+- `nix build .#bepinexPack` and `nix build .#mods` are `fetchurl`s at the locked sha256s. `mods`
+  is one directory, with each zip named the way `scripts/stage-stack.sh` names its cache.
+- `nix build .#plugins` is a `buildDotnetModule`. It runs `scripts/extract-refs.sh` against the
+  fetched server and pack, and `scripts/stage-stack.sh` against the fetched mods, then the root
+  `dotnet build` (Debug, as above). It builds with the SDK and the stamps the lock's `plugins`
+  names (below). Its `plugins/` and `patchers/` hold our DLLs.
+- `nix build .#serverImage` is the server image, an OCI archive; `projectImages."project/valheim-lembitu/server"`
+  is the same derivation, the output fleet-publish builds. `docs/server-image.md` describes it.
+- `nix flake check` builds the plugins, runs the verifier over the fetched bytes, and checks the
+  image's plugin GUIDs against `serverPlugins` (`scripts/list-plugin-guids.sh`).
+
+`scripts/verify-server-inputs.sh` is the offline check, and `test/server-input-lock.test.sh` is its
+test. With no arguments, it checks the lock against `docs/modstack.lock.json`, the download
+sources in `docs/modstack.md` and `scripts/extract-refs.sh`. Given inputs, it checks their bytes:
+
+```sh
+scripts/verify-server-inputs.sh --server <server-dir> --redist <redist-dir> \
+  --bepinex <pack.zip> --mods <dir-of-zips>
+```
+
+A live install holds both depots in one directory. Give that directory as both `--server` and
+`--redist`: each file is checked against its own depot's list, and nothing either list lacks may
+be in it.
+
+The depot trees must hold regular files only, as the depots ship them. A symlink is refused there,
+listed or not, and so is a fifo, socket or device. A listed path that is a symlink is refused even
+when the bytes it reaches match: they are its target's, which can sit outside the tree. The mods
+directory allows a listed zip to be a symlink, because Nix's `linkFarm` supplies every zip that
+way. Each one is judged by the bytes it reaches, and any unlisted entry is refused.
+
+Each refusal names its component (`server`, `redist`, `loader`, `mod` or `lock`) and the file. A
+pin bump rewrites `docs/modstack.lock.json` through `scripts/stage-stack.sh`. The same commit
+updates the mod's entry in `docs/server-inputs.lock.json`: the URL the stager fetches, and the
+same sha256. Until it does, the verifier refuses, and so does the test run. After a
+`PackageReference` changes, regenerate the NuGet lock with
+`nix build .#plugins.fetch-deps -o fetch-deps && ./fetch-deps nix/plugins-deps.json`.
+
+A plugin DLL embeds:
+
+- the path of its PDB;
+- the git commit of the checkout it was built in, in its informational version;
+- content-derived IDs that follow the compiler's exact version.
+
+`.#plugins` builds the way the live server's DLLs were built (ra's decision 3 (b),
+`docs/live-vs-lock-20261027.md` section 4). The lock's `plugins` names:
+
+- the SDK, 10.0.400. The build refuses another nixpkgs SDK version;
+- the PathMap, `/Users/ra/code/valheim-lembitu/`;
+- the commit stamp, `b3e60848…6778`.
+
+The build also maps the Nix build hook's randomly named NuGet folder to `/Users/ra/.nuget/`.
+Without that mapping, the folder's random name reaches the build IDs and two builds differ.
+
+The result is IL-identical to the live DLLs, and differs from them only in the 71 or 72 build-ID
+bytes. Nix builds reproduce each other byte for byte. The stamp describes the live build; when
+`src/` changes, re-lock it to the commit being built.
+
 ## Adding a plugin
 
 Create `src/plugins/<Name>/<Name>.csproj` with a GUID and a version; `dotnet build` at the root

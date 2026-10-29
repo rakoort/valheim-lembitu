@@ -4,6 +4,6 @@
   "HOST_CPU_PERCENT": "90",
   "HOST_MEMORY_PERCENT": "90",
   "DISK_PERCENT": "85",
-  "QUERY_PORT": "2457",
+  "GAME_PORT": "2456",
   "QUERY_HOST": "astral-tricep"
 }

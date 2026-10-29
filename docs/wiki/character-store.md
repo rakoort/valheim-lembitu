@@ -98,20 +98,22 @@ The Pack's `.versions.txt` already lists a SHA-256 for every file, which is what
 ### The trial, 2026-10-07 (#101)
 
 ServerManager 1.1.7 ran with the full Pack on the test host, server and client both on Valheim
-1.0.17, one Steam account. Run directories are under `~/lembitu-native-tests/` on astral-tricep;
-the per-criterion disposition is the file ticket101-final-disposition.json in the planned-orders run.
+1.0.17, one Steam account. Run directories were under `~/lembitu-native-tests/` on astral-tricep,
+and the per-criterion disposition was the file ticket101-final-disposition.json in the planned-orders
+run. All seven runs, and that file with them, were removed on 2026-10-20
+([native-testing.md](native-testing.md)).
 Kill tests used the native processes, not `docker kill`.
 
 | Criterion | Result | Run |
 | --- | --- | --- |
-| Pack client joins; missing optional AzuClock joins | Passed | `20261007T093543Z-ticket101-boot` |
-| Altered Tally DLL refused (`validation.hash_not_allowed`); missing Tally refused (`validation.required_plugin_missing`) | Passed | `…093543Z-ticket101-boot`, `20261007T135216Z-ticket109-missing-tally` |
-| Second character on one account refused | Passed | `…093543Z-ticket101-boot` |
-| Enrollment: `false` stored a used character; `true` replaced an edited local file; deleting every local copy restored identical custom data, inventory with item metadata, skills and known texts | Passed | `20261007T123308Z-ticket101-resumed-contract` |
-| Client killed: 83.6 s lost; coins picked up 2 s before the kill kept | Passed | `20261007T125851Z-ticket101-runtime-contract` |
-| Server killed five minutes after a checkpoint: 384.7 s lost | Failed the original 300 s; passes the amended bound | `20261007T100836Z-ticket101-crash-bound` |
-| Buffed fight with a real EpicLoot club, the Oathbound Huscarl record and a full backpack against Eikthyr: nobody kicked | Passed | `20261007T132207Z-ticket101-combat-maintenance` |
-| Planned restart: progress made just before `save` survived the stop | Passed | `20261007T133035Z-ticket101-planned-orders` |
+| Pack client joins; missing optional AzuClock joins | Passed | `20261007T093543Z-ticket101-boot` (removed 2026-10-20) |
+| Altered Tally DLL refused (`validation.hash_not_allowed`); missing Tally refused (`validation.required_plugin_missing`) | Passed | `…093543Z-ticket101-boot` (removed 2026-10-20), `20261007T135216Z-ticket109-missing-tally` (removed 2026-10-20) |
+| Second character on one account refused | Passed | `…093543Z-ticket101-boot` (removed 2026-10-20) |
+| Enrollment: `false` stored a used character; `true` replaced an edited local file; deleting every local copy restored identical custom data, inventory with item metadata, skills and known texts | Passed | `20261007T123308Z-ticket101-resumed-contract` (removed 2026-10-20) |
+| Client killed: 83.6 s lost; coins picked up 2 s before the kill kept | Passed | `20261007T125851Z-ticket101-runtime-contract` (removed 2026-10-20) |
+| Server killed five minutes after a checkpoint: 384.7 s lost | Failed the original 300 s; passes the amended bound | `20261007T100836Z-ticket101-crash-bound` (removed 2026-10-20) |
+| Buffed fight with a real EpicLoot club, the Oathbound Huscarl record and a full backpack against Eikthyr: nobody kicked | Passed | `20261007T132207Z-ticket101-combat-maintenance` (removed 2026-10-20) |
+| Planned restart: progress made just before `save` survived the stop | Passed | `20261007T133035Z-ticket101-planned-orders` (removed 2026-10-20) |
 
 One client, five idle minutes: without ServerManager 41.1 CPU seconds, a 33.35 ms frame and
 `ZNet.Update` at 0.73 ms mean, 3.9 ms worst; with it 38.5 s, 33.35 ms, and 0.65 ms mean, 11.4 ms
