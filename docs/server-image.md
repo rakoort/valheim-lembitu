@@ -295,20 +295,25 @@ with the server stopped. The overlay's verification is the ConfigMap's copy, whi
 
 ### Sealing lembitu-secrets
 
-`workloads/lembitu/lembitu-secrets.sops.yaml` is a placeholder with the two keys and no value, and
-it stays out of the kustomization until it is sealed: listed as it is, it would apply an empty
-password, which the entrypoint refuses. At the lift ("Lift valheim-lembitu" in astral-fleet's
-runbook), ra's agent:
+`workloads/lembitu/lembitu-secrets.sops.yaml` holds the two keys, sealed with sops to the Project's
+age recipient, and is listed in the kustomization. Flux decrypts it on the Pool with astral-fleet's
+flux-system Secret `sops-age-project-valheim-lembitu`; the private half is escrowed in ra's
+Bitwarden as `astral / flux / sops-age-project-valheim-lembitu`. Before the lift ("Lift
+valheim-lembitu" in astral-fleet's runbook, step 1), ra's agent:
 
-1. adds a `.sops.yaml` rule for `workloads/lembitu/.*\.sops\.yaml$` with the Project's age public
-   half and `encrypted_regex: ^(data|stringData)$`;
-2. fills `password` and `discord-bot-token` and encrypts the file in place with sops. Both keys must
-   be there, the token empty if there is no bot: the container's environment names the token key,
-   not optionally, so a Secret without it stops the Pod in `CreateContainerConfigError`, not a
-   start without the bot;
-3. adds `- lembitu-secrets.sops.yaml` to `workloads/lembitu/kustomization.yaml`'s `resources`.
+1. added `.sops.yaml`, whose one rule, for `workloads/lembitu/.*\.sops\.yaml$`, names the Project's
+   age public half with `encrypted_regex: ^(data|stringData)$`;
+2. filled `password` (the live server's `SERVER_PASS`) and `discord-bot-token` (its
+   `SERVERMANAGER_DISCORD_BOT_TOKEN`) from `config/launch/launch.secret.env` and encrypted the
+   file with sops, the plaintext only ever outside the checkout. Both keys must be there, the token
+   empty if there is no bot: the container's environment names the token key, not optionally, so
+   a Secret without it stops the Pod in `CreateContainerConfigError`, not a start without the bot;
+3. added `- lembitu-secrets.sops.yaml` to `workloads/lembitu/kustomization.yaml`'s `resources`.
 
-`test/lembitu-workload.test.sh` fails while a sealed file is unlisted or a placeholder is listed.
+To change a value: `sops workloads/lembitu/lembitu-secrets.sops.yaml` with the Project's age key
+from Bitwarden in `SOPS_AGE_KEY_FILE`. `test/lembitu-workload.test.sh` fails while a sealed file is
+unlisted or a placeholder is listed, and unless every value is sops ciphertext and the render holds
+the Secret.
 
 ## What the first boots showed
 

@@ -129,8 +129,9 @@ sts() { jq -e "$1" "$WORK/sts.json" > /dev/null; }  # sts <jq test>: true when i
 pod() { sts ".spec.template.spec | $1"; }
 server() { sts ".spec.template.spec.containers[0] | $1"; }
 
-check "the render is one StatefulSet and its three ConfigMaps, nothing else (no Secret while it is unsealed)" \
-  jqe '[.[].kind] | sort == ["ConfigMap", "ConfigMap", "ConfigMap", "StatefulSet"]' "$WORK/render.json"
+check "the render is one StatefulSet, its three ConfigMaps and the sealed Secret lembitu-secrets, nothing else" \
+  jqe '([.[].kind] | sort == ["ConfigMap", "ConfigMap", "ConfigMap", "Secret", "StatefulSet"])
+    and ([.[] | select(.kind == "Secret") | .metadata.name] == ["lembitu-secrets"])' "$WORK/render.json"
 check "StatefulSet lembitu: one replica, OrderedReady" \
   sts '.metadata.name == "lembitu" and .spec.replicas == 1 and .spec.podManagementPolicy == "OrderedReady"'
 check "on astral-bicep, at priority fleet-games, with a 180 s grace and no API token" \
@@ -193,12 +194,13 @@ secret_volume_ok() {
 }
 check "the Secret lembitu-secrets gives the password file, mode 0400, and ServerManager's bot token" secret_volume_ok
 SECRET_FILE="$REPO_ROOT/workloads/lembitu/lembitu-secrets.sops.yaml"
-placeholder_ok() {
+sealed_ok() {
   "$YQ" -o=json -I0 '.' "$SECRET_FILE" > "$WORK/secret.json"
   jqe '.metadata.name == "lembitu-secrets" and (.stringData | keys) == ["discord-bot-token", "password"]
-    and ([.stringData[]] | unique) == [""] and (has("data") | not)' "$WORK/secret.json"
+    and all(.stringData[]; startswith("ENC[AES256_GCM,")) and (has("data") | not)
+    and (.sops.mac | startswith("ENC[AES256_GCM,"))' "$WORK/secret.json"
 }
-check "the Secret's placeholder holds exactly the keys the StatefulSet reads, and no value" placeholder_ok
+check "the Secret holds exactly the keys the StatefulSet reads, each value sops ciphertext" sealed_ok
 sealed() { [[ "$("$YQ" '.sops != null' "$SECRET_FILE")" == true ]]; }
 listed() { "$YQ" -e '.resources[] | select(. == "lembitu-secrets.sops.yaml")' "$REPO_ROOT/workloads/lembitu/kustomization.yaml" > /dev/null 2>&1; }
 listing_matches_seal() { if sealed; then listed; elif listed; then return 1; fi; }
