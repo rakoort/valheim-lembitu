@@ -2,9 +2,9 @@
   "server": {
     "app": 896660,
     "depot": 896661,
-    "manifest": "4001404753685205688",
-    "build": 25909431,
-    "narHash": "sha256-7GLhPbO1FDgx2HPORAA9sLtrETQCqiY6+a4At5+PUWc=",
+    "manifest": "6965848522742639928",
+    "build": 26266951,
+    "narHash": "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
     "files": "docs/server-files.sha256"
   },
   "redist": {
