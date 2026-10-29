@@ -1,13 +1,13 @@
 # lembitu, valheim-lembitu's one stage on the Pool: astral-fleet's registration points Flux at
 # ./workloads/lembitu on main, into namespace project-valheim-lembitu (suspended until the cutover).
 #
-# lembitu-secrets.sops.yaml is a placeholder and stays out of `resources` until ra's agent seals it
-# (docs/server-image.md, "Sealing lembitu-secrets"): a listed placeholder would apply an empty
-# password, and the entrypoint refuses one. test/lembitu-workload.test.sh holds it unlisted while
-# it carries no sops metadata, and listed once it does.
+# lembitu-secrets.sops.yaml, the join password and ServerManager's Discord bot token, is sealed with
+# sops to the Project's age recipient (docs/server-image.md, "Sealing lembitu-secrets"); Flux
+# decrypts it. test/lembitu-workload.test.sh holds it listed while it carries sops metadata.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: project-valheim-lembitu
 resources:
   - ../../config
   - statefulset.yaml
+  - lembitu-secrets.sops.yaml
