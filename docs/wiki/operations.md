@@ -445,7 +445,7 @@ its own root, `<game root>/config/bepinex` (on today's container
 `~/lembitu/data/bepinex/config/bepinex`, the directory its BepInEx log names as `Dedicated config
 root:`), and its reports beside its plugin (`~/lembitu/data/bepinex/BepInEx/plugins/SeparateSpawns/reports`).
 `--dedicated <dir>` and `--reports <dir>` capture them, under `dedicated/` and
-`bepinex-state/SeparateSpawns/reports/`. Without them the archive records them as not captured
+`bepinex-state/SeparateSpawns/reports/`; the hourly unit passes both (ra, 2026-10-27). Without them the archive records them as not captured
 (`not_captured=` in its MANIFEST, no `store_` line), and a restore leaves the target's copies as they
 are, as for any store an archive never looked for. Losing the layout matters: the mod lays out new
 start regions and altars on a world that already has the old ones. A restore without `--dedicated`
@@ -514,8 +514,12 @@ a map and ledgers newer than it; move them aside by hand if that matters.
 committed as two systemd user units in `config/backup/`, which is what makes it reviewable in a diff
 rather than host lore: `lembitu-backup.timer` runs `OnCalendar=hourly` with a five-minute randomised
 delay and `Persistent=true`, and `lembitu-backup.service` calls `scripts/backup-world.sh` against the
-container's bind-mounted save directory with `--keep 48` and
-`--offhost astral-tricep:/home/ra/lembitu-backups`.
+container's bind-mounted save directory with `--keep 48`,
+`--offhost astral-tricep:/home/ra/lembitu-backups` and SeparateSpawns' two directories in the game
+tree, `--dedicated %h/lembitu/data/bepinex/config/bepinex` and
+`--reports %h/lembitu/data/bepinex/BepInEx/plugins/SeparateSpawns/reports`. The installed unit on
+astral-bicep is Home Manager's copy from rakoort/nixos-config `home/lembitu/units/`, which must match
+this one but for its `Documentation=` line; a change here is delivered by a pull request there.
 
 Hourly, because the server autosaves every thirty minutes, so at most two autosaves are ever at
 risk. Forty-eight archives, because that is two days of play, and long enough that a corruption
