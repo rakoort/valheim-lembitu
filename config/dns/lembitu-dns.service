@@ -1,6 +1,6 @@
 [Unit]
 Description=Keep lembitu.astral.ee pointing at astral-bicep's current home address
-Documentation=https://github.com/rakoort/valheim-lembitu/blob/master/docs/wiki/operations.md
+Documentation=https://github.com/rakoort/valheim-lembitu/blob/main/docs/wiki/operations.md
 After=network-online.target
 
 [Service]

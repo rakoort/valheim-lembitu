@@ -1,6 +1,6 @@
 [Unit]
 Description=Capture the Lembitu world save and mirror one copy off-host
-Documentation=https://github.com/rakoort/valheim-lembitu/blob/master/docs/wiki/operations.md
+Documentation=https://github.com/rakoort/valheim-lembitu/blob/main/docs/wiki/operations.md
 # The capture is read-only with respect to the server: it copies the live save tree and compares
 # the .ok marker set before and after, so it never needs the container stopped or paused.
 
@@ -11,11 +11,15 @@ IOSchedulingClass=idle
 # %h is the invoking user's home, so the unit carries no hostname-specific absolute paths beyond
 # the layout scripts/launch-server.sh creates: the container's /config is bind-mounted from
 # ~/lembitu/config, which makes ~/lembitu/config/save the server's -savedir.
+# ~/lembitu/data is its /opt/valheim, the game tree: SeparateSpawns' roster and world layouts sit in
+# its root there, config/bepinex, and its reports beside its plugin (valheim-lembitu #133).
 ExecStart=%h/code/valheim-lembitu/scripts/backup-world.sh \
   --savedir %h/lembitu/config/save \
   --out %h/lembitu/backups \
   --keep 48 \
-  --offhost astral-tricep:/home/ra/lembitu-backups
+  --offhost astral-tricep:/home/ra/lembitu-backups \
+  --dedicated %h/lembitu/data/bepinex/config/bepinex \
+  --reports %h/lembitu/data/bepinex/BepInEx/plugins/SeparateSpawns/reports
 
 # The hourly drift check rides along here rather than carrying its own timer: the overlay is
 # re-applied on every container start, and this is what notices a revert that happened between

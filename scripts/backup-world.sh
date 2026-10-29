@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 # Capture one consistent set of the server's live save stores (#20).
 #
-#   scripts/backup-world.sh --savedir <dir> --out <dir> [--world <name>] [--keep <n>] [--offhost <spec>]
+#   scripts/backup-world.sh --savedir <dir> --out <dir> [--dedicated <dir>] [--reports <dir>] [--world <name>]
+#                           [--keep <n>] [--offhost <spec>]
+#   scripts/backup-world.sh --root <dir> --out <dir> [...]
+#
+# --root names the Workload's volume (docs/server-image.md, "The volume"): <dir>/save is the game's
+# -savedir, <dir>/bepinex holds the plugin stores, <dir>/dedicated is SeparateSpawns' root and
+# <dir>/bepinex/SeparateSpawns/reports its reports, so on astral-bicep after the cutover it is
+# /state/lembitu/world. It reads exactly what --savedir <dir>/save --bepinex <dir>/bepinex
+# --dedicated <dir>/dedicated --reports <dir>/bepinex/SeparateSpawns/reports reads.
+#
+# On today's container SeparateSpawns' root is the game tree's config/bepinex and its reports sit in
+# the plugin tree, neither under the save or BepInEx config directory, so --dedicated and --reports
+# name them (docs/wiki/operations.md, the backup). Without them, and without --root, the two are not
+# captured and the MANIFEST says so: a restore then leaves the target's copies as they are.
 #
 # The measured pack writes per-world directories, not flat files: a world is
 # `worlds_local/<World>/_main.<n>.fwl2` with `.db2`, `.chunks`, `.chunk` siblings and an `.ok`
@@ -20,8 +33,14 @@
 #   bannedlist.txt          bans - server
 #
 # ServerManager/ holds the authoritative account-global characters (ADR-0034).
-# Guilds/, Marketplace/ and Lembitu.Guilds/ under the sibling bepinex directory
-# hold per-world state, not deployed configuration. Override with --bepinex.
+# Guilds/, Marketplace/, Lembitu.Guilds/, ValheimWebMap/ and EpicLoot/BountySaves/ under the
+# sibling bepinex directory hold per-world and per-player state, not deployed configuration
+# (BEPINEX_STORES in lib/save-format.sh). Each is optional and recorded absent until a plugin
+# writes it. Override the directory with --bepinex.
+# SeparateSpawns' roster and world layouts (dedicated/) and its reports
+# (bepinex-state/SeparateSpawns/reports) come from --dedicated and --reports, or --root
+# (DEDICATED_STORES and REPORTS_STORE in lib/save-format.sh). Each is optional and recorded absent
+# when its directory holds none; its configuration file is not archived.
 # All these stores travel together; selecting one world is refused once installed.
 # Consistency: world generation markers and state file hashes must remain unchanged
 # across copying. This is a stable disk snapshot, not a requested checkpoint. World
@@ -44,6 +63,9 @@ KEEP=14
 OFFHOST=""
 ATTEMPTS=3
 BEPINEX=""
+ROOT=""
+DEDICATED=""
+REPORTS=""
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 note() { printf '%s\n' "$*" >&2; }
@@ -51,10 +73,16 @@ note() { printf '%s\n' "$*" >&2; }
 usage() {
   cat >&2 <<'EOF'
 usage: scripts/backup-world.sh --savedir <dir> --out <dir> [options]
+       scripts/backup-world.sh --root <dir> --out <dir> [options]
 
   --savedir <dir>   the server's save directory (the game's -savedir, e.g. /config/save)
+  --root <dir>      the Workload's volume: <dir>/save, <dir>/bepinex, <dir>/dedicated and
+                    <dir>/bepinex/SeparateSpawns/reports (instead of the four options they replace)
   --out <dir>       where backup archives are written
   --bepinex <dir>   state source (default: sibling bepinex beside savedir)
+  --dedicated <dir> SeparateSpawns' root, holding its roster and SeparateSpawns/worlds/
+                    (default: not captured)
+  --reports <dir>   SeparateSpawns' reports directory (default: not captured)
   --world <name>    world to capture; default: every world directory found
   --keep <n>        how many archives to retain (default 14); 0 disables rotation
   --offhost <spec>  a destination for a second copy; one of:
@@ -67,8 +95,11 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --savedir) SAVEDIR=${2:?}; shift 2 ;;
+    --root) ROOT=${2:?}; shift 2 ;;
     --out) OUT=${2:?}; shift 2 ;;
     --bepinex) BEPINEX=${2:?}; shift 2 ;;
+    --dedicated) DEDICATED=${2:?}; shift 2 ;;
+    --reports) REPORTS=${2:?}; shift 2 ;;
     --world) WORLD=${2:?}; shift 2 ;;
     --keep) KEEP=${2:?}; shift 2 ;;
     --offhost) OFFHOST=${2:?}; shift 2 ;;
@@ -78,7 +109,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$SAVEDIR" ]] || die "--savedir is required"
+if [[ -n "$ROOT" ]]; then
+  [[ -z "$SAVEDIR" && -z "$BEPINEX" && -z "$DEDICATED" && -z "$REPORTS" ]] \
+    || die "--root replaces --savedir, --bepinex, --dedicated and --reports; give one or the others"
+  SAVEDIR="$ROOT/save" BEPINEX="$ROOT/bepinex" DEDICATED="$ROOT/dedicated" REPORTS="$ROOT/bepinex/SeparateSpawns/reports"
+fi
+[[ -n "$SAVEDIR" ]] || die "--savedir or --root is required"
 [[ -n "$OUT" ]] || die "--out is required"
 [[ -d "$SAVEDIR" ]] || die "no such save directory: $SAVEDIR"
 [[ "$KEEP" =~ ^[0-9]+$ ]] || die "--keep must be a non-negative integer"
@@ -87,6 +123,19 @@ done
 WORLDS_DIR="$SAVEDIR/worlds_local"
 [[ -d "$WORLDS_DIR" ]] || die "no worlds_local in $SAVEDIR; is this the server's -savedir?"
 BEPINEX=${BEPINEX:-$(dirname "$SAVEDIR")/bepinex}
+
+# SeparateSpawns' stores: archive path, then source, for each one this backup knows where to find.
+extra_keys=() extra_sources=() not_captured=()
+if [[ -n "$DEDICATED" ]]; then
+  for f in "${DEDICATED_STORES[@]}"; do extra_keys+=("dedicated/$f"); extra_sources+=("$DEDICATED/$f"); done
+else
+  not_captured+=("dedicated (no --dedicated)")
+fi
+if [[ -n "$REPORTS" ]]; then
+  extra_keys+=("$REPORTS_STORE"); extra_sources+=("$REPORTS")
+else
+  not_captured+=("$REPORTS_STORE (no --reports)")
+fi
 if [[ -d "$SAVEDIR/ServerManager" ]]; then
   [[ -d "$SAVEDIR/ServerManager/characters" ]] || die "ServerManager installed without character store"
   [[ -z "$WORLD" ]] || die "partial world capture refused with account-global character store"
@@ -128,7 +177,12 @@ capture() {
     [[ ! -d "$SAVEDIR/ServerManager" ]] || cp -a "$SAVEDIR/ServerManager" "$stage/ServerManager" || rc=$?
     mkdir -p "$stage/bepinex-state"
     for f in "${BEPINEX_STORES[@]}"; do
-      [[ ! -d "$BEPINEX/$f" ]] || cp -a "$BEPINEX/$f" "$stage/bepinex-state/$f" || rc=$?
+      # A store may be nested (EpicLoot/BountySaves) without the rest of its parent.
+      [[ ! -d "$BEPINEX/$f" ]] || { mkdir -p "$(dirname "$stage/bepinex-state/$f")" && cp -a "$BEPINEX/$f" "$stage/bepinex-state/$f"; } || rc=$?
+    done
+    for i in "${!extra_keys[@]}"; do
+      [[ ! -e "${extra_sources[$i]}" ]] \
+        || { mkdir -p "$(dirname "$stage/${extra_keys[$i]}")" && cp -a "${extra_sources[$i]}" "$stage/${extra_keys[$i]}"; } || rc=$?
     done
     [[ ! -d "$SAVEDIR/ServerManager" || -d "$stage/ServerManager/characters" ]] || die "character store disappeared during capture"
     after=""
@@ -145,8 +199,8 @@ capture() {
 # Account-global characters and per-world mod stores can change independently of .ok.
 state_fingerprint() {
   local p
-  for p in "$SAVEDIR/ServerManager" "${BEPINEX_STORES[@]/#/$BEPINEX/}"; do
-    [[ ! -d "$p" ]] || { printf '%s\n' "$p"; store_inventory "$p"; }
+  for p in "$SAVEDIR/ServerManager" "${BEPINEX_STORES[@]/#/$BEPINEX/}" "${extra_sources[@]}"; do
+    path_fingerprint "$p"
   done
 }
 
@@ -177,15 +231,18 @@ capture "$stage" "${worlds[@]}"
   printf 'generations_marker_set=%s\n' "$(for d in "${worlds[@]}"; do printf '%s=%s ' "$(basename "$d")" "$(generations "$d")"; done)"
   printf 'host=%s\n' "$(hostname)"
   printf 'format=2\n'
-  printf 'contents=worlds_local,cache,admission lists,ServerManager,bepinex-state/Guilds,bepinex-state/Marketplace,bepinex-state/Lembitu.Guilds\n'
-  printf 'excluded=BepInEx deployed configuration; local character exports\n'
+  printf 'contents=worlds_local,cache,admission lists,ServerManager%s%s\n' "$(printf ',bepinex-state/%s' "${BEPINEX_STORES[@]}")" \
+    "$( (( ${#extra_keys[@]} )) && printf ',%s' "${extra_keys[@]}")"
+  printf 'excluded=BepInEx deployed configuration; SeparateSpawns configuration; local character exports\n'
+  (( ${#not_captured[@]} == 0 )) || printf 'not_captured=%s\n' "$(IFS=,; printf '%s' "${not_captured[*]}")"
   printf 'consistency=stable disk files; no forced checkpoint; world and characters may differ by upload interval (300s), longer if stalled\n'
-  for f in cache ServerManager "${ADMISSION_FILES[@]}" "${BEPINEX_STORES[@]/#/bepinex-state/}"; do
+  for f in cache ServerManager "${ADMISSION_FILES[@]}" "${BEPINEX_STORES[@]/#/bepinex-state/}" "${extra_keys[@]}"; do
     if [[ -e "$stage/$f" ]]; then printf 'store_%s=present\n' "$f"; else printf 'store_%s=absent\n' "$f"; fi
   done
 } > "$stage/MANIFEST.txt"
 time_roots=("$stage/worlds_local" "$stage/bepinex-state")
 [[ ! -d "$stage/ServerManager" ]] || time_roots+=("$stage/ServerManager")
+[[ ! -d "$stage/dedicated" ]] || time_roots+=("$stage/dedicated")
 while IFS= read -r f; do
   printf '%s %s\n' "$(file_mtime "$f")" "${f#"$stage/"}"
 done < <(find "${time_roots[@]}" -type f) > "$stage/STATE-TIMES.txt"
