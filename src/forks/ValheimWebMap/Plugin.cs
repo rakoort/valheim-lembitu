@@ -112,14 +112,11 @@ namespace ValheimWebMap
             j.Prop("version", PluginInfo.Version);
             // What the page may show; the API already omits the data behind a disabled switch.
             j.Key("features").BeginObject();
-            j.Prop("history", _cfg.ShowHistory.Value && _cfg.TrackSessions.Value);
             j.Prop("hiddenPlayers", _cfg.ShowHiddenPlayers.Value);
             j.Prop("biome", _cfg.ShowBiome.Value);
             j.Prop("coordinates", _cfg.ShowCoordinates.Value);
             j.Prop("heading", _cfg.ShowHeading.Value);
-            j.Prop("timeOnline", _cfg.ShowTimeOnline.Value && _cfg.TrackSessions.Value);
             j.Prop("deadStatus", _cfg.ShowDeadStatus.Value);
-            j.Prop("deathCounts", _cfg.ShowDeathCounts.Value && _cfg.TrackDeaths.Value && _cfg.TrackSessions.Value);
             j.Prop("dayTime", _cfg.ShowDayAndTime.Value);
             j.Prop("explored", _cfg.ShowExploredPercent.Value);
             j.Prop("pins", _cfg.ShowPins.Value);
@@ -141,11 +138,6 @@ namespace ValheimWebMap
             return s != null ? s.StateJson : _emptyState;
         }
 
-        public string HistoryJson()
-        {
-            MapSession s = _session;
-            return s != null ? s.HistoryJson : "{\"players\":[]}";
-        }
 
         public string PinsJson()
         {
