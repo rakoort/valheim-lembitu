@@ -337,6 +337,10 @@ the Secret.
   - `Lembitu.Callings`' "The cook's grade through cooking stations: off". 1.0.21 added a
     `long sender` parameter to `CookingStation.SetSlot`, and the hook named the five-parameter
     method. `StationGrade.cs` now hooks the six-parameter one, and the feature logs `on`.
+  - Not in the log, but recorded here: AzuExtendedPlayerInventory 2.6.3 calls the
+    `PlayerProfile.GetStat(PlayerStatType)` that 1.0.21 removed. That code runs only in the
+    client's stats panel, so the server is unaffected. Upstream 2.6.5 fixes it
+    (`docs/modstack.md`).
 
 ## The proofs
 
