@@ -42,7 +42,8 @@ internal static class StationGrade
         var awake = Hooks.Method(station, "Awake", Type.EmptyTypes, typeof(void));
         var cookItem = Hooks.Method(station, "CookItem", new[] { typeof(Humanoid), typeof(ItemDrop.ItemData) }, typeof(bool));
         var addItem = Hooks.Method(station, "RPC_AddItem", new[] { typeof(long), typeof(string), typeof(bool) }, typeof(void));
-        var setSlot = Hooks.Method(station, "SetSlot", new[] { typeof(int), typeof(string), typeof(float), typeof(CookingStation.Status), typeof(bool) }, typeof(void));
+        // Valheim 1.0.21 added `long sender = 0` (the station records who cooked it); the postfix binds by name and needs none of it.
+        var setSlot = Hooks.Method(station, "SetSlot", new[] { typeof(int), typeof(string), typeof(float), typeof(CookingStation.Status), typeof(bool), typeof(long) }, typeof(void));
         var spawnItem = Hooks.Method(station, "SpawnItem", new[] { typeof(string), typeof(int), typeof(Vector3), typeof(bool) }, typeof(void));
         var dropAll = Hooks.Method(station, "DropAllItems", Type.EmptyTypes, typeof(void));
         var onCreateNew = Hooks.Method(typeof(ItemDrop), nameof(ItemDrop.OnCreateNew), new[] { typeof(ItemDrop), typeof(bool) }, typeof(void));
