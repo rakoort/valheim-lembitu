@@ -10,7 +10,7 @@ nix build .#serverImage                                      # the archive, valh
 nix build '.#projectImages."project/valheim-lembitu/server"' # the same derivation, the output fleet-publish builds
 ```
 
-`nix/server-image.nix` is the recipe. The archive's tag is the server build, `25909431`. The image is
+`nix/server-image.nix` is the recipe. The archive's tag is the server build, `26266951`. The image is
 about 2.3 GB in 28 layers, zstd-compressed. A warm build of the image alone takes about 20 seconds;
 the first, which fetches the depots, takes several minutes. Two builds of every derivation the image
 is made from give the same bytes, so the manifest digest is a function of the locked inputs and

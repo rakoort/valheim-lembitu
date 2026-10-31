@@ -4,7 +4,7 @@
     "depot": 896661,
     "manifest": "6965848522742639928",
     "build": 26266951,
-    "narHash": "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    "narHash": "sha256-pVk0OhYFwLUJqm/wn4cudkBzaUiL32m/0ZoJ6L3x3+M=",
     "files": "docs/server-files.sha256"
   },
   "redist": {

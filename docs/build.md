@@ -99,7 +99,7 @@ development loop above, which follows the latest public game:
 
 | File | Holds |
 | --- | --- |
-| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 4001404753685205688, build 25909431, and the NAR hash of the fetched tree. The install's second depot, the Steamworks SDK redistributable: depot 1006, manifest 4559160656493359681, and its NAR hash. BepInExPack 5.4.2351's URL and sha256. The SDK, PathMap and commit stamp our plugins are built with (`plugins`). The server-side plugin GUIDs the chainloader must load, and the ones it skips by their own process filter (`serverPlugins`). Each adopted mod's download URL and sha256. |
+| `docs/server-inputs.lock.json` | The server: app 896660, depot 896661, manifest 6965848522742639928, build 26266951 (Valheim 1.0.21, public since 2026-10-27; the 1.0.20 manifest 4001404753685205688 is on `default_old` only and refuses anonymous fetches), and the NAR hash of the fetched tree. The install's second depot, the Steamworks SDK redistributable: depot 1006, manifest 4559160656493359681, and its NAR hash. BepInExPack 5.4.2351's URL and sha256. The SDK, PathMap and commit stamp our plugins are built with (`plugins`). The server-side plugin GUIDs the chainloader must load, and the ones it skips by their own process filter (`serverPlugins`). Each adopted mod's download URL and sha256. |
 | `docs/server-files.sha256` | The server's 989 files in `sha256sum` format, so a copy of an install also checks with `sha256sum -c`. |
 | `docs/redist-files.sha256` | The redistributable's 4 files, in the same format. |
 | `nix/plugins-deps.json` | The plugins' NuGet packages, with their hashes. |
