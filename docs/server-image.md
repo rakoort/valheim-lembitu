@@ -330,6 +330,13 @@ the Secret.
   Deathward lethal prevention is disabled.` This comes from the adopted CreatureManager 1.3.5
   (`sighsorry.CreatureManager`), not from the image. It is not yet compared with the live server's
   log.
+- On 1.0.21 (build 26266951, 2026-10-31) the image test passed 78/78, as it did on 1.0.20. The
+  boot logged two lines that the 1.0.20 boot did not:
+  - Zen.ModLib's `VERSION MISMATCH … required: 1.0.20`, for ModLib and for ZenRaids. It is
+    log-only: both still patch.
+  - `Lembitu.Callings`' "The cook's grade through cooking stations: off". 1.0.21 added a
+    `long sender` parameter to `CookingStation.SetSlot`, and the hook still names the
+    five-parameter method.
 
 ## The proofs
 
