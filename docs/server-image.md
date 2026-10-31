@@ -335,8 +335,8 @@ the Secret.
   - Zen.ModLib's `VERSION MISMATCH … required: 1.0.20`, for ModLib and for ZenRaids. It is
     log-only: both still patch.
   - `Lembitu.Callings`' "The cook's grade through cooking stations: off". 1.0.21 added a
-    `long sender` parameter to `CookingStation.SetSlot`, and the hook still names the
-    five-parameter method.
+    `long sender` parameter to `CookingStation.SetSlot`, and the hook named the five-parameter
+    method. `StationGrade.cs` now hooks the six-parameter one, and the feature logs `on`.
 
 ## The proofs
 

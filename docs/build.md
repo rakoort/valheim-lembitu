@@ -164,7 +164,8 @@ A plugin DLL embeds:
 
 - the SDK, 10.0.400. The build refuses another nixpkgs SDK version;
 - the PathMap, `/Users/ra/code/valheim-lembitu/`;
-- the commit stamp, `b3e60848…6778`.
+- the commit stamp, `e408081b…bfb60`, the commit that hooks 1.0.21's six-argument
+  `CookingStation.SetSlot` (re-locked from the live build's `b3e60848…6778`).
 
 The build also maps the Nix build hook's randomly named NuGet folder to `/Users/ra/.nuget/`.
 Without that mapping, the folder's random name reaches the build IDs and two builds differ.

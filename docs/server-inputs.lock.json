@@ -23,7 +23,7 @@
   "plugins": {
     "sdk": "10.0.400",
     "pathMap": "/Users/ra/code/valheim-lembitu/",
-    "sourceRevisionId": "b3e608489924babc1dcee3de700f048fdd476778"
+    "sourceRevisionId": "e408081b476f00643a15fdda50ce2554543bfb60"
   },
   "serverPlugins": {
     "lister": "scripts/list-plugin-guids.sh",
