@@ -2,9 +2,9 @@
   "server": {
     "app": 896660,
     "depot": 896661,
-    "manifest": "4001404753685205688",
-    "build": 25909431,
-    "narHash": "sha256-7GLhPbO1FDgx2HPORAA9sLtrETQCqiY6+a4At5+PUWc=",
+    "manifest": "6965848522742639928",
+    "build": 26266951,
+    "narHash": "sha256-pVk0OhYFwLUJqm/wn4cudkBzaUiL32m/0ZoJ6L3x3+M=",
     "files": "docs/server-files.sha256"
   },
   "redist": {
@@ -23,7 +23,7 @@
   "plugins": {
     "sdk": "10.0.400",
     "pathMap": "/Users/ra/code/valheim-lembitu/",
-    "sourceRevisionId": "b3e608489924babc1dcee3de700f048fdd476778"
+    "sourceRevisionId": "e408081b476f00643a15fdda50ce2554543bfb60"
   },
   "serverPlugins": {
     "lister": "scripts/list-plugin-guids.sh",

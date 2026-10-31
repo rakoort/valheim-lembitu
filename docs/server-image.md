@@ -10,7 +10,7 @@ nix build .#serverImage                                      # the archive, valh
 nix build '.#projectImages."project/valheim-lembitu/server"' # the same derivation, the output fleet-publish builds
 ```
 
-`nix/server-image.nix` is the recipe. The archive's tag is the server build, `25909431`. The image is
+`nix/server-image.nix` is the recipe. The archive's tag is the server build, `26266951`. The image is
 about 2.3 GB in 28 layers, zstd-compressed. A warm build of the image alone takes about 20 seconds;
 the first, which fetches the depots, takes several minutes. Two builds of every derivation the image
 is made from give the same bytes, so the manifest digest is a function of the locked inputs and
@@ -330,6 +330,17 @@ the Secret.
   Deathward lethal prevention is disabled.` This comes from the adopted CreatureManager 1.3.5
   (`sighsorry.CreatureManager`), not from the image. It is not yet compared with the live server's
   log.
+- On 1.0.21 (build 26266951, 2026-10-31) the image test passed 78/78, as it did on 1.0.20. The
+  boot logged two lines that the 1.0.20 boot did not:
+  - Zen.ModLib's `VERSION MISMATCH … required: 1.0.20`, for ModLib and for ZenRaids. It is
+    log-only: both still patch.
+  - `Lembitu.Callings`' "The cook's grade through cooking stations: off". 1.0.21 added a
+    `long sender` parameter to `CookingStation.SetSlot`, and the hook named the five-parameter
+    method. `StationGrade.cs` now hooks the six-parameter one, and the feature logs `on`.
+  - Not in the log, but recorded here: AzuExtendedPlayerInventory 2.6.3 calls the
+    `PlayerProfile.GetStat(PlayerStatType)` that 1.0.21 removed. That code runs only in the
+    client's stats panel, so the server is unaffected. Upstream 2.6.5 fixes it
+    (`docs/modstack.md`).
 
 ## The proofs
 
