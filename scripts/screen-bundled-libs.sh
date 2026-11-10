@@ -2,7 +2,7 @@
 # Screen an adopted package's bundled managed libraries against the game we run (ADR-0002).
 #
 #   scripts/screen-bundled-libs.sh <dll> [<dll>...]
-#   scripts/screen-bundled-libs.sh --dir dist/plugins/ValheimRAFT
+#   scripts/screen-bundled-libs.sh --dir dist/plugins/SomeMod
 #
 # A package that ships prebuilt libraries hides the ADR-0002 failure mode in each one: a member the
 # game removed, or a field it turned into a `const`. The symptom appears at runtime, not at build,

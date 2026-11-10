@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PluginGuid>lembitu.levelupsound</PluginGuid>
+    <Version>0.1.0</Version>
+    <Description>Turns EpicMMOSystem's level-up sound down to a fifth and routes it through the game's sound-effect mixer. The mod plays that clip from an AudioSource at full volume with no mixer group, so no in-game volume slider reaches it and the mod exposes no volume setting.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- AudioSource and AudioMixerGroup: the two types this plugin exists to touch. -->
+    <Reference Include="UnityEngine.AudioModule" Private="false">
+      <HintPath>$(ValheimRefDir)UnityEngine.AudioModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

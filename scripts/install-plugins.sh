@@ -85,7 +85,7 @@ path_is_client_only() {  # path_is_client_only <dist-relative-path>
 
 # One line per staged tree, so a 230-file bundle tree is summarized instead of scrolled:
 #   installed plugins/MaxPlayerCount.dll
-#   removed stale plugins/ValheimRAFT/ (40 files)
+#   removed stale plugins/RetiredMod/ (40 files)
 # Groups are the first two path components - tree and package - because with dist/ mirroring
 # BepInEx/ the first component alone would collapse every package into "plugins/".
 report() {  # report <verb> <relative-path>...

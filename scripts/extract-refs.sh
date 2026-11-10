@@ -13,8 +13,8 @@
 
 set -euo pipefail
 
-BEPINEX_PACK_VERSION="5.4.2350"   # BepInEx 5.4.23.5
-BEPINEX_PACK_SHA256="37a91c000b4e88f2ed7a4bd7d812239852d2e36cbf0ff0a9f5faacfba46b105f"
+BEPINEX_PACK_VERSION="5.4.2351"
+BEPINEX_PACK_SHA256="bce631497976a93977ceb08e166712e6c31d15244956f89f17df092a9b62e29f"
 BEPINEX_PACK_URL="https://thunderstore.io/package/download/denikson/BepInExPack_Valheim/${BEPINEX_PACK_VERSION}/"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

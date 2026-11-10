@@ -10,9 +10,9 @@
 # merge keeps our values pinned and everything else exactly as the mod wrote it.
 #
 # Keys are matched by section and exact key text, because BepInEx config files reuse key names
-# across sections: PvPBiomeDominions has `Biome 1 - Meadows Rule` in [2 - PvP Settings] and again
-# in [3 - Map Position], and only the PvP one is ours to touch. An entry whose section+key is not
-# in the target is appended under its section at the end of the file, so a mod renaming a key
+# across sections. Matching only a key could change an unrelated setting in another section.
+# An entry whose section+key is not in the target is appended under its section at the end
+# of the file, so a mod renaming a key
 # fails loudly at review time (a duplicate appears) rather than silently reverting to default.
 # A target .cfg that does not exist at all is an error: writing one the mod never reads would be
 # a silent no-op.
